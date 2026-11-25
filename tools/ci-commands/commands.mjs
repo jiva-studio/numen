@@ -274,7 +274,7 @@ export const getPluginCommands = async (target, plugins = PLUGINS) => {
     found.push({
       id: manifest.id,
       settings: manifest.settings
-        .filter((one) => one.palette)
+        .filter((one) => one.isPalette)
         .map((one) => ({ text: `${manifest.name}: ${one.title}`, group: 'settings' })),
       declared: all
         .filter(

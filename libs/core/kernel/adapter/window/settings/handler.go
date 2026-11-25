@@ -139,7 +139,7 @@ func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 			Details:       s.Details,
 			Group:         s.Group,
 			DefaultJson:   s.DefaultJSON,
-			Palette:       s.Palette,
+			IsPalette:     s.Palette,
 			Icon:          s.Icon,
 			Options:       newWireOptions(s.Options),
 			Min:           s.Min,
@@ -148,11 +148,11 @@ func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 			OptionsBy:     newWireOptionsBy(s.OptionsBy),
 			When:          newWireCondition(s.When),
 			Accept:        s.Accept,
-			Multiple:      s.Multiple,
-			Preview:       s.Preview,
+			IsMultiple:    s.Multiple,
+			IsPreview:     s.Preview,
 			OptionsFrom:   s.OptionsFrom,
 			Operations:    s.Operations,
-			Discover:      s.Discover,
+			IsDiscover:    s.Discover,
 			ActiveOptions: newWireOptions(s.ActiveOptions),
 			IsShown:       s.IsShown,
 			ValueJson:     s.ValueJSON,
@@ -161,19 +161,19 @@ func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 	return settings
 }
 
-func newWireOptions(target manifest.SettingOptions) []*v1.PluginSettingOption {
+func newWireOptions(target manifest.SettingOptions) []*v1.Option {
 	if len(target) == 0 {
 		return nil
 	}
-	options := make([]*v1.PluginSettingOption, 0, len(target))
+	options := make([]*v1.Option, 0, len(target))
 	for _, one := range target {
 		options = append(options, newWireOption(one))
 	}
 	return options
 }
 
-func newWireOption(one manifest.SettingOption) *v1.PluginSettingOption {
-	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail, When: one.When}
+func newWireOption(one manifest.SettingOption) *v1.Option {
+	return &v1.Option{Value: one.Value, Title: one.Title, Detail: one.Detail, When: one.When}
 }
 
 func newWireOptionsBy(target *manifest.OptionsBy) *v1.PluginSettingOptionsBy {

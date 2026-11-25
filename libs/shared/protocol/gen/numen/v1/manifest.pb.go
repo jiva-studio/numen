@@ -1468,9 +1468,9 @@ type ManifestSlotPoint struct {
 	Slot string `protobuf:"bytes,1,opt,name=slot,proto3" json:"slot,omitempty"`
 	// title is what the settings page of the plugin calls the slot.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// menu marks a slot that draws its entries as the rows of a context menu: the settings page does not
+	// is_menu marks a slot that draws its entries as the rows of a context menu: the settings page does not
 	// list it, and its order comes from the manifests.
-	Menu          bool `protobuf:"varint,3,opt,name=menu,proto3" json:"menu,omitempty"`
+	IsMenu        bool `protobuf:"varint,3,opt,name=is_menu,json=menu,proto3" json:"is_menu,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1519,9 +1519,9 @@ func (x *ManifestSlotPoint) GetTitle() string {
 	return ""
 }
 
-func (x *ManifestSlotPoint) GetMenu() bool {
+func (x *ManifestSlotPoint) GetIsMenu() bool {
 	if x != nil {
-		return x.Menu
+		return x.IsMenu
 	}
 	return false
 }
@@ -2525,10 +2525,10 @@ type ManifestSetting struct {
 	// description is the one line the settings row shows under the title, at most 64 characters.
 	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	// details is the full text the info button beside the title opens. Empty shows no button.
-	Details string          `protobuf:"bytes,24,opt,name=details,proto3" json:"details,omitempty"`
-	Default *structpb.Value `protobuf:"bytes,5,opt,name=default,proto3" json:"default,omitempty"`
-	Palette bool            `protobuf:"varint,6,opt,name=palette,proto3" json:"palette,omitempty"`
-	Icon    string          `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
+	Details   string          `protobuf:"bytes,24,opt,name=details,proto3" json:"details,omitempty"`
+	Default   *structpb.Value `protobuf:"bytes,5,opt,name=default,proto3" json:"default,omitempty"`
+	IsPalette bool            `protobuf:"varint,6,opt,name=is_palette,json=palette,proto3" json:"is_palette,omitempty"`
+	Icon      string          `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
 	// options is a JSON list of options.
 	Options   *structpb.ListValue `protobuf:"bytes,8,opt,name=options,proto3" json:"options,omitempty"`
 	Min       *float64            `protobuf:"fixed64,9,opt,name=min,proto3,oneof" json:"min,omitempty"`
@@ -2537,11 +2537,11 @@ type ManifestSetting struct {
 	OptionsBy *ManifestOptionsBy  `protobuf:"bytes,14,opt,name=options_by,json=optionsBy,proto3" json:"options_by,omitempty"`
 	When      *ManifestCondition  `protobuf:"bytes,15,opt,name=when,proto3" json:"when,omitempty"`
 	Accept    []string            `protobuf:"bytes,16,rep,name=accept,proto3" json:"accept,omitempty"`
-	// multiple makes a file setting hold a list of paths, one per line.
-	Multiple bool `protobuf:"varint,17,opt,name=multiple,proto3" json:"multiple,omitempty"`
-	// preview makes the window apply the value while its control is focused, and restore the saved
+	// is_multiple makes a file setting hold a list of paths, one per line.
+	IsMultiple bool `protobuf:"varint,17,opt,name=is_multiple,json=multiple,proto3" json:"is_multiple,omitempty"`
+	// is_preview makes the window apply the value while its control is focused, and restore the saved
 	// value on leaving.
-	Preview bool `protobuf:"varint,18,opt,name=preview,proto3" json:"preview,omitempty"`
+	IsPreview bool `protobuf:"varint,18,opt,name=is_preview,json=preview,proto3" json:"is_preview,omitempty"`
 	// options_from names a registry the options are listed from, such as the installed themes.
 	OptionsFrom string `protobuf:"bytes,19,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
 	// generate makes the host fill an empty value; "token" is 32 random bytes in hex.
@@ -2550,9 +2550,9 @@ type ManifestSetting struct {
 	// call of the plugin for one of them goes through the rows of the setting, and a plugin calls no
 	// operation no setting names. max is the number of rows.
 	Operations []string `protobuf:"bytes,22,rep,name=operations,proto3" json:"operations,omitempty"`
-	// discover makes a setting of type connections that holds no row use every connection whose type
+	// is_discover makes a setting of type connections that holds no row use every connection whose type
 	// serves the operation, in the order of the connections, while the person leaves it on.
-	Discover bool `protobuf:"varint,23,opt,name=discover,proto3" json:"discover,omitempty"`
+	IsDiscover bool `protobuf:"varint,23,opt,name=is_discover,json=discover,proto3" json:"is_discover,omitempty"`
 	// group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in a card without a heading above the islands.
 	Group         string `protobuf:"bytes,25,opt,name=group,proto3" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -2631,9 +2631,9 @@ func (x *ManifestSetting) GetDefault() *structpb.Value {
 	return nil
 }
 
-func (x *ManifestSetting) GetPalette() bool {
+func (x *ManifestSetting) GetIsPalette() bool {
 	if x != nil {
-		return x.Palette
+		return x.IsPalette
 	}
 	return false
 }
@@ -2694,16 +2694,16 @@ func (x *ManifestSetting) GetAccept() []string {
 	return nil
 }
 
-func (x *ManifestSetting) GetMultiple() bool {
+func (x *ManifestSetting) GetIsMultiple() bool {
 	if x != nil {
-		return x.Multiple
+		return x.IsMultiple
 	}
 	return false
 }
 
-func (x *ManifestSetting) GetPreview() bool {
+func (x *ManifestSetting) GetIsPreview() bool {
 	if x != nil {
-		return x.Preview
+		return x.IsPreview
 	}
 	return false
 }
@@ -2729,9 +2729,9 @@ func (x *ManifestSetting) GetOperations() []string {
 	return nil
 }
 
-func (x *ManifestSetting) GetDiscover() bool {
+func (x *ManifestSetting) GetIsDiscover() bool {
 	if x != nil {
-		return x.Discover
+		return x.IsDiscover
 	}
 	return false
 }
@@ -2744,9 +2744,9 @@ func (x *ManifestSetting) GetGroup() string {
 }
 
 type ManifestNoteType struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Type   string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
-	Chunks *bool                  `protobuf:"varint,2,opt,name=chunks,proto3,oneof" json:"chunks,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Type      string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	HasChunks *bool                  `protobuf:"varint,2,opt,name=has_chunks,json=chunks,proto3,oneof" json:"has_chunks,omitempty"`
 	// headings is a JSON list of heading levels. Absent keeps every heading, and
 	// an empty list keeps none.
 	Headings        *structpb.ListValue `protobuf:"bytes,3,opt,name=headings,proto3" json:"headings,omitempty"`
@@ -2793,9 +2793,9 @@ func (x *ManifestNoteType) GetType() string {
 	return ""
 }
 
-func (x *ManifestNoteType) GetChunks() bool {
-	if x != nil && x.Chunks != nil {
-		return *x.Chunks
+func (x *ManifestNoteType) GetHasChunks() bool {
+	if x != nil && x.HasChunks != nil {
+		return *x.HasChunks
 	}
 	return false
 }
@@ -3501,11 +3501,11 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x10ManifestListener\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\x12!\n" +
-	"\fport_setting\x18\x04 \x01(\tR\vportSetting\"Q\n" +
+	"\fport_setting\x18\x04 \x01(\tR\vportSetting\"T\n" +
 	"\x11ManifestSlotPoint\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
-	"\x04menu\x18\x03 \x01(\bR\x04menu\"\xf4\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x15\n" +
+	"\ais_menu\x18\x03 \x01(\bR\x04menu\"\xf4\x02\n" +
 	"\x11ManifestSlotEntry\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x1a\n" +
 	"\acommand\x18\x02 \x01(\tH\x00R\acommand\x12\x14\n" +
@@ -3593,15 +3593,16 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xcb\x05\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xd7\x05\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x18\n" +
 	"\adetails\x18\x18 \x01(\tR\adetails\x120\n" +
-	"\adefault\x18\x05 \x01(\v2\x16.google.protobuf.ValueR\adefault\x12\x18\n" +
-	"\apalette\x18\x06 \x01(\bR\apalette\x12\x12\n" +
+	"\adefault\x18\x05 \x01(\v2\x16.google.protobuf.ValueR\adefault\x12\x1b\n" +
+	"\n" +
+	"is_palette\x18\x06 \x01(\bR\apalette\x12\x12\n" +
 	"\x04icon\x18\a \x01(\tR\x04icon\x124\n" +
 	"\aoptions\x18\b \x01(\v2\x1a.google.protobuf.ListValueR\aoptions\x12\x15\n" +
 	"\x03min\x18\t \x01(\x01H\x00R\x03min\x88\x01\x01\x12\x15\n" +
@@ -3611,27 +3612,29 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"options_by\x18\x0e \x01(\v2\x1b.numen.v1.ManifestOptionsByR\toptionsBy\x12/\n" +
 	"\x04when\x18\x0f \x01(\v2\x1b.numen.v1.ManifestConditionR\x04when\x12\x16\n" +
-	"\x06accept\x18\x10 \x03(\tR\x06accept\x12\x1a\n" +
-	"\bmultiple\x18\x11 \x01(\bR\bmultiple\x12\x18\n" +
-	"\apreview\x18\x12 \x01(\bR\apreview\x12!\n" +
+	"\x06accept\x18\x10 \x03(\tR\x06accept\x12\x1d\n" +
+	"\vis_multiple\x18\x11 \x01(\bR\bmultiple\x12\x1b\n" +
+	"\n" +
+	"is_preview\x18\x12 \x01(\bR\apreview\x12!\n" +
 	"\foptions_from\x18\x13 \x01(\tR\voptionsFrom\x12\x1a\n" +
 	"\bgenerate\x18\x14 \x01(\tR\bgenerate\x12\x1e\n" +
 	"\n" +
 	"operations\x18\x16 \x03(\tR\n" +
-	"operations\x12\x1a\n" +
-	"\bdiscover\x18\x17 \x01(\bR\bdiscover\x12\x14\n" +
+	"operations\x12\x1d\n" +
+	"\vis_discover\x18\x17 \x01(\bR\bdiscover\x12\x14\n" +
 	"\x05group\x18\x19 \x01(\tR\x05groupB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"\xd1\x01\n" +
+	"\x05_step\"\xd9\x01\n" +
 	"\x10ManifestNoteType\x12\x12\n" +
-	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1b\n" +
-	"\x06chunks\x18\x02 \x01(\bH\x00R\x06chunks\x88\x01\x01\x126\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1f\n" +
+	"\n" +
+	"has_chunks\x18\x02 \x01(\bH\x00R\x06chunks\x88\x01\x01\x126\n" +
 	"\bheadings\x18\x03 \x01(\v2\x1a.google.protobuf.ListValueR\bheadings\x12*\n" +
 	"\x11id_heading_levels\x18\x04 \x03(\x05R\x0fidHeadingLevels\x12\x1d\n" +
 	"\n" +
-	"id_pattern\x18\x05 \x01(\tR\tidPatternB\t\n" +
-	"\a_chunks\"v\n" +
+	"id_pattern\x18\x05 \x01(\tR\tidPatternB\r\n" +
+	"\v_has_chunks\"v\n" +
 	"\x17ManifestCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +

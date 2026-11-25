@@ -229,7 +229,7 @@ func (h *Handler) ListContributions(
 	points := make([]*v1.PluginSlotPoint, 0, len(listing.SlotPoints))
 	for _, one := range listing.SlotPoints {
 		points = append(points, &v1.PluginSlotPoint{
-			PluginId: one.PluginID, Point: &v1.ManifestSlotPoint{Slot: one.Point.Slot, Title: one.Point.Title, Menu: one.Point.Menu},
+			PluginId: one.PluginID, Point: &v1.ManifestSlotPoint{Slot: one.Point.Slot, Title: one.Point.Title, IsMenu: one.Point.Menu},
 		})
 	}
 	handlers := make([]*v1.PluginHandler, 0, len(listing.Handlers))

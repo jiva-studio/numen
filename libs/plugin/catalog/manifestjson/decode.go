@@ -213,7 +213,7 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Details:     one.GetDetails(),
 			Group:       one.GetGroup(),
 			Default:     one.GetDefault().AsInterface(),
-			Palette:     one.GetPalette(),
+			Palette:     one.GetIsPalette(),
 			Icon:        one.GetIcon(),
 			Options:     options,
 			Min:         one.Min,
@@ -222,12 +222,12 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			OptionsBy:   optionsBy,
 			When:        newCondition(one.GetWhen()),
 			Accept:      one.GetAccept(),
-			Multiple:    one.GetMultiple(),
-			Preview:     one.GetPreview(),
+			Multiple:    one.GetIsMultiple(),
+			Preview:     one.GetIsPreview(),
 			OptionsFrom: one.GetOptionsFrom(),
 			Generate:    one.GetGenerate(),
 			Operations:  one.GetOperations(),
-			Discover:    one.GetDiscover(),
+			Discover:    one.GetIsDiscover(),
 		})
 	}
 	return out, nil

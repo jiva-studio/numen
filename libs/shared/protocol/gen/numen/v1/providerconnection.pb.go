@@ -1009,7 +1009,7 @@ var File_numen_v1_providerconnection_proto protoreflect.FileDescriptor
 
 const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\n" +
-	"!numen/v1/providerconnection.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17numen/v1/manifest.proto\x1a\x17numen/v1/settings.proto\x1a\x15numen/v1/shared.proto\"\xe7\x02\n" +
+	"!numen/v1/providerconnection.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17numen/v1/manifest.proto\x1a\x15numen/v1/shared.proto\"\xe7\x02\n" +
 	"\x16ProviderConnectionType\x12\x17\n" +
 	"\atype_id\x18\x01 \x01(\tR\x06typeId\x12\x1b\n" +
 	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x1f\n" +
@@ -1211,7 +1211,6 @@ func file_numen_v1_providerconnection_proto_init() {
 		return
 	}
 	file_numen_v1_manifest_proto_init()
-	file_numen_v1_settings_proto_init()
 	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{

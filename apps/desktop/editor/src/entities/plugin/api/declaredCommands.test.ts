@@ -214,7 +214,7 @@ describe('the slots the plugins draw', () => {
         { pluginId: 'org.example.plex', point: { slot: 'plexGraph.node', title: 'Over a node' } },
         {
           pluginId: 'org.example.plex',
-          point: { slot: 'plexGraph.context', title: 'Menu', menu: true },
+          point: { slot: 'plexGraph.context', title: 'Menu', isMenu: true },
         },
       ],
     })

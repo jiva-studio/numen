@@ -4,7 +4,6 @@ package numen.v1;
 
 import "google/protobuf/struct.proto";
 import "numen/v1/manifest.proto";
-import "numen/v1/settings.proto";
 import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
