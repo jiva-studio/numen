@@ -34,7 +34,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
   const cloud = useCloudVaults(vault.remoteVaults)
   runInBackground(cloud.refresh(), reportFailure)
   watchCloudVaults(() => runInBackground(cloud.refresh(), reportFailure))
-  const vaults = Object.assign(useVaults({ listVaults: vault.listVaults, log }), { cloud })
+  const vaults = { ...useVaults({ listVaults: vault.listVaults, log }), cloud }
   const noteEditors = createNoteEditors({
     api: {
       notes: vault.note,
