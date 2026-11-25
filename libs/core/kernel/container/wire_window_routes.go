@@ -22,6 +22,7 @@ import (
 	windowlicense "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/license"
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/remotevault"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
@@ -33,7 +34,10 @@ import (
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfolder"
+	machineadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
@@ -394,4 +398,16 @@ func mountKeyFile(w *windowRoutes, res *Resources) {
 		Unlock:   keyfileusecase.NewUnlock(res.KeyFile),
 	})
 	w.Installation.Mount(editor.NewRoute(windowkeyfile.NewRoute(handler, w.page.Gate.CountQuestions())))
+}
+
+func mountRemoteVaults(w *windowRoutes, ports registry.Ports, add vault.Add, plugins windowPlugins, now machineport.Clock) {
+	folders := vaultfolder.Folders{}
+	user := machineadapter.UserFolders{}
+	handler := remotevault.NewHandler(
+		vault.NewListRemoteVaults(plugins.remoteVaults),
+		vault.NewSuggestVaultPath(plugins.newVaultsFolder, user, folders),
+		vault.NewOpenRemoteVault(ports.Vaults, ports.Remover, folders, user, add, plugins.remoteVaults, now),
+	)
+	path, served := remotevault.NewRoute(handler, w.page.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served))
 }

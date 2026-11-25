@@ -25,6 +25,7 @@ type File struct {
 	Search      Search      `json:"search"`
 	Logging     Logging     `json:"logging"`
 	Keys        Keys        `json:"keys"`
+	Vaults      Vaults      `json:"vaults"`
 	Plugins     map[string]map[string]any
 	Connections []connection.Connection
 }
@@ -38,6 +39,7 @@ type appObject struct {
 	Search      *Search     `json:"search"`
 	Logging     *Logging    `json:"logging"`
 	Keys        *Keys       `json:"keys"`
+	Vaults      *Vaults     `json:"vaults"`
 }
 
 // appSections are the sections of the owner app that a read fills in place, so that a section the
@@ -50,6 +52,7 @@ type appSections struct {
 	Search      *Search      `json:"search"`
 	Logging     *Logging     `json:"logging"`
 	Keys        *Keys        `json:"keys"`
+	Vaults      *Vaults      `json:"vaults"`
 }
 
 const keyVersion = "v"
@@ -84,7 +87,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Header.Version},
-		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &f.Logging, &f.Keys}},
+		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &f.Logging, &f.Keys, &f.Vaults}},
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {
@@ -178,7 +181,7 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search, &f.Logging, &f.Keys}
+	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search, &f.Logging, &f.Keys, &f.Vaults}
 	return hasInterfaceScale, json.Unmarshal(content, &sections)
 }
 
@@ -278,6 +281,7 @@ func DefaultFile() File {
 		Search:      DefaultSearch(),
 		Logging:     DefaultLogging(),
 		Keys:        DefaultKeys(),
+		Vaults:      DefaultVaults(),
 		Plugins:     map[string]map[string]any{},
 	}
 }

@@ -74,6 +74,10 @@ The `vaults` table in the index is what every other row's foreign key points at.
 
 **A filesystem root is not a vault, and neither is the user's home directory itself.** A non-absolute path is rejected, and so is a folder that cannot be read as a vault.
 
+### A vault from a plugin
+
+A plugin that declares the capability `vault.provider` offers remote vaults. The core lists them next to the local vaults (`RemoteVaultService.ListRemoteVaults`, an empty list while no enabled plugin provides them). Opening one (`OpenRemoteVault`) takes an absolute path whose parent exists and that is new or an empty folder, outside every vault on the list and neither a whole disk nor the home folder; it makes the folder, adds the vault and asks the plugin to connect the remote vault to it. When any step after the folder was made fails, the vault is taken off the list again and the folder is removed only if the call made it and it holds nothing but what the call made. `SuggestVaultPath` names the folder from the setting `app.vaults.folder` and the name of the vault, with the lowest free number appended where the name is taken — [Settings](settings.md).
+
 ### An identity already on the list
 
 A vault stores its identity inside its own folder, so it is recognised wherever that folder is moved. An identity already registered at another path is either a move or a copy, and the two are distinguished by checking the old path:

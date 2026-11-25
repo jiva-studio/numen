@@ -47,3 +47,6 @@ var ErrManagedExisting = errors.New("a managed vault needs a folder that is not 
 
 // ErrReadOnly is what a write to a vault gets from a caller that is not the plugin that manages the vault.
 var ErrReadOnly = errors.New("this vault is read only")
+
+// ErrInvalidPath is a path that cannot be the folder of a new vault. Its text says why.
+var ErrInvalidPath = errors.New("the path cannot be the folder of a vault")

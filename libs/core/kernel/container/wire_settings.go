@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	vaultusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
@@ -123,6 +124,16 @@ func listAppSettings(c settingsWiring) []plugindomain.Setting {
 		settingsadapter.JSONCodec{}, createSettingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{},
 		getThemeRegistry(c),
 	).Execute()
+}
+
+func getNewVaultsFolder(c settingsWiring) vaultusecase.NewVaultsFolder {
+	return func() string {
+		target, err := createSettings(c)
+		if err != nil {
+			c.HandleError(fmt.Errorf("read settings: %w", err))
+		}
+		return target.GetNewVaultsFolder()
+	}
 }
 
 func syncSetting(c settingsWiring) naming.SyncSetting {

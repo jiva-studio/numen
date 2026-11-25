@@ -16,12 +16,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/filebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/vaultbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	vaultusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -123,14 +125,16 @@ type windowStartup struct {
 }
 
 type windowPlugins struct {
-	source    sourcebridge.Binding
-	tasks     *run.Tasks
-	events    pluginEventEmitter
-	vault     windowsession.PluginVaultPath
-	triggers  windowsession.TriggerSource
-	startFeed func(context.Context, domain.Vault) func()
-	kinds     tabKinds
-	files     file.FileProvider
+	source          sourcebridge.Binding
+	tasks           *run.Tasks
+	events          pluginEventEmitter
+	vault           windowsession.PluginVaultPath
+	triggers        windowsession.TriggerSource
+	startFeed       func(context.Context, domain.Vault) func()
+	kinds           tabKinds
+	files           file.FileProvider
+	remoteVaults    vaultusecase.RemoteVaultProvider
+	newVaultsFolder vaultusecase.NewVaultsFolder
 }
 
 func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex, source sourcebridge.Binding) windowPlugins {
@@ -144,7 +148,8 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 		tasks:  tasks, events: exec.Runtime.pluginEventEmitter, vault: exec.Runtime.pluginBinding,
 		triggers:  getTriggerSource(install, exec, settingsDeps, vaultDeps, db.FrontmatterChanges()),
 		startFeed: getFeedStart(exec, settingsDeps, vaultDeps, db), kinds: newTabKinds(exec, settingsDeps, vaultDeps, db),
-		files: filebridge.NewProvider(exec.Runtime.Activator, exec.Runtime.Resolver),
+		files:        filebridge.NewProvider(exec.Runtime.Activator, exec.Runtime.Resolver),
+		remoteVaults: vaultbridge.NewProvider(exec.Runtime.Activator, exec.Runtime.Resolver), newVaultsFolder: getNewVaultsFolder(settingsDeps),
 	}
 }
 
@@ -205,6 +210,7 @@ func buildWindow(
 	mountFile(window, vaultDeps, db, plugins.kinds, &notes.Place, plugins.files)
 	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
 	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open, editor.GetFrameDialog(opening.Frame))
+	mountRemoteVaults(window, ports, moves.Change.Add, plugins, vaultDeps.Clock)
 	window.plugins = windowPluginAccess{
 		writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, ports.Lookup, vaultDeps.Readers, session.cases.openPlugin), showTab: session.tools.showTab,
 	}

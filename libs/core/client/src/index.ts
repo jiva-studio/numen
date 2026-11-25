@@ -208,3 +208,13 @@ export {
 } from './logs'
 export { findErrorCode, isStaleAnswer, parseFingerprint, ERRORS, getKnownErrorCode } from './errors'
 export { createStreamReader } from './stream'
+export {
+  type RemoteVault,
+  type RemoteVaultCalls,
+  type RemoteVaultErrorCode,
+  type RemoteVaultFailure,
+  type RemoteVaultRpc,
+  type VaultPathSuggestion,
+  createRemoteVaultClient,
+  createRemoteVaultRpc,
+} from './remotevaults'

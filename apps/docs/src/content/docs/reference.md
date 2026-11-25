@@ -73,6 +73,12 @@ Two things are not settings and are not in here: which files count as notes, and
 | --- | --- | --- |
 | `level` | text | which entries are written to the application log. One of `error`, `warning`, `info`, `debug`. |
 
+### `app.vaults`
+
+| | | |
+| --- | --- | --- |
+| `folder` | text | a vault opened from the cloud gets a folder in it, named after the vault. Empty means the Documents folder of the system: the folder Documents in your home folder on macOS, the folder the system names for documents on Linux and the Documents known folder on Windows. |
+
 ### `app.keys`
 
 | | | |

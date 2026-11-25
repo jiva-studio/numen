@@ -30,7 +30,8 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"search":{"rerankWindow":70,"maxReranked":200,"maxRerankedBytes":2048,"defaultLimit":30,"maxLimit":90,
 			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192},
 		"logging":{"level":"debug"},
-		"keys":{"credentialsFile":"passphrase"}}}`)
+		"keys":{"credentialsFile":"passphrase"},
+		"vaults":{"folder":"/srv/vaults"}}}`)
 	want := map[string]any{
 		"appearance.theme":                  "mine:sea",
 		"appearance.mode":                   "dark",
@@ -57,6 +58,7 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"search.maxQueryBytes":              8192.0,
 		"logging.level":                     "debug",
 		"keys.credentialsFile":              "passphrase",
+		"vaults.folder":                     "/srv/vaults",
 	}
 	for _, declared := range settings.GetAppDeclaration() {
 		path := append([]string{domainsettings.AppOwner}, strings.Split(declared.Key, ".")...)
