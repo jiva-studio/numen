@@ -77,6 +77,9 @@ func (b base) follow(ctx context.Context, o opened) (followed, error) {
 	if err != nil {
 		return followed{}, err
 	}
+	if err := refuseShorterChain(o.invitation.OwnerChain, chain); err != nil {
+		return followed{}, err
+	}
 	authors, err := trust.NewAuthors(o.invitation.OwnerChain, chain)
 	if err != nil {
 		return followed{}, err

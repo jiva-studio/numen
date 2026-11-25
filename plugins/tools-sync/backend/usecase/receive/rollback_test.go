@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -238,4 +239,32 @@ func TestPullShare_KeepsAChangeOfTheLinkMadeWhileItRuns(t *testing.T) {
 		t.Errorf("catalog name = %q, want Renamed", got)
 	}
 	wantNote(t, w.reader, received.VaultID, "Stew.md", "beef")
+}
+
+func TestAcceptInvitation_RefusesAnOwnerChainShorterThanTheOneOfTheInvitation(t *testing.T) {
+	words := synctest.NewWords(t)
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	first := synctest.NewFirstComputer(t, server, clock, string(owned), words)
+	first.Connect(t, owned)
+	reader := synctest.NewReaderComputer(t, server, clock, "Reader")
+	w := &world{server: server, clock: clock, owner: first, reader: reader}
+	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
+	w.syncOwner(t)
+	received := w.receive(t, reader, w.shareWith(t, reader, "Anna"))
+	_, before, err := reader.Cloud.GetShareLog(t.Context(), w.shareID(t, received.VaultID), 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	synctest.NewSecondComputer(t, server, clock, "Copy", words)
+	second := synctest.NewReaderComputer(t, server, clock, "Second")
+	invitation := w.shareWith(t, second, "Bo")
+	deps := second.ReceiveDeps()
+	deps.Shares = olderLog{Shares: second.Cloud, last: math.MaxUint64, chain: before, fork: false}
+
+	_, err = receive.NewAcceptInvitation(deps).Execute(t.Context(), invitation.Text)
+
+	if err == nil {
+		t.Error("an invitation was accepted over an owner chain shorter than its own, want a refusal")
+	}
 }
