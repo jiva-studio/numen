@@ -5,6 +5,7 @@
 import { expect, type ViewportSize } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
 import { DevicesDriver } from './devices.js'
+import type { IdentityComputer } from './identity-seed.js'
 import { IdentityDriver } from './identity.js'
 import { SubscriptionDriver } from './subscription.js'
 import { DEFAULT_VAULT } from './rules.js'
@@ -135,11 +136,21 @@ export class ComputerDriver {
   }
 
   private async ensureSecond(): Promise<SecondComputer> {
-    this.second ??= await this.startComputer(SECOND_VAULT)
+    this.second ??= await this.startComputer(SECOND_VAULT, this.getGivenComputer('second'))
     return this.second
   }
 
-  private async startComputer(vault: string): Promise<SecondComputer> {
+  private getGivenComputer(computer: IdentityComputer): IdentityComputer | undefined {
+    return this.owner.identity.hasGivenIdentity() ? computer : undefined
+  }
+
+  /** Gives the person the identity of the test identities on the first computer, and makes the sync server know its account. */
+  async giveIdentity(): Promise<void> {
+    this.owner.identity.give('first')
+    await this.owner.sync.learnAccount()
+  }
+
+  private async startComputer(vault: string, identity?: IdentityComputer): Promise<SecondComputer> {
     const scenario = new Scenario(this.first.page, this.viewport)
     scenario.createVault(vault)
     await this.owner.sync.setPlugin(scenario)
@@ -153,11 +164,16 @@ export class ComputerDriver {
       devices: new DevicesDriver(scenario, settings),
       settings,
     }
+    if (identity !== undefined) started.identity.give(identity)
     await application.startApplication('editor')
     return started
   }
 
   private async restoreWords(computer: SecondComputer): Promise<void> {
+    if (computer.identity.hasGivenIdentity()) {
+      await computer.identity.expectIdentity(true)
+      return
+    }
     const words = this.owner.identity.getWords()
     await computer.identity.restoreFromWords(words.join(' '))
     await computer.identity.expectIdentity(true)
@@ -182,7 +198,7 @@ export class ComputerDriver {
   }
 
   private async startChecker(synced: string): Promise<SecondComputer> {
-    const started = await this.startComputer(CHECK_VAULT)
+    const started = await this.startComputer(CHECK_VAULT, this.getGivenComputer('third'))
     await this.restoreWords(started)
     await started.vaults.connectExisting(CHECK_VAULT, synced)
     return started

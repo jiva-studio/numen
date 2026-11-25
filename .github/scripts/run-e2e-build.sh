@@ -29,7 +29,8 @@ run_part() {
         mkdir -p plugins/connections-llm/bin &&
         timed go-fakeopenai go build -C plugins/connections-llm -o bin/fakeopenai ./backend/cmd/fakeopenai &&
         mkdir -p tools/syncserver/bin &&
-        timed go-fakesync go build -C tools/syncserver -o bin/fakesync ./cmd/fakesync
+        timed go-fakesync go build -C tools/syncserver -o bin/fakesync ./cmd/fakesync &&
+        timed go-seedidentity go build -C tools/syncserver -o bin/seedidentity ./cmd/seedidentity
       ;;
     flashcards)
       timed vite-flashcards npm run build --prefix apps/desktop/flashcards &&

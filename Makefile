@@ -565,9 +565,11 @@ app_desktop_acceptance: lib_workbench_build app_desktop_editor_build app_desktop
 	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
 	cd plugins/connections-llm && go build -o bin/fakeopenai ./backend/cmd/fakeopenai
 	cd tools/syncserver && go build -o bin/fakesync ./cmd/fakesync
+	cd tools/syncserver && go build -o bin/seedidentity ./cmd/seedidentity
 	cd $(TESTS)/acceptance/desktop && npm run acceptance:test
 
-.PHONY: app_desktop_acceptance_lint
+.PHONY: app_desktop_acceptance_identity
+app_desktop_acceptance_identity: 
 app_desktop_acceptance_lint: ## lint the acceptance scenarios, steps and driver
 	cd $(TESTS)/acceptance/desktop && npm run acceptance:lint
 

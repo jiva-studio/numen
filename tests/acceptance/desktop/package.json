@@ -16,6 +16,7 @@
     "acceptance:lint": "node scripts/lint-features.mjs && eslint . && npm run -s acceptance:unit && node scripts/check-acceptance.mjs",
     "acceptance:unit": "vitest run",
     "acceptance:check": "node scripts/check-acceptance.mjs",
+    "acceptance:identity": "cd ../../../tools/syncserver && go run ./cmd/seedidentity -out ../../tests/acceptance/desktop/assets/identities",
     "acceptance:steps": "node scripts/list-acceptance-steps.mjs"
   },
   "devDependencies": {

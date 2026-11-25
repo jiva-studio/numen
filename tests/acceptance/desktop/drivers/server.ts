@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { STAND_IN_CONNECTION, STAND_IN_MODEL, startStandIns } from '../../../e2e/desktop/scripts/stand-ins.mjs'
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
 import { applyEnvironment, type EnvironmentSetting, type EnvironmentTargets } from './environment.js'
+import { KEY_FILE_SETTINGS, writeSeedKeys, type IdentityComputer } from './identity-seed.js'
 import type { Application } from './rules.js'
 import type { JsonObject } from '../../../e2e/desktop/tests/support/json.js'
 
@@ -85,6 +86,8 @@ export interface ServerOptions {
   readonly programs: readonly string[]
   readonly isLive: boolean
   readonly pluginSettings: Readonly<Record<string, Readonly<Record<string, string>>>>
+  /** The computer of the test identities whose keys the application finds at its start; none for an application with no identity. */
+  readonly identity?: IdentityComputer
 }
 
 interface Services {
@@ -249,6 +252,7 @@ export class Server {
         ? path.join(home, 'Library', 'Application Support', 'numen')
         : path.join(this.state, 'config', 'numen')
     fs.mkdirSync(folder, { recursive: true })
+    if (this.options.identity !== undefined) writeSeedKeys(folder, this.options.identity)
     const settings = standIns === undefined ? this.getLiveSettings() : {
       v: 1,
       connections: [
@@ -283,7 +287,7 @@ export class Server {
           }
         : {}),
     }
-    fs.writeFileSync(path.join(folder, 'numen.json'), JSON.stringify({ ...settings, ...this.options.pluginSettings }, null, 2))
+    fs.writeFileSync(path.join(folder, 'numen.json'), JSON.stringify({ ...settings, ...(this.options.identity === undefined ? {} : KEY_FILE_SETTINGS), ...this.options.pluginSettings }, null, 2))
   }
 
   private getLiveSettings() {
