@@ -13,13 +13,11 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // The endpoint checks the permission of each call: a call that reads needs
 // vault:read and one that changes anything needs vault:write.
 //
-// Numen-Vault works the vault of that identity instead of the vault the host
-// shows.
+// Numen-Vault selects the vault by identity; without it a call targets the active vault.
 //
 // Every path is relative to the vault root and written with forward slashes.
 service HostFileService {
-  // StatFile says what a file is now. A file that is not there is
-  // returns the error code NOT_FOUND.
+  // StatFile returns the current FileStat of a file, or NOT_FOUND.
   rpc StatFile(StatFileRequest) returns (StatFileResponse);
 
   // ReadFile reads a whole file, with the file stat it had when it was read.
@@ -91,13 +89,11 @@ message ReadFileResponse {
 message WriteFileRequest {
   string path = 1;
   bytes content = 2;
-  // What the file was when the caller read it.
   FileStat baseline = 3;
 }
 
 message WriteFileResponse {
   ErrorCode error = 1;
-  // What the file is now.
   FileStat stat = 2;
 }
 
@@ -146,7 +142,6 @@ message ListFileChangesResponse {
   // of another feed, or older than the removals the feed keeps. The reader
   // reads the vault again from the start, and changes is empty.
   bool is_reset = 4;
-  // has_more is true when more changes follow next.
   bool has_more = 5;
 }
 

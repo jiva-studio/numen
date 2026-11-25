@@ -39,6 +39,5 @@ message DeleteVersionRequest {
 
 message DeleteVersionResponse {
   CommandErrorCode error = 1;
-  // What a person reads about a failure.
   string message = 2;
 }

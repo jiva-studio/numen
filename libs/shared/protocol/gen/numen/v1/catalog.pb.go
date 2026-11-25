@@ -187,9 +187,8 @@ type CatalogEntry struct {
 	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	Category    string                 `protobuf:"bytes,5,opt,name=category,proto3" json:"category,omitempty"`
 	Contributes *ManifestContributes   `protobuf:"bytes,6,opt,name=contributes,proto3" json:"contributes,omitempty"`
-	// source names the source the entry comes from.
-	Source string       `protobuf:"bytes,7,opt,name=source,proto3" json:"source,omitempty"`
-	State  CatalogState `protobuf:"varint,8,opt,name=state,proto3,enum=numen.v1.CatalogState" json:"state,omitempty"`
+	Source      string                 `protobuf:"bytes,7,opt,name=source,proto3" json:"source,omitempty"`
+	State       CatalogState           `protobuf:"varint,8,opt,name=state,proto3,enum=numen.v1.CatalogState" json:"state,omitempty"`
 	// incompatibility is why the application cannot run the plugin, and detail states the
 	// requirement it fails.
 	Incompatibility       CatalogIncompatibility `protobuf:"varint,9,opt,name=incompatibility,proto3,enum=numen.v1.CatalogIncompatibility" json:"incompatibility,omitempty"`
@@ -485,11 +484,10 @@ func (x *GetCatalogEntryRequest) GetId() string {
 }
 
 type GetCatalogEntryResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// error is set when no entry is returned.
-	Error         CatalogErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CatalogErrorCode" json:"error,omitempty"`
-	Entry         *CatalogEntry         `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
-	SourceErrors  []*CatalogSourceError `protobuf:"bytes,3,rep,name=source_errors,json=sourceErrors,proto3" json:"source_errors,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         CatalogErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CatalogErrorCode" json:"error,omitempty"`
+	Entry         *CatalogEntry          `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
+	SourceErrors  []*CatalogSourceError  `protobuf:"bytes,3,rep,name=source_errors,json=sourceErrors,proto3" json:"source_errors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -679,11 +677,10 @@ func (x *FindCatalogEntryByTabKindRequest) GetKind() string {
 }
 
 type FindCatalogEntryByTabKindResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// error is set when no entry is returned.
-	Error         CatalogErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CatalogErrorCode" json:"error,omitempty"`
-	Entry         *CatalogEntry         `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
-	SourceErrors  []*CatalogSourceError `protobuf:"bytes,3,rep,name=source_errors,json=sourceErrors,proto3" json:"source_errors,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         CatalogErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CatalogErrorCode" json:"error,omitempty"`
+	Entry         *CatalogEntry          `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
+	SourceErrors  []*CatalogSourceError  `protobuf:"bytes,3,rep,name=source_errors,json=sourceErrors,proto3" json:"source_errors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

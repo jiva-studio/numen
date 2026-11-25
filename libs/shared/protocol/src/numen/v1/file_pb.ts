@@ -2,11 +2,7 @@
 // @generated from file numen/v1/file.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client may ask about the tree a vault is filed in.
-//
-// A path is what the vault calls a file or a folder, and what is here is the
-// moving one, removing one, making one. What is inside a note is note.proto,
-// and the bytes a file of the person's own holds are asset.proto.
+// File and folder operations on the vault tree.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -75,7 +71,7 @@ export type Entry = Message<"numen.v1.Entry"> & {
   path: string;
 
   /**
-   * The last segment of the path, which is what the row shows.
+   * The last segment of the path.
    *
    * @generated from field: string name = 2;
    */
@@ -191,8 +187,6 @@ export type FileKind = Message<"numen.v1.FileKind"> & {
   path: string;
 
   /**
-   * Whether a note is at the path.
-   *
    * @generated from field: bool is_note = 5;
    */
   isNote: boolean;
@@ -235,15 +229,11 @@ export const FileKindSchema: GenMessage<FileKind> = /*@__PURE__*/
  */
 export type MoveFileRequest = Message<"numen.v1.MoveFileRequest"> & {
   /**
-   * The file or folder to move, as the vault calls it.
-   *
    * @generated from field: string from = 1;
    */
   from: string;
 
   /**
-   * Where it is filed from now on. The last segment is what it is called.
-   *
    * @generated from field: string to = 2;
    */
   to: string;
@@ -261,23 +251,21 @@ export const MoveFileRequestSchema: GenMessage<MoveFileRequest> = /*@__PURE__*/
  */
 export type MoveFileResponse = Message<"numen.v1.MoveFileResponse"> & {
   /**
-   * What the file did. Absent when nothing was moved.
+   * Absent when nothing was moved.
    *
    * @generated from field: optional numen.v1.MoveResult move_result = 1;
    */
   moveResult?: MoveResult | undefined;
 
   /**
-   * Set when nothing was moved, and why.
-   *
    * @generated from field: numen.v1.ErrorCode error = 2;
    */
   error: ErrorCode;
 
   /**
    * Set when the move reached the vault and the index could not be updated for
-   * it. Search answers about these files as it read them last, until a walk
-   * goes past.
+   * it. Search answers about these files as it read them last, until the next
+   * index scan.
    *
    * @generated from field: bool is_index_outdated = 3;
    */
@@ -299,15 +287,11 @@ export const MoveFileResponseSchema: GenMessage<MoveFileResponse> = /*@__PURE__*
  */
 export type MoveResult = Message<"numen.v1.MoveResult"> & {
   /**
-   * Where the file was.
-   *
    * @generated from field: string from = 1;
    */
   from: string;
 
   /**
-   * Where it is now.
-   *
    * @generated from field: string to = 2;
    */
   to: string;
@@ -320,10 +304,7 @@ export type MoveResult = Message<"numen.v1.MoveResult"> & {
   repairedNotes: string[];
 
   /**
-   * The notes whose link stopped resolving and could not be written again, by
-   * name. Each of them still points at the name the file left, and nothing
-   * returns to it: a move that reports only what it repaired reports a
-   * vault it did not leave behind.
+   * The notes whose links stopped resolving and could not be updated, by name.
    *
    * @generated from field: repeated string dangling_notes = 4;
    */
@@ -342,8 +323,6 @@ export const MoveResultSchema: GenMessage<MoveResult> = /*@__PURE__*/
  */
 export type RemoveFileRequest = Message<"numen.v1.RemoveFileRequest"> & {
   /**
-   * The file or folder to remove.
-   *
    * @generated from field: string path = 1;
    */
   path: string;
@@ -393,7 +372,7 @@ export const EmptyTrashResponseSchema: GenMessage<EmptyTrashResponse> = /*@__PUR
  */
 export type RemoveFileResponse = Message<"numen.v1.RemoveFileResponse"> & {
   /**
-   * and when nothing was removed.
+   * Path of the removed entry in the trash. Empty when nothing was removed.
    *
    * @generated from field: string trash_path = 1;
    */
@@ -407,15 +386,13 @@ export type RemoveFileResponse = Message<"numen.v1.RemoveFileResponse"> & {
   danglingNotes: string[];
 
   /**
-   * Set when nothing was removed, and why.
-   *
    * @generated from field: numen.v1.ErrorCode error = 3;
    */
   error: ErrorCode;
 
   /**
    * Set when the file no longer exists and the index could not be updated for it.
-   * Search answers about it as it read it last, until a walk goes past.
+   * Search answers about it as it read it last, until the next index scan.
    *
    * @generated from field: bool is_index_outdated = 4;
    */
@@ -454,8 +431,6 @@ export const CreateFolderRequestSchema: GenMessage<CreateFolderRequest> = /*@__P
  */
 export type CreateFolderResponse = Message<"numen.v1.CreateFolderResponse"> & {
   /**
-   * Set when nothing was made, and why.
-   *
    * @generated from field: numen.v1.ErrorCode error = 1;
    */
   error: ErrorCode;

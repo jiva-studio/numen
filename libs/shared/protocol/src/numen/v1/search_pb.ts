@@ -2,10 +2,7 @@
 // @generated from file numen/v1/search.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client may ask of a vault by typing into it.
-//
-// things: SearchNames answers with names, and SearchText with the search
-// results of text a vault holds. A client drawing them apart asks each of them.
+// SearchService answers name queries (SearchNames) and text queries (SearchText).
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -260,8 +257,8 @@ export type SearchResult = Message<"numen.v1.SearchResult"> & {
   placeLabel: string;
 
   /**
-   * counted in bytes. With the path above it is the place this opens, and a hit
-   * in a note carries it as every other hit does.
+   * Byte range of the match in the source. Together with path, it identifies
+   * the target location.
    *
    * @generated from field: numen.v1.Range byte_range = 6;
    */
@@ -340,9 +337,6 @@ export const SearchResultSchema: GenMessage<SearchResult> = /*@__PURE__*/
 /**
  * SearchMode is how a search is asked. Each mode is an order of its own, and a
  * hybrid search fuses them into one.
- *
- * The theme's `Mode` already holds that name in this package, so the search's
- * own carries what it is a mode of.
  *
  * @generated from enum numen.v1.SearchMode
  */

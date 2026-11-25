@@ -2,15 +2,9 @@
 //
 // Source: numen/v1/settings.proto
 
-// What a client may ask about the file a person configures this installation
-// in.
-//
-// The settings belong to the installation and not to a vault: the same file
-//
-// They travel as the file's own text. Their sections belong to whichever
-// adapters an installation is composed of, so the core does not know the whole
-// shape and does not describe it, and a setting is written by naming the path
-// through the file. It is the only tree here that goes undescribed.
+// Installation-wide settings stored as JSON.
+// Sections are owned by app or plugin ids; individual settings are written by
+// key path.
 package numenv1connect
 
 import (
@@ -58,7 +52,6 @@ const (
 
 // SettingsServiceClient is a client for the numen.v1.SettingsService service.
 type SettingsServiceClient interface {
-	// GetSettings is every setting of the file.
 	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// WriteSettings writes settings into that file. The file is patched as an
 	// object, so every key a person typed keeps its position, and a file the
@@ -144,7 +137,6 @@ func (c *settingsServiceClient) WatchSettings(ctx context.Context, req *connect.
 
 // SettingsServiceHandler is an implementation of the numen.v1.SettingsService service.
 type SettingsServiceHandler interface {
-	// GetSettings is every setting of the file.
 	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// WriteSettings writes settings into that file. The file is patched as an
 	// object, so every key a person typed keeps its position, and a file the

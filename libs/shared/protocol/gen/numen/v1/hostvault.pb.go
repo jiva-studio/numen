@@ -554,7 +554,6 @@ func (*ListParseProblemsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{10}
 }
 
-// HostParseProblem is something parsing a file turned up.
 type HostParseProblem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -708,8 +707,7 @@ func (x *ListVaultProblemsRequest) GetChecks() []string {
 type HostVaultProblem struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note to open to resolve the problem.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// The check that found it.
+	Path   string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Check  string `protobuf:"bytes,2,opt,name=check,proto3" json:"check,omitempty"`
 	Detail string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	// The target of the link the problem is about: its scheme and its value.

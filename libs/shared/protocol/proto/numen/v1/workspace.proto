@@ -1,10 +1,6 @@
 syntax = "proto3";
 
-// showing.
-//
-// The tabs the window has open and the places something else asks to be put in
-// front of the person are the window's. What the vault is and what has changed
-// in it is vault.proto.
+// Window workspace state: open tabs, focus, and tab links.
 package numen.v1;
 
 import "numen/v1/shared.proto";
@@ -16,13 +12,11 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 service WorkspaceService {
   // WatchFocus reports the places something else asked to be put in front of
   // the person — an agent working the vault beside them — for as long as the
-  // caller listens. What travelling there looks like is the client's.
+  // caller listens.
   rpc WatchFocus(WatchFocusRequest) returns (stream WatchFocusResponse);
 
-  // WriteOpenTabs says what currently open — every tab of the window, and
-  // which of them is active. The client says so again whenever any of it
-  // changes, and an agent working the vault beside them reads what it last
-  // said.
+  // WriteOpenTabs records the open tabs of the window and the active tab. The
+  // client sends it on every change, and agents read the latest state.
   rpc WriteOpenTabs(WriteOpenTabsRequest) returns (WriteOpenTabsResponse);
 
   // ReadOpenTabs returns the tabs last written for the vault in the window. The
@@ -42,7 +36,6 @@ service WorkspaceService {
   // again within a grace period.
   rpc WatchTabLinks(WatchTabLinksRequest) returns (stream WatchTabLinksResponse);
 
-  // CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
   rpc CancelWatchTabLinks(CancelWatchTabLinksRequest) returns (CancelWatchTabLinksResponse);
 
   // WriteTabLinks links two tabs, unlinks a tab, or reports the linkable tabs
@@ -64,7 +57,6 @@ service WorkspaceService {
   // AcceptTabMove reports that a window opened a moved tab.
   rpc AcceptTabMove(AcceptTabMoveRequest) returns (AcceptTabMoveResponse);
 
-  // HighlightWindow turns the outline of a window on or off.
   rpc HighlightWindow(HighlightWindowRequest) returns (HighlightWindowResponse);
 }
 
@@ -139,14 +131,12 @@ message Tab {
   // Id is what the window calls this tab, which the active id names.
   string id = 1;
 
-  // Kind is the registered name of the tab kind.
   string kind = 2;
 
   // Path is the file it holds, by the path the vault files it under, and empty
   // for a tab holding no file.
   string path = 3;
 
-  // Title is what the tab is called, as the person reads it.
   string title = 4;
 
   // State is the JSON the plugin owning the kind saved for the tab, such as the
@@ -250,7 +240,6 @@ message CancelWatchTabLinksRequest {
 message CancelWatchTabLinksResponse {}
 
 message WriteTabLinksRequest {
-  // Id of the writing window.
   string window_id = 1;
 
   oneof change {
@@ -304,10 +293,7 @@ message ReadDetachedTabResponse {
 }
 
 message MoveTabRequest {
-  // The window the tab is in.
   string window_id = 1;
-
-  // The window to move the tab into.
   string target_window_id = 2;
 
   // The tab, with the state its kind saved.
@@ -364,7 +350,6 @@ enum TabMoveErrorCode {
 }
 
 message HighlightWindowRequest {
-  // The window to outline.
   string window_id = 1;
   bool is_on = 2;
 }

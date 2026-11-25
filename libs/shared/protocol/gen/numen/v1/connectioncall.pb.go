@@ -407,14 +407,13 @@ func (x *CallRow) GetFields() []*CallRowField {
 }
 
 type ConnectionCallServiceCallRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// plugin_id is the plugin whose rows serve the call.
-	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	// operation is the name of the operation, such as "llm.chat".
 	Operation string   `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
 	Payload   []byte   `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
 	Priority  Priority `protobuf:"varint,4,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
-	// preferred is unset for the rows in their order.
+	// Unset uses the rows in their declared order.
 	PreferredRow *PreferredRow `protobuf:"bytes,5,opt,name=preferred_row,json=preferredRow,proto3" json:"preferred_row,omitempty"`
 	// call_id is the id CancelCall names this call by, chosen by the client and unique among its calls. Empty
 	// when the call cannot be cancelled.
@@ -595,10 +594,9 @@ func (*ConnectionCallServiceCallResponse_Done) isConnectionCallServiceCallRespon
 func (*ConnectionCallServiceCallResponse_Failure) isConnectionCallServiceCallResponse_Frame() {}
 
 type CancelCallRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// plugin_id is the plugin the call was made for.
-	PluginId      string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	CallId        string `protobuf:"bytes,2,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	CallId        string                 `protobuf:"bytes,2,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -684,10 +682,9 @@ func (*CancelCallResponse) Descriptor() ([]byte, []int) {
 }
 
 type ConnectionCallServiceListRowsRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// plugin_id is the plugin whose rows are listed.
-	PluginId      string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	Operation     string `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Operation     string                 `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

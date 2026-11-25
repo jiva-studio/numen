@@ -203,7 +203,6 @@ message PluginSettingsView {
   // The id the frontend registers the component under.
   string id = 1;
 
-  // What the component is called.
   string title = 2;
 
   // Where the component is drawn: empty for the settings of the plugin, "identity" for the page "Identity and
@@ -231,7 +230,6 @@ message PluginReader {
   repeated string extensions = 2;
 }
 
-// PluginService lists the plugins the application has.
 service PluginService {
   rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse);
 }
@@ -291,8 +289,7 @@ message PluginProcess {
   // The leases the process holds: open calls, open streams and reported work.
   int32 lease_count = 5;
 
-  // Whether the plugin is served inside the core rather than by a process of
-  // its own.
+  // True when the plugin runs inside the core process.
   bool is_in_process = 6;
 
   // From when the core stops the process for idleness, in milliseconds since
@@ -320,12 +317,11 @@ message PluginLeaseHolder {
   // name of the plugin or of the connection that asked.
   string requester = 1;
 
-  // What the lease is for, in a few plain words.
   string reason = 2;
 }
 
 // PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.
-// A plugin serves it only when it takes events. A plugin that takes the event and refuses it answers
+// A plugin serves it only when it takes events. A plugin that rejects the event answers
 // with error set; a status code means the call was not served or failed.
 service PluginEventService {
   rpc DeliverEvent(DeliverEventRequest) returns (DeliverEventResponse);
@@ -341,7 +337,7 @@ message DeliverEventResponse {
   string detail = 2;
 }
 
-// value means it did not.
+// PluginEventErrorCode is why event delivery failed. Zero means success.
 enum PluginEventErrorCode {
   PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED = 0;
 

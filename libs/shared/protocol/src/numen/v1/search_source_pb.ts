@@ -64,8 +64,8 @@ export type DescribeSearchSourceResponse = Message<"numen.v1.DescribeSearchSourc
   name: string;
 
   /**
-   * An opaque string. Two vectors made under different recipes cannot be compared, so a vector kept
-   * under another recipe is stale.
+   * An opaque string. Vectors produced under different recipes cannot be
+   * compared.
    *
    * @generated from field: string recipe = 2;
    */
@@ -206,8 +206,6 @@ export type SearchSourceServiceSearchChunksRequest = Message<"numen.v1.SearchSou
   query: string;
 
   /**
-   * The most chunks to answer.
-   *
    * @generated from field: int32 limit = 3;
    */
   limit: number;

@@ -4,16 +4,7 @@
 // 	protoc        (unknown)
 // source: numen/v1/shared.proto
 
-// The types three or more services hold.
-//
-// A type enters only when three services already use it. Two holding one type
-// is a coincidence; three is a shape. Everything else stays in the file of the
-// service that answers with it, and the service that wants it imports that
-// file.
-//
-// Under any looser rule this fills with types nothing in particular owns, and a
-// type that arrives here early is one every service is written around
-// afterwards. It imports nothing, and it is what every other file imports.
+// Types shared by three or more services. Imports nothing.
 
 package numenv1
 
@@ -177,9 +168,8 @@ type FileStat struct {
 	Hash string `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
 	// The number of writes the vault had taken when the answer was made. Zero where the answer
 	// does not say.
-	Version uint64 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
-	// Whether the file is a note.
-	IsNote        bool `protobuf:"varint,6,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
+	Version       uint64 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	IsNote        bool   `protobuf:"varint,6,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

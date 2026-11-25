@@ -14,7 +14,6 @@ service PluginToolService {
   // alone; a name another plugin or the host already serves is not offered.
   rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
 
-  // CallTool runs one tool the plugin listed.
   rpc CallTool(CallToolRequest) returns (CallToolResponse);
 }
 
@@ -28,10 +27,7 @@ message ListToolsResponse {
 
 // PluginTool is one tool as an agent receives it.
 message PluginTool {
-  // The name an agent calls the tool by.
   string name = 1;
-
-  // What a person reads the tool as.
   string title = 2;
 
   // What the tool is for and when an agent reaches for it.
@@ -104,7 +100,6 @@ message CallToolResponse {
   ToolResult result = 2;
 }
 
-// ToolResult is what a tool answered.
 message ToolResult {
   // The words an agent reads.
   string text = 1;

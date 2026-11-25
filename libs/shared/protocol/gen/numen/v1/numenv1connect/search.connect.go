@@ -2,10 +2,7 @@
 //
 // Source: numen/v1/search.proto
 
-// What a client may ask of a vault by typing into it.
-//
-// things: SearchNames answers with names, and SearchText with the search
-// results of text a vault holds. A client drawing them apart asks each of them.
+// SearchService answers name queries (SearchNames) and text queries (SearchText).
 package numenv1connect
 
 import (

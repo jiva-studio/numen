@@ -326,7 +326,6 @@ func (x *ProviderSecret) GetValue() string {
 	return ""
 }
 
-// ProviderFailure is a call that was served and failed.
 type ProviderFailure struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Kind   FailureKind            `protobuf:"varint,1,opt,name=kind,proto3,enum=numen.v1.FailureKind" json:"kind,omitempty"`

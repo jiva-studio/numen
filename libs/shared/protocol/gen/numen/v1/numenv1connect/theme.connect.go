@@ -57,12 +57,10 @@ type ThemeServiceClient interface {
 	// the ones in the person's themes folder — which of them is applied, and the
 	// two sizes the window is drawn at.
 	ListThemes(context.Context, *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error)
-	// asked for. It is asked once for each theme that is tried on, and again
-	// when that theme's file changes.
+	// ReadTheme returns the stylesheet text of the named theme.
 	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)
-	// WriteAppearance writes the theme, the mode and the two sizes into the
-	// settings. The file is patched as an object, so every key a person typed
-	// are left as they are.
+	// WriteAppearance writes the theme, mode, and scale values into settings,
+	// preserving all other keys.
 	WriteAppearance(context.Context, *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error)
 	// WatchThemes reports the person's themes folder having changed, for as long
 	// as the caller listens. It says which themes, and nothing about them: the
@@ -142,12 +140,10 @@ type ThemeServiceHandler interface {
 	// the ones in the person's themes folder — which of them is applied, and the
 	// two sizes the window is drawn at.
 	ListThemes(context.Context, *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error)
-	// asked for. It is asked once for each theme that is tried on, and again
-	// when that theme's file changes.
+	// ReadTheme returns the stylesheet text of the named theme.
 	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)
-	// WriteAppearance writes the theme, the mode and the two sizes into the
-	// settings. The file is patched as an object, so every key a person typed
-	// are left as they are.
+	// WriteAppearance writes the theme, mode, and scale values into settings,
+	// preserving all other keys.
 	WriteAppearance(context.Context, *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error)
 	// WatchThemes reports the person's themes folder having changed, for as long
 	// as the caller listens. It says which themes, and nothing about them: the

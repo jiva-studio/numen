@@ -21,8 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// HostSearchErrorCode is why a call on the search index failed. The zero
-// value means it was not.
+// HostSearchErrorCode is why a search index call failed. Zero means success.
 type HostSearchErrorCode int32
 
 const (
@@ -204,8 +203,7 @@ type GetEmbeddingStateResponse struct {
 	// The recipe of the model in use. Every vector the host returns, and every
 	// floor it stores, is kept under it.
 	Recipe string `protobuf:"bytes,2,opt,name=recipe,proto3" json:"recipe,omitempty"`
-	// The name of the model in use.
-	Model string `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
+	Model  string `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
 	// The starting floor the plugin of the model reports, zero when it has none.
 	FloorHint float64 `protobuf:"fixed64,4,opt,name=floor_hint,json=floorHint,proto3" json:"floor_hint,omitempty"`
 	// How many chunks of the vault can carry a vector, and how many of them do
@@ -337,9 +335,8 @@ func (*GetIndexStatsRequest) Descriptor() ([]byte, []int) {
 type ExtensionStats struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The extension in lower case, without the dot. Empty for a file with none.
-	Extension string `protobuf:"bytes,1,opt,name=extension,proto3" json:"extension,omitempty"`
-	// How many sources have the extension.
-	SourceCount int64 `protobuf:"varint,2,opt,name=source_count,json=sourceCount,proto3" json:"source_count,omitempty"`
+	Extension   string `protobuf:"bytes,1,opt,name=extension,proto3" json:"extension,omitempty"`
+	SourceCount int64  `protobuf:"varint,2,opt,name=source_count,json=sourceCount,proto3" json:"source_count,omitempty"`
 	// How many chunks that can carry a vector belong to those sources.
 	ChunkCount    int64 `protobuf:"varint,3,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -958,8 +955,7 @@ type FindNearestChunksRequest struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Place  *SearchPlace           `protobuf:"bytes,1,opt,name=place,proto3" json:"place,omitempty"`
 	Vector []float32              `protobuf:"fixed32,2,rep,packed,name=vector,proto3" json:"vector,omitempty"`
-	// The most chunks to answer.
-	Limit int32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	Limit  int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	// The kinds of source to search, "note" or "file". Empty means every kind.
 	Kinds []string `protobuf:"bytes,4,rep,name=kinds,proto3" json:"kinds,omitempty"`
 	// Limits the search to the sources whose path starts with it, relative to the vault.
@@ -1719,9 +1715,8 @@ type SearchState struct {
 	// One for each rerank stage that ran.
 	Reranks []*SearchRerank `protobuf:"bytes,11,rep,name=reranks,proto3" json:"reranks,omitempty"`
 	// How the scores were made: none, meaning, words, fused or rerank.
-	ScoreKind string `protobuf:"bytes,12,opt,name=score_kind,json=scoreKind,proto3" json:"score_kind,omitempty"`
-	// The similarity floor the search used.
-	Floor float64 `protobuf:"fixed64,13,opt,name=floor,proto3" json:"floor,omitempty"`
+	ScoreKind string  `protobuf:"bytes,12,opt,name=score_kind,json=scoreKind,proto3" json:"score_kind,omitempty"`
+	Floor     float64 `protobuf:"fixed64,13,opt,name=floor,proto3" json:"floor,omitempty"`
 	// The generation of the index of the vault when the search started; opaque.
 	IndexGeneration string `protobuf:"bytes,14,opt,name=index_generation,json=indexGeneration,proto3" json:"index_generation,omitempty"`
 	unknownFields   protoimpl.UnknownFields

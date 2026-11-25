@@ -67,8 +67,7 @@ const (
 
 // HostFileServiceClient is a client for the numen.v1.HostFileService service.
 type HostFileServiceClient interface {
-	// StatFile says what a file is now. A file that is not there is
-	// returns the error code NOT_FOUND.
+	// StatFile returns the current FileStat of a file, or NOT_FOUND.
 	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
 	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)
@@ -239,8 +238,7 @@ func (c *hostFileServiceClient) PlaceFile(ctx context.Context, req *connect.Requ
 
 // HostFileServiceHandler is an implementation of the numen.v1.HostFileService service.
 type HostFileServiceHandler interface {
-	// StatFile says what a file is now. A file that is not there is
-	// returns the error code NOT_FOUND.
+	// StatFile returns the current FileStat of a file, or NOT_FOUND.
 	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
 	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)

@@ -13,8 +13,7 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // The endpoint checks the permission of each call: a call that reads needs
 // vault:read and one that changes anything needs vault:write.
 //
-// Numen-Vault works the vault of that identity instead of the vault the host
-// shows.
+// Numen-Vault selects the vault by identity; without it a call targets the active vault.
 service HostVaultService {
   // GetHostVault names the vault the host is showing. A host showing none answers
   // with the vault unset.
@@ -29,7 +28,6 @@ service HostVaultService {
   // until the plugin stops. A caller that finds it held waits for it.
   rpc LockVault(LockVaultRequest) returns (LockVaultResponse);
 
-  // UnlockVault releases the lock taken by LockVault.
   rpc UnlockVault(UnlockVaultRequest) returns (UnlockVaultResponse);
 
   // ListParseProblems lists what parsing each file of the vault turned up.
@@ -112,7 +110,6 @@ message UnlockVaultResponse {}
 
 message ListParseProblemsRequest {}
 
-// HostParseProblem is something parsing a file turned up.
 message HostParseProblem {
   string path = 1;
   string detail = 2;
@@ -132,7 +129,6 @@ message ListVaultProblemsRequest {
 message HostVaultProblem {
   // The note to open to resolve the problem.
   string path = 1;
-  // The check that found it.
   string check = 2;
   string detail = 3;
   // The target of the link the problem is about: its scheme and its value.

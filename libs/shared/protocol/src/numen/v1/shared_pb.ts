@@ -2,16 +2,7 @@
 // @generated from file numen/v1/shared.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// The types three or more services hold.
-//
-// A type enters only when three services already use it. Two holding one type
-// is a coincidence; three is a shape. Everything else stays in the file of the
-// service that answers with it, and the service that wants it imports that
-// file.
-//
-// Under any looser rule this fills with types nothing in particular owns, and a
-// type that arrives here early is one every service is written around
-// afterwards. It imports nothing, and it is what every other file imports.
+// Types shared by three or more services. Imports nothing.
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
@@ -63,8 +54,6 @@ export type FileStat = Message<"numen.v1.FileStat"> & {
   version: bigint;
 
   /**
-   * Whether the file is a note.
-   *
    * @generated from field: bool is_note = 6;
    */
   isNote: boolean;

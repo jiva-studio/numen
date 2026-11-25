@@ -26,8 +26,7 @@ type HostWindowErrorCode int32
 
 const (
 	HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED HostWindowErrorCode = 0
-	// NO_WINDOW means the host has no window.
-	HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW HostWindowErrorCode = 1
+	HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW   HostWindowErrorCode = 1
 	// NOT_FOUND means a path with no note or file in the vault, or a tab id with no tab in the window.
 	HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND HostWindowErrorCode = 2
 )
@@ -286,13 +285,11 @@ func (x *FocusFileResponse) GetError() HostWindowErrorCode {
 type OpenTab struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Id is what the window calls this tab, which the active id names.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Kind is the registered name of the tab kind.
+	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	// Path is the file the tab holds, relative to the vault, and empty for a tab
 	// holding no file.
-	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// Title is what the tab is called, as the person reads it.
+	Path  string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
 	// Place is the JSON of the place the reader of the tab reported, as the window
 	// passed it on unread; empty for a tab whose kind reports none.

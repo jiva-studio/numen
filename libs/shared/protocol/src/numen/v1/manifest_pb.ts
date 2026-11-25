@@ -145,8 +145,6 @@ export const ManifestSchema: GenMessage<Manifest> = /*@__PURE__*/
   messageDesc(file_numen_v1_manifest, 0);
 
 /**
- * ManifestContributes lists the contributions a plugin makes to the application.
- *
  * @generated from message numen.v1.ManifestContributes
  */
 export type ManifestContributes = Message<"numen.v1.ManifestContributes"> & {
@@ -326,8 +324,6 @@ export const ManifestContributesSchema: GenMessage<ManifestContributes> = /*@__P
   messageDesc(file_numen_v1_manifest, 1);
 
 /**
- * ManifestEditor lists the additions of a plugin to the note editor.
- *
  * @generated from message numen.v1.ManifestEditor
  */
 export type ManifestEditor = Message<"numen.v1.ManifestEditor"> & {
@@ -513,7 +509,7 @@ export type ManifestSearchFunction = Message<"numen.v1.ManifestSearchFunction"> 
   args: ManifestSearchFunctionArg[];
 
   /**
-   * level is "document"; version 1 refuses "chunk".
+   * level is "document"; version 1 rejects "chunk".
    *
    * @generated from field: string level = 3;
    */
@@ -527,8 +523,6 @@ export type ManifestSearchFunction = Message<"numen.v1.ManifestSearchFunction"> 
   description: string;
 
   /**
-   * example is a query that uses the function.
-   *
    * @generated from field: string example = 5;
    */
   example: string;
@@ -821,8 +815,6 @@ export const ManifestConnectionFieldSchema: GenMessage<ManifestConnectionField> 
  */
 export type ManifestTextKind = Message<"numen.v1.ManifestTextKind"> & {
   /**
-   * kind is the kind the plugin gives its text versions.
-   *
    * @generated from field: string kind = 1;
    */
   kind: string;
@@ -1093,8 +1085,6 @@ export const ManifestTriggerSchema: GenMessage<ManifestTrigger> = /*@__PURE__*/
   messageDesc(file_numen_v1_manifest, 19);
 
 /**
- * ManifestTheme is a theme a plugin adds to the list of themes.
- *
  * @generated from message numen.v1.ManifestTheme
  */
 export type ManifestTheme = Message<"numen.v1.ManifestTheme"> & {
@@ -1106,8 +1096,6 @@ export type ManifestTheme = Message<"numen.v1.ManifestTheme"> & {
   id: string;
 
   /**
-   * name is the title the theme is listed with.
-   *
    * @generated from field: string name = 2;
    */
   name: string;
@@ -1136,8 +1124,6 @@ export const ManifestThemeSchema: GenMessage<ManifestTheme> = /*@__PURE__*/
   messageDesc(file_numen_v1_manifest, 20);
 
 /**
- * ManifestTabKind is a kind of tab the plugin registers.
- *
  * @generated from message numen.v1.ManifestTabKind
  */
 export type ManifestTabKind = Message<"numen.v1.ManifestTabKind"> & {

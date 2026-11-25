@@ -1,6 +1,5 @@
 syntax = "proto3";
 
-//
 // What the vault is and what has changed in it: the questions that are about
 // the vault itself and not about anything filed in it. Its files are
 // file.proto, its notes note.proto and its text search.proto.
@@ -24,7 +23,6 @@ service VaultService {
 
 message GetVaultStateRequest {}
 
-// being done behind that window is Tasks.
 message GetVaultStateResponse {
   // Id is the identity the folder carries, and how this vault is asked for
   // again. Name is what the person calls it, which is what a window titles
@@ -32,7 +30,7 @@ message GetVaultStateResponse {
   string id = 1;
   string name = 2;
 
-  // Where the vault relies on this disk.
+  // Absolute path of the vault on disk.
   string path = 3;
 
   // How far indexing the vault has got.
@@ -41,10 +39,7 @@ message GetVaultStateResponse {
 
 // Scan is how far indexing a vault has got, and what stopped it.
 message Scan {
-  // IsReady is set when the scan has finished.
   bool is_ready = 1;
-
-  // Error is why the scan stopped, when it stopped for a reason.
   string error = 2;
 
   // Why the vault is not being followed, when it is not. Changes will only

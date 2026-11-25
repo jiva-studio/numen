@@ -2,7 +2,6 @@
 // @generated from file numen/v1/vault.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-//
 // What the vault is and what has changed in it: the questions that are about
 // the vault itself and not about anything filed in it. Its files are
 // file.proto, its notes note.proto and its text search.proto.
@@ -33,8 +32,6 @@ export const GetVaultStateRequestSchema: GenMessage<GetVaultStateRequest> = /*@_
   messageDesc(file_numen_v1_vault, 0);
 
 /**
- * being done behind that window is Tasks.
- *
  * @generated from message numen.v1.GetVaultStateResponse
  */
 export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & {
@@ -53,7 +50,7 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
   name: string;
 
   /**
-   * Where the vault relies on this disk.
+   * Absolute path of the vault on disk.
    *
    * @generated from field: string path = 3;
    */
@@ -81,15 +78,11 @@ export const GetVaultStateResponseSchema: GenMessage<GetVaultStateResponse> = /*
  */
 export type Scan = Message<"numen.v1.Scan"> & {
   /**
-   * IsReady is set when the scan has finished.
-   *
    * @generated from field: bool is_ready = 1;
    */
   isReady: boolean;
 
   /**
-   * Error is why the scan stopped, when it stopped for a reason.
-   *
    * @generated from field: string error = 2;
    */
   error: string;

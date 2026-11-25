@@ -147,7 +147,7 @@ func (PluginContributionKind) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{0}
 }
 
-// value means it did not.
+// PluginEventErrorCode is why event delivery failed. Zero means success.
 type PluginEventErrorCode int32
 
 const (
@@ -1252,8 +1252,7 @@ func (x *PluginSettingGroup) GetTitle() string {
 type PluginSettingsView struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The id the frontend registers the component under.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// What the component is called.
+	Id    string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	// Where the component is drawn: empty for the settings of the plugin, "identity" for the page "Identity and
 	// licenses".
@@ -1705,8 +1704,7 @@ type PluginProcess struct {
 	LastUseTimeUnixMs int64 `protobuf:"varint,4,opt,name=last_use_time_unix_ms,json=lastUseTimeUnixMs,proto3" json:"last_use_time_unix_ms,omitempty"`
 	// The leases the process holds: open calls, open streams and reported work.
 	LeaseCount int32 `protobuf:"varint,5,opt,name=lease_count,json=leaseCount,proto3" json:"lease_count,omitempty"`
-	// Whether the plugin is served inside the core rather than by a process of
-	// its own.
+	// True when the plugin runs inside the core process.
 	IsInProcess bool `protobuf:"varint,6,opt,name=is_in_process,json=isInProcess,proto3" json:"is_in_process,omitempty"`
 	// From when the core stops the process for idleness, in milliseconds since
 	// the Unix epoch; the core checks every 30 seconds. Zero while the process
@@ -1837,8 +1835,7 @@ type PluginLeaseHolder struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Who took the lease: a part of Numen such as "Search" or "Indexing", or the
 	// name of the plugin or of the connection that asked.
-	Requester string `protobuf:"bytes,1,opt,name=requester,proto3" json:"requester,omitempty"`
-	// What the lease is for, in a few plain words.
+	Requester     string `protobuf:"bytes,1,opt,name=requester,proto3" json:"requester,omitempty"`
 	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -21,15 +21,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// HostStoreErrorCode is why a call on the plugin's folder failed. The
-// zero value means it was not.
+// HostStoreErrorCode is why a store call failed. Zero means success.
 type HostStoreErrorCode int32
 
 const (
 	HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED HostStoreErrorCode = 0
 	// The host is showing no vault.
-	HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT HostStoreErrorCode = 1
-	// The file is not there.
+	HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT  HostStoreErrorCode = 1
 	HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND HostStoreErrorCode = 2
 	// The name is not a file of the plugin's folder.
 	HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT HostStoreErrorCode = 3

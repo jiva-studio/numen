@@ -14,8 +14,7 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // The endpoint checks the permission of each call: a call that reads needs
 // vault:read and one that changes anything needs vault:write.
 //
-// Numen-Vault works the vault of that identity instead of the vault the host
-// shows.
+// Numen-Vault selects the vault by identity; without it a call targets the active vault.
 //
 // Every path is relative to the vault root and written with forward slashes.
 service HostLinkService {
@@ -108,7 +107,7 @@ message ResolveLinksResponse {
 message HostLinkAddition {
   // The note the link is written in.
   string from = 1;
-  // The note as the caller read it.
+  // The file stat the caller read; a note changed since returns CONFLICT.
   FileStat baseline = 2;
   // The target as written, e.g. "Rivers" or "note://01H...".
   string to = 3;
@@ -128,7 +127,7 @@ message HostLinkServiceAddLinksRequest {
 message HostLinkAdded {
   // The note after the write; unset when nothing was written.
   FileStat stat = 1;
-  // Why the link was not written: CONFLICT for a stale baseline, NOT_FOUND,
+  // Why the link was not written: CONFLICT for an outdated baseline, NOT_FOUND,
   // NOT_A_NOTE, UNREADABLE, INTERNAL and the other per-note codes.
   ErrorCode error = 2;
   // The core's error text where the link was not written, empty on success.
@@ -146,7 +145,7 @@ message HostLinkServiceUpdateLinksRequest {
   string from = 1;
   // The target as written.
   string to = 2;
-  // The note as the caller read it.
+  // The file stat the caller read; a note changed since returns CONFLICT.
   FileStat baseline = 3;
   Role role = 4;
   string type = 5;
@@ -156,7 +155,7 @@ message HostLinkServiceUpdateLinksRequest {
 
 message HostLinkServiceUpdateLinksResponse {
   ErrorCode error = 1;
-  // The note after the write.
+  // The note stat after the write; unset when nothing was written.
   FileStat stat = 2;
   // The core's error text where nothing was written, empty on success.
   string detail = 3;
@@ -167,7 +166,7 @@ message HostLinkServiceRemoveLinksRequest {
   string from = 1;
   // The target as written.
   string to = 2;
-  // The note as the caller read it.
+  // The file stat the caller read; a note changed since returns CONFLICT.
   FileStat baseline = 3;
   // Only the links of this role. ROLE_UNSPECIFIED removes the links of every
   // role.
@@ -176,7 +175,7 @@ message HostLinkServiceRemoveLinksRequest {
 
 message HostLinkServiceRemoveLinksResponse {
   ErrorCode error = 1;
-  // The note after the write.
+  // The note stat after the write; unset when nothing was written.
   FileStat stat = 2;
   // The core's error text where nothing was written, empty on success.
   string detail = 3;

@@ -26,8 +26,6 @@ service HostQueueService {
   rpc FinishTask(FinishTaskRequest) returns (FinishTaskResponse);
 }
 
-// WorkState is the state of a piece of work in the queue. UNSPECIFIED means
-// nothing was said.
 enum WorkState {
   WORK_STATE_UNSPECIFIED = 0;
 

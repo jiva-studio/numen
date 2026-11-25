@@ -29,7 +29,6 @@ service PluginHealthService {
   rpc WatchHealth(WatchHealthRequest) returns (stream WatchHealthResponse);
 }
 
-// HealthSeverity is how bad a health item is.
 enum HealthSeverity {
   HEALTH_SEVERITY_UNSPECIFIED = 0;
 

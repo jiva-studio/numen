@@ -253,11 +253,10 @@ func (x *ReadFileResponse) GetStart() int64 {
 }
 
 type WriteFileRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	Path    string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Content []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
-	// What the file was when the caller read it.
-	Baseline      *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Content       []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	Baseline      *FileStat              `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -314,10 +313,9 @@ func (x *WriteFileRequest) GetBaseline() *FileStat {
 }
 
 type WriteFileResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
-	// What the file is now.
-	Stat          *FileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Stat          *FileStat              `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -679,8 +677,7 @@ type ListFileChangesResponse struct {
 	// is_reset is true when the feed cannot continue from since: since is empty,
 	// of another feed, or older than the removals the feed keeps. The reader
 	// reads the vault again from the start, and changes is empty.
-	IsReset bool `protobuf:"varint,4,opt,name=is_reset,json=isReset,proto3" json:"is_reset,omitempty"`
-	// has_more is true when more changes follow next.
+	IsReset       bool `protobuf:"varint,4,opt,name=is_reset,json=isReset,proto3" json:"is_reset,omitempty"`
 	HasMore       bool `protobuf:"varint,5,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

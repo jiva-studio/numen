@@ -31,16 +31,15 @@ service NoteService {
   // note it does not name is not in the answer, and neither is one that carries
   // no headings.
   //
-  // A path named twice is answered once, and a filter naming more notes than
-  // fit.
+  // A path named twice is answered once.
   rpc ListHeadings(ListHeadingsRequest) returns (ListHeadingsResponse);
 
   // ReadNote answers with the prose of a note, below its frontmatter.
   rpc ReadNote(ReadNoteRequest) returns (ReadNoteResponse);
 
   // WriteNote puts prose into a note, keeping the frontmatter the file has when
-  // the write lands and creating the file where there is none. A note that no
-  // `stale`.
+  // the write lands and creating the file where there is none. A note whose
+  // baseline no longer matches returns ERROR_CODE_CONFLICT.
   rpc WriteNote(WriteNoteRequest) returns (WriteNoteResponse);
 
   // CreateNote makes a note. The file is named after the title, and the links
@@ -76,10 +75,8 @@ service NoteService {
   // ListBacklinks lists the links written in other notes that point at a note.
   rpc ListBacklinks(ListBacklinksRequest) returns (ListBacklinksResponse);
 
-  // RenameNote gives a note a different name. A note is shown by its title,
-  // else by its first level-one heading, else by its filename: whichever of the
-  // three names it is brought into line, and the file follows it where a title
-  // and a filename are kept as one name.
+  // RenameNote renames a note by updating its frontmatter title or its
+  // filename, and moves the file when its name follows the title.
   rpc RenameNote(RenameNoteRequest) returns (RenameNoteResponse);
 
   // WatchEdits reports a change being made to a note's prose while it is being
@@ -199,8 +196,8 @@ message ResolveAddressesRequest {
   string from = 1;
 
   // The addresses to answer about. A scheme written before `://` is read as
-  // one — `name://Entropy`, `note://<identifier>` — and everything else is a
-  // name, so what a file carries between its brackets is taken currently.
+  // one — `name://Entropy`, `note://<identifier>` — and everything else is
+  // taken as a name.
   repeated string addresses = 2;
 
   // A text whose wikilinks are answered about beside `addresses`. Each one is
@@ -275,12 +272,11 @@ message NoteHeadings {
 message Heading {
   string text = 1;
 
-  // The line it relies on, counted from the first line of the prose.
+  // One-based line number in the note prose.
   int32 line = 2;
 
-  // How deep it sits, from one for the shallowest a note can carry. Zero where
-  // the answer does not say: a name that matched carries the heading's words
-  // and at its current position, and nothing about its depth.
+  // Heading depth starting at 1. Zero where depth is omitted (for example in
+  // NameMatch).
   int32 level = 3;
 }
 
@@ -292,7 +288,6 @@ message ReadNoteResponse {
   // The prose below the frontmatter, with line endings as LF.
   string body = 1;
 
-  // Set when the note was not read, and why.
   ErrorCode error = 2;
 
   optional FileStat file_stat = 3;
@@ -322,7 +317,6 @@ message WriteNoteRequest {
 }
 
 message WriteNoteResponse {
-  // Set when nothing was written, and why.
   ErrorCode error = 1;
 
   // The file the write produced, for the caller to present at its next write.
@@ -331,12 +325,11 @@ message WriteNoteResponse {
 
   // Set when the prose is on disk and the index could not be updated for it.
   // The write happened and `file_stat` stands; search answers about this note as it
-  // read it last, until a walk goes past.
+  // read it last, until the next index scan.
   bool is_index_outdated = 3;
 }
 
-// Role is what kind of relationship a link is. The list is closed: navigation
-// and drawing read it, so a role no one has decided on has no behaviour.
+// Role is the kind of relationship a link declares.
 enum Role {
   ROLE_UNSPECIFIED = 0;
   ROLE_PARENT = 1;
@@ -346,9 +339,8 @@ enum Role {
   ROLE_ATTACHMENT = 5;
 }
 
-// Marker is what is drawn at the end of a link that points at its target. The
-// list is closed: a value is introduced together with the code that draws it.
-// MARKER_UNSPECIFIED draws nothing.
+// Marker is what is drawn at the target end of a link. MARKER_UNSPECIFIED draws
+// nothing.
 enum Marker {
   MARKER_UNSPECIFIED = 0;
   MARKER_ARROW = 1;
@@ -389,12 +381,11 @@ message CreateNoteResponse {
   // Where the note is filed. Empty when nothing was made.
   string path = 1;
 
-  // Set when nothing was made, and why.
   ErrorCode error = 2;
 
   // Set when the note is on disk and the index could not be updated for it.
   // The note was made and `path` stands; search does not answer about it until
-  // a walk goes past.
+  // the next index scan.
   bool is_index_outdated = 3;
 
   // Set when no title was given and every numbered untitled name is taken.
@@ -520,7 +511,6 @@ message CreateRelatedNoteResponse {
   // Where the note is filed. Empty when nothing was made.
   string path = 1;
 
-  // Set when nothing was made, and why.
   ErrorCode error = 2;
 
   // Set when the note is on disk and the index could not be updated for it.
@@ -567,7 +557,6 @@ enum NameSource {
 }
 
 message RenameNoteRequest {
-  // The note to rename.
   string path = 1;
 
   // What the note is called from now on. The file is named after it.
@@ -575,28 +564,27 @@ message RenameNoteRequest {
 }
 
 message RenameNoteResponse {
-  // Where the note is filed. Empty when the note was never opened. The note is
-  // path the note still has.
+  // Where the note is filed. Empty when the note could not be opened.
   string path = 1;
 
-  // What the note is called. Empty when the note was never opened.
+  // What the note is called. Empty when the note could not be opened.
   string title = 2;
 
-  // Which of the three names the note, and so which the rename brought into
-  // line. NAME_SOURCE_UNSPECIFIED when the note was never opened.
+  // Which name source the rename updated. NAME_SOURCE_UNSPECIFIED when the note
+  // could not be opened.
   NameSource name_source = 3;
 
-  // What the file did. Absent when it kept its position.
+  // Absent when the file did not move.
   optional MoveResult move_result = 4;
 
   // Set when the rename did not finish, and why. The note may already have been
-  // written: `path`, `title` and `by` say what stands. A note holding prose the
+  // written: `path`, `title` and `name_source` say what stands. A note holding prose the
   // caller never saw is ERROR_CODE_CONFLICT, and nothing was written at all.
   ErrorCode error = 5;
 
   // Set when the rename reached the vault and the index could not be updated
-  // with it. Search answers about these files as it read them last, until a
-  // walk goes past.
+  // with it. Search answers about these files as it read them last, until the
+  // next index scan.
   bool is_index_outdated = 6;
 
   // The text of the error where it carries more than the code does.
@@ -609,7 +597,6 @@ message WatchEditsResponse {
   // The change this reports on. Every report of one change carries the same
   // name, and no two changes carry one.
   string change = 1;
-  // The note being changed.
   string path = 2;
   // The run being replaced, counted the way a client counts text: in UTF-16
   // code units over the prose a read answers with.

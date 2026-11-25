@@ -4,11 +4,7 @@
 // 	protoc        (unknown)
 // source: numen/v1/workspace.proto
 
-// showing.
-//
-// The tabs the window has open and the places something else asks to be put in
-// front of the person are the window's. What the vault is and what has changed
-// in it is vault.proto.
+// Window workspace state: open tabs, focus, and tab links.
 
 package numenv1
 
@@ -526,13 +522,11 @@ func (x *ReadOpenTabsResponse) GetLayout() string {
 type Tab struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Id is what the window calls this tab, which the active id names.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Kind is the registered name of the tab kind.
+	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	// Path is the file it holds, by the path the vault files it under, and empty
 	// for a tab holding no file.
-	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// Title is what the tab is called, as the person reads it.
+	Path  string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
 	// State is the JSON the plugin owning the kind saved for the tab, such as the
 	// place it shows. The core and the window store it unread; empty for a tab
@@ -1270,9 +1264,8 @@ func (*CancelWatchTabLinksResponse) Descriptor() ([]byte, []int) {
 }
 
 type WriteTabLinksRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Id of the writing window.
-	WindowId string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	WindowId string                 `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	// Types that are valid to be assigned to Change:
 	//
 	//	*WriteTabLinksRequest_Link
@@ -1726,11 +1719,9 @@ func (x *ReadDetachedTabResponse) GetMoveId() string {
 }
 
 type MoveTabRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The window the tab is in.
-	WindowId string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
-	// The window to move the tab into.
-	TargetWindowId string `protobuf:"bytes,2,opt,name=target_window_id,json=targetWindowId,proto3" json:"target_window_id,omitempty"`
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	WindowId       string                 `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
+	TargetWindowId string                 `protobuf:"bytes,2,opt,name=target_window_id,json=targetWindowId,proto3" json:"target_window_id,omitempty"`
 	// The tab, with the state its kind saved.
 	Tab           *Tab `protobuf:"bytes,3,opt,name=tab,proto3" json:"tab,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1996,10 +1987,9 @@ func (x *AcceptTabMoveResponse) GetError() TabMoveErrorCode {
 }
 
 type HighlightWindowRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The window to outline.
-	WindowId      string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
-	IsOn          bool   `protobuf:"varint,2,opt,name=is_on,json=isOn,proto3" json:"is_on,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WindowId      string                 `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
+	IsOn          bool                   `protobuf:"varint,2,opt,name=is_on,json=isOn,proto3" json:"is_on,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
