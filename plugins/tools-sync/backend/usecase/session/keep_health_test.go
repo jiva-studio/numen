@@ -2,6 +2,7 @@ package session_test
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -59,7 +60,11 @@ func TestKeep_RestoreWaitsForTheSignInThatClearsTheItems(t *testing.T) {
 	keep := session.NewKeep(session.Deps{Identity: fake, Server: fake, Health: spy, Clock: clock, Chains: nil})
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	go func() { _ = keep.Execute(ctx) }()
+	go func() {
+		if err := keep.Execute(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
+	}()
 	<-spy.entered
 
 	restored := make(chan error, 1)

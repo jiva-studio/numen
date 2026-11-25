@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
-func startMultipart(t *testing.T, c *synctest.Computer, uploader *cloud.Uploader, vault []byte) transfer.Upload {
+func startMultipart(t *testing.T, _ *synctest.Computer, uploader *cloud.Uploader, vault []byte) transfer.Upload {
 	t.Helper()
 	up, err := uploader.Start(t.Context(), vault, syncprotocol.MaxBlobSize+1)
 	if err != nil {

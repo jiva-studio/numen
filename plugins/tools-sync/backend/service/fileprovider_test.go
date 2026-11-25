@@ -21,13 +21,21 @@ func TestFileProvider_AnswersAFailureOfTheMethodWithItsCodeAndPlainText(t *testi
 	t.Cleanup(web.Close)
 
 	for _, method := range []string{"FetchFile", "DropDownload"} {
-		answer, err := http.Post(
-			web.URL+"/numen.v1.FileProviderService/"+method, "application/json", strings.NewReader(`{"vaultId":"v-1","path":"a.pdf"}`),
+		request, err := http.NewRequestWithContext(
+			t.Context(), http.MethodPost, web.URL+"/numen.v1.FileProviderService/"+method, strings.NewReader(`{"vaultId":"v-1","path":"a.pdf"}`),
 		)
 		if err != nil {
 			t.Fatal(err)
 		}
-		var failure struct{ Code, Message string }
+		request.Header.Set("Content-Type", "application/json")
+		answer, err := web.Client().Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var failure struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		}
 		err = json.NewDecoder(answer.Body).Decode(&failure)
 		if closeErr := answer.Body.Close(); closeErr != nil {
 			t.Fatal(closeErr)

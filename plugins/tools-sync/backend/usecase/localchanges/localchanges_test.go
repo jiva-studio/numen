@@ -321,6 +321,7 @@ func TestScanLocalChanges_ReturnsTheErrorOfTheContextWhenItEndsWhileTheNotesAreR
 	c.WriteNote(vault, "Locked.md", "secret")
 	c.WriteNote(vault, "Shopping list.md", "milk")
 	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	deps := c.LocalChangesDeps()
 	deps.Host = brokenStatHost{Host: c.Host, path: "Locked.md", err: context.Canceled, onStat: cancel}
 
