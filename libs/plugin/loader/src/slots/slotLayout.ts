@@ -78,6 +78,6 @@ export function readManifestSlotPoints(pluginId: string, manifest: Manifest): De
     pluginId,
     slot: one.slot,
     title: one.title,
-    menu: one.menu,
+    menu: one.isMenu,
   }))
 }

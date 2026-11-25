@@ -10,13 +10,15 @@ import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegen
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { PluginInfo, PluginSetting, PluginSettingGroup } from "./plugin_pb.js";
 import { file_numen_v1_plugin } from "./plugin_pb.js";
+import type { Option } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IsoBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEhUKDXNldHRpbmdzX2pzb24YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEg8KB3ZlcnNpb24YCiABKAQSMAoKYXBwX2dyb3VwcxgLIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdHcm91cCIqCgdTZXR0aW5nEhAKCGtleV9wYXRoGAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjwKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciOwoUV3JpdGVTZXR0aW5nc1JlcXVlc3QSIwoIc2V0dGluZ3MYASADKAsyES5udW1lbi52MS5TZXR0aW5nIj8KFVdyaXRlU2V0dGluZ3NSZXNwb25zZRIVCg1zZXR0aW5nc19qc29uGAEgASgJEg8KB3ZlcnNpb24YAiABKAQiOQoXQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgsKA2tleRgCIAEoCSJMChhDaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIRCglpc19jaG9zZW4YAiABKAgSDwoHcHJvYmxlbRgDIAEoCSI2Cg5PcHRpb25zUmVxdWVzdBISCgpvcGVyYXRpb25zGAEgAygJEhAKCGlzX2ZyZXNoGAIgASgIIkAKB09wdGlvbnMSIQoHb3B0aW9ucxgBIAMoCzIQLm51bWVuLnYxLk9wdGlvbhISCgppc19wYXJ0aWFsGAIgASgIIjUKBk9wdGlvbhINCgV2YWx1ZRgBIAEoCRINCgV0aXRsZRgCIAEoCRINCgVncm91cBgDIAEoCTLeAgoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USWQoQQ2hvb3NlUGx1Z2luUGF0aBIhLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXF1ZXN0GiIubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlElIKDVdhdGNoU2V0dGluZ3MSHi5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXNwb25zZTABQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_plugin]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IsoBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEhUKDXNldHRpbmdzX2pzb24YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEg8KB3ZlcnNpb24YCiABKAQSMAoKYXBwX2dyb3VwcxgLIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdHcm91cCIqCgdTZXR0aW5nEhAKCGtleV9wYXRoGAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjwKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciOwoUV3JpdGVTZXR0aW5nc1JlcXVlc3QSIwoIc2V0dGluZ3MYASADKAsyES5udW1lbi52MS5TZXR0aW5nIj8KFVdyaXRlU2V0dGluZ3NSZXNwb25zZRIVCg1zZXR0aW5nc19qc29uGAEgASgJEg8KB3ZlcnNpb24YAiABKAQiOQoXQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgsKA2tleRgCIAEoCSJMChhDaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIRCglpc19jaG9zZW4YAiABKAgSDwoHcHJvYmxlbRgDIAEoCSI2Cg5PcHRpb25zUmVxdWVzdBISCgpvcGVyYXRpb25zGAEgAygJEhAKCGlzX2ZyZXNoGAIgASgIIkAKB09wdGlvbnMSIQoHb3B0aW9ucxgBIAMoCzIQLm51bWVuLnYxLk9wdGlvbhISCgppc19wYXJ0aWFsGAIgASgIMt4CCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USUgoNV2F0Y2hTZXR0aW5ncxIeLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_plugin, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -304,37 +306,6 @@ export type Options = Message<"numen.v1.Options"> & {
  */
 export const OptionsSchema: GenMessage<Options> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 10);
-
-/**
- * @generated from message numen.v1.Option
- */
-export type Option = Message<"numen.v1.Option"> & {
-  /**
-   * @generated from field: string value = 1;
-   */
-  value: string;
-
-  /**
-   * title is shown in place of the value; empty shows the value.
-   *
-   * @generated from field: string title = 2;
-   */
-  title: string;
-
-  /**
-   * group is the heading the option is shown under; empty is no heading.
-   *
-   * @generated from field: string group = 3;
-   */
-  group: string;
-};
-
-/**
- * Describes the message numen.v1.Option.
- * Use `create(OptionSchema)` to create a new message.
- */
-export const OptionSchema: GenMessage<Option> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 11);
 
 /**
  * SettingsService answers about that file, one setting at a time.

@@ -108,7 +108,7 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
     description: s.description,
     ...readLabels(s),
     default: defaultValue,
-    palette: s.palette,
+    palette: s.isPalette,
     options: s.options.length > 0 ? s.options.map(readOption) : undefined,
     optionsBy: s.optionsBy
       ? {
@@ -123,11 +123,11 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
       : undefined,
     when: readCondition(s.when),
     accept: s.accept,
-    ...(s.multiple ? { multiple: true } : {}),
-    ...(s.preview ? { preview: true } : {}),
+    ...(s.isMultiple ? { multiple: true } : {}),
+    ...(s.isPreview ? { preview: true } : {}),
     ...(s.optionsFrom ? { optionsFrom: s.optionsFrom } : {}),
     ...(s.operations.length > 0 ? { operations: s.operations } : {}),
-    ...(s.discover ? { discover: true } : {}),
+    ...(s.isDiscover ? { discover: true } : {}),
     min: s.min,
     max: s.max,
     step: s.step,
