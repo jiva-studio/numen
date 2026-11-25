@@ -222,7 +222,7 @@ describe('useVaults', () => {
     await model.actions.load()
 
     expect(model.state.rows.value.at(0)).toMatchObject({
-      status: 'Waiting for the server',
+      status: 'Connecting…',
       tone: 'warning',
       kind: 'syncing',
     })

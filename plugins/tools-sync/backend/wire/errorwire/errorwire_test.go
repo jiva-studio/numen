@@ -106,7 +106,7 @@ func TestDescribe_ExplainsFirstSyncFailures(t *testing.T) {
 			err:  fmt.Errorf("connect: %w", vaultlink.FolderMissingError{Name: "Recipes", Path: "/home/anna/Recipes"}),
 			want: "The folder of the vault «Recipes» is missing: /home/anna/Recipes. Remove the vault from the list or restore the folder.",
 		},
-		"server away": {err: fmt.Errorf("get catalog: %w", syncprotocol.ErrUnreachable), want: "The sync server cannot be reached. Check the server address in the settings."},
+		"server away": {err: fmt.Errorf("get catalog: %w", syncprotocol.ErrUnreachable), want: "Can't connect right now. Check your internet connection and try again."},
 		"no plan":     {err: fmt.Errorf("append: %w", syncprotocol.ErrWriteNotAllowed), want: "Your plan does not allow syncing: choose a plan."},
 		"quota":       {err: fmt.Errorf("append: %w", syncprotocol.QuotaExceededError{Used: 5, Limit: 4}), want: textStorageFull},
 		"no vaults":   {err: fmt.Errorf("write: %w", vaultlink.ErrNoVaults), want: "There is no vault with a folder to sync. Add a vault, or restore the folder of one."},

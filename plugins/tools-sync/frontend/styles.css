@@ -46,6 +46,10 @@
   background: var(--numen-positive);
 }
 
+.sync-badge__dot--waiting {
+  background: var(--numen-caution-fg);
+}
+
 .sync-badge__label {
   white-space: nowrap;
 }

@@ -36,7 +36,12 @@ const detail = computed(() => {
         <RefreshCw class="sync-ring__glyph" />
       </SyncRing>
     </span>
-    <span v-else class="sync-badge__dot" aria-hidden="true" />
+    <span
+      v-else
+      class="sync-badge__dot"
+      :class="{ 'sync-badge__dot--waiting': phase === 'waiting' }"
+      aria-hidden="true"
+    />
     <span class="sync-badge__label">{{ label }}</span>
   </span>
 </template>
