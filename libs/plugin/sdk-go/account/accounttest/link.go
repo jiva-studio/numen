@@ -315,3 +315,26 @@ func (s *service) AdoptChain(_ context.Context, req *connect.Request[v1.AdoptCha
 	f.record.Chain = chain
 	return connect.NewResponse(&v1.AdoptChainResponse{}), nil
 }
+
+// AddDeviceAt makes the host add a device that it signs itself, as a device does when it links another one. The server is not
+// notified of it until the plugin publishes the chain.
+func (f *Fake) AddDeviceAt(device identity.DevicePublicKey, name string, at time.Time) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.record == nil {
+		return errors.New("the host has no identity")
+	}
+	added, err := f.record.Chain.AppendDevice(f.record.Device, device, name, at)
+	if err != nil {
+		return err
+	}
+	f.record.Chain = added
+	if f.link == nil {
+		f.setLink(newFakeLink())
+		f.link.wantsChannel = false
+		f.link.isClosed = true
+	}
+	f.link.pending = &added
+	f.link.bump()
+	return nil
+}

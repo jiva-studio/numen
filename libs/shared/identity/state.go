@@ -2,6 +2,7 @@ package identity
 
 import (
 	"fmt"
+	"time"
 )
 
 type Status uint8
@@ -59,8 +60,15 @@ func getStatus(chain Chain, device DeviceKey) (Status, error) {
 // Adopt takes a chain that extends the one of the state, or that outranks it at a fork, finds this device in it and returns the next
 // state. An active device takes the wrapped keys of the chain when the chain gave it new ones or voided the ones it held, and the keys
 // must be the keys of the chain; a revoked device keeps its record.
-func (s State) Adopt(next Chain) (State, error) {
-	if err := next.Verify(); err != nil {
+func (s State) Adopt(next Chain) (State, error) { return s.adopt(next, next.Verify) }
+
+// AdoptAt is Adopt for a chain that also verifies against the clock of the adopter (Chain.VerifyAt).
+func (s State) AdoptAt(next Chain, now time.Time) (State, error) {
+	return s.adopt(next, func() error { return next.VerifyAt(now) })
+}
+
+func (s State) adopt(next Chain, verify func() error) (State, error) {
+	if err := verify(); err != nil {
 		return State{}, err
 	}
 	isFork := !next.IsExtensionOf(s.Chain)

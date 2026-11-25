@@ -133,6 +133,11 @@ func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) {
 			text = fmt.Sprintf("A device removed another device from the account on %s. If it was not you, restore with the recovery words to override it", revocation.At.Format("2 Jan 2006"))
 		}
 	}
+	for _, addition := range chain.ListDeviceAdditions() {
+		if !bytes.Equal(addition.By, own) && now.Sub(addition.At) < identity.CoolingOff {
+			text = fmt.Sprintf("A device added another device to the account on %s. If it was not you, restore with the recovery words to override it", addition.At.Format("2 Jan 2006"))
+		}
+	}
 	switch {
 	case text != "":
 		if u.deps.Health.Report(ctx, health.Item{Key: noticeKey, Severity: health.Warning, Text: text}) == nil {

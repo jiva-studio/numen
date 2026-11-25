@@ -216,12 +216,12 @@ func newRecord(t *testing.T) held {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return joinChain(t, chain, root, keys, device)
+	return joinChain(t, chain, root, keys, device, now)
 }
 
-func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, keys identity.AccountKeys, device identity.DeviceKey) held {
+func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, keys identity.AccountKeys, device identity.DeviceKey, now time.Time) held {
 	t.Helper()
-	chain, err := chain.AppendDevice(root, device.Public(), "Test device", clock.System{}.Now())
+	chain, err := chain.AppendDevice(root, device.Public(), "Test device", now)
 	if err != nil {
 		t.Fatal(err)
 	}

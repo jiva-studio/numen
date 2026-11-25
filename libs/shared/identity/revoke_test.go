@@ -170,7 +170,7 @@ func TestRevokeDevice_RoundTripsThroughBytes(t *testing.T) {
 func TestRevokeDevice_RefusesToRevokeTheSigner(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
-	if _, _, err := m.chain.RevokeDevice(m.first, m.firstKeys, m.first.Public().Sign, rand.Reader, epoch()); !errors.Is(err, identity.ErrSelfRevoke) {
+	if _, _, err := m.chain.RevokeDevice(m.first, m.firstKeys, m.first.Public().Sign, rand.Reader, epoch().Add(10*time.Hour)); !errors.Is(err, identity.ErrSelfRevoke) {
 		t.Errorf("error = %v, want ErrSelfRevoke", err)
 	}
 }
@@ -179,11 +179,11 @@ func TestRevokeDevice_RefusesADeviceThatIsNotActive(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
 	chain, keys := m.revokeSecond(t)
-	if _, _, err := chain.RevokeDevice(m.first, keys, m.second.Public().Sign, rand.Reader, epoch()); !errors.Is(err, identity.ErrUnknownDevice) {
+	if _, _, err := chain.RevokeDevice(m.first, keys, m.second.Public().Sign, rand.Reader, epoch().Add(10*time.Hour)); !errors.Is(err, identity.ErrUnknownDevice) {
 		t.Errorf("a revoked device: error = %v, want ErrUnknownDevice", err)
 	}
 	stranger := newDeviceOf(t)
-	if _, _, err := m.chain.RevokeDevice(m.first, m.firstKeys, stranger.Public().Sign, rand.Reader, epoch()); !errors.Is(err, identity.ErrUnknownDevice) {
+	if _, _, err := m.chain.RevokeDevice(m.first, m.firstKeys, stranger.Public().Sign, rand.Reader, epoch().Add(10*time.Hour)); !errors.Is(err, identity.ErrUnknownDevice) {
 		t.Errorf("a stranger: error = %v, want ErrUnknownDevice", err)
 	}
 }
@@ -191,7 +191,7 @@ func TestRevokeDevice_RefusesADeviceThatIsNotActive(t *testing.T) {
 func TestRevokeDevice_AcceptsTheRecoveryKeyAsSigner(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
-	chain, _, err := m.chain.RevokeDevice(m.recovery, m.keys, m.second.Public().Sign, rand.Reader, epoch())
+	chain, _, err := m.chain.RevokeDevice(m.recovery, m.keys, m.second.Public().Sign, rand.Reader, epoch().Add(10*time.Hour))
 	if err != nil || len(chain.ListDevices()) != 1 {
 		t.Errorf("revoke by the recovery key: %v", err)
 	}
@@ -201,7 +201,7 @@ func TestRevokeDevice_RefusesToSignWithoutAnActiveSigner(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
 	chain, keys := m.revokeSecond(t)
-	if _, _, err := chain.RevokeDevice(m.second, keys, m.first.Public().Sign, rand.Reader, epoch()); !errors.Is(err, identity.ErrUnknownSigner) {
+	if _, _, err := chain.RevokeDevice(m.second, keys, m.first.Public().Sign, rand.Reader, epoch().Add(10*time.Hour)); !errors.Is(err, identity.ErrUnknownSigner) {
 		t.Errorf("error = %v, want ErrUnknownSigner", err)
 	}
 }
@@ -210,7 +210,7 @@ func TestAppendDevice_RefusesAnEntryOfARevokedDevice(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
 	chain, _ := m.revokeSecond(t)
-	if _, err := chain.AppendDevice(m.second, newDeviceOf(t).Public(), "Tablet", epoch()); !errors.Is(err, identity.ErrUnknownSigner) {
+	if _, err := chain.AppendDevice(m.second, newDeviceOf(t).Public(), "Tablet", epoch().Add(10*time.Hour)); !errors.Is(err, identity.ErrUnknownSigner) {
 		t.Errorf("error = %v, want ErrUnknownSigner", err)
 	}
 }
@@ -219,7 +219,7 @@ func TestAppendDevice_RefusesTheKeyOfARevokedDeviceAgain(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
 	chain, _ := m.revokeSecond(t)
-	if _, err := chain.AppendDevice(m.first, m.second.Public(), "Phone again", epoch()); !errors.Is(err, identity.ErrDuplicateDevice) {
+	if _, err := chain.AppendDevice(m.first, m.second.Public(), "Phone again", epoch().Add(10*time.Hour)); !errors.Is(err, identity.ErrDuplicateDevice) {
 		t.Errorf("error = %v, want ErrDuplicateDevice", err)
 	}
 }
@@ -234,7 +234,7 @@ func TestAppendDevice_RefusesAThirtyThirdActiveDevice(t *testing.T) {
 			t.Fatalf("device %d: %v", i+1, err)
 		}
 	}
-	if _, err = appended(chain, a.recovery, newDeviceOf(t).Public(), "One too many", epoch()); !errors.Is(err, identity.ErrTooManyDevices) {
+	if _, err = appended(chain, a.recovery, newDeviceOf(t).Public(), "One too many", epoch().Add(10*time.Hour)); !errors.Is(err, identity.ErrTooManyDevices) {
 		t.Errorf("error = %v, want ErrTooManyDevices", err)
 	}
 }

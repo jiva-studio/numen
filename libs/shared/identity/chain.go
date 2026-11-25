@@ -60,6 +60,14 @@ type Signer interface {
 // Chain is a signed, append-only log of devices rooted in the recovery signing key.
 type Chain struct{ entries []Entry }
 
+func entryTime(at time.Time, last Entry) time.Time {
+	at = at.UTC().Truncate(time.Second)
+	if at.Before(last.Time) {
+		return last.Time
+	}
+	return at
+}
+
 func NewChain(root RecoveryKey, account AccountKeys, at time.Time) (Chain, error) {
 	public := root.Public()
 	wrapped, err := account.WrapForRecovery(public)
@@ -105,7 +113,7 @@ func (c Chain) AppendDevice(by Signer, device DevicePublicKey, name string, at t
 		Seq:       last.Seq + 1,
 		Prev:      hashEntry(last),
 		Kind:      KindAddDevice,
-		Time:      at.UTC().Truncate(time.Second),
+		Time:      entryTime(at, last),
 		Signer:    slices.Clone(by.SignerKey()),
 		AddDevice: &AddDevice{Device: DevicePublicKey{Sign: slices.Clone(device.Sign), Box: device.Box}, Name: name},
 	}
@@ -144,6 +152,9 @@ func (c Chain) Verify() error {
 			state = newRoster(root)
 			continue
 		}
+		if entry.Time.Before(c.entries[i-1].Time) {
+			return fmt.Errorf("%w: entry %d is older than the entry before", ErrEntryTime, i)
+		}
 		if err := state.verify(entry, i); err != nil {
 			return err
 		}
@@ -151,6 +162,22 @@ func (c Chain) Verify() error {
 	}
 	if len(c.Bytes()) > MaxChainBytes {
 		return fmt.Errorf("%w: more than %d bytes", ErrChainTooLong, MaxChainBytes)
+	}
+	return nil
+}
+
+// MaxClockSkew is how far after the clock of the adopter an entry may be dated.
+const MaxClockSkew = 24 * time.Hour
+
+// VerifyAt runs Verify and refuses an entry dated more than MaxClockSkew after now (ErrEntryTime).
+func (c Chain) VerifyAt(now time.Time) error {
+	if err := c.Verify(); err != nil {
+		return err
+	}
+	for i, entry := range c.entries {
+		if entry.Time.After(now.Add(MaxClockSkew)) {
+			return fmt.Errorf("%w: entry %d is dated after the clock", ErrEntryTime, i)
+		}
 	}
 	return nil
 }
@@ -306,6 +333,25 @@ func (c Chain) ListDeviceRevocations() []DeviceRevocation {
 			continue
 		}
 		found = append(found, DeviceRevocation{By: bytes.Clone(entry.Signer), Device: bytes.Clone(entry.Revoke.Device), At: entry.Time})
+	}
+	return found
+}
+
+// DeviceAddition is the addition of a device that another device signed.
+type DeviceAddition struct {
+	By     ed25519.PublicKey
+	Device ed25519.PublicKey
+	At     time.Time
+}
+
+// ListDeviceAdditions returns the additions signed by a device, not by the recovery key, in the order of the chain.
+func (c Chain) ListDeviceAdditions() []DeviceAddition {
+	var found []DeviceAddition
+	for _, entry := range c.entries[min(1, len(c.entries)):] {
+		if entry.Kind != KindAddDevice || entry.AddDevice == nil || bytes.Equal(entry.Signer, c.Root().Sign) {
+			continue
+		}
+		found = append(found, DeviceAddition{By: bytes.Clone(entry.Signer), Device: bytes.Clone(entry.AddDevice.Device.Sign), At: entry.Time})
 	}
 	return found
 }

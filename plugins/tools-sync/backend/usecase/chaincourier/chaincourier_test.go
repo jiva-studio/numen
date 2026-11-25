@@ -3,7 +3,9 @@ package chaincourier_test
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -217,4 +219,35 @@ func TestLoop_ClearsTheFailureAnEarlierRunLeftWhenNothingIsPending(t *testing.T)
 	}()
 
 	synctest.WaitUntil(t, "the stale failure is cleared", func() bool { return len(current.Health.List()) == 0 })
+}
+
+func TestAdopt_RaisesANoticeWhenAnotherDeviceAddedADevice(t *testing.T) {
+	t.Parallel()
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	words := synctest.NewWords(t)
+	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
+	observer := synctest.NewSecondComputer(t, server, clock, "Tablet", words)
+	if _, err := chaincourier.NewAdopt(first.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	stranger, err := identity.NewDeviceKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Fake.AddDeviceAt(stranger.Public(), "Stranger", clock.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(first.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the addition published", published, err)
+	}
+
+	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	items := observer.Health.List()
+	if len(items) != 1 || items[0].Key != "device-revoked-others" || !strings.Contains(items[0].Text, "added another device") {
+		t.Errorf("health items = %+v, want one notice that a device added another device", items)
+	}
 }

@@ -74,3 +74,44 @@ func TestCompleteRestore_RefusesAChainShorterThanTheHighestOneSeenForTheAccount(
 		t.Fatalf("error = %v, want ErrChainOutdated", err)
 	}
 }
+
+func TestAdoptChain_RefusesAChainDatedFarAfterTheClockOfThisDevice(t *testing.T) {
+	t.Parallel()
+	first := newRestoreKit(t, "Desktop")
+	if _, err := first.create.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatal(err)
+	}
+	second := newRestoreKit(t, "Phone")
+	second.clock.Advance(72 * time.Hour)
+	if err := second.start.Execute(t.Context(), getLegalWords(), "", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := second.complete.Execute(t.Context(), syncPlugin, first.getChain(t)); err != nil {
+		t.Fatal(err)
+	}
+
+	err := first.adopt.Execute(t.Context(), second.getChain(t))
+
+	if !errors.Is(err, identitydomain.ErrInvalidChain) {
+		t.Errorf("error = %v, want ErrInvalidChain", err)
+	}
+}
+
+func TestCompleteRestore_RefusesAChainDatedFarAfterTheClockOfThisDevice(t *testing.T) {
+	t.Parallel()
+	first := newRestoreKit(t, "Desktop")
+	first.clock.Advance(72 * time.Hour)
+	if _, err := first.create.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatal(err)
+	}
+	second := newRestoreKit(t, "Phone")
+	if err := second.start.Execute(t.Context(), getLegalWords(), "", true); err != nil {
+		t.Fatal(err)
+	}
+
+	err := second.complete.Execute(t.Context(), syncPlugin, first.getChain(t))
+
+	if !errors.Is(err, identitydomain.ErrInvalidChain) {
+		t.Errorf("error = %v, want ErrInvalidChain", err)
+	}
+}

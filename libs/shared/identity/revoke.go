@@ -75,7 +75,7 @@ func (c Chain) appendKeys(by Signer, kind EntryKind, revoke *Revoke, current, fr
 		Seq:    last.Seq + 1,
 		Prev:   hashEntry(last),
 		Kind:   kind,
-		Time:   at.UTC().Truncate(time.Second),
+		Time:   entryTime(at, last),
 		Signer: by.SignerKey(),
 		Revoke: revoke,
 	}

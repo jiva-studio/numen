@@ -17,6 +17,7 @@ import (
 type records struct {
 	keys   pluginport.KeyStore
 	chains ChainStore
+	clock  Clock
 }
 
 func (r records) readRecord(ctx context.Context) (identitylib.Record, error) {
@@ -128,7 +129,7 @@ func (r records) writeNewState(ctx context.Context, record identitylib.Record, c
 }
 
 func (r records) adoptState(ctx context.Context, state identitylib.State, chain identitylib.Chain) (identitylib.State, error) {
-	next, err := state.Adopt(chain)
+	next, err := state.AdoptAt(chain, r.clock.Now())
 	if err != nil {
 		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}

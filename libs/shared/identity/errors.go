@@ -17,6 +17,7 @@ var (
 	ErrDuplicateDevice    = errors.New("identity: device is already in the chain")
 	ErrDeviceName         = errors.New("identity: invalid device name")
 	ErrUnwrap             = errors.New("identity: account keys cannot be unwrapped")
+	ErrEntryTime          = errors.New("identity: entry time is out of order or too far from the clock")
 )
 
 var (

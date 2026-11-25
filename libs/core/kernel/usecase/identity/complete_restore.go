@@ -90,6 +90,9 @@ func (c restoreCompletion) buildRestoredState(ctx context.Context, restore *pend
 	if err != nil {
 		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
+	if err := chain.VerifyAt(c.builder.clock.Now()); err != nil {
+		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
+	}
 	if !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
 		return identitylib.State{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
 	}
