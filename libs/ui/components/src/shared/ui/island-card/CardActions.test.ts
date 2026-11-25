@@ -111,7 +111,7 @@ describe('an action with choices', () => {
     actions.unmount()
   })
 
-  it('hands a failure of the listener of a picked choice to the error handler of the app', async () => {
+  it('reports a failure of the listener of a picked choice to the error handler of the app', async () => {
     const errors: unknown[] = []
     const actions = mount(CardActions, {
       props: { items: MENU, moreLabel: 'More actions' },

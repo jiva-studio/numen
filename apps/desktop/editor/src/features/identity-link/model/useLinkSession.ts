@@ -55,7 +55,7 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole, stallM
     link.value = undefined
     isStalled.value = false
     problem.value = ''
-    if (await requestStart(mode, scannedText)) poll.arm()
+    if (await requestStart(mode, scannedText)) poll.start()
   }
 
   const ask = async (call: () => Promise<Result<unknown, string>>): Promise<void> => {

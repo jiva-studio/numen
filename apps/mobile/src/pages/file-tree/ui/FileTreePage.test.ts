@@ -261,7 +261,7 @@ describe('moving between folders', () => {
     expect(page.find('[data-testid="error"]').exists()).toBe(false)
   })
 
-  it('draws nothing from a list that arrives after the page is gone', async () => {
+  it('draws nothing from a list that arrives after the page is unmounted', async () => {
     let answer: (rows: FileRow[]) => void = () => undefined
     const core = coreWith([books])
     core.listFiles.mockImplementation(() => new Promise<FileRow[]>((resolve) => (answer = resolve)))

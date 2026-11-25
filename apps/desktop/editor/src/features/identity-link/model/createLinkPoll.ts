@@ -69,7 +69,7 @@ export function createLinkPoll(options: LinkPollOptions) {
       failures = 0
       waits = 0
     },
-    arm(): void {
+    start(): void {
       stop()
       timer = setInterval(() => options.run(readOnce()), options.intervalMs)
     },
