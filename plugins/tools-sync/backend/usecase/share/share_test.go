@@ -10,6 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
@@ -444,5 +446,38 @@ func TestCreateShare_RefusesAFolderWhileTheWholeVaultIsShared(t *testing.T) {
 		if err := w.owner.CreateShare(t.Context(), owned, at); !errors.Is(err, share.ErrInsideShare) {
 			t.Errorf("%s: error = %v, want ErrInsideShare", name, err)
 		}
+	}
+}
+
+func TestCreateShare_RewrapsAFileSealedAtALaterEpochOfTheVault(t *testing.T) {
+	w := newWorld(t)
+	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
+	w.syncOwner(t)
+	if _, err := chaincourier.NewAdopt(w.owner.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.owner.Fake.AdvanceEpoch(); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(w.owner.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the chain of the epoch published", published, err)
+	}
+	if rotated, err := rotatevaultkeys.NewRotateVaultKeys(w.owner.RotateDeps()).Execute(t.Context()); err != nil || rotated != 1 {
+		t.Fatalf("rotated = %d, error = %v, want the vault rotated", rotated, err)
+	}
+	w.owner.WriteNote(owned, "Food/Milk.md", "milk")
+	w.syncOwner(t)
+
+	w.shareFolder(t)
+	w.syncOwner(t)
+
+	shared := 0
+	for _, head := range w.heads(t) {
+		if len(head.GetRevision().GetShareRootId()) > 0 {
+			shared++
+		}
+	}
+	if shared != 2 {
+		t.Errorf("%d share revisions, want 2: the file of epoch 0 and the file of epoch 1", shared)
 	}
 }

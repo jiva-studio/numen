@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -88,19 +89,19 @@ func (u *RewrapFolder) Execute(ctx context.Context, id domain.VaultID, root doma
 
 type rewrap struct {
 	base
-	remote   []byte
-	vaultKey [32]byte
-	shareKey [32]byte
-	root     domainshare.Root
-	authors  trust.Authors
-	author   []byte
+	remote    []byte
+	vaultKeys []vaultlink.VaultKey
+	shareKey  [32]byte
+	root      domainshare.Root
+	authors   trust.Authors
+	author    []byte
 }
 
 func newRewrap(b base) *rewrap {
 	empty := domainshare.Root{
 		ID: nil, VaultID: nil, Folder: "", Epoch: 0, Keys: nil, Readers: nil, Version: 0, HeadID: [32]byte{}, IsClosed: false, Phase: "",
 	}
-	return &rewrap{base: b, remote: nil, vaultKey: [32]byte{}, shareKey: [32]byte{}, root: empty, authors: trust.Authors{}, author: nil}
+	return &rewrap{base: b, remote: nil, vaultKeys: nil, shareKey: [32]byte{}, root: empty, authors: trust.Authors{}, author: nil}
 }
 
 func (r *rewrap) run(ctx context.Context, id domain.VaultID, root domainshare.Root) error {
@@ -138,9 +139,9 @@ func (r *rewrap) open(ctx context.Context, id domain.VaultID, root domainshare.R
 	if err != nil {
 		return fmt.Errorf("read the remote id of the link: %w", err)
 	}
-	key, err := r.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remote), link.SealedKey)
+	keys, err := vaultlink.OpenKeys(ctx, r.deps.Crypto, link)
 	if err != nil {
-		return fmt.Errorf("open the vault key: %w", err)
+		return err
 	}
 	if r.authors, err = r.getAuthors(ctx); err != nil {
 		return err
@@ -153,7 +154,7 @@ func (r *rewrap) open(ctx context.Context, id domain.VaultID, root domainshare.R
 	if !isKnown {
 		return errNoKey
 	}
-	r.remote, r.vaultKey, r.shareKey, r.root, r.author = remote, [32]byte(key), shareKey, root, own.DeviceSignKey
+	r.remote, r.vaultKeys, r.shareKey, r.root, r.author = remote, keys, shareKey, root, own.DeviceSignKey
 	return nil
 }
 
@@ -203,7 +204,11 @@ func (r *rewrap) build(head *syncv1.StoredRevision) (*syncv1.Revision, error) {
 }
 
 func (r *rewrap) openMeta(rev *syncv1.Revision) (note.Meta, bool) {
-	meta, err := note.OpenMeta(r.vaultKey, rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
+	at := slices.IndexFunc(r.vaultKeys, func(one vaultlink.VaultKey) bool { return one.Epoch == rev.GetEpoch() && len(one.Key) == 32 })
+	if at < 0 {
+		return note.Meta{}, false
+	}
+	meta, err := note.OpenMeta([32]byte(r.vaultKeys[at].Key), rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
 	return meta, err == nil
 }
 

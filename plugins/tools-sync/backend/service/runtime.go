@@ -33,6 +33,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/shareinvite"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
@@ -143,6 +144,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	fetching := downloadwire.Deps{
 		Fetch: fetchfile.Deps{
 			Stage: wired.Downloads, Revisions: cloudSide, Blobs: wired.DownloadBlobs, Crypto: p.identity, Host: p.vaults, State: p.state,
+			Shares: share.NewReadShares(sharewire.NewShareDeps(deps)),
 		},
 		Entries: p.state,
 	}

@@ -9,8 +9,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const guidePath = "Books/Guide.pdf"
@@ -202,5 +205,43 @@ func TestFetchFile_DamagedBytes_StoreHasNoFetchFiles(t *testing.T) {
 
 	if left := listFetchFiles(t, w); len(left) != 0 {
 		t.Errorf("the store keeps %v after the damaged download", left)
+	}
+}
+
+func TestFetchFile_PlacesAFileSealedAtALaterEpochOfTheVault(t *testing.T) {
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	words := synctest.NewWords(t)
+	computer := synctest.NewFirstComputer(t, server, clock, synctest.ComputerVault, words)
+	computer.Connect(t, synctest.ComputerVault)
+	if _, err := chaincourier.NewAdopt(computer.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := computer.Fake.AdvanceEpoch(); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(computer.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the chain of the epoch published", published, err)
+	}
+	if rotated, err := rotatevaultkeys.NewRotateVaultKeys(computer.RotateDeps()).Execute(t.Context()); err != nil || rotated != 1 {
+		t.Fatalf("rotated = %d, error = %v, want the vault rotated", rotated, err)
+	}
+	want := computer.WriteFileOfSize(synctest.ComputerVault, guidePath, 5<<20)
+	clock.Advance(time.Minute)
+	if err := computer.Sync(t.Context(), synctest.ComputerVault); err != nil {
+		t.Fatal(err)
+	}
+	phone := synctest.NewPhone(t, server, clock, synctest.PhoneVault, words)
+	phone.ConnectExisting(t, synctest.PhoneVault, computer.Link(t, synctest.ComputerVault).RemoteVaultID)
+	if err := phone.Sync(t.Context(), synctest.PhoneVault); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := fetchfile.NewFetchFile(phone.FetchDeps()).Execute(t.Context(), synctest.PhoneVault, guidePath); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, ok := phone.ReadNote(synctest.PhoneVault, guidePath); !ok || got != want {
+		t.Errorf("file of %d bytes (there: %v), want the 5 MiB of the computer", len(got), ok)
 	}
 }

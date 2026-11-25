@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/dropdownload"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
@@ -32,6 +32,7 @@ func NewPhone(t *testing.T, server *Server, clock *Clock, vault string, words []
 func (c *Computer) FetchDeps() fetchfile.Deps {
 	return fetchfile.Deps{
 		Stage: c.WireDeps().Downloads, Revisions: c.Cloud, Blobs: cloud.NewBlobs(c.Cloud), Crypto: c.Account, Host: c.Host, State: c.State,
+		Shares: share.NewReadShares(c.ShareDeps()),
 	}
 }
 

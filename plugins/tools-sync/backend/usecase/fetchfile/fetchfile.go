@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -50,6 +51,11 @@ type Stager interface {
 	Hold(vault domain.VaultID, name string) func()
 }
 
+// SharesReader reads the shares of a vault with the keys of their epochs.
+type SharesReader interface {
+	Execute(ctx context.Context, id domain.VaultID) ([]share.Root, error)
+}
+
 // Deps are what the use case needs.
 type Deps struct {
 	Stage     Stager
@@ -58,6 +64,7 @@ type Deps struct {
 	Crypto    ports.Crypto
 	Host      ports.Host
 	State     State
+	Shares    SharesReader
 }
 
 // FetchFile downloads the blob of an absent file in ranges, keeps what came in the store folder of the plugin
@@ -111,14 +118,14 @@ type target struct {
 }
 
 func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) error {
-	t, key, err := u.open(ctx, id, path)
+	t, keys, err := u.open(ctx, id, path)
 	if errors.Is(err, errHeld) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	rev, meta, err := u.readHead(ctx, t, key)
+	rev, meta, err := u.readHead(ctx, t, keys)
 	if err != nil {
 		return err
 	}
@@ -160,39 +167,39 @@ func (u *FetchFile) runLarge(ctx context.Context, t target, rev *syncv1.Revision
 	return errors.Join(fillErr, u.deps.Host.Store(t.id).Delete(ctx, name), u.deps.Stage.Forget(ctx, t.id, t.record.FileID))
 }
 
-func (u *FetchFile) open(ctx context.Context, id domain.VaultID, path string) (target, [32]byte, error) {
+func (u *FetchFile) open(ctx context.Context, id domain.VaultID, path string) (target, []vaultlink.VaultKey, error) {
 	listed, err := u.deps.Host.GetAbsent(id).ListAbsentFiles(ctx)
 	if err != nil {
-		return target{}, [32]byte{}, err
+		return target{}, nil, err
 	}
 	at := slices.IndexFunc(listed, func(one host.AbsentFile) bool { return one.Path == path })
 	if at < 0 {
-		return target{}, [32]byte{}, u.checkHeld(ctx, id, path)
+		return target{}, nil, u.checkHeld(ctx, id, path)
 	}
 	records, err := u.deps.State.ReadRecords(ctx, id)
 	if err != nil {
-		return target{}, [32]byte{}, err
+		return target{}, nil, err
 	}
 	recordAt := slices.IndexFunc(records, func(one transfer.FileRecord) bool { return one.Path == path })
 	if recordAt < 0 {
-		return target{}, [32]byte{}, fmt.Errorf("download %s: no record of the file: %w", path, ErrNotAbsent)
+		return target{}, nil, fmt.Errorf("download %s: no record of the file: %w", path, ErrNotAbsent)
 	}
 	link, err := u.deps.State.ReadLink(ctx, id)
 	if err != nil {
-		return target{}, [32]byte{}, err
+		return target{}, nil, err
 	}
 	remote, err := hex.DecodeString(link.RemoteVaultID)
 	if err != nil {
-		return target{}, [32]byte{}, fmt.Errorf("read the remote id of the link: %w", err)
+		return target{}, nil, fmt.Errorf("read the remote id of the link: %w", err)
 	}
-	key, err := u.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remote), link.SealedKey)
+	keys, err := vaultlink.OpenKeys(ctx, u.deps.Crypto, link)
 	if err != nil {
-		return target{}, [32]byte{}, fmt.Errorf("open the vault key: %w", err)
+		return target{}, nil, err
 	}
-	return target{id: id, path: path, remote: remote, record: records[recordAt], entry: listed[at]}, [32]byte(key), nil
+	return target{id: id, path: path, remote: remote, record: records[recordAt], entry: listed[at]}, keys, nil
 }
 
-func (u *FetchFile) readHead(ctx context.Context, t target, key [32]byte) (*syncv1.Revision, note.Meta, error) {
+func (u *FetchFile) readHead(ctx context.Context, t target, keys []vaultlink.VaultKey) (*syncv1.Revision, note.Meta, error) {
 	var since uint64
 	for pages := 1; ; pages++ {
 		page, err := u.deps.Revisions.GetChanges(ctx, t.remote, since, 0)
@@ -204,8 +211,11 @@ func (u *FetchFile) readHead(ctx context.Context, t target, key [32]byte) (*sync
 			if !bytes.Equal(rev.GetFileId(), t.record.FileID) || rev.GetDeleted() {
 				continue
 			}
-			meta, err := note.OpenMeta(key, rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
-			if err != nil || len(meta.Key) != 32 || meta.Hash != t.entry.Hash {
+			meta, isOpen, err := u.openMeta(ctx, t.id, keys, rev)
+			if err != nil {
+				return nil, note.Meta{}, err
+			}
+			if !isOpen || len(meta.Key) != 32 || meta.Hash != t.entry.Hash {
 				return nil, note.Meta{}, fmt.Errorf("download %s: %w", t.path, ErrHeadChanged)
 			}
 			return rev, meta, nil
@@ -218,6 +228,34 @@ func (u *FetchFile) readHead(ctx context.Context, t target, key [32]byte) (*sync
 		}
 		since = page.GetNextSeq()
 	}
+}
+
+func (u *FetchFile) openMeta(ctx context.Context, id domain.VaultID, keys []vaultlink.VaultKey, rev *syncv1.Revision) (note.Meta, bool, error) {
+	if len(rev.GetShareRootId()) > 0 {
+		if u.deps.Shares == nil {
+			return note.Meta{}, false, nil
+		}
+		roots, err := u.deps.Shares.Execute(ctx, id)
+		if err != nil {
+			return note.Meta{}, false, err
+		}
+		root, isFound := share.FindRootByID(roots, rev.GetShareRootId())
+		if !isFound {
+			return note.Meta{}, false, nil
+		}
+		key, isKnown := root.Keys.Get(rev.GetEpoch())
+		if !isKnown {
+			return note.Meta{}, false, nil
+		}
+		meta, err := share.OpenMeta[note.Meta](key, root.ID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
+		return meta, err == nil, nil
+	}
+	at := slices.IndexFunc(keys, func(one vaultlink.VaultKey) bool { return one.Epoch == rev.GetEpoch() && len(one.Key) == 32 })
+	if at < 0 {
+		return note.Meta{}, false, nil
+	}
+	meta, err := note.OpenMeta([32]byte(keys[at].Key), rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
+	return meta, err == nil, nil
 }
 
 func getPartName(rev *syncv1.Revision) string {
