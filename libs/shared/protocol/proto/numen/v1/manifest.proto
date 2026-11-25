@@ -40,7 +40,6 @@ message Manifest {
   bool is_off_by_default = 27;
 }
 
-// ManifestContributes lists the contributions a plugin makes to the application.
 message ManifestContributes {
   // tab_kinds are the kinds of tab the plugin's frontend registers.
   repeated ManifestTabKind tab_kinds = 1;
@@ -101,7 +100,6 @@ message ManifestContributes {
   ManifestEditor editor = 27;
 }
 
-// ManifestEditor lists the additions of a plugin to the note editor.
 message ManifestEditor {
   // extensions are the CodeMirror extensions the plugin's frontend registers. The frontend registers
   // an extension only under an id listed here.
@@ -159,7 +157,6 @@ message ManifestSearchFunction {
   string level = 3;
   // description is one line an agent reads about the function.
   string description = 4;
-  // example is a query that uses the function.
   string example = 5;
 }
 
@@ -248,7 +245,6 @@ message ManifestConnectionField {
 // ManifestTextKind is the readable name of one kind of text version a plugin makes. The application
 // lists a version by this name and by the raw kind where the plugin declares none.
 message ManifestTextKind {
-  // kind is the kind the plugin gives its text versions.
   string kind = 1;
   // title is the name a person reads, such as "Recognized text".
   string title = 2;
@@ -338,11 +334,9 @@ message ManifestTrigger {
   string when = 3;
 }
 
-// ManifestTheme is a theme a plugin adds to the list of themes.
 message ManifestTheme {
   // id is the slug the theme is named by inside the plugin.
   string id = 1;
-  // name is the title the theme is listed with.
   string name = 2;
   // appearance is light or dark when the theme sets one color scheme, and empty when it
   // follows the mode.
@@ -351,7 +345,6 @@ message ManifestTheme {
   string file = 4;
 }
 
-// ManifestTabKind is a kind of tab the plugin registers.
 message ManifestTabKind {
   // kind is the id the frontend registers the kind under.
   string kind = 1;

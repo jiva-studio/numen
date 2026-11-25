@@ -54,15 +54,11 @@ export const ListToolsResponseSchema: GenMessage<ListToolsResponse> = /*@__PURE_
  */
 export type PluginTool = Message<"numen.v1.PluginTool"> & {
   /**
-   * The name an agent calls the tool by.
-   *
    * @generated from field: string name = 1;
    */
   name: string;
 
   /**
-   * What a person reads the tool as.
-   *
    * @generated from field: string title = 2;
    */
   title: string;
@@ -205,8 +201,6 @@ export const CallToolResponseSchema: GenMessage<CallToolResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_tools, 4);
 
 /**
- * ToolResult is what a tool answered.
- *
  * @generated from message numen.v1.ToolResult
  */
 export type ToolResult = Message<"numen.v1.ToolResult"> & {
@@ -296,8 +290,6 @@ export const PluginToolService: GenService<{
     output: typeof ListToolsResponseSchema;
   },
   /**
-   * CallTool runs one tool the plugin listed.
-   *
    * @generated from rpc numen.v1.PluginToolService.CallTool
    */
   callTool: {

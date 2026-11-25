@@ -585,8 +585,6 @@ export type PluginSettingsView = Message<"numen.v1.PluginSettingsView"> & {
   id: string;
 
   /**
-   * What the component is called.
-   *
    * @generated from field: string title = 2;
    */
   title: string;
@@ -780,8 +778,7 @@ export type PluginProcess = Message<"numen.v1.PluginProcess"> & {
   leaseCount: number;
 
   /**
-   * Whether the plugin is served inside the core rather than by a process of
-   * its own.
+   * True when the plugin runs inside the core process.
    *
    * @generated from field: bool is_in_process = 6;
    */
@@ -848,8 +845,6 @@ export type PluginLeaseHolder = Message<"numen.v1.PluginLeaseHolder"> & {
   requester: string;
 
   /**
-   * What the lease is for, in a few plain words.
-   *
    * @generated from field: string reason = 2;
    */
   reason: string;
@@ -1090,8 +1085,6 @@ export const PluginLifecycleService: GenService<{
   serviceDesc(file_numen_v1_plugin, 0);
 
 /**
- * PluginService lists the plugins the application has.
- *
  * @generated from service numen.v1.PluginService
  */
 export const PluginService: GenService<{
@@ -1140,7 +1133,7 @@ export const PluginProcessService: GenService<{
 
 /**
  * PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.
- * A plugin serves it only when it takes events. A plugin that takes the event and rejects it answers
+ * A plugin serves it only when it takes events. A plugin that rejects the event answers
  * with error set; a status code means the call was not served or failed.
  *
  * @generated from service numen.v1.PluginEventService

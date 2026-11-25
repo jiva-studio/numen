@@ -48,7 +48,6 @@ message CatalogEntry {
   string description = 4;
   string category = 5;
   ManifestContributes contributes = 6;
-  // source names the source the entry comes from.
   string source = 7;
   CatalogState state = 8;
   // incompatibility is why the application cannot run the plugin, and detail states the
@@ -76,7 +75,6 @@ message GetCatalogEntryRequest {
 }
 
 message GetCatalogEntryResponse {
-  // error is set when no entry is returned.
   ErrorCode error = 1;
   CatalogEntry entry = 2;
   repeated CatalogSourceError source_errors = 3;
@@ -96,7 +94,6 @@ message FindCatalogEntryByTabKindRequest {
 }
 
 message FindCatalogEntryByTabKindResponse {
-  // error is set when no entry is returned.
   ErrorCode error = 1;
   CatalogEntry entry = 2;
   repeated CatalogSourceError source_errors = 3;

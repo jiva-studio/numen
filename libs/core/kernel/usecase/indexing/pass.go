@@ -40,7 +40,7 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 	// a cache, so neither has to finish.
 	isStopped := false
 	if p.readNotes(ctx, read) {
-		isStopped = p.indexSources(ctx)
+		isStopped = p.indexTexts(ctx)
 	}
 	p.reportIndexChanged(ctx, isStopped)
 
@@ -51,7 +51,7 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 		case <-ctx.Done():
 			return
 		case <-p.waits.getSourcesWake():
-			p.reportIndexChanged(ctx, p.indexSources(ctx))
+			p.reportIndexChanged(ctx, p.indexTexts(ctx))
 		case <-p.waits.readWakeChannel():
 			p.reportIndexChanged(ctx, p.embedRecognized(ctx))
 		case <-p.waits.getNotesWake():
@@ -100,12 +100,6 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	return true
 }
 
-func (p *pass) indexSources(ctx context.Context) (isStoppedByWake bool) {
-	request := p.isRebuild
-	p.isRebuild = false
-	return p.indexTexts(ctx, request)
-}
-
 func (p *pass) embedRecognized(ctx context.Context) (isStoppedByWake bool) {
 	target := p.drainSources()
 	if len(target) == 0 {
@@ -117,7 +111,9 @@ func (p *pass) embedRecognized(ctx context.Context) (isStoppedByWake bool) {
 	return p.embed(ctx)
 }
 
-func (p *pass) indexTexts(ctx context.Context, rebuild bool) (isStoppedByWake bool) {
+func (p *pass) indexTexts(ctx context.Context) (isStoppedByWake bool) {
+	rebuild := p.isRebuild
+	p.isRebuild = false
 	events := p.events
 	making, err := p.env.openReading(ctx, p.v, rebuild)
 	if err != nil {
@@ -226,13 +222,13 @@ func (w *Worker) planVectors(ctx context.Context, v domain.Vault) vectorPlan {
 		plan.hasPending = true
 		return plan
 	}
-	target, embedded, err := w.vectorCounts(ctx, v)
+	progress, err := w.vectorCounts(ctx, v)
 	if err != nil {
 		plan.hasPending = true
 		return plan
 	}
-	plan.skipped = min(plan.skipped, max(0, target-embedded))
-	plan.pending = max(0, target-embedded-plan.skipped)
+	plan.skipped = min(plan.skipped, max(0, progress.TotalCount-progress.EmbeddedCount))
+	plan.pending = max(0, progress.TotalCount-progress.EmbeddedCount-plan.skipped)
 	plan.hasPending = plan.pending > 0
 	return plan
 }

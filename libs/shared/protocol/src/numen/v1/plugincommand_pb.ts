@@ -153,8 +153,6 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
   id: string;
 
   /**
-   * What a person reads the command as.
-   *
    * @generated from field: string title = 3;
    */
   title: string;
@@ -220,8 +218,6 @@ export type CommandArgument = Message<"numen.v1.CommandArgument"> & {
   name: string;
 
   /**
-   * What a person is asked for.
-   *
    * @generated from field: string title = 2;
    */
   title: string;
@@ -354,9 +350,6 @@ export const ListCommandItemsResponseSchema: GenMessage<ListCommandItemsResponse
   messageDesc(file_numen_v1_plugincommand, 9);
 
 /**
- * CommandItemList is the items one command offers over the path of the
- * request.
- *
  * @generated from message numen.v1.CommandItemList
  */
 export type CommandItemList = Message<"numen.v1.CommandItemList"> & {

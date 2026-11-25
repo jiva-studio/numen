@@ -208,8 +208,6 @@ export const ListParseProblemsRequestSchema: GenMessage<ListParseProblemsRequest
   messageDesc(file_numen_v1_hostvault, 10);
 
 /**
- * HostParseProblem is something parsing a file turned up.
- *
  * @generated from message numen.v1.HostParseProblem
  */
 export type HostParseProblem = Message<"numen.v1.HostParseProblem"> & {
@@ -286,8 +284,6 @@ export type HostVaultProblem = Message<"numen.v1.HostVaultProblem"> & {
   path: string;
 
   /**
-   * The check that found it.
-   *
    * @generated from field: string check = 2;
    */
   check: string;
@@ -398,8 +394,7 @@ export const HostIndexStateSchema: GenEnum<HostIndexState> = /*@__PURE__*/
  * The endpoint checks the permission of each call: a call that reads needs
  * vault:read and one that changes anything needs vault:write.
  *
- * Numen-Vault works the vault of that identity instead of the vault the host
- * shows.
+ * Numen-Vault selects the vault by identity; without it a call targets the active vault.
  *
  * @generated from service numen.v1.HostVaultService
  */
@@ -439,8 +434,6 @@ export const HostVaultService: GenService<{
     output: typeof LockVaultResponseSchema;
   },
   /**
-   * UnlockVault releases the lock taken by LockVault.
-   *
    * @generated from rpc numen.v1.HostVaultService.UnlockVault
    */
   unlockVault: {

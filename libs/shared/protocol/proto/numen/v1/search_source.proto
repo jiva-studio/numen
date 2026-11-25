@@ -40,8 +40,8 @@ message DescribeSearchSourceResponse {
   // The text a person knows the data of the source by.
   string name = 1;
 
-  // An opaque string. Two vectors made under different recipes cannot be compared, so a vector kept
-  // under another recipe is stale.
+  // An opaque string. Vectors produced under different recipes cannot be
+  // compared.
   string recipe = 2;
 
   // How many values one vector of the source holds.
@@ -85,7 +85,6 @@ message SearchSourceServiceSearchChunksRequest {
   SearchPlace place = 1;
   string query = 2;
 
-  // The most chunks to answer.
   int32 limit = 3;
 
   // The kinds of source to search, "note" or "file". Empty means every kind.

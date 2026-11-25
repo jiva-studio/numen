@@ -44,7 +44,7 @@ type ReadNotes func(ctx context.Context, during func()) (vaultreading.ScanResult
 
 // GetVectorCounts answers how many chunks the vault holds that can carry a vector, and how
 // many carry one.
-type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
+type GetVectorCounts func(ctx context.Context, v domain.Vault) (EmbeddingProgress, error)
 
 // IndexChangeHandler is notified after a pass changed the index of a vault and left nothing pending. A pass that
 // changes nothing notifies nothing.

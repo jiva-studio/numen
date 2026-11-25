@@ -45,9 +45,6 @@ export type Theme = Message<"numen.v1.Theme"> & {
   title: string;
 
   /**
-   * Which origin it comes from: what this installation ships, and what a person
-   * put in their own folder.
-   *
    * @generated from field: numen.v1.Origin origin = 3;
    */
   origin: Origin;
@@ -108,8 +105,6 @@ export type ListThemesResponse = Message<"numen.v1.ListThemesResponse"> & {
   themes: Theme[];
 
   /**
-   * The theme that is applied, by its name.
-   *
    * @generated from field: string applied_theme = 2;
    */
   appliedTheme: string;
@@ -160,8 +155,6 @@ export const ListThemesResponseSchema: GenMessage<ListThemesResponse> = /*@__PUR
  */
 export type ReadThemeRequest = Message<"numen.v1.ReadThemeRequest"> & {
   /**
-   * The theme, by its name.
-   *
    * @generated from field: string name = 1;
    */
   name: string;
@@ -199,7 +192,8 @@ export const ReadThemeResponseSchema: GenMessage<ReadThemeResponse> = /*@__PURE_
  */
 export type WriteAppearanceRequest = Message<"numen.v1.WriteAppearanceRequest"> & {
   /**
-   * the settings are left as they are.
+   * Theme name to apply. An empty or unknown name returns an error without
+   * changing settings.
    *
    * @generated from field: string name = 1;
    */
@@ -239,8 +233,6 @@ export const WriteAppearanceRequestSchema: GenMessage<WriteAppearanceRequest> = 
  */
 export type WriteAppearanceResponse = Message<"numen.v1.WriteAppearanceResponse"> & {
   /**
-   * Set when the settings were not written; detail carries the reason.
-   *
    * @generated from field: numen.v1.ErrorCode error = 1;
    */
   error: ErrorCode;
@@ -390,8 +382,7 @@ export const ThemeService: GenService<{
     output: typeof ListThemesResponseSchema;
   },
   /**
-   * asked for. It is asked once for each theme that is tried on, and again
-   * when that theme's file changes.
+   * ReadTheme returns the stylesheet text of the named theme.
    *
    * @generated from rpc numen.v1.ThemeService.ReadTheme
    */
@@ -401,9 +392,8 @@ export const ThemeService: GenService<{
     output: typeof ReadThemeResponseSchema;
   },
   /**
-   * WriteAppearance writes the theme, the mode and the two sizes into the
-   * settings. The file is patched as an object, so every key a person typed
-   * are left as they are.
+   * WriteAppearance writes the theme, mode, and scale values into settings,
+   * preserving all other keys.
    *
    * @generated from rpc numen.v1.ThemeService.WriteAppearance
    */

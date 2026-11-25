@@ -99,14 +99,13 @@ type NoteServiceClient interface {
 	// note it does not name is not in the answer, and neither is one that carries
 	// no headings.
 	//
-	// A path named twice is answered once, and a filter naming more notes than
-	// fit.
+	// A path named twice is answered once.
 	ListHeadings(context.Context, *connect.Request[v1.ListHeadingsRequest]) (*connect.Response[v1.ListHeadingsResponse], error)
 	// ReadNote answers with the prose of a note, below its frontmatter.
 	ReadNote(context.Context, *connect.Request[v1.ReadNoteRequest]) (*connect.Response[v1.ReadNoteResponse], error)
 	// WriteNote puts prose into a note, keeping the frontmatter the file has when
-	// the write lands and creating the file where there is none. A note that no
-	// `stale`.
+	// the write lands and creating the file where there is none. A note whose
+	// baseline no longer matches returns ERROR_CODE_CONFLICT.
 	WriteNote(context.Context, *connect.Request[v1.WriteNoteRequest]) (*connect.Response[v1.WriteNoteResponse], error)
 	// CreateNote makes a note. The file is named after the title, and the links
 	// the note carries are written into it as it is made, so it arrives joined.
@@ -133,10 +132,8 @@ type NoteServiceClient interface {
 	CreateRelatedNote(context.Context, *connect.Request[v1.CreateRelatedNoteRequest]) (*connect.Response[v1.CreateRelatedNoteResponse], error)
 	// ListBacklinks lists the links written in other notes that point at a note.
 	ListBacklinks(context.Context, *connect.Request[v1.ListBacklinksRequest]) (*connect.Response[v1.ListBacklinksResponse], error)
-	// RenameNote gives a note a different name. A note is shown by its title,
-	// else by its first level-one heading, else by its filename: whichever of the
-	// three names it is brought into line, and the file follows it where a title
-	// and a filename are kept as one name.
+	// RenameNote renames a note by updating its frontmatter title or its
+	// filename, and moves the file when its name follows the title.
 	RenameNote(context.Context, *connect.Request[v1.RenameNoteRequest]) (*connect.Response[v1.RenameNoteResponse], error)
 	// WatchEdits reports a change being made to a note's prose while it is being
 	// made, for as long as the caller listens. It is what a person reading that
@@ -368,14 +365,13 @@ type NoteServiceHandler interface {
 	// note it does not name is not in the answer, and neither is one that carries
 	// no headings.
 	//
-	// A path named twice is answered once, and a filter naming more notes than
-	// fit.
+	// A path named twice is answered once.
 	ListHeadings(context.Context, *connect.Request[v1.ListHeadingsRequest]) (*connect.Response[v1.ListHeadingsResponse], error)
 	// ReadNote answers with the prose of a note, below its frontmatter.
 	ReadNote(context.Context, *connect.Request[v1.ReadNoteRequest]) (*connect.Response[v1.ReadNoteResponse], error)
 	// WriteNote puts prose into a note, keeping the frontmatter the file has when
-	// the write lands and creating the file where there is none. A note that no
-	// `stale`.
+	// the write lands and creating the file where there is none. A note whose
+	// baseline no longer matches returns ERROR_CODE_CONFLICT.
 	WriteNote(context.Context, *connect.Request[v1.WriteNoteRequest]) (*connect.Response[v1.WriteNoteResponse], error)
 	// CreateNote makes a note. The file is named after the title, and the links
 	// the note carries are written into it as it is made, so it arrives joined.
@@ -402,10 +398,8 @@ type NoteServiceHandler interface {
 	CreateRelatedNote(context.Context, *connect.Request[v1.CreateRelatedNoteRequest]) (*connect.Response[v1.CreateRelatedNoteResponse], error)
 	// ListBacklinks lists the links written in other notes that point at a note.
 	ListBacklinks(context.Context, *connect.Request[v1.ListBacklinksRequest]) (*connect.Response[v1.ListBacklinksResponse], error)
-	// RenameNote gives a note a different name. A note is shown by its title,
-	// else by its first level-one heading, else by its filename: whichever of the
-	// three names it is brought into line, and the file follows it where a title
-	// and a filename are kept as one name.
+	// RenameNote renames a note by updating its frontmatter title or its
+	// filename, and moves the file when its name follows the title.
 	RenameNote(context.Context, *connect.Request[v1.RenameNoteRequest]) (*connect.Response[v1.RenameNoteResponse], error)
 	// WatchEdits reports a change being made to a note's prose while it is being
 	// made, for as long as the caller listens. It is what a person reading that

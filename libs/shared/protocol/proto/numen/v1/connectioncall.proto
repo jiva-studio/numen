@@ -81,13 +81,12 @@ message CallRow {
 }
 
 message ConnectionCallServiceCallRequest {
-  // plugin_id is the plugin whose rows serve the call.
   string plugin_id = 1;
   // operation is the name of the operation, such as "llm.chat".
   string operation = 2;
   bytes payload = 3;
   Priority priority = 4;
-  // preferred is unset for the rows in their order.
+  // Unset uses the rows in their declared order.
   PreferredRow preferred_row = 5;
   // call_id is the id CancelCall names this call by, chosen by the client and unique among its calls. Empty
   // when the call cannot be cancelled.
@@ -104,7 +103,6 @@ message ConnectionCallServiceCallResponse {
 }
 
 message CancelCallRequest {
-  // plugin_id is the plugin the call was made for.
   string plugin_id = 1;
   string call_id = 2;
 }
@@ -112,7 +110,6 @@ message CancelCallRequest {
 message CancelCallResponse {}
 
 message ConnectionCallServiceListRowsRequest {
-  // plugin_id is the plugin whose rows are listed.
   string plugin_id = 1;
   string operation = 2;
 }

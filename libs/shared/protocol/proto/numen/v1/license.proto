@@ -27,7 +27,6 @@ service LicenseService {
   rpc WatchLicenses(WatchLicensesRequest) returns (stream WatchLicensesResponse);
 }
 
-// LicenseStatus is the state of a license on this machine.
 enum LicenseStatus {
   LICENSE_STATUS_UNSPECIFIED = 0;
   // LICENSE_STATUS_INACTIVE is a license with no key activated on this machine.

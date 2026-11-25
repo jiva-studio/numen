@@ -1,15 +1,6 @@
 syntax = "proto3";
 
-// The types three or more services hold.
-//
-// A type enters only when three services already use it. Two holding one type
-// is a coincidence; three is a shape. Everything else stays in the file of the
-// service that answers with it, and the service that wants it imports that
-// file.
-//
-// Under any looser rule this fills with types nothing in particular owns, and a
-// type that arrives here early is one every service is written around
-// afterwards. It imports nothing, and it is what every other file imports.
+// Types shared by three or more services. Imports nothing.
 package numen.v1;
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
@@ -155,7 +146,6 @@ message FileStat {
   // does not say.
   uint64 version = 5;
 
-  // Whether the file is a note.
   bool is_note = 6;
 }
 

@@ -332,8 +332,6 @@ export const WatchLicensesResponseSchema: GenMessage<WatchLicensesResponse> = /*
   messageDesc(file_numen_v1_license, 10);
 
 /**
- * LicenseStatus is the state of a license on this machine.
- *
  * @generated from enum numen.v1.LicenseStatus
  */
 export enum LicenseStatus {

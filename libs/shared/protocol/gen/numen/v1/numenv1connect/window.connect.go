@@ -61,7 +61,6 @@ type WindowServiceClient interface {
 	// the title, subject and progress of each.
 	//
 	// The whole list is sent on every change, and the first list is sent at once.
-	// It is a stream because tasks can start without a request from the window.
 	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest]) (*connect.ServerStreamForClient[v1.WatchTasksResponse], error)
 	// WatchWindowClose streams a message when the window is about to close. A caller
 	// holding unsaved work in memory saves it, then calls ReportPendingWork.
@@ -70,9 +69,7 @@ type WindowServiceClient interface {
 	// closes when no caller has any, and stays open while a person is being asked
 	// about the work.
 	ReportPendingWork(context.Context, *connect.Request[v1.ReportPendingWorkRequest]) (*connect.Response[v1.ReportPendingWorkResponse], error)
-	// GetCurrentVault is which vault this window has in front of the person. Two
-	// windows are open on one installation and each shows what it shows, so it is
-	// the window that is asked and not the list of vaults.
+	// GetCurrentVault returns the vault open in this window.
 	GetCurrentVault(context.Context, *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error)
 	// CancelTask stops one task that WatchTasks lists as cancellable. The task
 	// stays in the list until its work has stopped, and WatchTasks then reports
@@ -165,7 +162,6 @@ type WindowServiceHandler interface {
 	// the title, subject and progress of each.
 	//
 	// The whole list is sent on every change, and the first list is sent at once.
-	// It is a stream because tasks can start without a request from the window.
 	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest], *connect.ServerStream[v1.WatchTasksResponse]) error
 	// WatchWindowClose streams a message when the window is about to close. A caller
 	// holding unsaved work in memory saves it, then calls ReportPendingWork.
@@ -174,9 +170,7 @@ type WindowServiceHandler interface {
 	// closes when no caller has any, and stays open while a person is being asked
 	// about the work.
 	ReportPendingWork(context.Context, *connect.Request[v1.ReportPendingWorkRequest]) (*connect.Response[v1.ReportPendingWorkResponse], error)
-	// GetCurrentVault is which vault this window has in front of the person. Two
-	// windows are open on one installation and each shows what it shows, so it is
-	// the window that is asked and not the list of vaults.
+	// GetCurrentVault returns the vault open in this window.
 	GetCurrentVault(context.Context, *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error)
 	// CancelTask stops one task that WatchTasks lists as cancellable. The task
 	// stays in the list until its work has stopped, and WatchTasks then reports

@@ -2,11 +2,7 @@
 //
 // Source: numen/v1/workspace.proto
 
-// showing.
-//
-// The tabs the window has open and the places something else asks to be put in
-// front of the person are the window's. What the vault is and what has changed
-// in it is vault.proto.
+// Window workspace state: open tabs, focus, and tab links.
 package numenv1connect
 
 import (
@@ -80,12 +76,10 @@ const (
 type WorkspaceServiceClient interface {
 	// WatchFocus reports the places something else asked to be put in front of
 	// the person — an agent working the vault beside them — for as long as the
-	// caller listens. What travelling there looks like is the client's.
+	// caller listens.
 	WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest]) (*connect.ServerStreamForClient[v1.WatchFocusResponse], error)
-	// WriteOpenTabs says what currently open — every tab of the window, and
-	// which of them is active. The client says so again whenever any of it
-	// changes, and an agent working the vault beside them reads what it last
-	// said.
+	// WriteOpenTabs records the open tabs of the window and the active tab. The
+	// client sends it on every change, and agents read the latest state.
 	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
 	// ReadOpenTabs returns the tabs last written for the vault in the window. The
 	// core keeps them across restarts, and the window opens them again.
@@ -101,7 +95,6 @@ type WorkspaceServiceClient interface {
 	// window ends, the tabs of that window are unlinked unless the window watches
 	// again within a grace period.
 	WatchTabLinks(context.Context, *connect.Request[v1.WatchTabLinksRequest]) (*connect.ServerStreamForClient[v1.WatchTabLinksResponse], error)
-	// CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
 	CancelWatchTabLinks(context.Context, *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error)
 	// WriteTabLinks links two tabs, unlinks a tab, or reports the linkable tabs
 	// of a window.
@@ -117,7 +110,6 @@ type WorkspaceServiceClient interface {
 	MoveTab(context.Context, *connect.Request[v1.MoveTabRequest]) (*connect.Response[v1.MoveTabResponse], error)
 	// AcceptTabMove reports that a window opened a moved tab.
 	AcceptTabMove(context.Context, *connect.Request[v1.AcceptTabMoveRequest]) (*connect.Response[v1.AcceptTabMoveResponse], error)
-	// HighlightWindow turns the outline of a window on or off.
 	HighlightWindow(context.Context, *connect.Request[v1.HighlightWindowRequest]) (*connect.Response[v1.HighlightWindowResponse], error)
 }
 
@@ -287,12 +279,10 @@ func (c *workspaceServiceClient) HighlightWindow(ctx context.Context, req *conne
 type WorkspaceServiceHandler interface {
 	// WatchFocus reports the places something else asked to be put in front of
 	// the person — an agent working the vault beside them — for as long as the
-	// caller listens. What travelling there looks like is the client's.
+	// caller listens.
 	WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest], *connect.ServerStream[v1.WatchFocusResponse]) error
-	// WriteOpenTabs says what currently open — every tab of the window, and
-	// which of them is active. The client says so again whenever any of it
-	// changes, and an agent working the vault beside them reads what it last
-	// said.
+	// WriteOpenTabs records the open tabs of the window and the active tab. The
+	// client sends it on every change, and agents read the latest state.
 	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
 	// ReadOpenTabs returns the tabs last written for the vault in the window. The
 	// core keeps them across restarts, and the window opens them again.
@@ -308,7 +298,6 @@ type WorkspaceServiceHandler interface {
 	// window ends, the tabs of that window are unlinked unless the window watches
 	// again within a grace period.
 	WatchTabLinks(context.Context, *connect.Request[v1.WatchTabLinksRequest], *connect.ServerStream[v1.WatchTabLinksResponse]) error
-	// CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
 	CancelWatchTabLinks(context.Context, *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error)
 	// WriteTabLinks links two tabs, unlinks a tab, or reports the linkable tabs
 	// of a window.
@@ -324,7 +313,6 @@ type WorkspaceServiceHandler interface {
 	MoveTab(context.Context, *connect.Request[v1.MoveTabRequest]) (*connect.Response[v1.MoveTabResponse], error)
 	// AcceptTabMove reports that a window opened a moved tab.
 	AcceptTabMove(context.Context, *connect.Request[v1.AcceptTabMoveRequest]) (*connect.Response[v1.AcceptTabMoveResponse], error)
-	// HighlightWindow turns the outline of a window on or off.
 	HighlightWindow(context.Context, *connect.Request[v1.HighlightWindowRequest]) (*connect.Response[v1.HighlightWindowResponse], error)
 }
 

@@ -34,7 +34,6 @@ message SetLogLevelRequest {
 
 message SetLogLevelResponse {}
 
-// LogLevel is the severity of a log entry. The zero value means nothing.
 enum LogLevel {
   LOG_LEVEL_UNSPECIFIED = 0;
 
@@ -61,7 +60,6 @@ message LogEntry {
   // Who wrote the entry: "core", "sql", "rpc", "window", or the id of a plugin.
   string source = 3;
 
-  // The summary line of the entry.
   string message = 4;
 
   // The structured properties of the entry, each value encoded as JSON.

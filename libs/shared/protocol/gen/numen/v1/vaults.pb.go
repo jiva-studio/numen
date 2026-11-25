@@ -141,9 +141,8 @@ func (*ListVaultsRequest) Descriptor() ([]byte, []int) {
 
 // ListVaultsResponse is the list itself, which is the same for every window.
 type ListVaultsResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Every vault the installation holds.
-	Vaults        []*Vault `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Vaults        []*Vault               `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -243,8 +242,7 @@ func (x *AddVaultRequest) GetName() string {
 type AddVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault that joined the list. Absent when nothing was added.
-	Vault *Vault `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
-	// Set when nothing was added, and why.
+	Vault *Vault    `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
 	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
@@ -304,11 +302,9 @@ func (x *AddVaultResponse) GetDetail() string {
 }
 
 type RenameVaultRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The vault to rename, by its identity.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// What the vault is called from now on.
-	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -360,9 +356,8 @@ func (x *RenameVaultRequest) GetName() string {
 type RenameVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault under its new name. Absent when it was not renamed. The name a
-	// vault already has is not a change and answers with the vault currently.
-	Vault *Vault `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
-	// Set when the vault was not renamed, and why.
+	// vault already has is not a change and answers with the unchanged vault.
+	Vault *Vault    `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
 	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
@@ -423,11 +418,9 @@ func (x *RenameVaultResponse) GetDetail() string {
 
 type RemoveVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The vault to remove, by its identity.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// is_folder_trashed sends the folder to the trash of this machine, where a person
-	// deleted. A folder no longer carrying this vault's identity stays where it
-	// is and the vault stays on the list.
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Moves the vault folder to the system trash. A folder no longer carrying
+	// this vault's identity is left untouched and the vault stays on the list.
 	IsFolderTrashed bool `protobuf:"varint,2,opt,name=is_folder_trashed,json=isFolderTrashed,proto3" json:"is_folder_trashed,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -542,9 +535,8 @@ func (x *RemoveVaultResponse) GetPath() string {
 }
 
 type OpenVaultRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The vault to show, by its identity.
-	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

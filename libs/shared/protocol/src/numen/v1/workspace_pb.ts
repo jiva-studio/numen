@@ -2,11 +2,7 @@
 // @generated from file numen/v1/workspace.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// showing.
-//
-// The tabs the window has open and the places something else asks to be put in
-// front of the person are the window's. What the vault is and what has changed
-// in it is vault.proto.
+// Window workspace state: open tabs, focus, and tab links.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -243,8 +239,6 @@ export type Tab = Message<"numen.v1.Tab"> & {
   id: string;
 
   /**
-   * Kind is the registered name of the tab kind.
-   *
    * @generated from field: string kind = 2;
    */
   kind: string;
@@ -258,8 +252,6 @@ export type Tab = Message<"numen.v1.Tab"> & {
   path: string;
 
   /**
-   * Title is what the tab is called, as the person reads it.
-   *
    * @generated from field: string title = 4;
    */
   title: string;
@@ -601,8 +593,6 @@ export const CancelWatchTabLinksResponseSchema: GenMessage<CancelWatchTabLinksRe
  */
 export type WriteTabLinksRequest = Message<"numen.v1.WriteTabLinksRequest"> & {
   /**
-   * Id of the writing window.
-   *
    * @generated from field: string window_id = 1;
    */
   windowId: string;
@@ -800,15 +790,11 @@ export const ReadDetachedTabResponseSchema: GenMessage<ReadDetachedTabResponse> 
  */
 export type MoveTabRequest = Message<"numen.v1.MoveTabRequest"> & {
   /**
-   * The window the tab is in.
-   *
    * @generated from field: string window_id = 1;
    */
   windowId: string;
 
   /**
-   * The window to move the tab into.
-   *
    * @generated from field: string target_window_id = 2;
    */
   targetWindowId: string;
@@ -928,8 +914,6 @@ export const AcceptTabMoveResponseSchema: GenMessage<AcceptTabMoveResponse> = /*
  */
 export type HighlightWindowRequest = Message<"numen.v1.HighlightWindowRequest"> & {
   /**
-   * The window to outline.
-   *
    * @generated from field: string window_id = 1;
    */
   windowId: string;
@@ -970,7 +954,7 @@ export const WorkspaceService: GenService<{
   /**
    * WatchFocus reports the places something else asked to be put in front of
    * the person — an agent working the vault beside them — for as long as the
-   * caller listens. What travelling there looks like is the client's.
+   * caller listens.
    *
    * @generated from rpc numen.v1.WorkspaceService.WatchFocus
    */
@@ -980,10 +964,8 @@ export const WorkspaceService: GenService<{
     output: typeof WatchFocusResponseSchema;
   },
   /**
-   * WriteOpenTabs says what currently open — every tab of the window, and
-   * which of them is active. The client says so again whenever any of it
-   * changes, and an agent working the vault beside them reads what it last
-   * said.
+   * WriteOpenTabs records the open tabs of the window and the active tab. The
+   * client sends it on every change, and agents read the latest state.
    *
    * @generated from rpc numen.v1.WorkspaceService.WriteOpenTabs
    */
@@ -1031,8 +1013,6 @@ export const WorkspaceService: GenService<{
     output: typeof WatchTabLinksResponseSchema;
   },
   /**
-   * CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
-   *
    * @generated from rpc numen.v1.WorkspaceService.CancelWatchTabLinks
    */
   cancelWatchTabLinks: {
@@ -1095,8 +1075,6 @@ export const WorkspaceService: GenService<{
     output: typeof AcceptTabMoveResponseSchema;
   },
   /**
-   * HighlightWindow turns the outline of a window on or off.
-   *
    * @generated from rpc numen.v1.WorkspaceService.HighlightWindow
    */
   highlightWindow: {

@@ -34,7 +34,6 @@ service ProviderConnectionService {
   rpc ListRowOptions(ListRowOptionsRequest) returns (ListRowOptionsResponse);
 }
 
-// ProviderConnectionType is a kind of connection one plugin provides.
 message ProviderConnectionType {
   // type_id is the plugin id, a slash and the id the plugin gives the type.
   string type_id = 1;
@@ -42,7 +41,6 @@ message ProviderConnectionType {
   string plugin_name = 3;
   string title = 4;
   string description = 5;
-  // operations are the names of the operations the type serves.
   repeated string operations = 6;
   repeated ManifestConnectionField fields = 7;
   // row_fields are the values a row that names a connection of the type holds besides the connection.
@@ -149,7 +147,6 @@ message ListRowOptionsRequest {
   string field = 2;
   // options are the values the row holds so far.
   map<string, string> options = 3;
-  // operations are the operations the setting of rows is used for.
   repeated string operations = 4;
 }
 

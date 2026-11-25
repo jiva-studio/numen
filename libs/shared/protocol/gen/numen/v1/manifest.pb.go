@@ -215,7 +215,6 @@ func (x *Manifest) GetIsOffByDefault() bool {
 	return false
 }
 
-// ManifestContributes lists the contributions a plugin makes to the application.
 type ManifestContributes struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// tab_kinds are the kinds of tab the plugin's frontend registers.
@@ -463,7 +462,6 @@ func (x *ManifestContributes) GetEditor() *ManifestEditor {
 	return nil
 }
 
-// ManifestEditor lists the additions of a plugin to the note editor.
 type ManifestEditor struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// extensions are the CodeMirror extensions the plugin's frontend registers. The frontend registers
@@ -784,8 +782,7 @@ type ManifestSearchFunction struct {
 	// level is "document"; version 1 rejects "chunk".
 	Level string `protobuf:"bytes,3,opt,name=level,proto3" json:"level,omitempty"`
 	// description is one line an agent reads about the function.
-	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	// example is a query that uses the function.
+	Description   string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	Example       string `protobuf:"bytes,5,opt,name=example,proto3" json:"example,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1336,8 +1333,7 @@ func (x *ManifestConnectionField) GetOptionsFrom() string {
 // lists a version by this name and by the raw kind where the plugin declares none.
 type ManifestTextKind struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// kind is the kind the plugin gives its text versions.
-	Kind string `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	Kind  string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
 	// title is the name a person reads, such as "Recognized text".
 	Title         string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1827,12 +1823,10 @@ func (x *ManifestTrigger) GetWhen() string {
 	return ""
 }
 
-// ManifestTheme is a theme a plugin adds to the list of themes.
 type ManifestTheme struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// id is the slug the theme is named by inside the plugin.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// name is the title the theme is listed with.
+	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// appearance is light or dark when the theme sets one color scheme, and empty when it
 	// follows the mode.
@@ -1901,7 +1895,6 @@ func (x *ManifestTheme) GetFile() string {
 	return ""
 }
 
-// ManifestTabKind is a kind of tab the plugin registers.
 type ManifestTabKind struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// kind is the id the frontend registers the kind under.

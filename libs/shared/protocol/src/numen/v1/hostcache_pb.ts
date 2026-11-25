@@ -105,16 +105,12 @@ export const WriteCacheResponseSchema: GenMessage<WriteCacheResponse> = /*@__PUR
  * belongs to the installation and not to the vault, and can be made again.
  * The host names the plugin by its token, and the calls need no permission.
  *
- * Numen-Vault works the vault of that identity instead of the vault the host
- * shows.
+ * Numen-Vault selects the vault by identity; without it a call targets the active vault.
  *
  * @generated from service numen.v1.HostCacheService
  */
 export const HostCacheService: GenService<{
   /**
-   * ReadCache reads what the plugin kept for this vault under a name. The cache
-   * belongs to the installation and not to the vault, and can be made again.
-   *
    * @generated from rpc numen.v1.HostCacheService.ReadCache
    */
   readCache: {
@@ -123,8 +119,6 @@ export const HostCacheService: GenService<{
     output: typeof ReadCacheResponseSchema;
   },
   /**
-   * WriteCache replaces what the plugin keeps for this vault under a name.
-   *
    * @generated from rpc numen.v1.HostCacheService.WriteCache
    */
   writeCache: {

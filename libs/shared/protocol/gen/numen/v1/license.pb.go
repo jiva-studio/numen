@@ -21,7 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// LicenseStatus is the state of a license on this machine.
 type LicenseStatus int32
 
 const (

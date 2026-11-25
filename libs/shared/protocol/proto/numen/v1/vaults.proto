@@ -36,8 +36,7 @@ service VaultsService {
   rpc RemoveVault(RemoveVaultRequest) returns (RemoveVaultResponse);
 
   // OpenVault shows another vault in this window. What the window was showing
-  // is release, and everything a client asked about it is asked again of the
-  // vault that arrives.
+  // is released, and callers re-query the new vault.
   rpc OpenVault(OpenVaultRequest) returns (OpenVaultResponse);
 }
 
@@ -63,7 +62,6 @@ message ListVaultsRequest {}
 
 // ListVaultsResponse is the list itself, which is the same for every window.
 message ListVaultsResponse {
-  // Every vault the installation holds.
   repeated Vault vaults = 1;
 }
 
@@ -80,7 +78,6 @@ message AddVaultResponse {
   // The vault that joined the list. Absent when nothing was added.
   optional Vault vault = 1;
 
-  // Set when nothing was added, and why.
   ErrorCode error = 2;
 
   // The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
@@ -88,19 +85,15 @@ message AddVaultResponse {
 }
 
 message RenameVaultRequest {
-  // The vault to rename, by its identity.
   string id = 1;
-
-  // What the vault is called from now on.
   string name = 2;
 }
 
 message RenameVaultResponse {
   // The vault under its new name. Absent when it was not renamed. The name a
-  // vault already has is not a change and answers with the vault currently.
+  // vault already has is not a change and answers with the unchanged vault.
   optional Vault vault = 1;
 
-  // Set when the vault was not renamed, and why.
   ErrorCode error = 2;
 
   // The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
@@ -108,12 +101,10 @@ message RenameVaultResponse {
 }
 
 message RemoveVaultRequest {
-  // The vault to remove, by its identity.
   string id = 1;
 
-  // is_folder_trashed sends the folder to the trash of this machine, where a person
-  // deleted. A folder no longer carrying this vault's identity stays where it
-  // is and the vault stays on the list.
+  // Moves the vault folder to the system trash. A folder no longer carrying
+  // this vault's identity is left untouched and the vault stays on the list.
   bool is_folder_trashed = 2;
 }
 
@@ -130,7 +121,6 @@ message RemoveVaultResponse {
 }
 
 message OpenVaultRequest {
-  // The vault to show, by its identity.
   string id = 1;
 }
 

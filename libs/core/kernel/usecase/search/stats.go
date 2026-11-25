@@ -60,39 +60,45 @@ func NewStats(source IndexStats, clock machineport.Clock) *Stats {
 	}
 }
 
+// StatsSnapshot holds the index counts for one vault and recipe along with the index sizes.
+type StatsSnapshot struct {
+	Counts index.Counts
+	Sizes  index.Sizes
+}
+
 // Get returns the counts of the vault under the recipe, at most one second old, and the sizes of the
 // index, at most half a minute old. An answer that failed is not kept.
-func (s *Stats) Get(ctx context.Context, vaultID domain.VaultID, recipe string) (index.Counts, index.Sizes, error) {
+func (s *Stats) Get(ctx context.Context, vaultID domain.VaultID, recipe string) (StatsSnapshot, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	now := s.clock.Now()
 	counts, err := s.getCountsLocked(ctx, now, countsKey{vault: vaultID, recipe: recipe})
 	if err != nil {
-		return index.Counts{}, index.Sizes{}, err
+		return StatsSnapshot{}, err
 	}
 	sizes, err := s.getSizesLocked(ctx, now)
 	if err != nil {
-		return index.Counts{}, index.Sizes{}, err
+		return StatsSnapshot{}, err
 	}
-	return counts, sizes, nil
+	return StatsSnapshot{Counts: counts, Sizes: sizes}, nil
 }
 
 // Execute reads what the index holds for the vault and the space it takes, with the model in use.
 func (s *Stats) Execute(ctx context.Context, v domain.Vault, model searchsource.Description) (plugin.IndexStats, error) {
 	recipe := model.Recipe()
-	counts, sizes, err := s.Get(ctx, v.ID, recipe)
+	snapshot, err := s.Get(ctx, v.ID, recipe)
 	if err != nil {
 		return plugin.IndexStats{}, fmt.Errorf("read the index statistics of %s: %w", v.ID, err)
 	}
-	extensions := make([]plugin.ExtensionStats, len(counts.Extensions))
-	for i, one := range counts.Extensions {
+	extensions := make([]plugin.ExtensionStats, len(snapshot.Counts.Extensions))
+	for i, one := range snapshot.Counts.Extensions {
 		extensions[i] = plugin.ExtensionStats{Extension: one.Extension, Sources: one.Sources, Chunks: one.Chunks}
 	}
 	return plugin.IndexStats{
 		Recipe: recipe, Model: model.Name, Dimensions: int64(model.Width),
-		Chunks: counts.Chunks, Vectors: counts.Vectors,
-		Sources: counts.Sources, Extensions: extensions,
-		DatabaseBytes: sizes.Database, VectorBytes: sizes.Vectors,
+		Chunks: snapshot.Counts.Chunks, Vectors: snapshot.Counts.Vectors,
+		Sources: snapshot.Counts.Sources, Extensions: extensions,
+		DatabaseBytes: snapshot.Sizes.Database, VectorBytes: snapshot.Sizes.Vectors,
 	}, nil
 }
 

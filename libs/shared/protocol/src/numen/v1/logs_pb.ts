@@ -98,8 +98,6 @@ export type LogEntry = Message<"numen.v1.LogEntry"> & {
   source: string;
 
   /**
-   * The summary line of the entry.
-   *
    * @generated from field: string message = 4;
    */
   message: string;
@@ -202,8 +200,6 @@ export const WatchLogsResponseSchema: GenMessage<WatchLogsResponse> = /*@__PURE_
   messageDesc(file_numen_v1_logs, 8);
 
 /**
- * LogLevel is the severity of a log entry. The zero value means nothing.
- *
  * @generated from enum numen.v1.LogLevel
  */
 export enum LogLevel {

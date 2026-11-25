@@ -185,8 +185,6 @@ export const CallRowSchema: GenMessage<CallRow> = /*@__PURE__*/
  */
 export type ConnectionCallServiceCallRequest = Message<"numen.v1.ConnectionCallServiceCallRequest"> & {
   /**
-   * plugin_id is the plugin whose rows serve the call.
-   *
    * @generated from field: string plugin_id = 1;
    */
   pluginId: string;
@@ -209,7 +207,7 @@ export type ConnectionCallServiceCallRequest = Message<"numen.v1.ConnectionCallS
   priority: Priority;
 
   /**
-   * preferred is unset for the rows in their order.
+   * Unset uses the rows in their declared order.
    *
    * @generated from field: numen.v1.PreferredRow preferred_row = 5;
    */
@@ -273,8 +271,6 @@ export const ConnectionCallServiceCallResponseSchema: GenMessage<ConnectionCallS
  */
 export type CancelCallRequest = Message<"numen.v1.CancelCallRequest"> & {
   /**
-   * plugin_id is the plugin the call was made for.
-   *
    * @generated from field: string plugin_id = 1;
    */
   pluginId: string;
@@ -310,8 +306,6 @@ export const CancelCallResponseSchema: GenMessage<CancelCallResponse> = /*@__PUR
  */
 export type ConnectionCallServiceListRowsRequest = Message<"numen.v1.ConnectionCallServiceListRowsRequest"> & {
   /**
-   * plugin_id is the plugin whose rows are listed.
-   *
    * @generated from field: string plugin_id = 1;
    */
   pluginId: string;

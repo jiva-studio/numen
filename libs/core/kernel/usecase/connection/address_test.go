@@ -23,7 +23,13 @@ func TestCheckAddressAcceptsWhatAConnectionMayReach(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if err := connection.CheckAddress(c.address, c.hasKey); err != nil {
+			var err error
+			if c.hasKey {
+				err = connection.CheckAddressWithKey(c.address)
+			} else {
+				err = connection.CheckAddress(c.address)
+			}
+			if err != nil {
 				t.Errorf("err = %v", err)
 			}
 		})
@@ -53,7 +59,13 @@ func TestCheckAddressRefusesWhatAConnectionMustNotReach(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if err := connection.CheckAddress(c.address, c.hasKey); !errors.Is(err, connection.ErrInvalidField) {
+			var err error
+			if c.hasKey {
+				err = connection.CheckAddressWithKey(c.address)
+			} else {
+				err = connection.CheckAddress(c.address)
+			}
+			if !errors.Is(err, connection.ErrInvalidField) {
 				t.Errorf("err = %v, want ErrInvalidField", err)
 			}
 		})
