@@ -24,6 +24,9 @@ func (u *SignAsRecovery) Execute(_ context.Context, pluginID string, message []b
 	if restore == nil {
 		return nil, identitydomain.ErrNoPendingRestore
 	}
+	if restore.refusal != nil {
+		return nil, restore.refusal
+	}
 	signature := restore.recovery.SignForRecovery(pluginID, message)
 	return signature[:], nil
 }

@@ -41,6 +41,9 @@ func (u *ConfirmJoin) Execute(ctx context.Context, approve bool) error {
 	if err := link.chain.VerifyAt(u.clock.Now()); err != nil {
 		return fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
+	if err := checkHighWater(ctx, u.records.keys, link.chain.Root().Fingerprint().String(), link.chain.Len()); err != nil {
+		return err
+	}
 	state, err := identitylib.NewState(link.record, link.chain)
 	if err != nil {
 		return err

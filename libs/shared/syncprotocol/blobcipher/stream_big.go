@@ -187,7 +187,7 @@ func newPlainReader(revisionKey [32]byte, fileID [16]byte, header [headerSize]by
 	stride := 1<<chunkLog2 + tagSize
 	reader := &PlainReader{chunks: chunks, source: source, index: index, chunkStride: stride, header: header, sealed: make([]byte, stride), opened: make([]byte, 0, stride)}
 	if index > 0 {
-		reader.remaining, reader.hasSize = plainSize-(int64(index)<<chunkLog2-lengthPrefixSize), true
+		reader.remaining, reader.hasSize = max(0, plainSize-(int64(index)<<chunkLog2-lengthPrefixSize)), true
 	}
 	return reader, nil
 }

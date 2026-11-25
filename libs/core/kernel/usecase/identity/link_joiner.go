@@ -39,7 +39,11 @@ func readGrant(link *pendingLink, now time.Time, wrappedBytes, chainBytes []byte
 	if err != nil {
 		return false
 	}
-	if _, err := link.record.Device.UnwrapAccountKeys(wrapped); err != nil {
+	account, err := link.record.Device.UnwrapAccountKeys(wrapped)
+	if err != nil {
+		return false
+	}
+	if _, err := chain.OpenKeyHistory(account); err != nil {
 		return false
 	}
 	link.record.Wrapped, link.chain = wrapped, chain

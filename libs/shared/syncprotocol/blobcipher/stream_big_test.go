@@ -424,3 +424,22 @@ func TestParseHeader_ReadsFlagsAndChunkSizeAndRefusesWhatIsNotAHeader(t *testing
 		}
 	}
 }
+
+func TestOpenStreamFrom_ReturnsNothingWhenTheResumePointIsInsideThePadding(t *testing.T) {
+	t.Parallel()
+	l := newLayout()
+	plain := newPlain(3*mebibyte + 1)
+	stored := buildBlob(t, l, plain)
+	var header [56]byte
+	copy(header[:], stored)
+
+	reader, err := blobcipher.OpenStreamFrom(l.revisionKey, l.fileID, header, 2, 1, bytes.NewReader(stored[blobcipher.GetChunkOffset(20, 2):]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := io.ReadAll(reader)
+
+	if err != nil || len(got) != 0 {
+		t.Errorf("read %d bytes, error = %v, want no bytes and no error", len(got), err)
+	}
+}
