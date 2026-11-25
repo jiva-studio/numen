@@ -142,7 +142,7 @@ func TestGuardDeletions_KeepsTheAnswerOfTheOtherDirectionWhenThereAreNoRemovals(
 func TestGuardDeletions_DoesNotUseAnAnswerForMoreFilesThanThePersonWasShown(t *testing.T) {
 	t.Parallel()
 	s, answers := newAnsweredSetup()
-	s.check(t, transfer.DirectionSend, 6, 20)
+	s.check(t, transfer.DirectionSend, 7, 20)
 	if _, err := s.answer.Execute(t.Context(), vaultID, transfer.ChoiceRemove); err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestGuardDeletions_DoesNotUseAnAnswerForMoreFilesThanThePersonWasShown(t *t
 	verdict := s.check(t, transfer.DirectionSend, 12, 20)
 
 	if verdict != transfer.Pause {
-		t.Errorf("verdict for 12 files after the answer for 6 = %d, want Pause", verdict)
+		t.Errorf("verdict for 12 files after the answer for 7 = %d, want Pause", verdict)
 	}
 	if _, isKept := answers.answers[vaultID]; isKept {
 		t.Error("the answer is still kept after it was refused")

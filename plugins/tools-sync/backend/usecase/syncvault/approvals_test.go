@@ -76,11 +76,14 @@ func TestSyncVault_AnAnswerForEightFilesDoesNotRemoveThirteen(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.writeMany(t, 20)
 	sync(t, p.a, source)
-	p.pauseRemovals(t, 8)
-	p.answer(t, transfer.ChoiceRemove)
+	p.removeMany(8)
+	sync(t, p.a, source)
+	p.afterDelay()
 	for i := 8; i < 13; i++ {
 		p.a.Vaults.With(source).Remove(fmt.Sprintf("Papers/File %d.pdf", i+1))
 	}
+	sync(t, p.a, source)
+	p.answer(t, transfer.ChoiceRemove)
 	p.afterDelay()
 
 	sync(t, p.a, source)
