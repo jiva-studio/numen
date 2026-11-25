@@ -184,29 +184,31 @@ func NewLoop(deps Deps, clock ports.Clock) *Loop {
 func (u *Loop) Execute(ctx context.Context) error {
 	wait := publishInterval
 	for round := 0; ; round++ {
-		if u.isIdle != nil && u.isIdle() {
-			wait = publishInterval
-			if err := u.clock.Wait(ctx, wait); err != nil {
-				return err
-			}
-			continue
-		}
-		_, published := u.publish.Execute(ctx)
-		u.reportPublish(ctx, published)
-		var adopted error
-		if round%adoptEvery == 0 {
-			_, adopted = u.adopt.Execute(ctx)
-		}
-		if published == nil && adopted == nil {
+		published, adopted := u.runRound(ctx, round)
+		isFailed := published != nil || adopted != nil
+		if !isFailed {
 			wait = publishInterval
 		}
 		if err := u.clock.Wait(ctx, wait); err != nil {
 			return errors.Join(err, published, adopted)
 		}
-		if published != nil || adopted != nil {
+		if isFailed {
 			wait = min(2*wait, longestRetryWait)
 		}
 	}
+}
+
+// runRound publishes the chain and, at every adoptEvery-th round, adopts the chain of the server; an idle device does neither.
+func (u *Loop) runRound(ctx context.Context, round int) (published, adopted error) {
+	if u.isIdle != nil && u.isIdle() {
+		return nil, nil
+	}
+	_, published = u.publish.Execute(ctx)
+	u.reportPublish(ctx, published)
+	if round%adoptEvery == 0 {
+		_, adopted = u.adopt.Execute(ctx)
+	}
+	return published, adopted
 }
 
 func (u *Loop) reportPublish(ctx context.Context, published error) {

@@ -282,22 +282,8 @@ func (u *FetchFile) readHead(ctx context.Context, t target, keys []vaultlink.Vau
 		if err != nil {
 			return nil, note.Meta{}, err
 		}
-		for _, stored := range page.GetChanges() {
-			rev := stored.GetRevision()
-			if !bytes.Equal(rev.GetFileId(), t.record.FileID) || rev.GetDeleted() {
-				continue
-			}
-			if err := note.CheckRevision(stored, t.remote, authors.IsTrusted); err != nil {
-				return nil, note.Meta{}, fmt.Errorf("download %s: %w", t.path, err)
-			}
-			meta, isOpen, err := u.openMeta(ctx, t.id, keys, rev)
-			if err != nil {
-				return nil, note.Meta{}, err
-			}
-			if !isOpen || len(meta.Key) != 32 || meta.Hash != t.entry.Hash {
-				return nil, note.Meta{}, fmt.Errorf("download %s: %w", t.path, ErrHeadChanged)
-			}
-			return rev, meta, nil
+		if rev, meta, isFound, err := u.findHead(ctx, t, keys, authors, page.GetChanges()); isFound || err != nil {
+			return rev, meta, err
 		}
 		if !page.GetHasMore() {
 			return nil, note.Meta{}, fmt.Errorf("download %s: %w", t.path, ErrHeadChanged)
@@ -307,6 +293,28 @@ func (u *FetchFile) readHead(ctx context.Context, t target, keys []vaultlink.Vau
 		}
 		since = page.GetNextSeq()
 	}
+}
+
+// findHead looks in one page for the head of the file: the revision that is still the one the listing named.
+func (u *FetchFile) findHead(ctx context.Context, t target, keys []vaultlink.VaultKey, authors trust.Authors, changes []*syncv1.StoredRevision) (*syncv1.Revision, note.Meta, bool, error) {
+	for _, stored := range changes {
+		rev := stored.GetRevision()
+		if !bytes.Equal(rev.GetFileId(), t.record.FileID) || rev.GetDeleted() {
+			continue
+		}
+		if err := note.CheckRevision(stored, t.remote, authors.IsTrusted); err != nil {
+			return nil, note.Meta{}, true, fmt.Errorf("download %s: %w", t.path, err)
+		}
+		meta, isOpen, err := u.openMeta(ctx, t.id, keys, rev)
+		if err != nil {
+			return nil, note.Meta{}, true, err
+		}
+		if !isOpen || len(meta.Key) != 32 || meta.Hash != t.entry.Hash {
+			return nil, note.Meta{}, true, fmt.Errorf("download %s: %w", t.path, ErrHeadChanged)
+		}
+		return rev, meta, true, nil
+	}
+	return nil, note.Meta{}, false, nil
 }
 
 func (u *FetchFile) getAuthors(ctx context.Context) (trust.Authors, error) {
@@ -321,25 +329,29 @@ func (u *FetchFile) getAuthors(ctx context.Context) (trust.Authors, error) {
 	return trust.NewAuthors(own.Chain, stored)
 }
 
+func (u *FetchFile) openSharedMeta(ctx context.Context, id domain.VaultID, rev *syncv1.Revision) (note.Meta, bool, error) {
+	if u.deps.Shares == nil {
+		return note.Meta{}, false, nil
+	}
+	roots, err := u.deps.Shares.Execute(ctx, id)
+	if err != nil {
+		return note.Meta{}, false, err
+	}
+	root, isFound := share.FindRootByID(roots, rev.GetShareRootId())
+	if !isFound {
+		return note.Meta{}, false, nil
+	}
+	key, isKnown := root.Keys.Get(rev.GetEpoch())
+	if !isKnown {
+		return note.Meta{}, false, nil
+	}
+	meta, err := share.OpenMeta[note.Meta](key, root.ID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
+	return meta, err == nil, nil
+}
+
 func (u *FetchFile) openMeta(ctx context.Context, id domain.VaultID, keys []vaultlink.VaultKey, rev *syncv1.Revision) (note.Meta, bool, error) {
 	if len(rev.GetShareRootId()) > 0 {
-		if u.deps.Shares == nil {
-			return note.Meta{}, false, nil
-		}
-		roots, err := u.deps.Shares.Execute(ctx, id)
-		if err != nil {
-			return note.Meta{}, false, err
-		}
-		root, isFound := share.FindRootByID(roots, rev.GetShareRootId())
-		if !isFound {
-			return note.Meta{}, false, nil
-		}
-		key, isKnown := root.Keys.Get(rev.GetEpoch())
-		if !isKnown {
-			return note.Meta{}, false, nil
-		}
-		meta, err := share.OpenMeta[note.Meta](key, root.ID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
-		return meta, err == nil, nil
+		return u.openSharedMeta(ctx, id, rev)
 	}
 	at := slices.IndexFunc(keys, func(one vaultlink.VaultKey) bool { return one.Epoch == rev.GetEpoch() && len(one.Key) == 32 })
 	if at < 0 {

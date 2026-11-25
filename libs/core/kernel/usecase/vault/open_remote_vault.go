@@ -56,15 +56,21 @@ type OpenRemoteVault struct {
 }
 
 // NewOpenRemoteVault creates the opening over the list this installation keeps and its remover, the
-// filesystem, the folders of the person, Add, the provider and the clock.
+// places, Add, the provider and the clock.
 func NewOpenRemoteVault(
-	vaults vaultport.VaultList, remover vaultport.VaultRemover, paths NewVaultPaths, folders NewVaultFolders,
-	user UserFolders, add Add,
+	vaults vaultport.VaultList, remover vaultport.VaultRemover, places RemoteVaultPlaces, add Add,
 	provider RemoteVaultProvider, now machineport.Clock,
 ) *OpenRemoteVault {
 	return &OpenRemoteVault{
-		vaults: vaults, remover: remover, paths: paths, folders: folders, user: user, add: add, provider: provider, now: now,
+		vaults: vaults, remover: remover, paths: places.Paths, folders: places.Folders, user: places.User, add: add, provider: provider, now: now,
 	}
+}
+
+// RemoteVaultPlaces is where a remote vault may go: how paths are written, the folders of this machine and the folders of the person.
+type RemoteVaultPlaces struct {
+	Paths   NewVaultPaths
+	Folders NewVaultFolders
+	User    UserFolders
 }
 
 // Execute returns the vault the remote vault is connected to at the path. The path is absolute, its parent
@@ -100,19 +106,43 @@ func (u *OpenRemoteVault) Execute(ctx context.Context, remoteID, path string) (i
 }
 
 func (u *OpenRemoteVault) checkPath(path string) (vaultdomain.FolderState, error) {
-	if path == "." || !domain.IsAbsPath(path) {
-		return vaultdomain.FolderState{}, newInvalidPath("%q is not an absolute path", path)
+	if err := u.checkPlace(path); err != nil {
+		return vaultdomain.FolderState{}, err
 	}
-	if u.paths.GetParentPath(path) == path {
-		return vaultdomain.FolderState{}, newInvalidPath("%s is a whole disk; a vault is a folder of its own", path)
-	}
-	home, err := u.user.GetHomeFolder()
+	state, err := u.checkFolder(path)
 	if err != nil {
 		return vaultdomain.FolderState{}, err
 	}
-	if path == u.paths.CleanPath(home) {
-		return vaultdomain.FolderState{}, newInvalidPath("%s is the home folder; a vault is a folder of its own", path)
+	listed, err := u.vaults.List()
+	if err != nil {
+		return vaultdomain.FolderState{}, err
 	}
+	if err := domain.Vaults(listed).CheckOverlap(path); err != nil {
+		return vaultdomain.FolderState{}, err
+	}
+	return state, nil
+}
+
+// checkPlace refuses a path that is no absolute path, a whole disk or the home folder.
+func (u *OpenRemoteVault) checkPlace(path string) error {
+	if path == "." || !domain.IsAbsPath(path) {
+		return newInvalidPath("%q is not an absolute path", path)
+	}
+	if u.paths.GetParentPath(path) == path {
+		return newInvalidPath("%s is a whole disk; a vault is a folder of its own", path)
+	}
+	home, err := u.user.GetHomeFolder()
+	if err != nil {
+		return err
+	}
+	if path == u.paths.CleanPath(home) {
+		return newInvalidPath("%s is the home folder; a vault is a folder of its own", path)
+	}
+	return nil
+}
+
+// checkFolder reads the folder of the path and refuses one that cannot be filled: no parent, a file, or a folder with things in it.
+func (u *OpenRemoteVault) checkFolder(path string) (vaultdomain.FolderState, error) {
 	parentPath := u.paths.GetParentPath(path)
 	parent, err := u.folders.GetFolderState(parentPath)
 	if err != nil {
@@ -130,13 +160,6 @@ func (u *OpenRemoteVault) checkPath(path string) (vaultdomain.FolderState, error
 	}
 	if state.Exists && !state.IsEmpty {
 		return vaultdomain.FolderState{}, newInvalidPath("%s is not empty; a remote vault is opened in a new or an empty folder", path)
-	}
-	listed, err := u.vaults.List()
-	if err != nil {
-		return vaultdomain.FolderState{}, err
-	}
-	if err := domain.Vaults(listed).CheckOverlap(path); err != nil {
-		return vaultdomain.FolderState{}, err
 	}
 	return state, nil
 }

@@ -83,7 +83,7 @@ type runtime struct {
 func newRuntime(p parts) *runtime {
 	r := &runtime{
 		parts: p, wakes: loops.NewWakes(wakeBuffer), interval: loops.NewInterval(defaultInterval), removal: loops.NewInterval(defaultRemovalDelay),
-		received: loops.NewText(), settings: settingswire.New(p.health, logging.Warn), epochRoot: loops.NewText(), failures: errorwire.NewFailures(), isForeground: loops.Flag{}, session: nil,
+		received: loops.NewText(), settings: settingswire.New(p.health, logging.Warn), epochRoot: loops.NewText(), failures: errorwire.NewFailures(), isForeground: loops.Flag{}, isOnDemand: loops.Flag{}, session: nil,
 	}
 	r.session = loops.NewSupervisor(r.start)
 	return r
@@ -141,6 +141,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		Deps: deps, Uploads: cloud.NewUploader(cloudSide, p.clock.Now), UploadEntries: p.state, DownloadBlobs: cloud.NewBlobs(cloudSide),
 		DownloadEntries: p.state, Pending: p.state, Approvals: p.state, Absences: p.state, RemovalDelay: r.removal.Get,
 		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}), LazyHeavy: r.isOnDemand.IsOn(),
+		Downloads: nil,
 	}
 	wired.Downloads = syncwire.NewDownloads(wired)
 	pass := syncwire.NewSyncVault(wired)

@@ -42,7 +42,7 @@ type Link struct {
 	Removed        []RemovedFile     `json:"removed,omitempty"`
 	Retired        []RetiredFile     `json:"retired,omitempty"`
 	Kind           string            `json:"kind,omitempty"`
-	Received       *ShareRecord         `json:"received,omitempty"`
+	Received       *ShareRecord      `json:"received,omitempty"`
 }
 
 // RemoteVault is a synced vault of the account, with its last name.

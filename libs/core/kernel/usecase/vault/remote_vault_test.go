@@ -63,7 +63,7 @@ func newRemoteFixture(t *testing.T) *remoteFixture {
 	provider := &fakeProvider{}
 	parent := t.TempDir()
 	user := fixedFolders{home: filepath.Join(parent, "home"), documents: filepath.Join(parent, "Documents")}
-	open := vaults.NewOpenRemoteVault(registry, registry, vaultfolder.Folders{}, vaultfolder.Folders{}, user, add, provider, clock)
+	open := vaults.NewOpenRemoteVault(registry, registry, vaults.RemoteVaultPlaces{Paths: vaultfolder.Folders{}, Folders: vaultfolder.Folders{}, User: user}, add, provider, clock)
 	return &remoteFixture{t: t, registry: registry, provider: provider, parent: parent, open: open}
 }
 

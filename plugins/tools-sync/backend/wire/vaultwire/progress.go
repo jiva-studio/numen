@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
@@ -34,33 +35,13 @@ func (v *VaultList) setProgress(ctx context.Context, id domain.VaultID, one *api
 		return err
 	}
 	for _, record := range records {
-		if onDemand[record.Path] {
-			continue
-		}
-		size := record.BlobSize
-		if size == 0 {
-			size = uint64(max(record.Size, 0))
-		}
-		one.SyncedBytes += size
-	}
-	waiting := map[string]bool{}
-	if v.moving.downloads != nil {
-		entries, err := v.moving.downloads.ReadDownloads(ctx, id)
-		if err != nil {
-			return err
-		}
-		for _, entry := range entries {
-			waiting[entry.Path] = true
+		if !onDemand[record.Path] {
+			one.SyncedBytes += getStoredSize(record)
 		}
 	}
-	if v.moving.uploads != nil {
-		entries, err := v.moving.uploads.ReadUploads(ctx, id)
-		if err != nil {
-			return err
-		}
-		for _, entry := range entries {
-			waiting[entry.Path] = true
-		}
+	waiting, err := v.listWaiting(ctx, id)
+	if err != nil {
+		return err
 	}
 	for path := range onDemand {
 		if !waiting[path] {
@@ -71,6 +52,37 @@ func (v *VaultList) setProgress(ctx context.Context, id domain.VaultID, one *api
 	one.Syncing = v.deps.Locker.IsLocked(id) || len(waiting) > 0
 	one.TotalBytes = one.SyncedBytes + one.OnDemandBytes
 	return nil
+}
+
+func getStoredSize(record transfer.FileRecord) uint64 {
+	if record.BlobSize != 0 {
+		return record.BlobSize
+	}
+	return uint64(max(record.Size, 0))
+}
+
+// listWaiting returns the paths of the files whose download or upload is listed and not finished.
+func (v *VaultList) listWaiting(ctx context.Context, id domain.VaultID) (map[string]bool, error) {
+	waiting := map[string]bool{}
+	if v.moving.downloads != nil {
+		entries, err := v.moving.downloads.ReadDownloads(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		for _, entry := range entries {
+			waiting[entry.Path] = true
+		}
+	}
+	if v.moving.uploads != nil {
+		entries, err := v.moving.uploads.ReadUploads(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		for _, entry := range entries {
+			waiting[entry.Path] = true
+		}
+	}
+	return waiting, nil
 }
 
 func (v *VaultList) setCloudTotals(ctx context.Context, listed []api.Vault) {

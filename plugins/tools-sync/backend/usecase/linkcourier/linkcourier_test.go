@@ -214,7 +214,7 @@ type lingeringRelay struct {
 	release chan struct{}
 }
 
-func (l lingeringRelay) WaitMessages(ctx context.Context, _ []byte, _ syncclient.LinkSide, after uint32, wait time.Duration) (syncclient.LinkMessages, error) {
+func (l lingeringRelay) WaitMessages(ctx context.Context, _ []byte, _ syncclient.LinkSide, _ uint32, _ time.Duration) (syncclient.LinkMessages, error) {
 	close(l.waiting)
 	<-ctx.Done()
 	<-l.release

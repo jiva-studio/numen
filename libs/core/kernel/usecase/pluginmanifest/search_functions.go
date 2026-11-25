@@ -28,6 +28,8 @@ func getArgumentType(t searchfunction.ArgType) searchquery.ValueType {
 		return searchquery.TypeInt
 	case searchfunction.ArgBool:
 		return searchquery.TypeBool
+	case searchfunction.ArgString:
+		return searchquery.TypeString
 	}
 	return searchquery.TypeString
 }

@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
@@ -98,12 +99,7 @@ func (u *Endorse) confirmVault(ctx context.Context, remote, own []byte, revoked 
 
 func (u *Endorse) listHeads(ctx context.Context, remote []byte, revoked [][]byte) ([]*syncv1.StoredRevision, error) {
 	isRevoked := func(sign []byte) bool {
-		for _, key := range revoked {
-			if bytes.Equal(key, sign) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(revoked, func(key []byte) bool { return bytes.Equal(key, sign) })
 	}
 	var found []*syncv1.StoredRevision
 	var since uint64

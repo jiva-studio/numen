@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
@@ -118,11 +119,7 @@ func (r *run) execute(ctx context.Context) error {
 		if page.GetReset_() {
 			return r.reconcile(ctx)
 		}
-		if err := r.applyPage(ctx, page.GetChanges()); err != nil {
-			return err
-		}
-		r.next = page.GetNextSeq()
-		if err := r.save(ctx); err != nil {
+		if err := r.takePage(ctx, page); err != nil {
 			return err
 		}
 		if !page.GetHasMore() {
@@ -133,6 +130,14 @@ func (r *run) execute(ctx context.Context) error {
 		}
 		since = page.GetNextSeq()
 	}
+}
+
+func (r *run) takePage(ctx context.Context, page *syncv1.GetChangesResponse) error {
+	if err := r.applyPage(ctx, page.GetChanges()); err != nil {
+		return err
+	}
+	r.next = page.GetNextSeq()
+	return r.save(ctx)
 }
 
 func (r *run) finish(ctx context.Context) error {

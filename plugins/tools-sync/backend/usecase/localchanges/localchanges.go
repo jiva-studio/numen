@@ -104,30 +104,49 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 	slices.Sort(paths)
 	var found []transfer.Change
 	for _, path := range paths {
-		if seen[path].Hash != "" && seen[path].Hash == bases[path] {
+		change, err := u.scanFile(ctx, files, path, seen, bases)
+		if errors.Is(err, errUnreadable) {
 			continue
-		}
-		stat, err := files.StatFile(ctx, path)
-		if errors.Is(err, host.ErrFileAbsent) {
-			continue
-		}
-		if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrNotANote) {
-			delete(seen, path)
-			continue
-		}
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return nil, ctxErr
 		}
 		if err != nil {
-			continue
+			return nil, err
 		}
-		seen[path] = note.FileSnapshot{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano(), SourceID: seen[path].SourceID}
-		if stat.Hash != bases[path] && u.deps.Clock.Now().Sub(stat.ModTime) >= settleTime {
-			found = append(found, transfer.Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()})
+		if change != nil {
+			found = append(found, *change)
 		}
 	}
 	return found, nil
 }
+
+// scanFile reads one file of the listing and returns its change, or nothing when the file is the one last sent, is not on this
+// device, or has not settled.
+func (u *ScanLocalChanges) scanFile(ctx context.Context, files ports.Files, path string, seen map[string]note.FileSnapshot, bases map[string]string) (*transfer.Change, error) {
+	if seen[path].Hash != "" && seen[path].Hash == bases[path] {
+		return nil, nil
+	}
+	stat, err := files.StatFile(ctx, path)
+	if errors.Is(err, host.ErrFileAbsent) {
+		return nil, nil
+	}
+	if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrNotANote) {
+		delete(seen, path)
+		return nil, nil
+	}
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return nil, ctxErr
+	}
+	if err != nil {
+		return nil, errUnreadable
+	}
+	seen[path] = note.FileSnapshot{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano(), SourceID: seen[path].SourceID}
+	if stat.Hash == bases[path] || u.deps.Clock.Now().Sub(stat.ModTime) < settleTime {
+		return nil, nil
+	}
+	return &transfer.Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()}, nil
+}
+
+// errUnreadable is a file that could not be read now; the next scan reads it again.
+var errUnreadable = errors.New("the file could not be read")
 
 var errFeedReset = errors.New("the file change feed reset while the notes were read")
 

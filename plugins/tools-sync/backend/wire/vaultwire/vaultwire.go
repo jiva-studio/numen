@@ -105,7 +105,8 @@ func (v *VaultList) ListVaults(ctx context.Context, _ api.ListVaultsRequest) (ap
 }
 
 func (v *VaultList) getVault(ctx context.Context, vault domain.Vault, holders map[string]bool) (api.Vault, error) {
-	one := api.Vault{ID: string(vault.ID), Name: vault.Name, Path: vault.Path, State: api.StateNotConnected, LastSyncedAt: "", ConflictCount: 0, PausedDeletions: nil, RemoteID: ""}
+	one := api.Vault{ID: string(vault.ID), Name: vault.Name, Path: vault.Path, State: api.StateNotConnected, LastSyncedAt: "", ConflictCount: 0, PausedDeletions: nil, RemoteID: "",
+		Syncing: false, SyncedBytes: 0, TotalBytes: 0, PendingFiles: 0, OnDemandFiles: 0, OnDemandBytes: 0}
 	link, err := v.deps.State.ReadLink(ctx, vault.ID)
 	if errors.Is(err, vaultlink.ErrNotConnected) {
 		return one, nil

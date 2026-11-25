@@ -78,9 +78,12 @@ func (h *Downloads) GetDownloadProgress(
 	}), nil
 }
 
-const interruptedText = "The download was interrupted. Try again."
+// interruptedError is what the person reads when a download stops: a sentence, which an error string may not be.
+type interruptedError struct{}
 
-var errDownloadInterrupted = errors.New(interruptedText)
+func (interruptedError) Error() string { return "The download was interrupted. Try again." }
+
+var errDownloadInterrupted error = interruptedError{}
 
 func newDownloadError(err error) error {
 	if answered, ok := errors.AsType[*connect.Error](err); ok {

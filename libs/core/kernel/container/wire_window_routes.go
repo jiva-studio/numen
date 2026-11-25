@@ -367,6 +367,6 @@ func mountRemoteVaults(w *windowRoutes, ports registry.Ports, add vault.Add, plu
 	w.Installation.Mount(editor.NewRoute(windowremotevault.NewRoute(windowremotevault.NewHandler(
 		vault.NewListRemoteVaults(plugins.remoteVaults),
 		vault.NewSuggestVaultPath(plugins.newVaultsFolder, user, folders, folders),
-		vault.NewOpenRemoteVault(ports.Vaults, ports.Remover, folders, folders, user, add, plugins.remoteVaults, now),
+		vault.NewOpenRemoteVault(ports.Vaults, ports.Remover, vault.RemoteVaultPlaces{Paths: folders, Folders: folders, User: user}, add, plugins.remoteVaults, now),
 	), w.page.Gate.CountQuestions())))
 }

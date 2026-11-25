@@ -78,29 +78,11 @@ func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore
 func (c restoreCompletion) buildRestoredState(ctx context.Context, restore *pendingRestore, chainBytes []byte) (identitylib.State, error) {
 	fingerprint := restore.recovery.Public().Fingerprint().String()
 	if len(chainBytes) == 0 {
-		if err := checkHighWater(ctx, c.records.keys, fingerprint, 0); err != nil {
-			return identitylib.State{}, err
-		}
-		if !restore.mark.IsZero() {
-			return identitylib.State{}, fmt.Errorf("%w: the server holds no chain", identitydomain.ErrChainOutdated)
-		}
-		return c.builder.buildNew(restore.recovery, restore.device)
+		return c.buildWithoutChain(ctx, restore, fingerprint)
 	}
-	chain, err := identitylib.ParseChain(chainBytes)
+	chain, err := c.readChain(ctx, restore, chainBytes, fingerprint)
 	if err != nil {
-		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
-	}
-	if err := chain.VerifyAt(c.builder.clock.Now()); err != nil {
-		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
-	}
-	if !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
-		return identitylib.State{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
-	}
-	if err := checkHighWater(ctx, c.records.keys, fingerprint, chain.Len()); err != nil {
 		return identitylib.State{}, err
-	}
-	if !restore.mark.IsZero() && !chain.HasMark(restore.mark) {
-		return identitylib.State{}, fmt.Errorf("%w: the chain has %d entries and does not contain the mark %v", identitydomain.ErrChainOutdated, chain.Len(), restore.mark)
 	}
 	account, err := c.openRecoveryKeys(restore.recovery, chain)
 	if err != nil {
@@ -121,6 +103,36 @@ func (c restoreCompletion) buildRestoredState(ctx context.Context, restore *pend
 		return identitylib.State{}, fmt.Errorf("%w: the rotation holds no keys for this device", identitylib.ErrUnwrap)
 	}
 	return identitylib.NewState(identitylib.Record{Device: restore.device, Wrapped: wrapped}, chain)
+}
+
+func (c restoreCompletion) buildWithoutChain(ctx context.Context, restore *pendingRestore, fingerprint string) (identitylib.State, error) {
+	if err := checkHighWater(ctx, c.records.keys, fingerprint, 0); err != nil {
+		return identitylib.State{}, err
+	}
+	if !restore.mark.IsZero() {
+		return identitylib.State{}, fmt.Errorf("%w: the server holds no chain", identitydomain.ErrChainOutdated)
+	}
+	return c.builder.buildNew(restore.recovery, restore.device)
+}
+
+func (c restoreCompletion) readChain(ctx context.Context, restore *pendingRestore, chainBytes []byte, fingerprint string) (identitylib.Chain, error) {
+	chain, err := identitylib.ParseChain(chainBytes)
+	if err != nil {
+		return identitylib.Chain{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
+	}
+	if err := chain.VerifyAt(c.builder.clock.Now()); err != nil {
+		return identitylib.Chain{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
+	}
+	if !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
+		return identitylib.Chain{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
+	}
+	if err := checkHighWater(ctx, c.records.keys, fingerprint, chain.Len()); err != nil {
+		return identitylib.Chain{}, err
+	}
+	if !restore.mark.IsZero() && !chain.HasMark(restore.mark) {
+		return identitylib.Chain{}, fmt.Errorf("%w: the chain has %d entries and does not contain the mark %v", identitydomain.ErrChainOutdated, chain.Len(), restore.mark)
+	}
+	return chain, nil
 }
 
 func (c restoreCompletion) openRecoveryKeys(recovery identitylib.RecoveryKey, chain identitylib.Chain) (identitylib.AccountKeys, error) {

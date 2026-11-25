@@ -28,7 +28,9 @@ type ReceivedFolders struct {
 }
 
 // NewReceivedFolders returns the folders in the folder setting returns.
-func NewReceivedFolders(setting func() string) *ReceivedFolders { return &ReceivedFolders{setting: setting} }
+func NewReceivedFolders(setting func() string) *ReceivedFolders {
+	return &ReceivedFolders{setting: setting}
+}
 
 // MakeReceivedFolder makes a folder of the name, with a number appended when the name is taken, and returns its path
 // and the name of the vault it holds.

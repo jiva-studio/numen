@@ -49,7 +49,7 @@ func (p *Provider) DropDownload(ctx context.Context, v domain.Vault, path string
 }
 
 // GetFetchProgress asks the plugin how far the download of the file at path has come.
-func (p *Provider) GetFetchProgress(ctx context.Context, v domain.Vault, path string) (vaultdomain.DownloadProgress, error) {
+func (p *Provider) GetFetchProgress(ctx context.Context, _ domain.Vault, path string) (vaultdomain.DownloadProgress, error) {
 	var progress vaultdomain.DownloadProgress
 	err := call(ctx, p, "get fetch progress", func(client numenv1connect.FileProviderServiceClient) error {
 		answer, err := client.GetFetchProgress(ctx, connect.NewRequest(&v1.GetFetchProgressRequest{Path: path}))

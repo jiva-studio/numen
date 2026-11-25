@@ -22,10 +22,10 @@ func NewError(err error) error {
 }
 
 func getRPCCode(code server.ErrorCode) rpcerror.Code {
-	switch code {
-	case server.CodeFailedPrecondition:
+	if code == server.CodeFailedPrecondition {
 		return rpcerror.FailedPrecondition
-	case server.CodeUnavailable:
+	}
+	if code == server.CodeUnavailable {
 		return rpcerror.Unavailable
 	}
 	return rpcerror.Internal
