@@ -213,7 +213,6 @@ func (c Chain) openHistoryFrom(current AccountKeys, epoch uint32) (AccountKeys, 
 	return keys, nil
 }
 
-// getAccountBox returns the account box public key the chain gives the epoch.
 func (c Chain) getAccountBox(epoch uint32) [32]byte {
 	for _, entry := range c.entries[min(1, len(c.entries)):] {
 		if revoke := entry.keyChange(); revoke != nil && revoke.Epoch == epoch {

@@ -74,8 +74,6 @@ func (f *fakeTimers) Advance(d time.Duration) {
 	}
 }
 
-// serveByStep writes one chunk per signal of next and, after stallAfter chunks, waits until the request ends. The
-// channel it returns is closed when the handler reaches that wait.
 func serveByStep(t *testing.T, stallAfter int, next <-chan struct{}) (string, <-chan struct{}) {
 	t.Helper()
 	stalled := make(chan struct{})

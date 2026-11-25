@@ -355,7 +355,6 @@ func (r *run) recordRollback(meta note.Meta, rev *syncv1.Revision) error {
 	return nil
 }
 
-// checkRoom returns syncprotocol.ErrTooManyPages when a list that a pull keeps already holds syncprotocol.MaxCatalogEntries items.
 func checkRoom(held int) error {
 	if held >= syncprotocol.MaxCatalogEntries {
 		return syncprotocol.ErrTooManyPages

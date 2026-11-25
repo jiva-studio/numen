@@ -240,7 +240,6 @@ func getMainWindowOptions(opened *editor.Installation) application.WebviewWindow
 	})
 }
 
-// getMediaPermissions gives the camera and the microphone their answers: the main window allows both, to scan a QR code and to record audio.
 func getMediaPermissions(camera, microphone application.Permission) map[application.PermissionType]application.Permission {
 	return map[application.PermissionType]application.Permission{
 		application.PermissionCamera:     camera,

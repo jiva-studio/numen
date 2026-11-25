@@ -231,8 +231,6 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []tr
 	return records, isRetry, nil
 }
 
-// takeBatch splits off the changes whose files are read and committed together: at most maxBatchFiles files and about
-// maxBatchBytes bytes of content, and always at least one change.
 func takeBatch(changes []transfer.Change) (batch, rest []transfer.Change) {
 	total := int64(0)
 	for i, change := range changes {

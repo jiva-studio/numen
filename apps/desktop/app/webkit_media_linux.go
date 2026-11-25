@@ -41,9 +41,6 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
-// enableMediaCapture switches on the WebKit settings that expose getUserMedia and enumerateDevices. WebKitGTK keeps
-// them off by default, and Wails allows the permission request but never sets them, so a page sees no camera.
-// The settings are set when a page starts loading, before its document and its navigator exist.
 func enableMediaCapture(app *application.App) {
 	app.Window.OnCreate(func(window application.Window) {
 		window.OnWindowEvent(events.Linux.WindowLoadStarted, func(*application.WindowEvent) {

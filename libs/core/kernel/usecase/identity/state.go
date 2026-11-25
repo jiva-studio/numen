@@ -51,8 +51,6 @@ func (r records) checkAbsent(ctx context.Context) error {
 	return fmt.Errorf("%w: read the identity: %w", identitydomain.ErrKeyStore, err)
 }
 
-// checkReplaceable refuses when the device holds a usable identity. A record without a chain file, a record that does not parse
-// and a device missing from its chain cannot be used, and a new identity, a restore or a link replaces them.
 func (r records) checkReplaceable(ctx context.Context) error {
 	_, err := r.readState(ctx)
 	switch {
@@ -64,8 +62,6 @@ func (r records) checkReplaceable(ctx context.Context) error {
 	return err
 }
 
-// readState returns the identity of this device. A record or chain that cannot be used reads as no identity (ErrNoIdentity, which
-// also wraps the cause); a key store or file that fails is returned as it is.
 func (r records) readState(ctx context.Context) (identitylib.State, error) {
 	state, err := r.readStoredState(ctx)
 	if errors.Is(err, identitylib.ErrMalformed) || errors.Is(err, identitylib.ErrUnsupportedVersion) || errors.Is(err, identitydomain.ErrNoChain) {
@@ -178,8 +174,6 @@ func toIdentity(state identitylib.State) (identitydomain.Identity, error) {
 
 func getHighWaterName(fingerprint string) string { return "chain-length-" + fingerprint }
 
-// checkHighWater refuses a chain of the account that is shorter than the longest chain this device has held for it (ErrChainOutdated),
-// including after the identity was deleted from the device.
 func (r records) checkHighWater(ctx context.Context, fingerprint string, length int) error {
 	value, err := r.keys.GetKey(ctx, getHighWaterName(fingerprint))
 	if isNoKey(err) {

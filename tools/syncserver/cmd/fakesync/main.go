@@ -200,7 +200,6 @@ func run() error {
 	return nil
 }
 
-// newSessionFolder makes the folder a run without -state-dir works in, and returns the function that removes it.
 func newSessionFolder() (string, func(), error) {
 	folder, err := os.MkdirTemp("", "fakesync-")
 	if err != nil {

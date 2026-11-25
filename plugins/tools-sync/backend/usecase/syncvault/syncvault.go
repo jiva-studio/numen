@@ -238,8 +238,6 @@ func (u *SyncVault) getAuthors(ctx context.Context) (trust.Authors, error) {
 	return trust.NewAuthors(own.Chain, stored)
 }
 
-// dropForeign forgets the registration of a vault whose key another identity sealed, registers the vault again with a fresh key
-// so the next pass uploads it, and tells the person in one plain item.
 func (u *SyncVault) dropForeign(ctx context.Context, id domain.VaultID, isForeign bool, err error) error {
 	if !isForeign {
 		return err

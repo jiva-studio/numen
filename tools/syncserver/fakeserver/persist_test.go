@@ -96,7 +96,11 @@ func TestRestore_ServesAfterARestartABodyThatWasUploadedBefore(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	response, err := http.Get(secondAddress + "/admin/blobs") //nolint:noctx // a plain local request in a test
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, secondAddress+"/admin/blobs", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Fatal(err)
 	}

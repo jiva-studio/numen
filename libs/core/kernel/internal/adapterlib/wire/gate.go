@@ -182,8 +182,6 @@ func (t *callTrace) recordCall(
 	})
 }
 
-// isDetailed reports whether the log line of a failed call carries the error text: an internal failure of a service whose errors never hold
-// a secret, an identity error names the step that failed and holds no key.
 func isDetailed(service string, code connect.Code) bool {
 	return service == "IdentityService" && (code == connect.CodeInternal || code == connect.CodeUnknown)
 }

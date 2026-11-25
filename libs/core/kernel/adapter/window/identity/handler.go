@@ -137,7 +137,6 @@ func (h *Handler) DeleteIdentity(
 	return connect.NewResponse(&v1.DeleteIdentityResponse{}), nil
 }
 
-// newInternalError returns the failure as an internal error.
 func newInternalError(err error) error {
 	return connect.NewError(connect.CodeInternal, err)
 }

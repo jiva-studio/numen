@@ -168,8 +168,6 @@ type Failures struct {
 // NewFailures returns an empty Failures.
 func NewFailures() *Failures { return &Failures{mu: sync.Mutex{}, last: map[string]string{}} }
 
-// isNew reports whether the operation failed with another error than the last one it logged, so that a
-// method a window asks again and again writes one line, not one per ask.
 func (f *Failures) isNew(operation string, err error) bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()

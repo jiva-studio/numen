@@ -26,7 +26,6 @@ func New(dir string) *Store {
 
 // Staged is a body that was received but is not yet kept under a name.
 type Staged struct {
-	// Size is the count of bytes received.
 	Size  int64
 	store *Store
 	file  string
