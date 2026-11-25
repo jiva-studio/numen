@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
@@ -544,5 +545,23 @@ func TestSyncVault_DeletesAStagedFileNoDownloadNamesAtTheStartOfAPassEvenWhenThe
 		if file.Name == "0badc0de.part" {
 			t.Error("a staged file that no download names was left by a pass whose removals wait")
 		}
+	}
+}
+
+func TestSyncVault_AFileThatGrewPastTheSmallLimitAfterTheScanIsNotSentAsItsFirstPart(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	p.a.WriteNote(source, pdf, pdfText)
+	grown := synctest.NewSource(pdf, note.SmallFileLimit+1000, 7, synctest.GetStart().Add(-time.Hour))
+	p.a.Spy().Serve(grown)
+
+	sync(t, p.a, source)
+
+	heads := p.getLiveHeads(t)
+	if len(heads) != 1 {
+		t.Fatalf("%d live heads, want 1", len(heads))
+	}
+	meta := synctest.OpenMeta(t, p.a.GetVaultKey(t, source), heads[0].GetRevision())
+	if meta.Size != grown.GetStat().Size || meta.Hash != grown.GetStat().Hash {
+		t.Errorf("sent size %d, want the whole file of %d bytes, not the first %d", meta.Size, grown.GetStat().Size, note.SmallFileLimit)
 	}
 }
