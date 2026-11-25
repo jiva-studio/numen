@@ -463,7 +463,8 @@ func (x *ReadThemeResponse) GetCss() string {
 
 type WriteAppearanceRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Theme name to apply. Empty leaves the current theme unchanged.
+	// Theme name to apply. An empty or unknown name returns an error without
+	// changing settings.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Which half of a pair the tokens resolve to from now on.
 	Mode Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`

@@ -44,7 +44,8 @@ message WatchTasksRequest {
 }
 
 message WatchTasksResponse {
-  // Active tasks, in the order they began. Each message carries the full list.
+  // Reported tasks and notices, ordered by when the window first received each
+  // one. Each message carries the full list.
   repeated Task tasks = 1;
 }
 

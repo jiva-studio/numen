@@ -192,7 +192,8 @@ export const ReadThemeResponseSchema: GenMessage<ReadThemeResponse> = /*@__PURE_
  */
 export type WriteAppearanceRequest = Message<"numen.v1.WriteAppearanceRequest"> & {
   /**
-   * Theme name to apply. Empty leaves the current theme unchanged.
+   * Theme name to apply. An empty or unknown name returns an error without
+   * changing settings.
    *
    * @generated from field: string name = 1;
    */

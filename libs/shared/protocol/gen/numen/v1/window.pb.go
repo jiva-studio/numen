@@ -237,7 +237,8 @@ func (x *WatchTasksRequest) GetWindowId() string {
 
 type WatchTasksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Active tasks, in the order they began. Each message carries the full list.
+	// Reported tasks and notices, ordered by when the window first received each
+	// one. Each message carries the full list.
 	Tasks         []*Task `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

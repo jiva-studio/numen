@@ -43,7 +43,8 @@ export const WatchTasksRequestSchema: GenMessage<WatchTasksRequest> = /*@__PURE_
  */
 export type WatchTasksResponse = Message<"numen.v1.WatchTasksResponse"> & {
   /**
-   * Active tasks, in the order they began. Each message carries the full list.
+   * Reported tasks and notices, ordered by when the window first received each
+   * one. Each message carries the full list.
    *
    * @generated from field: repeated numen.v1.Task tasks = 1;
    */

@@ -254,6 +254,8 @@ export type HostLinkAddition = Message<"numen.v1.HostLinkAddition"> & {
   from: string;
 
   /**
+   * The file stat the caller read; a note changed since returns CONFLICT.
+   *
    * @generated from field: numen.v1.FileStat baseline = 2;
    */
   baseline?: FileStat | undefined;
@@ -393,6 +395,8 @@ export type HostLinkServiceUpdateLinksRequest = Message<"numen.v1.HostLinkServic
   to: string;
 
   /**
+   * The file stat the caller read; a note changed since returns CONFLICT.
+   *
    * @generated from field: numen.v1.FileStat baseline = 3;
    */
   baseline?: FileStat | undefined;
@@ -435,6 +439,8 @@ export type HostLinkServiceUpdateLinksResponse = Message<"numen.v1.HostLinkServi
   error: ErrorCode;
 
   /**
+   * The note stat after the write; unset when nothing was written.
+   *
    * @generated from field: numen.v1.FileStat stat = 2;
    */
   stat?: FileStat | undefined;
@@ -473,6 +479,8 @@ export type HostLinkServiceRemoveLinksRequest = Message<"numen.v1.HostLinkServic
   to: string;
 
   /**
+   * The file stat the caller read; a note changed since returns CONFLICT.
+   *
    * @generated from field: numen.v1.FileStat baseline = 3;
    */
   baseline?: FileStat | undefined;
@@ -503,6 +511,8 @@ export type HostLinkServiceRemoveLinksResponse = Message<"numen.v1.HostLinkServi
   error: ErrorCode;
 
   /**
+   * The note stat after the write; unset when nothing was written.
+   *
    * @generated from field: numen.v1.FileStat stat = 2;
    */
   stat?: FileStat | undefined;

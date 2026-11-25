@@ -120,7 +120,8 @@ message ReadThemeResponse {
 }
 
 message WriteAppearanceRequest {
-  // Theme name to apply. Empty leaves the current theme unchanged.
+  // Theme name to apply. An empty or unknown name returns an error without
+  // changing settings.
   string name = 1;
 
   // Which half of a pair the tokens resolve to from now on.
