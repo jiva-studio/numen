@@ -145,10 +145,6 @@ func getPhaseAge(phase string) (time.Duration, bool) {
 }
 
 func (s *Server) serveSubscription(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	phase := r.URL.Query().Get("phase")
 	age, known := getPhaseAge(phase)
 	if days := r.URL.Query().Get("days"); known && phase != "active" && days != "" {

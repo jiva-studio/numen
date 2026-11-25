@@ -117,10 +117,6 @@ func (s *Server) countCall(procedure string) {
 }
 
 func (s *Server) serveStreams(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	w.Header().Set("Content-Type", "text/plain")
 	if _, err := fmt.Fprintf(w, "%d\n", s.CountStreams()); err != nil {
 		return
@@ -128,19 +124,11 @@ func (s *Server) serveStreams(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) serveStreamsEnd(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	s.EndStreams()
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) servePulls(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	s.mu.Lock()
 	counts := maps.Clone(s.pulls)
 	s.mu.Unlock()

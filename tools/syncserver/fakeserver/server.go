@@ -175,19 +175,19 @@ func (s *Server) newMux() http.Handler {
 	mux.Handle(syncv1connect.NewSubscriptionServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewRestoreServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewWatchServiceHandler(s, options))
-	mux.HandleFunc("/admin/streams", s.serveStreams)
-	mux.HandleFunc("/admin/pulls", s.servePulls)
-	mux.HandleFunc("/admin/streams/end", s.serveStreamsEnd)
+	mux.HandleFunc("GET /admin/streams", s.serveStreams)
+	mux.HandleFunc("GET /admin/pulls", s.servePulls)
+	mux.HandleFunc("POST /admin/streams/end", s.serveStreamsEnd)
 	mux.Handle(syncv1connect.NewShareServiceHandler(s, options))
 	mux.HandleFunc(payFolder, s.servePay)
-	mux.HandleFunc("/admin/subscription", s.serveSubscription)
-	mux.HandleFunc("/admin/usage", s.serveUsage)
+	mux.HandleFunc("POST /admin/subscription", s.serveSubscription)
+	mux.HandleFunc("POST /admin/usage", s.serveUsage)
 	mux.HandleFunc(portalFolder, s.servePortal)
-	mux.HandleFunc("/admin/trial", s.serveTrial)
-	mux.HandleFunc("/admin/cancel-trial", s.serveCancelTrial)
+	mux.HandleFunc("POST /admin/trial", s.serveTrial)
+	mux.HandleFunc("POST /admin/cancel-trial", s.serveCancelTrial)
 	mux.HandleFunc("/blobs/", s.serveBlob)
-	mux.HandleFunc("/admin/sessions", s.serveSessions)
-	mux.HandleFunc("/admin/sessions/end", s.serveEnd)
+	mux.HandleFunc("GET /admin/sessions", s.serveSessions)
+	mux.HandleFunc("POST /admin/sessions/end", s.serveEnd)
 	mux.HandleFunc("/admin/blobs", s.serveStoredBlobs)
 	mux.HandleFunc("/admin/backup", s.serveBackup)
 	mux.HandleFunc("/admin/restore", s.serveRestore)
@@ -197,7 +197,7 @@ func (s *Server) newMux() http.Handler {
 	mux.HandleFunc("/admin/part-log", s.servePartLog)
 	mux.HandleFunc("/admin/stop-after-bytes", s.serveStopAfter(&s.stopUpload))
 	mux.HandleFunc("/admin/stop-after-download-bytes", s.serveStopAfter(&s.stopDownload))
-	mux.HandleFunc("/admin/prune-tombstones", s.servePrune)
+	mux.HandleFunc("POST /admin/prune-tombstones", s.servePrune)
 	return mux
 }
 
@@ -374,10 +374,6 @@ type sessionJSON struct {
 }
 
 func (s *Server) serveSessions(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	listed := []sessionJSON{}
 	for _, one := range s.ListSessions() {
 		listed = append(listed, sessionJSON{DeviceSignKey: hex.EncodeToString(one.DeviceSignKey), AccountFingerprint: one.AccountFingerprint, Token: one.Token})
@@ -389,10 +385,6 @@ func (s *Server) serveSessions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) serveEnd(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	var device []byte
 	if text := r.URL.Query().Get("deviceSignKey"); text != "" {
 		decoded, err := hex.DecodeString(text)

@@ -89,10 +89,6 @@ func (s *Server) servePortal(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) serveTrial(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	if _, found := s.findPlan(r.URL.Query().Get("plan")); !found {
 		http.Error(w, "unknown plan", http.StatusBadRequest)
 		return
@@ -113,10 +109,6 @@ func (s *Server) serveTrial(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) serveCancelTrial(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	if _, found := s.findPlan(r.URL.Query().Get("plan")); !found {
 		http.Error(w, "unknown plan", http.StatusBadRequest)
 		return
@@ -132,10 +124,6 @@ func (s *Server) serveCancelTrial(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) serveUsage(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	bytes, err := strconv.ParseUint(r.URL.Query().Get("bytes"), 10, 64)
 	if err != nil {
 		http.Error(w, "bytes is a number", http.StatusBadRequest)

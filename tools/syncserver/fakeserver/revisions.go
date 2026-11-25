@@ -338,10 +338,6 @@ func (s *Server) PruneTombstones() int {
 }
 
 func (s *Server) servePrune(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	if _, err := fmt.Fprintln(w, s.PruneTombstones()); err != nil {
 		return
 	}
