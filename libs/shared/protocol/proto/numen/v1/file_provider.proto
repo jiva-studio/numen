@@ -6,7 +6,7 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 
 // FileProviderService is what a plugin that declares the files.provider capability serves: it fills the
 // files its vaults list as absent and takes the bytes of its downloads off the device again. The core
-// calls it for FileService.FetchFile and FileService.DropDownload, and names no plugin to do so.
+// calls it for FileService.FetchFile, FileService.DropDownload and FileService.GetDownloadProgress, and names no plugin to do so.
 service FileProviderService {
   // FetchFile downloads the absent file at the path of the vault and fills it. It returns once the file
   // holds its bytes.
@@ -15,6 +15,10 @@ service FileProviderService {
   // DropDownload removes the download of the file at the path of the vault. A file with changes the
   // provider has not kept is a failed precondition, and its bytes stay.
   rpc DropDownload(FileProviderServiceDropDownloadRequest) returns (FileProviderServiceDropDownloadResponse);
+
+  // GetFetchProgress says how many bytes of the download at the path have come and how many the file has.
+  // It is not known when no download of that path runs.
+  rpc GetFetchProgress(GetFetchProgressRequest) returns (GetFetchProgressResponse);
 }
 
 message FileProviderServiceFetchFileRequest {
@@ -30,3 +34,13 @@ message FileProviderServiceDropDownloadRequest {
 }
 
 message FileProviderServiceDropDownloadResponse {}
+
+message GetFetchProgressRequest {
+  string path = 1;
+}
+
+message GetFetchProgressResponse {
+  bool is_known = 1;
+  int64 bytes_done = 2;
+  int64 bytes_total = 3;
+}

@@ -57,6 +57,9 @@ const (
 	// FileServiceDropDownloadProcedure is the fully-qualified name of the FileService's DropDownload
 	// RPC.
 	FileServiceDropDownloadProcedure = "/numen.v1.FileService/DropDownload"
+	// FileServiceGetDownloadProgressProcedure is the fully-qualified name of the FileService's
+	// GetDownloadProgress RPC.
+	FileServiceGetDownloadProgressProcedure = "/numen.v1.FileService/GetDownloadProgress"
 )
 
 // FileServiceClient is a client for the numen.v1.FileService service.
@@ -90,6 +93,9 @@ type FileServiceClient interface {
 	// by the plugin that provides files. A file whose changes that plugin has not kept is a failed
 	// precondition that says so, and its bytes stay.
 	DropDownload(context.Context, *connect.Request[v1.DropDownloadRequest]) (*connect.Response[v1.DropDownloadResponse], error)
+	// GetDownloadProgress says how much of the file at the path the provider has downloaded so far. It is
+	// not known when the provider runs no download of that path.
+	GetDownloadProgress(context.Context, *connect.Request[v1.GetDownloadProgressRequest]) (*connect.Response[v1.GetDownloadProgressResponse], error)
 }
 
 // NewFileServiceClient constructs a client for the numen.v1.FileService service. By default, it
@@ -151,19 +157,26 @@ func NewFileServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(fileServiceMethods.ByName("DropDownload")),
 			connect.WithClientOptions(opts...),
 		),
+		getDownloadProgress: connect.NewClient[v1.GetDownloadProgressRequest, v1.GetDownloadProgressResponse](
+			httpClient,
+			baseURL+FileServiceGetDownloadProgressProcedure,
+			connect.WithSchema(fileServiceMethods.ByName("GetDownloadProgress")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // fileServiceClient implements FileServiceClient.
 type fileServiceClient struct {
-	listFiles     *connect.Client[v1.ListFilesRequest, v1.ListFilesResponse]
-	listFileKinds *connect.Client[v1.ListFileKindsRequest, v1.ListFileKindsResponse]
-	moveFile      *connect.Client[v1.MoveFileRequest, v1.MoveFileResponse]
-	removeFile    *connect.Client[v1.RemoveFileRequest, v1.RemoveFileResponse]
-	emptyTrash    *connect.Client[v1.EmptyTrashRequest, v1.EmptyTrashResponse]
-	createFolder  *connect.Client[v1.CreateFolderRequest, v1.CreateFolderResponse]
-	fetchFile     *connect.Client[v1.FetchFileRequest, v1.FetchFileResponse]
-	dropDownload  *connect.Client[v1.DropDownloadRequest, v1.DropDownloadResponse]
+	listFiles           *connect.Client[v1.ListFilesRequest, v1.ListFilesResponse]
+	listFileKinds       *connect.Client[v1.ListFileKindsRequest, v1.ListFileKindsResponse]
+	moveFile            *connect.Client[v1.MoveFileRequest, v1.MoveFileResponse]
+	removeFile          *connect.Client[v1.RemoveFileRequest, v1.RemoveFileResponse]
+	emptyTrash          *connect.Client[v1.EmptyTrashRequest, v1.EmptyTrashResponse]
+	createFolder        *connect.Client[v1.CreateFolderRequest, v1.CreateFolderResponse]
+	fetchFile           *connect.Client[v1.FetchFileRequest, v1.FetchFileResponse]
+	dropDownload        *connect.Client[v1.DropDownloadRequest, v1.DropDownloadResponse]
+	getDownloadProgress *connect.Client[v1.GetDownloadProgressRequest, v1.GetDownloadProgressResponse]
 }
 
 // ListFiles calls numen.v1.FileService.ListFiles.
@@ -206,6 +219,11 @@ func (c *fileServiceClient) DropDownload(ctx context.Context, req *connect.Reque
 	return c.dropDownload.CallUnary(ctx, req)
 }
 
+// GetDownloadProgress calls numen.v1.FileService.GetDownloadProgress.
+func (c *fileServiceClient) GetDownloadProgress(ctx context.Context, req *connect.Request[v1.GetDownloadProgressRequest]) (*connect.Response[v1.GetDownloadProgressResponse], error) {
+	return c.getDownloadProgress.CallUnary(ctx, req)
+}
+
 // FileServiceHandler is an implementation of the numen.v1.FileService service.
 type FileServiceHandler interface {
 	// ListFiles is what one folder of the vault holds. A tree asks for a folder
@@ -237,6 +255,9 @@ type FileServiceHandler interface {
 	// by the plugin that provides files. A file whose changes that plugin has not kept is a failed
 	// precondition that says so, and its bytes stay.
 	DropDownload(context.Context, *connect.Request[v1.DropDownloadRequest]) (*connect.Response[v1.DropDownloadResponse], error)
+	// GetDownloadProgress says how much of the file at the path the provider has downloaded so far. It is
+	// not known when the provider runs no download of that path.
+	GetDownloadProgress(context.Context, *connect.Request[v1.GetDownloadProgressRequest]) (*connect.Response[v1.GetDownloadProgressResponse], error)
 }
 
 // NewFileServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -294,6 +315,12 @@ func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(fileServiceMethods.ByName("DropDownload")),
 		connect.WithHandlerOptions(opts...),
 	)
+	fileServiceGetDownloadProgressHandler := connect.NewUnaryHandler(
+		FileServiceGetDownloadProgressProcedure,
+		svc.GetDownloadProgress,
+		connect.WithSchema(fileServiceMethods.ByName("GetDownloadProgress")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.FileService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FileServiceListFilesProcedure:
@@ -312,6 +339,8 @@ func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption
 			fileServiceFetchFileHandler.ServeHTTP(w, r)
 		case FileServiceDropDownloadProcedure:
 			fileServiceDropDownloadHandler.ServeHTTP(w, r)
+		case FileServiceGetDownloadProgressProcedure:
+			fileServiceGetDownloadProgressHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -351,4 +380,8 @@ func (UnimplementedFileServiceHandler) FetchFile(context.Context, *connect.Reque
 
 func (UnimplementedFileServiceHandler) DropDownload(context.Context, *connect.Request[v1.DropDownloadRequest]) (*connect.Response[v1.DropDownloadResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.DropDownload is not implemented"))
+}
+
+func (UnimplementedFileServiceHandler) GetDownloadProgress(context.Context, *connect.Request[v1.GetDownloadProgressRequest]) (*connect.Response[v1.GetDownloadProgressResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.GetDownloadProgress is not implemented"))
 }

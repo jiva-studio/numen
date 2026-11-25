@@ -50,6 +50,10 @@ service FileService {
   // by the plugin that provides files. A file whose changes that plugin has not kept is a failed
   // precondition that says so, and its bytes stay.
   rpc DropDownload(DropDownloadRequest) returns (DropDownloadResponse);
+
+  // GetDownloadProgress says how much of the file at the path the provider has downloaded so far. It is
+  // not known when the provider runs no download of that path.
+  rpc GetDownloadProgress(GetDownloadProgressRequest) returns (GetDownloadProgressResponse);
 }
 
 message ListFilesRequest {
@@ -220,3 +224,17 @@ message DropDownloadRequest {
 }
 
 message DropDownloadResponse {}
+
+message GetDownloadProgressRequest {
+  // The file whose download to ask about, as the vault calls it.
+  string path = 1;
+}
+
+message GetDownloadProgressResponse {
+  // False when no download of the file runs; the two sizes are then zero.
+  bool is_known = 1;
+  // The bytes of the file that are on this device so far.
+  int64 bytes_done = 2;
+  // The size of the whole file in bytes.
+  int64 bytes_total = 3;
+}

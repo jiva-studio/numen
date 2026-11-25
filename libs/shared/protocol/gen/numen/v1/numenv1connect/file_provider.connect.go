@@ -39,6 +39,9 @@ const (
 	// FileProviderServiceDropDownloadProcedure is the fully-qualified name of the FileProviderService's
 	// DropDownload RPC.
 	FileProviderServiceDropDownloadProcedure = "/numen.v1.FileProviderService/DropDownload"
+	// FileProviderServiceGetFetchProgressProcedure is the fully-qualified name of the
+	// FileProviderService's GetFetchProgress RPC.
+	FileProviderServiceGetFetchProgressProcedure = "/numen.v1.FileProviderService/GetFetchProgress"
 )
 
 // FileProviderServiceClient is a client for the numen.v1.FileProviderService service.
@@ -49,6 +52,9 @@ type FileProviderServiceClient interface {
 	// DropDownload removes the download of the file at the path of the vault. A file with changes the
 	// provider has not kept is a failed precondition, and its bytes stay.
 	DropDownload(context.Context, *connect.Request[v1.FileProviderServiceDropDownloadRequest]) (*connect.Response[v1.FileProviderServiceDropDownloadResponse], error)
+	// GetFetchProgress says how many bytes of the download at the path have come and how many the file has.
+	// It is not known when no download of that path runs.
+	GetFetchProgress(context.Context, *connect.Request[v1.GetFetchProgressRequest]) (*connect.Response[v1.GetFetchProgressResponse], error)
 }
 
 // NewFileProviderServiceClient constructs a client for the numen.v1.FileProviderService service. By
@@ -74,13 +80,20 @@ func NewFileProviderServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(fileProviderServiceMethods.ByName("DropDownload")),
 			connect.WithClientOptions(opts...),
 		),
+		getFetchProgress: connect.NewClient[v1.GetFetchProgressRequest, v1.GetFetchProgressResponse](
+			httpClient,
+			baseURL+FileProviderServiceGetFetchProgressProcedure,
+			connect.WithSchema(fileProviderServiceMethods.ByName("GetFetchProgress")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // fileProviderServiceClient implements FileProviderServiceClient.
 type fileProviderServiceClient struct {
-	fetchFile    *connect.Client[v1.FileProviderServiceFetchFileRequest, v1.FileProviderServiceFetchFileResponse]
-	dropDownload *connect.Client[v1.FileProviderServiceDropDownloadRequest, v1.FileProviderServiceDropDownloadResponse]
+	fetchFile        *connect.Client[v1.FileProviderServiceFetchFileRequest, v1.FileProviderServiceFetchFileResponse]
+	dropDownload     *connect.Client[v1.FileProviderServiceDropDownloadRequest, v1.FileProviderServiceDropDownloadResponse]
+	getFetchProgress *connect.Client[v1.GetFetchProgressRequest, v1.GetFetchProgressResponse]
 }
 
 // FetchFile calls numen.v1.FileProviderService.FetchFile.
@@ -93,6 +106,11 @@ func (c *fileProviderServiceClient) DropDownload(ctx context.Context, req *conne
 	return c.dropDownload.CallUnary(ctx, req)
 }
 
+// GetFetchProgress calls numen.v1.FileProviderService.GetFetchProgress.
+func (c *fileProviderServiceClient) GetFetchProgress(ctx context.Context, req *connect.Request[v1.GetFetchProgressRequest]) (*connect.Response[v1.GetFetchProgressResponse], error) {
+	return c.getFetchProgress.CallUnary(ctx, req)
+}
+
 // FileProviderServiceHandler is an implementation of the numen.v1.FileProviderService service.
 type FileProviderServiceHandler interface {
 	// FetchFile downloads the absent file at the path of the vault and fills it. It returns once the file
@@ -101,6 +119,9 @@ type FileProviderServiceHandler interface {
 	// DropDownload removes the download of the file at the path of the vault. A file with changes the
 	// provider has not kept is a failed precondition, and its bytes stay.
 	DropDownload(context.Context, *connect.Request[v1.FileProviderServiceDropDownloadRequest]) (*connect.Response[v1.FileProviderServiceDropDownloadResponse], error)
+	// GetFetchProgress says how many bytes of the download at the path have come and how many the file has.
+	// It is not known when no download of that path runs.
+	GetFetchProgress(context.Context, *connect.Request[v1.GetFetchProgressRequest]) (*connect.Response[v1.GetFetchProgressResponse], error)
 }
 
 // NewFileProviderServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -122,12 +143,20 @@ func NewFileProviderServiceHandler(svc FileProviderServiceHandler, opts ...conne
 		connect.WithSchema(fileProviderServiceMethods.ByName("DropDownload")),
 		connect.WithHandlerOptions(opts...),
 	)
+	fileProviderServiceGetFetchProgressHandler := connect.NewUnaryHandler(
+		FileProviderServiceGetFetchProgressProcedure,
+		svc.GetFetchProgress,
+		connect.WithSchema(fileProviderServiceMethods.ByName("GetFetchProgress")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.FileProviderService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FileProviderServiceFetchFileProcedure:
 			fileProviderServiceFetchFileHandler.ServeHTTP(w, r)
 		case FileProviderServiceDropDownloadProcedure:
 			fileProviderServiceDropDownloadHandler.ServeHTTP(w, r)
+		case FileProviderServiceGetFetchProgressProcedure:
+			fileProviderServiceGetFetchProgressHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -143,4 +172,8 @@ func (UnimplementedFileProviderServiceHandler) FetchFile(context.Context, *conne
 
 func (UnimplementedFileProviderServiceHandler) DropDownload(context.Context, *connect.Request[v1.FileProviderServiceDropDownloadRequest]) (*connect.Response[v1.FileProviderServiceDropDownloadResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileProviderService.DropDownload is not implemented"))
+}
+
+func (UnimplementedFileProviderServiceHandler) GetFetchProgress(context.Context, *connect.Request[v1.GetFetchProgressRequest]) (*connect.Response[v1.GetFetchProgressResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileProviderService.GetFetchProgress is not implemented"))
 }

@@ -1065,6 +1065,114 @@ func (*DropDownloadResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{18}
 }
 
+type GetDownloadProgressRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The file whose download to ask about, as the vault calls it.
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDownloadProgressRequest) Reset() {
+	*x = GetDownloadProgressRequest{}
+	mi := &file_numen_v1_file_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDownloadProgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDownloadProgressRequest) ProtoMessage() {}
+
+func (x *GetDownloadProgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDownloadProgressRequest.ProtoReflect.Descriptor instead.
+func (*GetDownloadProgressRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetDownloadProgressRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type GetDownloadProgressResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// False when no download of the file runs; the two sizes are then zero.
+	IsKnown bool `protobuf:"varint,1,opt,name=is_known,json=isKnown,proto3" json:"is_known,omitempty"`
+	// The bytes of the file that are on this device so far.
+	BytesDone int64 `protobuf:"varint,2,opt,name=bytes_done,json=bytesDone,proto3" json:"bytes_done,omitempty"`
+	// The size of the whole file in bytes.
+	BytesTotal    int64 `protobuf:"varint,3,opt,name=bytes_total,json=bytesTotal,proto3" json:"bytes_total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDownloadProgressResponse) Reset() {
+	*x = GetDownloadProgressResponse{}
+	mi := &file_numen_v1_file_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDownloadProgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDownloadProgressResponse) ProtoMessage() {}
+
+func (x *GetDownloadProgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDownloadProgressResponse.ProtoReflect.Descriptor instead.
+func (*GetDownloadProgressResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetDownloadProgressResponse) GetIsKnown() bool {
+	if x != nil {
+		return x.IsKnown
+	}
+	return false
+}
+
+func (x *GetDownloadProgressResponse) GetBytesDone() int64 {
+	if x != nil {
+		return x.BytesDone
+	}
+	return 0
+}
+
+func (x *GetDownloadProgressResponse) GetBytesTotal() int64 {
+	if x != nil {
+		return x.BytesTotal
+	}
+	return 0
+}
+
 var File_numen_v1_file_proto protoreflect.FileDescriptor
 
 const file_numen_v1_file_proto_rawDesc = "" +
@@ -1132,7 +1240,15 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x11FetchFileResponse\")\n" +
 	"\x13DropDownloadRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\x16\n" +
-	"\x14DropDownloadResponse2\xde\x04\n" +
+	"\x14DropDownloadResponse\"0\n" +
+	"\x1aGetDownloadProgressRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"x\n" +
+	"\x1bGetDownloadProgressResponse\x12\x19\n" +
+	"\bis_known\x18\x01 \x01(\bR\aisKnown\x12\x1d\n" +
+	"\n" +
+	"bytes_done\x18\x02 \x01(\x03R\tbytesDone\x12\x1f\n" +
+	"\vbytes_total\x18\x03 \x01(\x03R\n" +
+	"bytesTotal2\xc2\x05\n" +
 	"\vFileService\x12D\n" +
 	"\tListFiles\x12\x1a.numen.v1.ListFilesRequest\x1a\x1b.numen.v1.ListFilesResponse\x12P\n" +
 	"\rListFileKinds\x12\x1e.numen.v1.ListFileKindsRequest\x1a\x1f.numen.v1.ListFileKindsResponse\x12A\n" +
@@ -1143,7 +1259,8 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"EmptyTrash\x12\x1b.numen.v1.EmptyTrashRequest\x1a\x1c.numen.v1.EmptyTrashResponse\x12M\n" +
 	"\fCreateFolder\x12\x1d.numen.v1.CreateFolderRequest\x1a\x1e.numen.v1.CreateFolderResponse\x12D\n" +
 	"\tFetchFile\x12\x1a.numen.v1.FetchFileRequest\x1a\x1b.numen.v1.FetchFileResponse\x12M\n" +
-	"\fDropDownload\x12\x1d.numen.v1.DropDownloadRequest\x1a\x1e.numen.v1.DropDownloadResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\fDropDownload\x12\x1d.numen.v1.DropDownloadRequest\x1a\x1e.numen.v1.DropDownloadResponse\x12b\n" +
+	"\x13GetDownloadProgress\x12$.numen.v1.GetDownloadProgressRequest\x1a%.numen.v1.GetDownloadProgressResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_file_proto_rawDescOnce sync.Once
@@ -1157,38 +1274,40 @@ func file_numen_v1_file_proto_rawDescGZIP() []byte {
 	return file_numen_v1_file_proto_rawDescData
 }
 
-var file_numen_v1_file_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_numen_v1_file_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_numen_v1_file_proto_goTypes = []any{
-	(*ListFilesRequest)(nil),      // 0: numen.v1.ListFilesRequest
-	(*ListFilesResponse)(nil),     // 1: numen.v1.ListFilesResponse
-	(*Entry)(nil),                 // 2: numen.v1.Entry
-	(*ListFileKindsRequest)(nil),  // 3: numen.v1.ListFileKindsRequest
-	(*ListFileKindsResponse)(nil), // 4: numen.v1.ListFileKindsResponse
-	(*FileKind)(nil),              // 5: numen.v1.FileKind
-	(*MoveFileRequest)(nil),       // 6: numen.v1.MoveFileRequest
-	(*MoveFileResponse)(nil),      // 7: numen.v1.MoveFileResponse
-	(*MoveResult)(nil),            // 8: numen.v1.MoveResult
-	(*RemoveFileRequest)(nil),     // 9: numen.v1.RemoveFileRequest
-	(*EmptyTrashRequest)(nil),     // 10: numen.v1.EmptyTrashRequest
-	(*EmptyTrashResponse)(nil),    // 11: numen.v1.EmptyTrashResponse
-	(*RemoveFileResponse)(nil),    // 12: numen.v1.RemoveFileResponse
-	(*CreateFolderRequest)(nil),   // 13: numen.v1.CreateFolderRequest
-	(*CreateFolderResponse)(nil),  // 14: numen.v1.CreateFolderResponse
-	(*FetchFileRequest)(nil),      // 15: numen.v1.FetchFileRequest
-	(*FetchFileResponse)(nil),     // 16: numen.v1.FetchFileResponse
-	(*DropDownloadRequest)(nil),   // 17: numen.v1.DropDownloadRequest
-	(*DropDownloadResponse)(nil),  // 18: numen.v1.DropDownloadResponse
-	(*structpb.Struct)(nil),       // 19: google.protobuf.Struct
-	(ErrorCode)(0),                // 20: numen.v1.ErrorCode
+	(*ListFilesRequest)(nil),            // 0: numen.v1.ListFilesRequest
+	(*ListFilesResponse)(nil),           // 1: numen.v1.ListFilesResponse
+	(*Entry)(nil),                       // 2: numen.v1.Entry
+	(*ListFileKindsRequest)(nil),        // 3: numen.v1.ListFileKindsRequest
+	(*ListFileKindsResponse)(nil),       // 4: numen.v1.ListFileKindsResponse
+	(*FileKind)(nil),                    // 5: numen.v1.FileKind
+	(*MoveFileRequest)(nil),             // 6: numen.v1.MoveFileRequest
+	(*MoveFileResponse)(nil),            // 7: numen.v1.MoveFileResponse
+	(*MoveResult)(nil),                  // 8: numen.v1.MoveResult
+	(*RemoveFileRequest)(nil),           // 9: numen.v1.RemoveFileRequest
+	(*EmptyTrashRequest)(nil),           // 10: numen.v1.EmptyTrashRequest
+	(*EmptyTrashResponse)(nil),          // 11: numen.v1.EmptyTrashResponse
+	(*RemoveFileResponse)(nil),          // 12: numen.v1.RemoveFileResponse
+	(*CreateFolderRequest)(nil),         // 13: numen.v1.CreateFolderRequest
+	(*CreateFolderResponse)(nil),        // 14: numen.v1.CreateFolderResponse
+	(*FetchFileRequest)(nil),            // 15: numen.v1.FetchFileRequest
+	(*FetchFileResponse)(nil),           // 16: numen.v1.FetchFileResponse
+	(*DropDownloadRequest)(nil),         // 17: numen.v1.DropDownloadRequest
+	(*DropDownloadResponse)(nil),        // 18: numen.v1.DropDownloadResponse
+	(*GetDownloadProgressRequest)(nil),  // 19: numen.v1.GetDownloadProgressRequest
+	(*GetDownloadProgressResponse)(nil), // 20: numen.v1.GetDownloadProgressResponse
+	(*structpb.Struct)(nil),             // 21: google.protobuf.Struct
+	(ErrorCode)(0),                      // 22: numen.v1.ErrorCode
 }
 var file_numen_v1_file_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
 	5,  // 1: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
-	19, // 2: numen.v1.FileKind.properties:type_name -> google.protobuf.Struct
+	21, // 2: numen.v1.FileKind.properties:type_name -> google.protobuf.Struct
 	8,  // 3: numen.v1.MoveFileResponse.move_result:type_name -> numen.v1.MoveResult
-	20, // 4: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
-	20, // 5: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
-	20, // 6: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
+	22, // 4: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	22, // 5: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	22, // 6: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
 	0,  // 7: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
 	3,  // 8: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
 	6,  // 9: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
@@ -1197,16 +1316,18 @@ var file_numen_v1_file_proto_depIdxs = []int32{
 	13, // 12: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
 	15, // 13: numen.v1.FileService.FetchFile:input_type -> numen.v1.FetchFileRequest
 	17, // 14: numen.v1.FileService.DropDownload:input_type -> numen.v1.DropDownloadRequest
-	1,  // 15: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
-	4,  // 16: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
-	7,  // 17: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
-	12, // 18: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
-	11, // 19: numen.v1.FileService.EmptyTrash:output_type -> numen.v1.EmptyTrashResponse
-	14, // 20: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
-	16, // 21: numen.v1.FileService.FetchFile:output_type -> numen.v1.FetchFileResponse
-	18, // 22: numen.v1.FileService.DropDownload:output_type -> numen.v1.DropDownloadResponse
-	15, // [15:23] is the sub-list for method output_type
-	7,  // [7:15] is the sub-list for method input_type
+	19, // 15: numen.v1.FileService.GetDownloadProgress:input_type -> numen.v1.GetDownloadProgressRequest
+	1,  // 16: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
+	4,  // 17: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
+	7,  // 18: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
+	12, // 19: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
+	11, // 20: numen.v1.FileService.EmptyTrash:output_type -> numen.v1.EmptyTrashResponse
+	14, // 21: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
+	16, // 22: numen.v1.FileService.FetchFile:output_type -> numen.v1.FetchFileResponse
+	18, // 23: numen.v1.FileService.DropDownload:output_type -> numen.v1.DropDownloadResponse
+	20, // 24: numen.v1.FileService.GetDownloadProgress:output_type -> numen.v1.GetDownloadProgressResponse
+	16, // [16:25] is the sub-list for method output_type
+	7,  // [7:16] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -1225,7 +1346,7 @@ func file_numen_v1_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_file_proto_rawDesc), len(file_numen_v1_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

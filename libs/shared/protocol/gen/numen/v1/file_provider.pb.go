@@ -197,6 +197,110 @@ func (*FileProviderServiceDropDownloadResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_provider_proto_rawDescGZIP(), []int{3}
 }
 
+type GetFetchProgressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFetchProgressRequest) Reset() {
+	*x = GetFetchProgressRequest{}
+	mi := &file_numen_v1_file_provider_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFetchProgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFetchProgressRequest) ProtoMessage() {}
+
+func (x *GetFetchProgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_provider_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFetchProgressRequest.ProtoReflect.Descriptor instead.
+func (*GetFetchProgressRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_provider_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetFetchProgressRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type GetFetchProgressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IsKnown       bool                   `protobuf:"varint,1,opt,name=is_known,json=isKnown,proto3" json:"is_known,omitempty"`
+	BytesDone     int64                  `protobuf:"varint,2,opt,name=bytes_done,json=bytesDone,proto3" json:"bytes_done,omitempty"`
+	BytesTotal    int64                  `protobuf:"varint,3,opt,name=bytes_total,json=bytesTotal,proto3" json:"bytes_total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFetchProgressResponse) Reset() {
+	*x = GetFetchProgressResponse{}
+	mi := &file_numen_v1_file_provider_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFetchProgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFetchProgressResponse) ProtoMessage() {}
+
+func (x *GetFetchProgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_provider_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFetchProgressResponse.ProtoReflect.Descriptor instead.
+func (*GetFetchProgressResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_provider_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetFetchProgressResponse) GetIsKnown() bool {
+	if x != nil {
+		return x.IsKnown
+	}
+	return false
+}
+
+func (x *GetFetchProgressResponse) GetBytesDone() int64 {
+	if x != nil {
+		return x.BytesDone
+	}
+	return 0
+}
+
+func (x *GetFetchProgressResponse) GetBytesTotal() int64 {
+	if x != nil {
+		return x.BytesTotal
+	}
+	return 0
+}
+
 var File_numen_v1_file_provider_proto protoreflect.FileDescriptor
 
 const file_numen_v1_file_provider_proto_rawDesc = "" +
@@ -209,10 +313,19 @@ const file_numen_v1_file_provider_proto_rawDesc = "" +
 	"&FileProviderServiceDropDownloadRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\")\n" +
-	"'FileProviderServiceDropDownloadResponse2\xf6\x01\n" +
+	"'FileProviderServiceDropDownloadResponse\"-\n" +
+	"\x17GetFetchProgressRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"u\n" +
+	"\x18GetFetchProgressResponse\x12\x19\n" +
+	"\bis_known\x18\x01 \x01(\bR\aisKnown\x12\x1d\n" +
+	"\n" +
+	"bytes_done\x18\x02 \x01(\x03R\tbytesDone\x12\x1f\n" +
+	"\vbytes_total\x18\x03 \x01(\x03R\n" +
+	"bytesTotal2\xd1\x02\n" +
 	"\x13FileProviderService\x12j\n" +
 	"\tFetchFile\x12-.numen.v1.FileProviderServiceFetchFileRequest\x1a..numen.v1.FileProviderServiceFetchFileResponse\x12s\n" +
-	"\fDropDownload\x120.numen.v1.FileProviderServiceDropDownloadRequest\x1a1.numen.v1.FileProviderServiceDropDownloadResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\fDropDownload\x120.numen.v1.FileProviderServiceDropDownloadRequest\x1a1.numen.v1.FileProviderServiceDropDownloadResponse\x12Y\n" +
+	"\x10GetFetchProgress\x12!.numen.v1.GetFetchProgressRequest\x1a\".numen.v1.GetFetchProgressResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_file_provider_proto_rawDescOnce sync.Once
@@ -226,20 +339,24 @@ func file_numen_v1_file_provider_proto_rawDescGZIP() []byte {
 	return file_numen_v1_file_provider_proto_rawDescData
 }
 
-var file_numen_v1_file_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_numen_v1_file_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_numen_v1_file_provider_proto_goTypes = []any{
 	(*FileProviderServiceFetchFileRequest)(nil),     // 0: numen.v1.FileProviderServiceFetchFileRequest
 	(*FileProviderServiceFetchFileResponse)(nil),    // 1: numen.v1.FileProviderServiceFetchFileResponse
 	(*FileProviderServiceDropDownloadRequest)(nil),  // 2: numen.v1.FileProviderServiceDropDownloadRequest
 	(*FileProviderServiceDropDownloadResponse)(nil), // 3: numen.v1.FileProviderServiceDropDownloadResponse
+	(*GetFetchProgressRequest)(nil),                 // 4: numen.v1.GetFetchProgressRequest
+	(*GetFetchProgressResponse)(nil),                // 5: numen.v1.GetFetchProgressResponse
 }
 var file_numen_v1_file_provider_proto_depIdxs = []int32{
 	0, // 0: numen.v1.FileProviderService.FetchFile:input_type -> numen.v1.FileProviderServiceFetchFileRequest
 	2, // 1: numen.v1.FileProviderService.DropDownload:input_type -> numen.v1.FileProviderServiceDropDownloadRequest
-	1, // 2: numen.v1.FileProviderService.FetchFile:output_type -> numen.v1.FileProviderServiceFetchFileResponse
-	3, // 3: numen.v1.FileProviderService.DropDownload:output_type -> numen.v1.FileProviderServiceDropDownloadResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: numen.v1.FileProviderService.GetFetchProgress:input_type -> numen.v1.GetFetchProgressRequest
+	1, // 3: numen.v1.FileProviderService.FetchFile:output_type -> numen.v1.FileProviderServiceFetchFileResponse
+	3, // 4: numen.v1.FileProviderService.DropDownload:output_type -> numen.v1.FileProviderServiceDropDownloadResponse
+	5, // 5: numen.v1.FileProviderService.GetFetchProgress:output_type -> numen.v1.GetFetchProgressResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -256,7 +373,7 @@ func file_numen_v1_file_provider_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_file_provider_proto_rawDesc), len(file_numen_v1_file_provider_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

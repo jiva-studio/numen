@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file_provider.proto.
  */
 export const file_numen_v1_file_provider: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9maWxlX3Byb3ZpZGVyLnByb3RvEghudW1lbi52MSJFCiNGaWxlUHJvdmlkZXJTZXJ2aWNlRmV0Y2hGaWxlUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRwYXRoGAIgASgJIiYKJEZpbGVQcm92aWRlclNlcnZpY2VGZXRjaEZpbGVSZXNwb25zZSJICiZGaWxlUHJvdmlkZXJTZXJ2aWNlRHJvcERvd25sb2FkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRwYXRoGAIgASgJIikKJ0ZpbGVQcm92aWRlclNlcnZpY2VEcm9wRG93bmxvYWRSZXNwb25zZTL2AQoTRmlsZVByb3ZpZGVyU2VydmljZRJqCglGZXRjaEZpbGUSLS5udW1lbi52MS5GaWxlUHJvdmlkZXJTZXJ2aWNlRmV0Y2hGaWxlUmVxdWVzdBouLm51bWVuLnYxLkZpbGVQcm92aWRlclNlcnZpY2VGZXRjaEZpbGVSZXNwb25zZRJzCgxEcm9wRG93bmxvYWQSMC5udW1lbi52MS5GaWxlUHJvdmlkZXJTZXJ2aWNlRHJvcERvd25sb2FkUmVxdWVzdBoxLm51bWVuLnYxLkZpbGVQcm92aWRlclNlcnZpY2VEcm9wRG93bmxvYWRSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChxudW1lbi92MS9maWxlX3Byb3ZpZGVyLnByb3RvEghudW1lbi52MSJFCiNGaWxlUHJvdmlkZXJTZXJ2aWNlRmV0Y2hGaWxlUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRwYXRoGAIgASgJIiYKJEZpbGVQcm92aWRlclNlcnZpY2VGZXRjaEZpbGVSZXNwb25zZSJICiZGaWxlUHJvdmlkZXJTZXJ2aWNlRHJvcERvd25sb2FkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRwYXRoGAIgASgJIikKJ0ZpbGVQcm92aWRlclNlcnZpY2VEcm9wRG93bmxvYWRSZXNwb25zZSInChdHZXRGZXRjaFByb2dyZXNzUmVxdWVzdBIMCgRwYXRoGAEgASgJIlUKGEdldEZldGNoUHJvZ3Jlc3NSZXNwb25zZRIQCghpc19rbm93bhgBIAEoCBISCgpieXRlc19kb25lGAIgASgDEhMKC2J5dGVzX3RvdGFsGAMgASgDMtECChNGaWxlUHJvdmlkZXJTZXJ2aWNlEmoKCUZldGNoRmlsZRItLm51bWVuLnYxLkZpbGVQcm92aWRlclNlcnZpY2VGZXRjaEZpbGVSZXF1ZXN0Gi4ubnVtZW4udjEuRmlsZVByb3ZpZGVyU2VydmljZUZldGNoRmlsZVJlc3BvbnNlEnMKDERyb3BEb3dubG9hZBIwLm51bWVuLnYxLkZpbGVQcm92aWRlclNlcnZpY2VEcm9wRG93bmxvYWRSZXF1ZXN0GjEubnVtZW4udjEuRmlsZVByb3ZpZGVyU2VydmljZURyb3BEb3dubG9hZFJlc3BvbnNlElkKEEdldEZldGNoUHJvZ3Jlc3MSIS5udW1lbi52MS5HZXRGZXRjaFByb2dyZXNzUmVxdWVzdBoiLm51bWVuLnYxLkdldEZldGNoUHJvZ3Jlc3NSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.FileProviderServiceFetchFileRequest
@@ -83,9 +83,53 @@ export const FileProviderServiceDropDownloadResponseSchema: GenMessage<FileProvi
   messageDesc(file_numen_v1_file_provider, 3);
 
 /**
+ * @generated from message numen.v1.GetFetchProgressRequest
+ */
+export type GetFetchProgressRequest = Message<"numen.v1.GetFetchProgressRequest"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.GetFetchProgressRequest.
+ * Use `create(GetFetchProgressRequestSchema)` to create a new message.
+ */
+export const GetFetchProgressRequestSchema: GenMessage<GetFetchProgressRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file_provider, 4);
+
+/**
+ * @generated from message numen.v1.GetFetchProgressResponse
+ */
+export type GetFetchProgressResponse = Message<"numen.v1.GetFetchProgressResponse"> & {
+  /**
+   * @generated from field: bool is_known = 1;
+   */
+  isKnown: boolean;
+
+  /**
+   * @generated from field: int64 bytes_done = 2;
+   */
+  bytesDone: bigint;
+
+  /**
+   * @generated from field: int64 bytes_total = 3;
+   */
+  bytesTotal: bigint;
+};
+
+/**
+ * Describes the message numen.v1.GetFetchProgressResponse.
+ * Use `create(GetFetchProgressResponseSchema)` to create a new message.
+ */
+export const GetFetchProgressResponseSchema: GenMessage<GetFetchProgressResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file_provider, 5);
+
+/**
  * FileProviderService is what a plugin that declares the files.provider capability serves: it fills the
  * files its vaults list as absent and takes the bytes of its downloads off the device again. The core
- * calls it for FileService.FetchFile and FileService.DropDownload, and names no plugin to do so.
+ * calls it for FileService.FetchFile, FileService.DropDownload and FileService.GetDownloadProgress, and names no plugin to do so.
  *
  * @generated from service numen.v1.FileProviderService
  */
@@ -111,6 +155,17 @@ export const FileProviderService: GenService<{
     methodKind: "unary";
     input: typeof FileProviderServiceDropDownloadRequestSchema;
     output: typeof FileProviderServiceDropDownloadResponseSchema;
+  },
+  /**
+   * GetFetchProgress says how many bytes of the download at the path have come and how many the file has.
+   * It is not known when no download of that path runs.
+   *
+   * @generated from rpc numen.v1.FileProviderService.GetFetchProgress
+   */
+  getFetchProgress: {
+    methodKind: "unary";
+    input: typeof GetFetchProgressRequestSchema;
+    output: typeof GetFetchProgressResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_file_provider, 0);

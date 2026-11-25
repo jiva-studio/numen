@@ -19,7 +19,7 @@ import type { JsonObject, Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5IqYBCgVFbnRyeRIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJaXNfZm9sZGVyGAMgASgIEg8KB2lzX25vdGUYBiABKAgSDAoEdHlwZRgFIAEoCRIQCgh0YWJfa2luZBgHIAEoCRIYChBtb2RpZmllZF91bml4X21zGAggASgDEhEKCWlzX2Fic2VudBgJIAEoCBIQCghwcm92aWRlchgKIAEoCSIlChRMaXN0RmlsZUtpbmRzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI6ChVMaXN0RmlsZUtpbmRzUmVzcG9uc2USIQoFa2luZHMYASADKAsyEi5udW1lbi52MS5GaWxlS2luZCJ2CghGaWxlS2luZBIMCgRwYXRoGAEgASgJEg8KB2lzX25vdGUYBSABKAgSDAoEdHlwZRgDIAEoCRIrCgpwcm9wZXJ0aWVzGAYgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIQCgh0YWJfa2luZBgHIAEoCSIrCg9Nb3ZlRmlsZVJlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSKRAQoQTW92ZUZpbGVSZXNwb25zZRIuCgttb3ZlX3Jlc3VsdBgBIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgDIAEoCEIOCgxfbW92ZV9yZXN1bHQiVgoKTW92ZVJlc3VsdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhYKDnJlcGFpcmVkX25vdGVzGAMgAygJEhYKDmRhbmdsaW5nX25vdGVzGAQgAygJIiEKEVJlbW92ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiEwoRRW1wdHlUcmFzaFJlcXVlc3QiKgoSRW1wdHlUcmFzaFJlc3BvbnNlEhQKDGZhaWxlZF9wYXRocxgBIAMoCSJ/ChJSZW1vdmVGaWxlUmVzcG9uc2USEgoKdHJhc2hfcGF0aBgBIAEoCRIWCg5kYW5nbGluZ19ub3RlcxgCIAMoCRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgEIAEoCCIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiOgoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiIAoQRmV0Y2hGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJIhMKEUZldGNoRmlsZVJlc3BvbnNlIiMKE0Ryb3BEb3dubG9hZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSIWChREcm9wRG93bmxvYWRSZXNwb25zZTLeBAoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEkcKCkVtcHR5VHJhc2gSGy5udW1lbi52MS5FbXB0eVRyYXNoUmVxdWVzdBocLm51bWVuLnYxLkVtcHR5VHJhc2hSZXNwb25zZRJNCgxDcmVhdGVGb2xkZXISHS5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVzcG9uc2USRAoJRmV0Y2hGaWxlEhoubnVtZW4udjEuRmV0Y2hGaWxlUmVxdWVzdBobLm51bWVuLnYxLkZldGNoRmlsZVJlc3BvbnNlEk0KDERyb3BEb3dubG9hZBIdLm51bWVuLnYxLkRyb3BEb3dubG9hZFJlcXVlc3QaHi5udW1lbi52MS5Ecm9wRG93bmxvYWRSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_google_protobuf_struct, file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5IqYBCgVFbnRyeRIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJaXNfZm9sZGVyGAMgASgIEg8KB2lzX25vdGUYBiABKAgSDAoEdHlwZRgFIAEoCRIQCgh0YWJfa2luZBgHIAEoCRIYChBtb2RpZmllZF91bml4X21zGAggASgDEhEKCWlzX2Fic2VudBgJIAEoCBIQCghwcm92aWRlchgKIAEoCSIlChRMaXN0RmlsZUtpbmRzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI6ChVMaXN0RmlsZUtpbmRzUmVzcG9uc2USIQoFa2luZHMYASADKAsyEi5udW1lbi52MS5GaWxlS2luZCJ2CghGaWxlS2luZBIMCgRwYXRoGAEgASgJEg8KB2lzX25vdGUYBSABKAgSDAoEdHlwZRgDIAEoCRIrCgpwcm9wZXJ0aWVzGAYgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIQCgh0YWJfa2luZBgHIAEoCSIrCg9Nb3ZlRmlsZVJlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSKRAQoQTW92ZUZpbGVSZXNwb25zZRIuCgttb3ZlX3Jlc3VsdBgBIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgDIAEoCEIOCgxfbW92ZV9yZXN1bHQiVgoKTW92ZVJlc3VsdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhYKDnJlcGFpcmVkX25vdGVzGAMgAygJEhYKDmRhbmdsaW5nX25vdGVzGAQgAygJIiEKEVJlbW92ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiEwoRRW1wdHlUcmFzaFJlcXVlc3QiKgoSRW1wdHlUcmFzaFJlc3BvbnNlEhQKDGZhaWxlZF9wYXRocxgBIAMoCSJ/ChJSZW1vdmVGaWxlUmVzcG9uc2USEgoKdHJhc2hfcGF0aBgBIAEoCRIWCg5kYW5nbGluZ19ub3RlcxgCIAMoCRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgEIAEoCCIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiOgoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiIAoQRmV0Y2hGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJIhMKEUZldGNoRmlsZVJlc3BvbnNlIiMKE0Ryb3BEb3dubG9hZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSIWChREcm9wRG93bmxvYWRSZXNwb25zZSIqChpHZXREb3dubG9hZFByb2dyZXNzUmVxdWVzdBIMCgRwYXRoGAEgASgJIlgKG0dldERvd25sb2FkUHJvZ3Jlc3NSZXNwb25zZRIQCghpc19rbm93bhgBIAEoCBISCgpieXRlc19kb25lGAIgASgDEhMKC2J5dGVzX3RvdGFsGAMgASgDMsIFCgtGaWxlU2VydmljZRJECglMaXN0RmlsZXMSGi5udW1lbi52MS5MaXN0RmlsZXNSZXF1ZXN0GhsubnVtZW4udjEuTGlzdEZpbGVzUmVzcG9uc2USUAoNTGlzdEZpbGVLaW5kcxIeLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1Jlc3BvbnNlEkEKCE1vdmVGaWxlEhkubnVtZW4udjEuTW92ZUZpbGVSZXF1ZXN0GhoubnVtZW4udjEuTW92ZUZpbGVSZXNwb25zZRJHCgpSZW1vdmVGaWxlEhsubnVtZW4udjEuUmVtb3ZlRmlsZVJlcXVlc3QaHC5udW1lbi52MS5SZW1vdmVGaWxlUmVzcG9uc2USRwoKRW1wdHlUcmFzaBIbLm51bWVuLnYxLkVtcHR5VHJhc2hSZXF1ZXN0GhwubnVtZW4udjEuRW1wdHlUcmFzaFJlc3BvbnNlEk0KDENyZWF0ZUZvbGRlchIdLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlcXVlc3QaHi5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXNwb25zZRJECglGZXRjaEZpbGUSGi5udW1lbi52MS5GZXRjaEZpbGVSZXF1ZXN0GhsubnVtZW4udjEuRmV0Y2hGaWxlUmVzcG9uc2USTQoMRHJvcERvd25sb2FkEh0ubnVtZW4udjEuRHJvcERvd25sb2FkUmVxdWVzdBoeLm51bWVuLnYxLkRyb3BEb3dubG9hZFJlc3BvbnNlEmIKE0dldERvd25sb2FkUHJvZ3Jlc3MSJC5udW1lbi52MS5HZXREb3dubG9hZFByb2dyZXNzUmVxdWVzdBolLm51bWVuLnYxLkdldERvd25sb2FkUHJvZ3Jlc3NSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_google_protobuf_struct, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
@@ -533,6 +533,58 @@ export const DropDownloadResponseSchema: GenMessage<DropDownloadResponse> = /*@_
   messageDesc(file_numen_v1_file, 18);
 
 /**
+ * @generated from message numen.v1.GetDownloadProgressRequest
+ */
+export type GetDownloadProgressRequest = Message<"numen.v1.GetDownloadProgressRequest"> & {
+  /**
+   * The file whose download to ask about, as the vault calls it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.GetDownloadProgressRequest.
+ * Use `create(GetDownloadProgressRequestSchema)` to create a new message.
+ */
+export const GetDownloadProgressRequestSchema: GenMessage<GetDownloadProgressRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 19);
+
+/**
+ * @generated from message numen.v1.GetDownloadProgressResponse
+ */
+export type GetDownloadProgressResponse = Message<"numen.v1.GetDownloadProgressResponse"> & {
+  /**
+   * False when no download of the file runs; the two sizes are then zero.
+   *
+   * @generated from field: bool is_known = 1;
+   */
+  isKnown: boolean;
+
+  /**
+   * The bytes of the file that are on this device so far.
+   *
+   * @generated from field: int64 bytes_done = 2;
+   */
+  bytesDone: bigint;
+
+  /**
+   * The size of the whole file in bytes.
+   *
+   * @generated from field: int64 bytes_total = 3;
+   */
+  bytesTotal: bigint;
+};
+
+/**
+ * Describes the message numen.v1.GetDownloadProgressResponse.
+ * Use `create(GetDownloadProgressResponseSchema)` to create a new message.
+ */
+export const GetDownloadProgressResponseSchema: GenMessage<GetDownloadProgressResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 20);
+
+/**
  * FileService answers what the vault holds at a path, and moves it about.
  *
  * @generated from service numen.v1.FileService
@@ -630,6 +682,17 @@ export const FileService: GenService<{
     methodKind: "unary";
     input: typeof DropDownloadRequestSchema;
     output: typeof DropDownloadResponseSchema;
+  },
+  /**
+   * GetDownloadProgress says how much of the file at the path the provider has downloaded so far. It is
+   * not known when the provider runs no download of that path.
+   *
+   * @generated from rpc numen.v1.FileService.GetDownloadProgress
+   */
+  getDownloadProgress: {
+    methodKind: "unary";
+    input: typeof GetDownloadProgressRequestSchema;
+    output: typeof GetDownloadProgressResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_file, 0);
