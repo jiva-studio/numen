@@ -5,6 +5,8 @@
  * move into a "..." menu. An item with choices is a menu button: it stays in the header and opens its choices.
  */
 import { computed, nextTick, ref, useTemplateRef, type Component } from 'vue'
+import { reportFailure } from '@/shared/api/report'
+import { runInBackground } from '@/shared/lib/async/background'
 import { Ellipsis } from '@lucide/vue'
 import { measureRect } from '@/shared/api/dom'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -69,10 +71,12 @@ function onPress(item: CardActionItem, event: Event): void {
   choice.value = { item, at: { x: box.left, y: box.bottom }, wide: box.width, from }
 }
 
-async function onChooseChoice(id: string): Promise<void> {
+function onChooseChoice(id: string): void {
   choice.value = null
-  await nextTick()
-  emit('choose', id)
+  runInBackground(
+    nextTick(() => emit('choose', id)),
+    reportFailure,
+  )
 }
 
 function onClose(): void {
