@@ -2,8 +2,10 @@ package fakeserver_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -242,5 +244,25 @@ func TestGetChanges_ResetsACursorOlderThanTheFloorOfPrunedDeletions(t *testing.T
 	}
 	if current.GetReset_() {
 		t.Errorf("answer at the floor = %v, want no reset", current)
+	}
+}
+
+func TestAdminPulls_CountsTheReadsOfChangesOfEachDevice(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	vault := e.newVault()
+	for range 3 {
+		if _, err := e.revision.GetChanges(t.Context(), vault, 0, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var counts map[string]int
+	if err := json.Unmarshal(e.getAdmin("/admin/pulls"), &counts); err != nil {
+		t.Fatal(err)
+	}
+
+	if want := map[string]int{hex.EncodeToString(e.device.Public().Sign): 3}; !maps.Equal(counts, want) {
+		t.Errorf("pulls = %v, want %v", counts, want)
 	}
 }

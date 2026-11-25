@@ -83,10 +83,11 @@ type challenge struct {
 // URLs at /blobs/, and the admin paths /admin/sessions (GET lists, POST /admin/sessions/end ends every
 // session, or the ones of the device in the query deviceSignKey, a hex string) and /admin/blobs (GET returns
 // the id and the body of every stored blob, raw). The watch service streams change hints; /admin/streams (GET) returns the count of open streams as text and
-// /admin/streams/end (POST) ends them all. The subscription service has the pay page at /pay/ and the admin
+// /admin/streams/end (POST) ends them all. /admin/pulls (GET) returns an object of the hex device sign key of each device and how often
+// it read changes, so a test can wait until a device ran a pass. The subscription service has the pay page at /pay/ and the admin
 // path /admin/subscription (POST, phase=none|active|grace|read_only|deleted and an optional account). An account
 // may write when its subscription allows it, and every account does unless the config sets NeedsSubscription. The admin paths
-// /admin/trial and /admin/cancel-trial (POST, plan=id and an optional account) start and cancel a trial, and /admin/usage (POST, bytes=N and an
+// /admin/trial and /admin/cancel-trial (POST, plan=id and an optional account) start a trial, which answers the time it ends as text, and cancel it, and /admin/usage (POST, bytes=N and an
 // optional account) sets the bytes the cloud holds. The restore service has the admin paths /admin/backup (POST keeps the state),
 // /admin/restore (POST puts the kept state back and announces nothing), /admin/announce (POST issues a restore epoch),
 // /admin/retention (POST deletes the vaults of every account) and /admin/blob-loss (POST drops the body of every blob).
@@ -112,6 +113,7 @@ type Server struct {
 	blobs         map[string]*blobRow
 	used          map[string]uint64
 	calls         map[string]int
+	pulls         map[string]int
 	subscriptions map[string]time.Time
 	planOf        map[string]string
 	checkouts     map[string]checkout
@@ -132,7 +134,7 @@ func New(cfg Config) *Server {
 	s := &Server{
 		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, plans: cfg.Plans, audience: cfg.Audience, needsSubscription: cfg.NeedsSubscription,
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
-		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
+		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{}, pulls: map[string]int{},
 		subscriptions: map[string]time.Time{}, planOf: map[string]string{}, checkouts: map[string]checkout{}, shop: shop{trials: map[string]bool{}},
 		store: bodystore.New(cfg.BodyDir), stop: cfg.Stop, streams: streams.New(cfg.Heartbeat),
 		shares: map[string]*sharestate.State{}, deleting: map[string]time.Time{},
@@ -174,6 +176,7 @@ func (s *Server) newMux() http.Handler {
 	mux.Handle(syncv1connect.NewRestoreServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewWatchServiceHandler(s, options))
 	mux.HandleFunc("/admin/streams", s.serveStreams)
+	mux.HandleFunc("/admin/pulls", s.servePulls)
 	mux.HandleFunc("/admin/streams/end", s.serveStreamsEnd)
 	mux.Handle(syncv1connect.NewShareServiceHandler(s, options))
 	mux.HandleFunc(payFolder, s.servePay)

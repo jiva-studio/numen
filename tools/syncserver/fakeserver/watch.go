@@ -2,6 +2,7 @@ package fakeserver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"maps"
 	"net/http"
@@ -133,4 +134,18 @@ func (s *Server) serveStreamsEnd(w http.ResponseWriter, r *http.Request) {
 	}
 	s.EndStreams()
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) servePulls(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	s.mu.Lock()
+	counts := maps.Clone(s.pulls)
+	s.mu.Unlock()
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(counts); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }

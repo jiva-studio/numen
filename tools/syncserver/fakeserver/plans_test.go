@@ -2,11 +2,14 @@ package fakeserver_test
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
@@ -309,4 +312,34 @@ func newPlansServer(tb testing.TB, plans []syncprotocol.Plan) (*billing, *synccl
 
 func newAnonymousSubscription(address string) *syncclient.SubscriptionClient {
 	return syncclient.NewSubscriptionClient(address, http.DefaultClient, func() string { return "" })
+}
+
+func TestAdminTrial_AnswersTheTimeTheTrialEndsAndStoresIt(t *testing.T) {
+	t.Parallel()
+	b := createBillingEnv(t, true)
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, b.address+"/admin/trial?plan=plus", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := b.clock.now.Add(14 * day).UTC().Format(time.RFC3339)
+	if got := strings.TrimSpace(string(body)); response.StatusCode != http.StatusOK || got != want {
+		t.Errorf("answer = %d %q, want 200 %q", response.StatusCode, got, want)
+	}
+	if got := b.subscriptionNow(); got.PlanID != "plus" {
+		t.Errorf("subscription = %+v, want the plan plus", got)
+	}
 }

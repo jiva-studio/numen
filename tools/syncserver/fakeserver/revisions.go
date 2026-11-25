@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -272,13 +273,14 @@ func (s *Server) storeRevision(b *batch, i int) *syncv1.StoredRevision {
 }
 
 func (s *Server) GetChanges(_ context.Context, req *connect.Request[syncv1.GetChangesRequest]) (*connect.Response[syncv1.GetChangesResponse], error) {
-	account, err := s.authenticate(req.Header())
+	session, err := s.authenticateSession(req.Header())
 	if err != nil {
 		return nil, err
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	vault, err := s.getOwnedVault(account, req.Msg.GetVaultId())
+	s.pulls[hex.EncodeToString(session.DeviceSignKey)]++
+	vault, err := s.getOwnedVault(session.AccountFingerprint, req.Msg.GetVaultId())
 	if err != nil {
 		return nil, err
 	}

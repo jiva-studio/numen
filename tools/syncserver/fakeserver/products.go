@@ -2,9 +2,11 @@ package fakeserver
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"slices"
 	"strconv"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -97,12 +99,17 @@ func (s *Server) serveTrial(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	var ends time.Time
 	for _, account := range s.listAccounts(r.URL.Query().Get("account")) {
-		s.subscriptions[account] = s.now().Add(trialPeriod)
+		ends = s.now().Add(trialPeriod)
+		s.subscriptions[account] = ends
 		s.planOf[account] = r.URL.Query().Get("plan")
 		s.shop.trials[account] = true
 	}
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Content-Type", "text/plain")
+	if _, err := fmt.Fprintln(w, ends.UTC().Format(time.RFC3339)); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) serveCancelTrial(w http.ResponseWriter, r *http.Request) {
