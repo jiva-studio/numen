@@ -364,3 +364,18 @@ func TestDownloadFile_DiscardDeletesTheStagedFileAndItsState(t *testing.T) {
 		t.Errorf("entries = %+v, want none after Discard", kept)
 	}
 }
+
+func TestDownloadFile_KeepsThePositionOfEveryWholeChunkItTook(t *testing.T) {
+	w := newWorld(t)
+	stored, meta, _ := w.publishBig(t, "Videos/Trip.bin", 3)
+	w.p.Server.StopAfterDownloadBytes(t, 5<<20+1000)
+
+	if _, err := w.use.Execute(t.Context(), w.input(stored, meta)); err == nil {
+		t.Fatal("the break was not seen")
+	}
+
+	kept := w.readEntries(t)
+	if len(kept) != 1 || kept[0].NextChunk < 5 {
+		t.Fatalf("entries after the break = %+v, want the position of at least 5 whole chunks", kept)
+	}
+}

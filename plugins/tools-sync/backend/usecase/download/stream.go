@@ -192,9 +192,6 @@ func (r *run) advance(ctx context.Context, plain *blobcipher.PlainReader, at *po
 		return fmt.Errorf("keep the hash of the stored bytes: %w", err)
 	}
 	at.next, at.state = plain.ChunkIndex(), state
-	if at.next%saveEvery != 0 {
-		return nil
-	}
 	return r.keep(ctx, at)
 }
 

@@ -19,7 +19,7 @@ func getCarrierGradeNAT() netip.Prefix { return netip.MustParsePrefix("100.64.0.
 
 // NewBlobHTTPClient returns the client that moves blobs over the presigned addresses of the server at
 // serverAddress. It sends to https addresses only, and to http only on a loopback host when the server is
-// on one; it never connects to a loopback, private, link-local or carrier-grade address unless the server
+// on one; timeout is the time a transfer may stand still, not its total time; it never connects to a loopback, private, link-local or carrier-grade address unless the server
 // is on a loopback host; and it follows no redirect. The dial check runs on the resolved address, so a name
 // that resolves to such an address is refused. A request through a proxy is checked by its address only.
 func NewBlobHTTPClient(serverAddress string, timeout time.Duration) *http.Client {
@@ -28,12 +28,14 @@ func NewBlobHTTPClient(serverAddress string, timeout time.Duration) *http.Client
 		return checkDialAddress(address, isLocal)
 	}}
 	transport := &http.Transport{
-		Proxy:               http.ProxyFromEnvironment,
-		DialContext:         dialer.DialContext,
-		ForceAttemptHTTP2:   true,
-		TLSHandshakeTimeout: timeout,
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		ForceAttemptHTTP2:     true,
+		TLSHandshakeTimeout:   timeout,
+		ResponseHeaderTimeout: timeout,
 	}
-	return &http.Client{Timeout: timeout, Transport: guardTransport{next: transport, isLocal: isLocal}, CheckRedirect: refuseRedirect}
+	guarded := guardTransport{next: transport, isLocal: isLocal}
+	return &http.Client{Transport: progressTransport{next: guarded, idle: timeout}, CheckRedirect: refuseRedirect}
 }
 
 type guardTransport struct {

@@ -25,7 +25,6 @@ var (
 )
 
 const (
-	saveEvery = 16
 	stageSize = 1 << 20
 )
 
