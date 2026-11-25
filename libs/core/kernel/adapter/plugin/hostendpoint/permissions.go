@@ -16,8 +16,6 @@ import (
 // beyond the plugin itself: its own store, its own cache, its own health, or a grant it checks itself.
 const noPermission = ""
 
-// getProcedurePermissions returns the permission each procedure of the host endpoint needs. A procedure that is not
-// listed is refused.
 func getProcedurePermissions() map[string]string {
 	return map[string]string{
 		numenv1connect.HostDependencyServiceFetchModelFileProcedure:  noPermission,

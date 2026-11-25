@@ -104,12 +104,12 @@ func TestDescribe_ExplainsFirstSyncFailures(t *testing.T) {
 			err:  fmt.Errorf("connect: %w", vaultlink.FolderMissingError{Name: "Recipes", Path: "/home/anna/Recipes"}),
 			want: "The folder of the vault «Recipes» is missing: /home/anna/Recipes. Remove the vault from the list or restore the folder.",
 		},
-		"server away": {err: fmt.Errorf("get catalog: %w", syncprotocol.ErrUnreachable), want: "Numen Sync cannot reach the server. Check the server address in the settings."},
+		"server away": {err: fmt.Errorf("get catalog: %w", syncprotocol.ErrUnreachable), want: "The sync server cannot be reached. Check the server address in the settings."},
 		"no plan":     {err: fmt.Errorf("append: %w", syncprotocol.ErrWriteNotAllowed), want: "Your plan does not allow syncing: choose a plan."},
 		"quota":       {err: fmt.Errorf("append: %w", syncprotocol.QuotaExceededError{Used: 5, Limit: 4}), want: textStorageFull},
 		"no vaults":   {err: fmt.Errorf("write: %w", vaultlink.ErrNoVaults), want: "There is no vault with a folder to sync. Add a vault, or restore the folder of one."},
-		"no identity": {err: sessiondomain.ErrNoIdentity, want: "Numen Sync is not set up on this computer. Create an account or restore one in the settings."},
-		"no server":   {err: sessiondomain.ErrNoServer, want: "No sync server is set. Enter the server address in the settings of Numen Sync."},
+		"no identity": {err: sessiondomain.ErrNoIdentity, want: "Sync is not set up on this computer. Create an identity or restore one in the settings."},
+		"no server":   {err: sessiondomain.ErrNoServer, want: "No sync server is set. Enter the server address in the settings."},
 	} {
 		code, text := NewFailures().Describe(t.Context(), "connect-vault", one.err)
 		if text != one.want {

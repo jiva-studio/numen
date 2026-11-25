@@ -28,8 +28,8 @@ type runTimer struct {
 	asked chan time.Duration
 }
 
-func (t runTimer) After(d time.Duration) <-chan time.Time {
-	fired := t.ManualClock.After(d)
+func (t runTimer) StartTimer(d time.Duration) <-chan time.Time {
+	fired := t.ManualClock.StartTimer(d)
 	t.asked <- d
 	return fired
 }

@@ -69,8 +69,8 @@ func (c restoreCompletion) start(ctx context.Context, recovery identitylib.Recov
 	}
 	restore := &pendingRestore{recovery: recovery, device: device, mark: mark, startedAt: clock.Now(), replaced: make(chan struct{})}
 	c.restores.replace(restore)
-	go c.completeAfterFallback(context.WithoutCancel(ctx), restore, clock.After(restoreFallback))
-	go c.expireAfterLifetime(restore, clock.After(restoreLifetime))
+	go c.completeAfterFallback(context.WithoutCancel(ctx), restore, clock.StartTimer(restoreFallback))
+	go c.expireAfterLifetime(restore, clock.StartTimer(restoreLifetime))
 	return nil
 }
 
@@ -96,6 +96,6 @@ func (c restoreCompletion) completeAfterFallback(ctx context.Context, restore *p
 		if !errors.Is(err, identitydomain.ErrKeyStore) {
 			return
 		}
-		fired = c.builder.clock.After(restoreFallback)
+		fired = c.builder.clock.StartTimer(restoreFallback)
 	}
 }

@@ -20,10 +20,10 @@ import (
 )
 
 // GenericText is what the person reads for a failure that has no entry in the tables.
-const GenericText = "Something went wrong in Numen Sync. Try again; if it fails again, look at the log of the plugin."
+const GenericText = "Something went wrong in sync. Try again; if it fails again, look at the log of the plugin."
 
 const (
-	textUnreachable = "Numen Sync cannot reach the server. Check the server address in the settings."
+	textUnreachable = "The sync server cannot be reached. Check the server address in the settings."
 	textNoPlan      = "Your plan does not allow syncing: choose a plan."
 	textStorageFull = "The cloud storage is full: changes stay on this computer. Free some space or choose a bigger plan."
 	textSignIn      = "The server did not accept the sign-in of this computer. Try again later."
@@ -63,9 +63,9 @@ func findText(err error) (string, bool) {
 	case errors.As(err, &quota):
 		return textStorageFull, true
 	case isAccountDeleting(err):
-		return "The account is being deleted. Restore it in the settings of Numen Sync to keep syncing.", true
+		return "The identity is being deleted. Restore it in the settings to keep syncing.", true
 	case errors.As(err, new(sessiondomain.DeviceRevokedError)):
-		return "This computer was removed from the account. Sign in again in the settings of Numen Sync.", true
+		return "This computer was removed from the identity. Sign in again in the settings.", true
 	}
 	for _, one := range getEntries() {
 		if errors.Is(err, one.target) {
@@ -121,7 +121,7 @@ func getEntries() []entry {
 	return []entry{
 		{syncprotocol.ErrUnreachable, server.CodeUnavailable, textUnreachable},
 		{sessiondomain.ErrUnreachable, server.CodeUnavailable, textUnreachable},
-		{sessiondomain.ErrNoServer, server.CodeUnavailable, "No sync server is set. Enter the server address in the settings of Numen Sync."},
+		{sessiondomain.ErrNoServer, server.CodeUnavailable, "No sync server is set. Enter the server address in the settings."},
 		{syncprotocol.ErrInsecureAddress, server.CodeInvalidArgument, "The server address must start with https://, or be an http address on this computer. Check the server address in the settings."},
 		{syncprotocol.ErrAlreadySubscribed, server.CodeAlreadyExists, "The account has a subscription already."},
 		{syncprotocol.ErrSamePlan, server.CodeAlreadyExists, "The account has this plan already."},
@@ -134,7 +134,7 @@ func getEntries() []entry {
 		{host.ErrChanged, server.CodeFailedPrecondition, "The file changed while it was read. Try again."},
 		{fetchfile.ErrHeadChanged, server.CodeFailedPrecondition, "The file changed while it was fetched. Try again."},
 		{fetchfile.ErrNotAbsent, server.CodeFailedPrecondition, "This file is on this computer already."},
-		{sessiondomain.ErrNoIdentity, server.CodeFailedPrecondition, "Numen Sync is not set up on this computer. Create an account or restore one in the settings."},
+		{sessiondomain.ErrNoIdentity, server.CodeFailedPrecondition, "Sync is not set up on this computer. Create an identity or restore one in the settings."},
 		{syncprotocol.ErrBillingUnavailable, server.CodeFailedPrecondition, "This sync server does not sell subscriptions."},
 		{syncprotocol.ErrNoActiveSubscription, server.CodeFailedPrecondition, textNoPlan},
 		{syncprotocol.ErrWriteNotAllowed, server.CodeFailedPrecondition, textNoPlan},

@@ -17,8 +17,8 @@ func (System) Now() time.Time {
 	return time.Now()
 }
 
-// After returns a channel that receives the time once d has passed.
-func (System) After(d time.Duration) <-chan time.Time {
+// StartTimer returns a channel that receives the time once d has passed.
+func (System) StartTimer(d time.Duration) <-chan time.Time {
 	return time.After(d)
 }
 

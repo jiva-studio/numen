@@ -123,7 +123,7 @@ func (d Deps) getCompletion() restoreCompletion {
 // Clock is the time source of an installation: the time now and a signal after a delay.
 type Clock interface {
 	Now() time.Time
-	After(d time.Duration) <-chan time.Time
+	StartTimer(d time.Duration) <-chan time.Time
 }
 
 func (d Deps) getClock() Clock { return d.records.clock }

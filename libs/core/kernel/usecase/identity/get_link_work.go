@@ -24,7 +24,7 @@ func NewGetLinkWork(d Deps) *GetLinkWork {
 func (u *GetLinkWork) Execute(ctx context.Context, sinceVersion uint64, wait time.Duration) (identitydomain.LinkWork, error) {
 	var timeout <-chan time.Time
 	if wait > 0 {
-		timeout = u.clock.After(min(wait, maxLinkWait))
+		timeout = u.clock.StartTimer(min(wait, maxLinkWait))
 	}
 	for {
 		work, changed := u.read(sinceVersion)

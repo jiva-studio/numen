@@ -25,7 +25,7 @@ func TestManualClockReportsConfiguredTimeUntilMoved(t *testing.T) {
 
 func TestManualClockFiresAWaitOnlyOnceMovedPastItsEnd(t *testing.T) {
 	fake := NewClock()
-	fired := fake.After(time.Minute)
+	fired := fake.StartTimer(time.Minute)
 	fake.Advance(59 * time.Second)
 	select {
 	case <-fired:

@@ -29,7 +29,7 @@ func (a *Account) getDeps() (accountdata.Deps, error) {
 	return *a.deps, nil
 }
 
-var errNoAccountData = errors.New("the account cannot be changed here")
+var errNoAccountData = errors.New("the identity cannot be changed here")
 
 // GetAccountState returns whether the account is being deleted and when the server deletes it. A device with no
 // identity gets an empty answer.

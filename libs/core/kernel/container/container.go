@@ -252,5 +252,5 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 
 type timeSource interface {
 	Now() time.Time
-	After(d time.Duration) <-chan time.Time
+	StartTimer(d time.Duration) <-chan time.Time
 }
