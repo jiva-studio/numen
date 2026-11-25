@@ -49,7 +49,7 @@ func GetVerdict(memory Memory, look Look) Verdict {
 		return KeyChanged
 	case len(look.EpochID) > 0 && !bytes.Equal(memory.EpochID, look.EpochID):
 		return Changed
-	case look.HeadSeq < memory.Cursor:
+	case look.HeadSeq < max(memory.Cursor, memory.HighSeq):
 		return WentBack
 	}
 	return Same

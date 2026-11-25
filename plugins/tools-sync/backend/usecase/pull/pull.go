@@ -122,11 +122,14 @@ func (r *run) execute(ctx context.Context) error {
 		}
 		r.result.EpochID = page.GetRestoreEpochId()
 		r.result.Verdict = restore.GetVerdict(
-			restore.Memory{EpochID: r.link.RestoreEpochID, Cursor: r.link.ServerSeq, PinnedKey: nil},
+			restore.Memory{EpochID: r.link.RestoreEpochID, Cursor: r.link.ServerSeq, HighSeq: r.link.HighSeq, PinnedKey: nil},
 			restore.Look{EpochID: r.result.EpochID, HeadSeq: page.GetHeadSeq(), SignKey: nil},
 		)
 		if r.result.Verdict != restore.Same {
 			return nil
+		}
+		if err := r.raiseHighSeq(ctx, page.GetHeadSeq()); err != nil {
+			return err
 		}
 		if page.GetReset_() {
 			return r.reconcile(ctx)
@@ -142,6 +145,17 @@ func (r *run) execute(ctx context.Context) error {
 		}
 		since = page.GetNextSeq()
 	}
+}
+
+func (r *run) raiseHighSeq(ctx context.Context, head uint64) error {
+	if head <= r.link.HighSeq {
+		return nil
+	}
+	r.link.HighSeq = head
+	return r.deps.State.UpdateLink(ctx, r.in.VaultID, func(fresh *vaultlink.Link) error {
+		fresh.HighSeq = max(fresh.HighSeq, head)
+		return nil
+	})
 }
 
 func (r *run) takePage(ctx context.Context, page *syncv1.GetChangesResponse) error {
