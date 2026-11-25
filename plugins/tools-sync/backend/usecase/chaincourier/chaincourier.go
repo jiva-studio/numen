@@ -165,7 +165,6 @@ func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now t
 			u.seen = map[string]int64{}
 		}
 	}
-	println("DEBUG recordSightings fresh=", u.isFresh, "seen=", len(u.seen), "entries=", len(listEntries(chain)))
 	isChanged := u.isFresh
 	for id, signed := range listEntries(chain) {
 		if _, isKnown := u.seen[id]; isKnown {
@@ -179,7 +178,6 @@ func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now t
 	}
 	u.isFresh = false
 	if isChanged {
-		println("DEBUG write", u.deps.Sightings.WriteEntrySightings(ctx, maps.Clone(u.seen)) == nil)
 		_ = u.deps.Sightings.WriteEntrySightings(ctx, maps.Clone(u.seen))
 	}
 	return u.seen
