@@ -44,8 +44,9 @@ export class IdentityDriver {
     return this.settings.showPage(PAGE)
   }
 
-  private getShownWords(panel: Locator): Locator {
-    return panel.getByRole('list', { name: 'Recovery words' }).getByRole('listitem')
+  /** The dialogs of the page are in the body of the window, not in the panel of the page. */
+  private getShownWords(): Locator {
+    return this.scenario.page.getByRole('list', { name: 'Recovery words' }).getByRole('listitem')
   }
 
   private async readAccount(panel: Locator): Promise<string> {
@@ -59,43 +60,46 @@ export class IdentityDriver {
   async start(): Promise<void> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: 'Create identity', exact: true }).click()
-    const shown = this.getShownWords(panel)
+    const shown = this.getShownWords()
     await expect(shown.first()).toBeVisible()
     this.words = (await shown.allInnerTexts()).map((word) => word.trim())
   }
 
   async writeWordsDown(): Promise<void> {
-    const panel = await this.showPage()
-    await panel.getByRole('button', { name: 'I wrote the words down', exact: true }).click()
+    await this.showPage()
+    await this.scenario.page.getByRole('button', { name: 'I wrote the words down', exact: true }).click()
   }
 
   async expectWordsAsked(count: number): Promise<void> {
-    const panel = await this.showPage()
-    await expect(panel.getByRole('textbox', { name: /^Word \d+$/ })).toHaveCount(count)
-    await expect(panel.getByRole('list', { name: 'Recovery words' })).toHaveCount(0)
+    await this.showPage()
+    const { page } = this.scenario
+    await expect(page.getByRole('textbox', { name: /^Word \d+$/ })).toHaveCount(count)
+    await expect(page.getByRole('list', { name: 'Recovery words' })).toHaveCount(0)
   }
 
   async expectWordCount(count: number): Promise<void> {
-    await expect(this.getShownWords(await this.showPage())).toHaveCount(count)
+    await this.showPage()
+    await expect(this.getShownWords()).toHaveCount(count)
   }
 
   async expectNoWords(): Promise<void> {
-    const panel = await this.showPage()
-    await expect(panel.getByRole('list', { name: 'Recovery words' })).toHaveCount(0)
-    for (const word of this.words)
-      await expect(panel.getByText(word, { exact: true })).toHaveCount(0)
+    await this.showPage()
+    const { page } = this.scenario
+    await expect(page.getByRole('list', { name: 'Recovery words' })).toHaveCount(0)
+    for (const word of this.words) await expect(page.getByText(word, { exact: true })).toHaveCount(0)
   }
 
   private async confirm(mistake?: string): Promise<void> {
-    const panel = await this.showPage()
-    const fields = panel.getByRole('textbox', { name: /^Word \d+$/ })
+    await this.showPage()
+    const { page } = this.scenario
+    const fields = page.getByRole('textbox', { name: /^Word \d+$/ })
     await expect(fields).toHaveCount(CONFIRMATIONS)
     const labels = await fields.evaluateAll((all) =>
       all.map((one) => (one as HTMLInputElement).labels?.[0]?.textContent.trim() ?? ''),
     )
     const answers = planAnswers(labels.map(readPosition), this.words, mistake)
     for (const [index, answer] of answers.entries()) await fields.nth(index).fill(answer)
-    await panel.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
   }
 
   async confirmWords(count: number): Promise<void> {
@@ -130,8 +134,8 @@ export class IdentityDriver {
     this.sheets = readKitSheets(readPdfPages(fs.readFileSync(file)))
   }
 
-  private getKitDialog(panel: Locator): Locator {
-    return panel.getByRole('dialog', { name: 'Download recovery kit' })
+  private getKitDialog(): Locator {
+    return this.scenario.page.getByRole('dialog', { name: 'Download recovery kit' })
   }
 
   private getDownloadButton(panel: Locator): Locator {
@@ -151,7 +155,7 @@ export class IdentityDriver {
     const file = this.prepareDownload()
     const panel = await this.showPage()
     await this.getDownloadButton(panel).click()
-    const dialog = this.getKitDialog(panel)
+    const dialog = this.getKitDialog()
     await dialog.getByRole('textbox', { name: PROOF_FIELD, exact: true }).fill(words.join(' '))
     await dialog.getByRole('button', { name: 'Download PDF', exact: true }).click()
     return file
@@ -202,15 +206,15 @@ export class IdentityDriver {
     await expect(panel.getByText(NO_IDENTITY)).toBeVisible()
   }
 
-  private getRestoreDialog(panel: Locator, title: string): Locator {
-    return panel.getByRole('dialog', { name: title })
+  private getRestoreDialog(title: string): Locator {
+    return this.scenario.page.getByRole('dialog', { name: title })
   }
 
   private async restore(text: string): Promise<void> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: 'Restore', exact: true }).click()
     await panel.page().getByRole('menuitem', { name: 'Type the 12 words' }).click()
-    const dialog = this.getRestoreDialog(panel, 'Recovery words')
+    const dialog = this.getRestoreDialog('Recovery words')
     await dialog.getByRole('textbox', { name: PROOF_FIELD, exact: true }).fill(text)
     const restore = dialog.getByRole('button', { name: 'Restore', exact: true })
     if (await restore.isEnabled()) await restore.click()
@@ -220,7 +224,7 @@ export class IdentityDriver {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: 'Restore', exact: true }).click()
     await panel.page().getByRole('menuitem', { name: 'Type the words of two sheets' }).click()
-    const dialog = this.getRestoreDialog(panel, 'Recovery kit: type')
+    const dialog = this.getRestoreDialog('Recovery kit: type')
     for (const [index, text] of texts.entries()) {
       await dialog.getByRole('textbox', { name: `Sheet ${index + 1}`, exact: true }).fill(text)
     }
