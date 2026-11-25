@@ -6,6 +6,7 @@
 import { computed } from 'vue'
 import { Check, CircleAlert, CloudOff, RefreshCw } from '@lucide/vue'
 import type { VaultRowKind } from '../model/vaults'
+import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -13,12 +14,14 @@ const props = defineProps<{
   kind: VaultRowKind
   status: string
   details: readonly string[]
+  progress?: number | null
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const ICONS = { ok: Check, syncing: RefreshCw, off: CloudOff, conflict: CircleAlert } as const
 const icon = computed(() => ICONS[props.kind])
 const rest = computed(() => props.details.filter((one) => one !== ''))
+const percent = computed(() => Math.round((props.progress ?? 0) * 100))
 </script>
 
 <template>
@@ -31,6 +34,17 @@ const rest = computed(() => props.details.filter((one) => one !== ''))
       <span class="vault-row__line" role="status">
         <span class="vault-row__state">{{ status }}</span>
         <template v-for="one in rest" :key="one"> · {{ one }}</template>
+      </span>
+      <span
+        v-if="progress !== undefined && progress !== null"
+        class="vault-row__progress"
+        role="progressbar"
+        :aria-label="words.syncProgressName"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-valuenow="percent"
+      >
+        <span class="vault-row__progress-fill" :style="{ inlineSize: `${percent}%` }" />
       </span>
     </div>
     <div v-if="$slots['actions']" class="vault-row__actions"><slot name="actions" /></div>

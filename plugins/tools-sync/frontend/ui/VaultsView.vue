@@ -117,6 +117,7 @@ function report(failure: unknown): void {
           :kind="row.kind"
           :status="row.status"
           :details="[row.size, row.detail]"
+          :progress="row.progress"
         >
           <template #actions>
             <template v-if="row.canResolve">

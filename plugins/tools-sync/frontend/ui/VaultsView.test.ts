@@ -209,4 +209,48 @@ describe('VaultsView', () => {
 
     expect(wrapper.text()).not.toContain('boom')
   })
+
+  it('shows a syncing vault with its sizes and a progress bar, and an up-to-date vault with no bar', async () => {
+    const { wrapper } = await render({
+      vaults: [
+        createVault({
+          id: 'a',
+          name: 'Busy',
+          state: 'connected',
+          syncing: true,
+          syncedBytes: 1_048_576,
+          totalBytes: 4_194_304,
+        }),
+        createVault({ id: 'b', name: 'Calm', state: 'connected' }),
+      ],
+      remote: [],
+    })
+
+    const rows = wrapper.findAll('li')
+    expect(rows[0]?.text()).toContain('Syncing · 1 MB of 4 MB')
+    const bar = rows[0]?.find('[role="progressbar"]')
+    expect(bar?.attributes('aria-valuenow')).toBe('25')
+    expect(rows[1]?.text()).toContain('Up to date')
+    expect(rows[1]?.find('[role="progressbar"]').exists()).toBe(false)
+  })
+
+  it('lets a conflict win over syncing', async () => {
+    const { wrapper } = await render({
+      vaults: [createVault({ state: 'connected', syncing: true, conflictCount: 2 })],
+      remote: [],
+    })
+
+    expect(wrapper.text()).toContain('Needs attention')
+    expect(wrapper.find('[role="progressbar"]').exists()).toBe(false)
+  })
+
+  it('draws the icon placeholder and both text lines while the vaults load', () => {
+    const client = createClient()
+    client.getStatus.mockReturnValue(new Promise(() => undefined))
+    const wrapper = mount(VaultsView, { props: { client, now: () => NOW } })
+
+    const row = wrapper.find('.vault-row--loading')
+    expect(row.find('.vault-row__icon .skeleton').exists()).toBe(true)
+    expect(row.findAll('.vault-row__label .skeleton')).toHaveLength(2)
+  })
 })

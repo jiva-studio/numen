@@ -1,13 +1,10 @@
 import { defineComponent, h } from 'vue'
 import type { SyncState } from '../model/sync'
-import SyncBadge from './SyncBadge.vue'
+import SyncIndicator from './SyncIndicator.vue'
 
 export function createSyncView(state: SyncState) {
   return defineComponent({
     name: 'SyncStatusView',
-    setup: () => () =>
-      h(SyncBadge, {
-        phase: state.phase.value,
-      }),
+    setup: () => () => h(SyncIndicator, { state }),
   })
 }

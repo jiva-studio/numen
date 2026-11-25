@@ -12,6 +12,7 @@ const createStatus = (patch: Partial<GetStatusResponse> = {}): GetStatusResponse
 })
 
 const createClient = (answer: () => Promise<GetStatusResponse>) => ({
+  listVaults: vi.fn<VaultsClient['listVaults']>(() => Promise.resolve({ vaults: [] })),
   getStatus: vi.fn<VaultsClient['getStatus']>(answer),
 })
 

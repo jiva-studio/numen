@@ -1,5 +1,9 @@
 export const WORDS = {
   syncingLabel: 'Syncing…',
+  statusSyncing: 'Syncing',
+  syncProgress: (synced: string, total: string): string => `${synced} of ${total}`,
+  syncingPercent: (percent: number): string => `Syncing ${percent}%`,
+  syncProgressName: 'Sync progress',
   syncingDetail: 'Synchronizing vault…',
   syncedLabel: 'Synced',
   syncedDetail: 'Vault is synchronized.',

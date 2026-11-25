@@ -6,11 +6,16 @@ import { WORDS as words } from '../words'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   phase: SyncPhase
+  percent?: number | null
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const label = computed(() => {
-  if (props.phase === 'syncing') return words.syncingLabel
+  if (props.phase === 'syncing') {
+    return props.percent === undefined || props.percent === null
+      ? words.syncingLabel
+      : words.syncingPercent(props.percent)
+  }
   return props.phase === 'waiting' ? words.statusWaiting : words.syncedLabel
 })
 const detail = computed(() => {

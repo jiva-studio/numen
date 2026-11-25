@@ -33,6 +33,7 @@ export interface VaultRow {
   readonly remoteId: string
   readonly isSynced: boolean
   readonly size: string
+  readonly progress: number | null
 }
 
 interface UseVaultsOptions {
@@ -83,6 +84,17 @@ const getSize = (cloud: readonly RemoteVault[], remoteId: string): string => {
   return one === undefined ? '' : words.sizeInCloud(formatCloudSize(one.sizeBytes))
 }
 
+const getProgress = (synced: number, total: number): number =>
+  total > 0 ? Math.min(Math.max(synced / total, 0), 1) : 0
+
+/** The share of bytes done over the vaults that sync now, in whole percents. */
+export function getSyncPercent(vaults: readonly Vault[]): number {
+  const active = vaults.filter((vault) => vault.syncing === true)
+  const total = active.reduce((sum, vault) => sum + (vault.totalBytes ?? 0), 0)
+  const synced = active.reduce((sum, vault) => sum + (vault.syncedBytes ?? 0), 0)
+  return Math.round(getProgress(synced, total) * 100)
+}
+
 const getCloudRow = (one: RemoteVault): VaultRow => ({
   id: one.remoteId,
   name: one.name,
@@ -94,9 +106,10 @@ const getCloudRow = (one: RemoteVault): VaultRow => ({
   remoteId: one.remoteId,
   isSynced: false,
   size: words.sizeInCloud(formatCloudSize(one.sizeBytes)),
+  progress: null,
 })
 
-const getRow = (
+export const getRow = (
   vault: Vault,
   now: Date,
   isReachable: boolean,
@@ -108,6 +121,7 @@ const getRow = (
     remoteId: vault.remoteId,
     isSynced: true,
     size: getSize(cloud, vault.remoteId),
+    progress: null,
   }
   const paused = getPausedLabel(vault.pausedDeletions)
   if (paused !== '') {
@@ -122,6 +136,14 @@ const getRow = (
   if (!isReachable) {
     const status = words.statusWaiting
     return { ...base, status, tone: 'warning', kind: 'syncing', detail: synced, canResolve: false }
+  }
+  if (vault.syncing === true) {
+    const synced = vault.syncedBytes ?? 0
+    const total = vault.totalBytes ?? 0
+    const size = words.syncProgress(formatCloudSize(synced), formatCloudSize(total))
+    const progress = getProgress(synced, total)
+    const status = words.statusSyncing
+    return { ...base, status, tone: 'warning', kind: 'syncing', detail: '', canResolve: false, size, progress }
   }
   const status = words.statusUpToDate
   return { ...base, status, tone: 'ok', kind: 'ok', detail: synced, canResolve: false }

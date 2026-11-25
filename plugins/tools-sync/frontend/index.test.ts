@@ -19,6 +19,8 @@ const stubServer = (server: Server) => {
         return Promise.resolve(
           Response.json({ hasIdentity: server.hasIdentity, isReachable: true, items: [] }),
         )
+      case 'ListVaults':
+        return Promise.resolve(Response.json({ vaults: [] }))
       case 'GetSubscription':
         return Promise.resolve(
           Response.json({
