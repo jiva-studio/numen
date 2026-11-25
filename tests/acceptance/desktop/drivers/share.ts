@@ -58,12 +58,14 @@ export class ShareDriver {
     const request = this.getDialog().getByRole('alert')
     await expect(request).toContainText(getShortFingerprint(fingerprint), { timeout: SHARE_LIMIT_MS })
     await expect(request).toContainText(`Code ${code}`)
+    await expect(request).toContainText(fingerprint)
   }
 
-  /** Compares the code of the device with the one in the dialog, then allows the device and expects it among the devices that read. */
+  /** Compares the code and the fingerprint of the device with the ones in the dialog, confirms the fingerprint, then allows the device and expects it among the devices that read. */
   async allow(fingerprint: string, code: string): Promise<void> {
     await this.expectRequest(fingerprint, code)
     const dialog = this.getDialog()
+    await dialog.getByRole('checkbox', { name: 'The fingerprint is the same' }).check()
     await dialog.getByRole('button', { name: 'Approve', exact: true }).click()
     await expect(dialog.getByText(getShortFingerprint(fingerprint))).toBeVisible({ timeout: SHARE_LIMIT_MS })
     await this.close()

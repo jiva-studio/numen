@@ -135,8 +135,14 @@ export interface AccountClient {
   get(): Promise<IdentityInfo | undefined>
   generateWords(): Promise<readonly string[]>
   create(words: readonly string[]): Promise<Result<IdentityInfo, IdentityFailure>>
-  /** Starts to restore the account of the words; the identity exists once the core has completed it. */
-  startRestore(words: readonly string[]): Promise<Result<undefined, IdentityFailure>>
+  /**
+   * Starts to restore the account of the words; the identity exists once the core has completed it. `isUnmarkedConfirmed` is the person's
+   * confirmation to restore with no chain mark of a recovery kit to check the sync server against.
+   */
+  startRestore(
+    words: readonly string[],
+    isUnmarkedConfirmed: boolean,
+  ): Promise<Result<undefined, IdentityFailure>>
   delete(): Promise<void>
   /**
    * Makes a new kit of three sheets once the proof fits the account of this device and saves it as a
@@ -146,6 +152,7 @@ export interface AccountClient {
   /** Starts to restore the account of two sheets of a kit, like startRestore does for the words. */
   startRestoreFromKit(
     sheets: readonly (readonly string[])[],
+    isUnmarkedConfirmed: boolean,
   ): Promise<Result<undefined, IdentityFailure>>
 }
 
@@ -322,7 +329,8 @@ const createAccountClient = (rpc: AccountRpc): AccountClient => ({
       missing: 'The core returned no identity.',
     })
   },
-  startRestore: async (words) => readStartAnswer(await rpc.startRestore({ words: [...words] })),
+  startRestore: async (words, isUnmarkedConfirmed) =>
+    readStartAnswer(await rpc.startRestore({ words: [...words], confirmUnmarked: isUnmarkedConfirmed })),
   delete: async () => {
     await rpc.deleteIdentity({})
   },
@@ -333,8 +341,10 @@ const createAccountClient = (rpc: AccountRpc): AccountClient => ({
       ? asValue(answer.isSaved)
       : asFailure({ error, message: answer.detail })
   },
-  startRestoreFromKit: async (sheets) =>
-    readStartAnswer(await rpc.startRestoreFromKit({ sheets: writeSheets(sheets) })),
+  startRestoreFromKit: async (sheets, isUnmarkedConfirmed) =>
+    readStartAnswer(
+      await rpc.startRestoreFromKit({ sheets: writeSheets(sheets), confirmUnmarked: isUnmarkedConfirmed }),
+    ),
 })
 
 const createLinkClient = (rpc: LinkRpc): LinkClient => ({

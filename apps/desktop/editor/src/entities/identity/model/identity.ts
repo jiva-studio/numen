@@ -137,8 +137,8 @@ export function createIdentityStore(
       settle(
         () =>
           'words' in proof
-            ? api.account.startRestore(proof.words)
-            : api.account.startRestoreFromKit(proof.sheets),
+            ? api.account.startRestore(proof.words, true)
+            : api.account.startRestoreFromKit(proof.sheets, true),
         'words' in proof ? 'words' : 'sheets',
       ),
     )

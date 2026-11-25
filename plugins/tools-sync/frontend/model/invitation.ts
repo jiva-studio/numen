@@ -102,9 +102,9 @@ export function createInvitationView(options: InvitationViewOptions) {
     }
   }
 
-  const answerRequest = (reply: (requestId: string) => Promise<void>): Promise<void> =>
+  const answerRequest = (reply: (one: ShareRequest) => Promise<void>): Promise<void> =>
     answer(async () => {
-      if (request.value !== undefined) await reply(request.value.requestId)
+      if (request.value !== undefined) await reply(request.value)
     })
 
   return reactive({
@@ -120,8 +120,10 @@ export function createInvitationView(options: InvitationViewOptions) {
     isBusy,
     start,
     fail,
-    approve: (): Promise<void> => answerRequest((one) => invitations.approveShareRequest(one)),
-    decline: (): Promise<void> => answerRequest((one) => invitations.declineShareRequest(one)),
+    approve: (): Promise<void> =>
+      answerRequest((one) => invitations.approveShareRequest(one.requestId, one.fingerprint)),
+    decline: (): Promise<void> =>
+      answerRequest((one) => invitations.declineShareRequest(one.requestId)),
     revoke: (): Promise<void> => answer(() => invitations.revokeShareInvitation(id.value)),
     removeAccess: (person: SharePerson): Promise<void> =>
       answer(() => shares.removeReader({ ...target, fingerprint: person.fingerprint })),

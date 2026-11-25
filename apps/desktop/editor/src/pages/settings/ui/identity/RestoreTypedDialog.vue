@@ -39,6 +39,7 @@ function onInput(position: 0 | 1, event: Event): void {
   <IdentityDialog
     :title="words.restoreTypedTitle"
     :hint="words.restoreTypedHint"
+    :caution="words.restoreUnverifiedNote"
     @submit="emit('restore')"
     @cancel="emit('cancel')"
   >

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const markHeadSize = 6
+const markHeadSize = 16
 
 // Mark is where a chain stood once: how many entries it had and the start of the hash of its last one. A person can copy it from a
 // printed sheet, and a chain that does not contain it is older than the sheet or a different history.
@@ -33,7 +33,7 @@ func (c Chain) HasMark(m Mark) bool {
 	return m.Length >= 1 && len(c.entries) >= m.Length && c.getMarkAt(m.Length) == m
 }
 
-// String returns the length and the head in hex, as "7-3FA912C077B1".
+// String returns the length and the head in hex, as "7-3FA912C077B13FA912C077B13FA912C0".
 func (m Mark) String() string {
 	return strconv.Itoa(m.Length) + "-" + strings.ToUpper(hex.EncodeToString(m.Head[:]))
 }

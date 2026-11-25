@@ -69,7 +69,7 @@ export interface ShareInvitationClient {
   listShareInvitations(): Promise<readonly ShareInvitation[]>
   revokeShareInvitation(id: string): Promise<void>
   listShareRequests(): Promise<readonly ShareRequest[]>
-  approveShareRequest(requestId: string): Promise<void>
+  approveShareRequest(requestId: string, fingerprint: string): Promise<void>
   declineShareRequest(requestId: string): Promise<void>
 }
 
@@ -98,8 +98,11 @@ export function createShareInvitationClient(api: Api): ShareInvitationClient {
     listShareRequests: async () =>
       (await call<Empty, { requests: readonly ShareRequest[] }>(api, 'ListShareRequests', {}))
         .requests,
-    approveShareRequest: async (requestId) => {
-      await call<{ requestId: string }, Empty>(api, 'ApproveShareRequest', { requestId })
+    approveShareRequest: async (requestId, fingerprint) => {
+      await call<{ requestId: string; fingerprint: string }, Empty>(api, 'ApproveShareRequest', {
+        requestId,
+        fingerprint,
+      })
     },
     declineShareRequest: async (requestId) => {
       await call<{ requestId: string }, Empty>(api, 'DeclineShareRequest', { requestId })

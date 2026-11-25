@@ -448,7 +448,7 @@ func TestAdopt_RaisesANoticeWhenTheRecoveryWordsReplacedWhatADeviceDid(t *testin
 		t.Fatalf("adopted = %v, error = %v, want the fork adopted", adopted, err)
 	}
 	items := observer.Health.List()
-	if len(items) != 1 || !strings.Contains(items[0].Text, "recovery words") || !strings.Contains(items[0].Text, "undone") {
+	if len(items) != 1 || !strings.Contains(items[0].Text, "recovery words") || !strings.Contains(items[0].Text, "undid") {
 		t.Errorf("health items = %+v, want the notice that the recovery words undid changes of the devices", items)
 	}
 }
@@ -491,7 +491,7 @@ func TestAdopt_RaisesNoForkNoticeWhenTheWordsOnlyAddedADevice(t *testing.T) {
 	}
 
 	for _, item := range first.Health.List() {
-		if strings.Contains(item.Text, "recovery words") && strings.Contains(item.Text, "undone") {
+		if strings.Contains(item.Text, "recovery words") && strings.Contains(item.Text, "undid") {
 			t.Errorf("health item = %+v, want no fork notice for a restore on a second computer", item)
 		}
 	}

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"strings"
 	"sync"
 	"time"
 
@@ -132,15 +133,19 @@ func (u *Adopt) Execute(ctx context.Context) (bool, error) {
 	if err := u.deps.Core.AdoptChain(ctx, stored); err != nil {
 		return false, err
 	}
-	return true, u.notify(ctx, parsed, own.DeviceSignKey)
+	var forks []identity.Fork
+	if fork, isFork := parsed.FindFork(ownChain); isFork {
+		forks = append(forks, fork)
+	}
+	return true, u.notify(ctx, parsed, own.DeviceSignKey, forks...)
 }
 
-func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) error {
+func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte, forks ...identity.Fork) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	var text string
 	now := u.deps.Clock.Now()
-	for _, candidate := range listNotices(chain, own, now, u.recordSightings(ctx, chain, now)) {
+	for _, candidate := range listNotices(chain, own, now, u.recordSightings(ctx, chain, now, forks)) {
 		text = candidate
 	}
 	switch {
@@ -154,7 +159,7 @@ func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) er
 	return nil
 }
 
-func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now time.Time) map[string]int64 {
+func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now time.Time, forks []identity.Fork) map[string]int64 {
 	if u.seen == nil {
 		stored, err := u.deps.Sightings.ReadEntrySightings(ctx)
 		u.seen, u.isFresh = stored, err == nil && stored == nil
@@ -173,6 +178,12 @@ func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now t
 			u.seen[id] = min(signed.Unix(), now.Unix())
 		}
 		isChanged = true
+	}
+	for _, fork := range forks {
+		if key := getForkKey(fork); u.seen[key] == 0 {
+			u.seen[key] = now.Unix()
+			isChanged = true
+		}
 	}
 	u.isFresh = false
 	if isChanged {
@@ -204,6 +215,11 @@ func listNotices(chain identity.Chain, own []byte, now time.Time, seen map[strin
 		at, isRecent := getSightingAt(seen, addition.ID, now)
 		if !bytes.Equal(addition.By, own) && !bytes.Equal(addition.Device, own) && isRecent {
 			found = append(found, getAddedNotice(at))
+		}
+	}
+	for key, sighted := range seen {
+		if at := time.Unix(sighted, 0).UTC(); strings.HasPrefix(key, forkKeyPrefix) && now.Sub(at) < identity.CoolingOff {
+			found = append(found, getForkNotice(at))
 		}
 	}
 	return found
@@ -291,4 +307,14 @@ func getRevokedNotice(at time.Time) string {
 
 func getAddedNotice(at time.Time) string {
 	return fmt.Sprintf("A device added another device to the identity on %s. If it was not you, restore with the recovery words", at.Format(noticeDate))
+}
+
+// forkKeyPrefix starts the key of a fork in the sightings: a fork by the recovery key leaves no entry of the chain that shows what it voided, so
+// the moment this device saw it is kept under the hash of its first entry.
+const forkKeyPrefix = "fork:"
+
+func getForkKey(fork identity.Fork) string { return forkKeyPrefix + hex.EncodeToString(fork.ID[:]) }
+
+func getForkNotice(at time.Time) string {
+	return fmt.Sprintf("On %s the recovery words undid changes of your devices. If it was not you, someone has your recovery words", at.Format(noticeDate))
 }

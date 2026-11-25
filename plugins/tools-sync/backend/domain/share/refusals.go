@@ -55,6 +55,8 @@ var (
 	ErrLinkOtherServer = errors.New("this share link is for another sync server")
 	// ErrLinkUsed means another person used the link before.
 	ErrLinkUsed = errors.New("this share link was used by another person")
+	// ErrFingerprintNotConfirmed means the fingerprint the sharer confirmed is not the fingerprint of the person who asks to read.
+	ErrFingerprintNotConfirmed = errors.New("the fingerprint is not the one of the person who asks; check it with the person again")
 	// ErrUnknownRequest means no request to read a folder has that id, or it was answered or expired.
 	ErrUnknownRequest = errors.New("this request does not exist any more")
 	// ErrLinkDeclined means the sharer declined the request.

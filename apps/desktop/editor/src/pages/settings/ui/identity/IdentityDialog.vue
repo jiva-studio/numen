@@ -6,7 +6,7 @@
 import { Dialog } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ title: string; hint?: string; step?: string }>()
+defineProps<{ title: string; hint?: string; caution?: string; step?: string }>()
 
 const emit = defineEmits<{
   (e: 'submit'): void
@@ -23,7 +23,15 @@ const emit = defineEmits<{
     @submit="emit('submit')"
     @cancel="emit('cancel')"
   >
+    <p v-if="caution" class="identity-dialog__caution" role="note">{{ caution }}</p>
     <slot />
     <template v-if="$slots['actions']" #actions><slot name="actions" /></template>
   </Dialog>
 </template>
+
+<style scoped>
+.identity-dialog__caution {
+  margin: 0;
+  color: var(--numen-hushed);
+}
+</style>

@@ -95,7 +95,7 @@ func read(ctx context.Context, deps Deps, o *offer, plain []byte) {
 	if o.request == nil {
 		o.request = &pending{
 			chain: m.Chain, name: domainshare.CleanDeviceName(m.Name), fingerprint: chain.Root().Fingerprint().String(),
-			code: o.channel.Code(), isBusy: false,
+			code: o.channel.GetCodeFor(o.owner, chain.Root().Fingerprint().String()), isBusy: false,
 		}
 	}
 	deps.Hub.mu.Unlock()

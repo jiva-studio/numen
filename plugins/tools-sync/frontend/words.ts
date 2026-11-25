@@ -170,6 +170,10 @@ export const WORDS = {
   joinRequest: 'Join request',
   readOnlyHint: 'They can only read.',
   confirmationCode: (code: string): string => `Code ${code}`,
+  requestFingerprint: (fingerprint: string): string => `Fingerprint ${fingerprint}`,
+  fingerprintNote:
+    'The code only shows that the person has the link. Ask the person to read you their fingerprint from Numen, and allow only if it is the same as this one.',
+  fingerprintConfirm: 'The fingerprint is the same',
   approve: 'Approve',
   decline: 'Decline',
   shareLinkField: 'Invitation link',

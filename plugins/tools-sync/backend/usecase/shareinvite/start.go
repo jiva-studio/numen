@@ -70,7 +70,7 @@ func (u *Start) Execute(ctx context.Context, id domain.VaultID, folder string) (
 		return SharedLink{}, err
 	}
 	made := &offer{
-		id: channel.ID, vault: id, folder: normalized, name: name, expiresAt: expiresAt, displayer: displayer, channel: nil, request: nil, isDone: false,
+		id: channel.ID, vault: id, folder: normalized, name: name, owner: chain.Root().Fingerprint().String(), expiresAt: expiresAt, displayer: displayer, channel: nil, request: nil, isDone: false,
 	}
 	u.deps.Hub.mu.Lock()
 	u.deps.Hub.offers[hex.EncodeToString(channel.ID)] = made
