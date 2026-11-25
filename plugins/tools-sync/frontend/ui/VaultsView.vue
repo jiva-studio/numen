@@ -5,12 +5,7 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Cloud, TriangleAlert } from '@lucide/vue'
-import {
-  Button,
-  getCurrentDate,
-  IslandCard,
-  type MenuItem,
-} from '@numen/ui'
+import { Button, getCurrentDate, IslandCard, type MenuItem } from '@numen/ui'
 import type { VaultsClient } from '../api/vaults'
 import { getErrorMessage, useVaults } from '../model/vaults'
 import { WORDS as words } from '../words'

@@ -42,9 +42,7 @@ export function createSyncState(
       }
       const { vaults } = await client.listVaults()
       const connected = vaults.filter((vault) => vault.state === 'connected')
-      rows.value = connected.map((vault) =>
-        getRow(vault, getCurrentDate(), status.isReachable, []),
-      )
+      rows.value = connected.map((vault) => getRow(vault, getCurrentDate(), status.isReachable, []))
       const isSyncing = status.isReachable && connected.some((vault) => vault.syncing)
       percent.value = isSyncing ? getSyncPercent(connected) : null
       if (!status.isReachable) phase.value = 'waiting'

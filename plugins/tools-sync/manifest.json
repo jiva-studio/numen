@@ -13,7 +13,11 @@
       { "id": "vault.stopSync", "title": "Stop syncing this vault", "icon": "cloud-off" },
       { "id": "share.open", "title": "Share...", "icon": "share-2" },
       { "id": "share.accept", "title": "Accept a shared folder...", "icon": "folder-input" },
-      { "id": "vault.fromCloud", "title": "Get a vault from the cloud...", "icon": "cloud-download" }
+      {
+        "id": "vault.fromCloud",
+        "title": "Get a vault from the cloud...",
+        "icon": "cloud-download"
+      }
     ],
     "slots": [
       { "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 },

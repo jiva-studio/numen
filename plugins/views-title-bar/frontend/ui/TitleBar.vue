@@ -222,10 +222,16 @@ function onRunCommand(
           class="title-bar__vault-icon"
           aria-hidden="true"
         />
-        <Folder v-else-if="localIds.has(item.id)" class="title-bar__vault-icon" aria-hidden="true" />
+        <Folder
+          v-else-if="localIds.has(item.id)"
+          class="title-bar__vault-icon"
+          aria-hidden="true"
+        />
       </template>
       <template #trailing="{ item }">
-        <span v-if="sizes.get(item.id)" class="title-bar__vault-size">{{ sizes.get(item.id) }}</span>
+        <span v-if="sizes.get(item.id)" class="title-bar__vault-size">
+          {{ sizes.get(item.id) }}
+        </span>
       </template>
     </SearchableListPopup>
 

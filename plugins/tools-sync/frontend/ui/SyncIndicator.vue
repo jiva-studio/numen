@@ -43,7 +43,12 @@ function onClose(): void {
     >
       <SyncBadge :phase="props.state.phase.value" :percent="props.state.percent.value" />
     </button>
-    <div v-if="isOpen" class="sync-indicator__popover" role="dialog" :aria-label="words.vaultsTitle">
+    <div
+      v-if="isOpen"
+      class="sync-indicator__popover"
+      role="dialog"
+      :aria-label="words.vaultsTitle"
+    >
       <p v-if="props.state.rows.value.length === 0" class="sync-indicator__empty">
         {{ words.noVaultsTitle }}
       </p>

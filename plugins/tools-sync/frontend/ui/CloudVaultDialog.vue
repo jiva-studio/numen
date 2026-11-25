@@ -48,7 +48,9 @@ const deviceLabelId = useId()
 const cloudChoices = computed(() =>
   props.cloudVaults.map((one) => ({ id: one.remoteId, text: one.name })),
 )
-const deviceChoices = computed(() => props.freeVaults.map((one) => ({ id: one.id, text: one.name })))
+const deviceChoices = computed(() =>
+  props.freeVaults.map((one) => ({ id: one.id, text: one.name })),
+)
 const isAsking = computed(() => props.question !== '')
 const canChoose = computed(() => remoteId.value !== '' && vaultId.value !== '')
 

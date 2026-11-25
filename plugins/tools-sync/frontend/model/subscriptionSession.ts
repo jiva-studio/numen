@@ -134,5 +134,14 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
     followServer?.dispose()
   })
 
-  return { account, server, waiting, problem, plansProblem, load, readIfReachable, actions: { change, manage } }
+  return {
+    account,
+    server,
+    waiting,
+    problem,
+    plansProblem,
+    load,
+    readIfReachable,
+    actions: { change, manage },
+  }
 }

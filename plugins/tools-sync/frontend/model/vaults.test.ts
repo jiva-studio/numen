@@ -110,7 +110,10 @@ describe('useVaults', () => {
 
     await model.actions.load()
 
-    expect(model.state.rows.value.at(0)?.facts).toStrictEqual(['1 file on demand', '1 MB in the cloud'])
+    expect(model.state.rows.value.at(0)?.facts).toStrictEqual([
+      '1 file on demand',
+      '1 MB in the cloud',
+    ])
   })
 
   it('says nothing about files on demand when none stay in the cloud', async () => {
