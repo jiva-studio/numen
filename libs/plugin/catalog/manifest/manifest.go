@@ -122,6 +122,7 @@ func ListPluginCapabilities() []string {
 		"files.provider",
 		"search.source",
 		"tools",
+		"vault.provider",
 	}
 }
 

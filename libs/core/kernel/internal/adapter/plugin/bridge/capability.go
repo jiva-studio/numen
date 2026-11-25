@@ -9,4 +9,6 @@ const (
 	CapabilityTools = "tools"
 	// CapabilityFilesProvider marks a plugin that serves FileProviderService: it keeps the bytes of the absent files of a vault.
 	CapabilityFilesProvider = "files.provider"
+	// CapabilityVaultProvider marks a plugin that serves VaultProviderService: it offers remote vaults this device can connect to a folder.
+	CapabilityVaultProvider = "vault.provider"
 )
