@@ -9,9 +9,7 @@ const CLOUD_REFRESH_INTERVAL_MS = 5 * 60 * 1000
 /** What watching the window uses of the browser. */
 interface CloudWatchPorts {
   readonly isVisible: () => boolean
-  /** Calls `listener` at every focus of the window and every change of its visibility; returns the stop. */
   readonly onWake: (listener: () => void) => () => void
-  /** Calls `task` every `ms` milliseconds; returns the stop. */
   readonly every: (task: () => void, ms: number) => () => void
 }
 
