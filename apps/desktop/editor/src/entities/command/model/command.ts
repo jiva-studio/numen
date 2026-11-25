@@ -73,6 +73,8 @@ export interface Command {
   readonly prompts?: readonly CommandPrompt[]
   readonly group: CommandGroup
   readonly when?: string
+  /** Whether it suits what a row menu is over, beyond its condition. */
+  canRunOver?(target: CommandTarget): boolean
   /** Whether it is offered at all over what is in front, in this window. */
   isAvailable(target: CommandTarget, runs: RunSupport): boolean
   getFieldText?(target: CommandTarget): string

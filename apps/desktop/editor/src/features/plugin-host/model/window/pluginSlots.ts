@@ -39,7 +39,7 @@ export interface SlotCommandFinderDeps {
   readonly getDeclaredCommands: () => readonly DeclaredCommand[] | undefined
   readonly getEditorCommands: () => readonly Pick<
     Command,
-    'id' | 'text' | 'iconName' | 'when' | 'listItems'
+    'id' | 'text' | 'iconName' | 'when' | 'listItems' | 'canRunOver'
   >[]
   readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined
   readonly hasPluginItems?: (command: string) => boolean
@@ -66,6 +66,7 @@ export function createSlotCommandFinder(
   const findEditorLook = (command: string, target: CommandTarget | undefined) => {
     const found = deps.getEditorCommands().find((one) => one.id === command)
     if (!found || !isAvailableOver(found.when, target)) return undefined
+    if (target && found.canRunOver && !found.canRunOver(target)) return undefined
     return {
       title: found.text,
       ...getEditorIcon(found.iconName, command),

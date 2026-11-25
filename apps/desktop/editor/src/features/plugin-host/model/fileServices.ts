@@ -4,7 +4,7 @@
  */
 import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceIcons } from '@numen/plugin-loader'
-import type { Downloads, FileApi } from '@/entities/file'
+import type { Downloads, Entry, FileApi } from '@/entities/file'
 import { COMMAND, findIcon, type CommandTarget } from '@/shared/model/command'
 import type { NoteCreator } from '@/entities/note'
 import { getEntryIcon } from './window/entryIcon'
@@ -18,13 +18,23 @@ export interface VaultFilesDeps {
   readonly runCommand: (id: string, target: CommandTarget, name: string) => Promise<void>
 }
 
+/** A file here carries the provider of the vault, which is what lets a person take its download off again. */
+const markEntry = (one: Entry, provider: string, isDownloading: boolean): Entry => ({
+  ...one,
+  ...(!one.isFolder && !one.isAbsent && provider ? { provider } : {}),
+  ...(isDownloading ? { isDownloading: true } : {}),
+})
+
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
   const { making, getTarget, runCommand: run } = deps
+  /** The plugin that fills the absent files of the vault, once a listing has shown one. */
+  let provider = ''
   return {
-    list: async (folder) =>
-      (await deps.listFiles(folder)).map((one) =>
-        deps.downloads.isRunning(one.path) ? { ...one, isDownloading: true } : one,
-      ),
+    list: async (folder) => {
+      const listed = await deps.listFiles(folder)
+      provider = listed.find((one) => one.isAbsent && one.provider)?.provider ?? provider
+      return listed.map((one) => markEntry(one, provider, deps.downloads.isRunning(one.path)))
+    },
     watchDownloads: (handler) => {
       const stop = deps.downloads.watch((path) => handler([path]))
       return { dispose: stop }

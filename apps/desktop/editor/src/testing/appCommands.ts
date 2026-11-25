@@ -42,7 +42,12 @@ export const createEmptyWindow = (
     },
     writeMessage: discard,
   },
-  files: { files: api.vault.file, notes: NO_NOTES, writeMessage: discard },
+  files: {
+    files: api.vault.file,
+    downloads: api.vault.downloads,
+    notes: NO_NOTES,
+    writeMessage: discard,
+  },
   vaults: {
     vaults: api.vault.vaults,
     clearTrash: api.vault.file.emptyTrash,

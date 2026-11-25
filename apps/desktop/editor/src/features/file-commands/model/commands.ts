@@ -10,14 +10,16 @@ import {
   type CommandInvocation,
   type Notes,
 } from '@/shared/model/command'
-import type { FileApi } from '@/entities/file'
+import type { Downloads, FileApi } from '@/entities/file'
 import type { MessageWriter } from '@/shared/model/notices/messages'
+import { formatError } from '@/shared/api/errors'
 import { generateUniqueName } from '@/shared/lib/paths'
 import { FILE_WORDS } from '../words'
 
 /** What the commands over files use of the window. */
 export interface FileCommandsDeps {
-  readonly files: Pick<FileApi, 'createFolder' | 'listFiles' | 'moveFile'>
+  readonly files: Pick<FileApi, 'createFolder' | 'dropDownload' | 'listFiles' | 'moveFile'>
+  readonly downloads: Pick<Downloads, 'fetch'>
   readonly notes: Notes
   readonly writeMessage: MessageWriter
 }
@@ -35,6 +37,28 @@ const moveFileCommand = async (
     return deps.writeMessage(FILE_WORDS.alreadyExists, 'error')
   }
   deps.writeMessage(FILE_WORDS.errors[answer.error], 'error')
+}
+
+const downloadFileCommand = async (
+  invocation: CommandInvocation,
+  deps: FileCommandsDeps,
+): Promise<void> => {
+  try {
+    await deps.downloads.fetch(invocation.target.path)
+  } catch (error) {
+    deps.writeMessage(formatError(error), 'error')
+  }
+}
+
+const dropDownloadCommand = async (
+  invocation: CommandInvocation,
+  deps: FileCommandsDeps,
+): Promise<void> => {
+  try {
+    await deps.files.dropDownload(invocation.target.path)
+  } catch (error) {
+    deps.writeMessage(formatError(error), 'error')
+  }
 }
 
 const getUntitledFolderPath = async (
@@ -69,6 +93,23 @@ const createFolderCommand = async (
  */
 export const createFileCommands = (deps: FileCommandsDeps): FeatureCommands => ({
   commands: [
+    // The slots draw these two over the row of a file; the palette offers no row for them.
+    {
+      id: COMMAND.downloadFile,
+      text: FILE_WORDS.download,
+      group: 'file',
+      when: 'target.isNote || target.isFile',
+      isAvailable: () => false,
+      canRunOver: (target) => target.isAbsent === true,
+    },
+    {
+      id: COMMAND.dropDownload,
+      text: FILE_WORDS.dropDownload,
+      group: 'file',
+      when: 'target.isNote || target.isFile',
+      isAvailable: () => false,
+      canRunOver: (target) => target.isAbsent !== true && !!target.provider,
+    },
     {
       id: COMMAND.createFolder,
       text: FILE_WORDS.newFolder,
@@ -86,6 +127,8 @@ export const createFileCommands = (deps: FileCommandsDeps): FeatureCommands => (
     },
   ],
   handlers: {
+    [COMMAND.downloadFile]: (invocation) => downloadFileCommand(invocation, deps),
+    [COMMAND.dropDownload]: (invocation) => dropDownloadCommand(invocation, deps),
     [COMMAND.createFolder]: (invocation) => createFolderCommand(invocation, deps),
     [COMMAND.moveFile]: (invocation) => moveFileCommand(invocation, deps),
   },

@@ -28,6 +28,22 @@ export const APP_SLOT_ENTRIES: readonly DeclaredSlotEntry[] = [
   {
     pluginId: APP_PLACEMENT_OWNER,
     slot: 'fileTree.context',
+    command: 'app:file.download',
+    group: '1-download',
+    order: 10,
+    when: OVER_ONE_ROW,
+  },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    slot: 'fileTree.context',
+    command: 'app:file.dropDownload',
+    group: '1-download',
+    order: 20,
+    when: OVER_ONE_ROW,
+  },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    slot: 'fileTree.context',
     command: 'app:file.copyPath',
     group: '2-edit',
     order: 20,

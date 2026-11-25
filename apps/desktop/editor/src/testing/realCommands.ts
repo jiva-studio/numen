@@ -315,7 +315,12 @@ export function createRealWindow(parts: RealWindowParts) {
         },
         writeMessage: options.writeMessage,
       },
-      files: { files: api.vault.file, notes: options.reached, writeMessage: options.writeMessage },
+      files: {
+        files: api.vault.file,
+        downloads: api.vault.downloads,
+        notes: options.reached,
+        writeMessage: options.writeMessage,
+      },
       vaults: {
         vaults: api.vault.vaults,
         clearTrash: api.vault.file.emptyTrash,

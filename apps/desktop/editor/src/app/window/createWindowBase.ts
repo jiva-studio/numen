@@ -54,7 +54,7 @@ export function createWindowBase(api: WindowApi) {
         navigator: vault.navigator,
         writeMessage,
       },
-      files: { files: api.vault.file, notes, writeMessage },
+      files: { files: api.vault.file, downloads: api.vault.downloads, notes, writeMessage },
       vaults: {
         vaults: api.vault.vaults,
         cloud: { known: vaults.cloud, remote: api.vault.remoteVaults, ask: picker },
