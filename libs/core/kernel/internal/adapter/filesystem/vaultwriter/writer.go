@@ -247,7 +247,7 @@ func (w *VaultWriter) RemoveUnchanged(ctx context.Context, path string, was doma
 }
 
 func (w *VaultWriter) resolveNotePath(path string) (string, error) {
-	target, err := w.getContainedPath(path)
+	target, err := vaultconfig.GetContainedPath(w.root, path, w.opts.GetServiceDir())
 	if err != nil {
 		return "", err
 	}
@@ -258,7 +258,7 @@ func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 }
 
 func (w *VaultWriter) resolvePath(path string) (string, error) {
-	target, err := w.getContainedPath(path)
+	target, err := vaultconfig.GetContainedPath(w.root, path, w.opts.GetServiceDir())
 	if err != nil {
 		return "", err
 	}
@@ -285,10 +285,6 @@ func (w *VaultWriter) resolveWritableFile(path string, isWritable func(string) b
 		return "", fmt.Errorf("%s: %w", inside, edit.ErrNotANote)
 	}
 	return resolved, nil
-}
-
-func (w *VaultWriter) getContainedPath(path string) (string, error) {
-	return vaultconfig.GetContainedPath(w.root, path, w.opts.GetServiceDir())
 }
 
 func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
