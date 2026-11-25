@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
@@ -301,4 +302,42 @@ func TestAcceptInvitation_RemovesTheVaultItAddedWhenItCannotLockIt(t *testing.T)
 	if len(vaults.removed) != 1 {
 		t.Errorf("removed vaults = %v, want the one vault that was added", vaults.removed)
 	}
+}
+
+// fileCheckingRecords reads the pulled note at every write of the records.
+type fileCheckingRecords struct {
+	ports.Records
+
+	read    func(path string) bool
+	missing []string
+}
+
+func (f *fileCheckingRecords) WriteRecords(ctx context.Context, id domain.VaultID, records []transfer.FileRecord) error {
+	for _, record := range records {
+		if !f.read(record.Path) {
+			f.missing = append(f.missing, record.Path)
+		}
+	}
+	return f.Records.WriteRecords(ctx, id, records)
+}
+
+func TestPullShare_WritesTheFileBeforeItPersistsTheRecordOfIt(t *testing.T) {
+	w := newWorld(t)
+	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
+	w.syncOwner(t)
+	received := w.receive(t, w.reader, w.shareWith(t, w.reader, "Anna"))
+	w.owner.WriteNote(owned, "Food/Bread.md", "flour")
+	w.syncOwner(t)
+	deps := w.reader.ReceiveDeps()
+	spy := &fileCheckingRecords{Records: deps.Records, read: func(path string) bool { _, ok := w.reader.ReadNote(received.VaultID, path); return ok }, missing: nil}
+	deps.Records = spy
+
+	if _, err := receive.NewPullShare(deps).Execute(t.Context(), received.VaultID); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(spy.missing) != 0 {
+		t.Errorf("records of %v were persisted before their files were written", spy.missing)
+	}
+	wantNote(t, w.reader, received.VaultID, "Bread.md", "flour")
 }

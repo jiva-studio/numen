@@ -26,28 +26,19 @@ func (r *pullRun) download(ctx context.Context, stored *syncv1.StoredRevision, m
 		return err
 	}
 	previous, isKnown := r.getRecord(rev.GetFileId())
+	if err := r.write(ctx, meta.Path, plain, stat, isAbsent); err != nil {
+		if errors.Is(err, host.ErrStale) || errors.Is(err, host.ErrAlreadyExists) {
+			r.addConflict(meta.Path, stored.GetSeq())
+			return nil
+		}
+		return err
+	}
 	r.setRecord(newPulledRecord(rev.GetFileId(), meta.Path, meta.Hash, stored.GetRevId()))
 	if err := r.deps.Records.WriteRecords(ctx, r.id, r.records); err != nil {
 		return err
 	}
-	err = r.write(ctx, meta.Path, plain, stat, isAbsent)
-	if err == nil {
-		r.result.Applied = append(r.result.Applied, meta.Path)
-		return r.retire(ctx, previous, isKnown, meta.Path, stored.GetSeq())
-	}
-	if isKnown {
-		r.setRecord(previous)
-	} else {
-		r.removeRecord(rev.GetFileId())
-	}
-	if saveErr := r.deps.Records.WriteRecords(ctx, r.id, r.records); saveErr != nil {
-		return saveErr
-	}
-	if errors.Is(err, host.ErrStale) || errors.Is(err, host.ErrAlreadyExists) {
-		r.addConflict(meta.Path, stored.GetSeq())
-		return nil
-	}
-	return err
+	r.result.Applied = append(r.result.Applied, meta.Path)
+	return r.retire(ctx, previous, isKnown, meta.Path, stored.GetSeq())
 }
 
 func (r *pullRun) write(ctx context.Context, path string, plain []byte, stat domain.FileStat, isAbsent bool) error {
