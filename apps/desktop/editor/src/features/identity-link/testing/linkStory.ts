@@ -12,7 +12,10 @@ const WINDOW_FRAME =
 
 /** The window the dialogs are drawn in: they are centred in all of it. */
 export const WindowFrame = defineComponent({
-  setup: (_, { slots }) => () => h('div', { class: 'numen', style: WINDOW_FRAME }, slots['default']?.()),
+  setup:
+    (_, { slots }) =>
+    () =>
+      h('div', { class: 'numen', style: WINDOW_FRAME }, slots['default']?.()),
 })
 
 const INFO: LinkInfo = {
