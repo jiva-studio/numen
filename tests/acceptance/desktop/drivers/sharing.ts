@@ -30,7 +30,6 @@ export class SharingDriver {
     return this.readers.ask(reader, started.link, this.identity.getAccountFingerprint())
   }
 
-  /** The folder must be in the vault the step names, or the step names a folder that is not shared from there. */
   private requireFolder(vault: string, folder: string): void {
     const name = this.scenario.getVault(vault)
     if (folder !== '') expect(this.scenario.getWorld().getEntryKind(name, folder), `the vault "${name}" has the folder "${folder}"`).toBe('folder')

@@ -11,7 +11,6 @@ const TOLD_LIMIT_MS = 20_000
 
 const escapePattern = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-/** The warnings the application lists for the plugin "Numen Sync" of a computer. */
 const readSyncWarnings = async (scenario: Scenario): Promise<string[]> => {
   const head = await scenario.getServer().readStreamHead('PluginHealthService/WatchHealth', {})
   const items = (head['items'] ?? []) as { pluginId?: string; text?: string }[]

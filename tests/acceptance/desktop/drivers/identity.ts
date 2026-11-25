@@ -44,7 +44,6 @@ export class IdentityDriver {
     private readonly settings: SettingsDriver,
   ) {}
 
-  /** Shows the page; a dialog that is open is closed first, as a person leaves it. */
   private async showPage(): Promise<Locator> {
     const dialog = this.scenario.page.getByRole('dialog')
     const isClosed = await expect(dialog).toHaveCount(0, { timeout: DIALOG_CLOSES_MS }).then(() => true, () => false)
@@ -55,7 +54,6 @@ export class IdentityDriver {
     return this.settings.showPage(PAGE)
   }
 
-  /** The dialogs of the identity are in the body of the window, not in the panel of the page, and block the page while they are open. */
   private getShownWords(): Locator {
     return this.scenario.page.getByRole('list', { name: 'Recovery words' }).getByRole('listitem')
   }
@@ -260,7 +258,6 @@ export class IdentityDriver {
     await this.restore(text)
   }
 
-  /** Restores from a number of words that are not the words of an identity. */
   async restoreFromWrongWords(count: number): Promise<void> {
     await this.restore(Array.from({ length: count }, () => WRONG_WORD).join(' '))
   }

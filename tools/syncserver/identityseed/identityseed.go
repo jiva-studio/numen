@@ -147,7 +147,6 @@ func marshalServer(fingerprint string, chain []byte) ([]byte, error) {
 	})
 }
 
-// Write saves the seed in the folder.
 func Write(folder string, seed Seed) error {
 	raw, err := json.MarshalIndent(seed.Identity, "", "  ")
 	if err != nil {

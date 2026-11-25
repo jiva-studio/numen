@@ -86,7 +86,6 @@ export interface ServerOptions {
   readonly programs: readonly string[]
   readonly isLive: boolean
   readonly pluginSettings: Readonly<Record<string, Readonly<Record<string, string>>>>
-  /** The computer of the test identities whose keys the application finds at its start; none for an application with no identity. */
   readonly identity?: IdentityComputer
 }
 
