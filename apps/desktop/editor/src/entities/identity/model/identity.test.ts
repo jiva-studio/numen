@@ -280,6 +280,35 @@ describe('the identity store restoring from words', () => {
     expect(store.identity.value).toBeUndefined()
   })
 
+  it('stops waiting when the signal is aborted and reads no more', async () => {
+    vi.useFakeTimers()
+    const get = vi.fn(() => Promise.resolve(undefined))
+    const { store } = createStore(createClient({ get }))
+    const controller = new AbortController()
+
+    const pending = store.restore({ words: WORDS }, controller.signal)
+    await vi.advanceTimersByTimeAsync(2500)
+    const reads = get.mock.calls.length
+    controller.abort()
+    const answer = await pending
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(answer.ok).toBe(false)
+    expect(get).toHaveBeenCalledTimes(reads)
+    expect(store.identity.value).toBeUndefined()
+  })
+
+  it('gives up with a text of the person after one minute without an identity', async () => {
+    vi.useFakeTimers()
+    const { store } = createStore(createClient({ get: () => Promise.resolve(undefined) }))
+
+    const pending = store.restore({ words: WORDS })
+    await vi.advanceTimersByTimeAsync(61_000)
+
+    expect(await pending).toStrictEqual({ ok: false, error: IDENTITY_WORDS.loadFailed })
+    expect(store.identity.value).toBeUndefined()
+  })
+
   it('reports that the words are not valid, stores no identity and does not wait', async () => {
     const get = vi.fn(() => Promise.resolve(undefined))
     const { store } = createStore(

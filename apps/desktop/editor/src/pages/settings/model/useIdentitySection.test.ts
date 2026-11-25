@@ -56,3 +56,41 @@ describe('the identity section', () => {
     expect(section?.step.value).toBe('idle')
   })
 })
+
+describe('the identity section restoring from words', () => {
+  it('aborts the wait for the restored identity when the person cancels', async () => {
+    let signal: AbortSignal | undefined
+    const installation: InstallationIdentity = {
+      identity: ref<IdentityInfo | undefined>(undefined),
+      load: vi.fn(() => Promise.resolve()),
+      create: vi.fn(),
+      delete: vi.fn(),
+      recovery: {
+        generateWords: vi.fn(),
+        restore: (_proof, given) => {
+          signal = given
+          return new Promise(() => undefined)
+        },
+        saveKit: vi.fn(),
+      },
+      devices: createInertDevices(),
+      keyFile: createInertKeyFile(),
+    }
+    let section: ReturnType<typeof useIdentitySection> | undefined
+    mount(
+      defineComponent({
+        setup() {
+          section = useIdentitySection(() => installation, () => undefined)
+          return () => null
+        },
+      }),
+    )
+    section?.actions.startRestore('restore-words')
+    section?.restore.words.setText(RECOVERY_WORDS.slice(0, 12).join(' '))
+    section?.actions.restore().catch(() => undefined)
+    await flushPromises()
+    expect(signal?.aborted).toBe(false)
+    section?.actions.cancel()
+    expect(signal?.aborted).toBe(true)
+  })
+})

@@ -176,7 +176,7 @@ export interface InstallationIdentity {
   delete(): Promise<Result<void, string>>
   readonly recovery: {
     generateWords(): Promise<Result<readonly string[], string>>
-    restore(proof: KitProof): Promise<Result<IdentityInfo, string>>
+    restore(proof: KitProof, signal?: AbortSignal): Promise<Result<IdentityInfo, string>>
     saveKit(proof: KitProof): Promise<Result<boolean, string>>
   }
 }

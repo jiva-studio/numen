@@ -5,6 +5,7 @@
  */
 import type { Ref } from 'vue'
 import type { Result } from '@numen/result'
+import type { KitProof } from '@/entities/identity'
 import type { InstallationIdentity } from '../types'
 import { createIdentityRestore } from './createIdentityRestore'
 import { readWordsOnly } from './readProof'
@@ -27,19 +28,30 @@ export function useRestoreSources(options: RestoreSourcesOptions) {
   const words = useRecoveryProof(problem, readWordsOnly)
   const typed = useTypedSheets(problem)
   const identityRestore = createIdentityRestore(getIdentity, run, words.read)
+  let restoring: AbortController | undefined
+
+  const restoreWith = async (proof?: KitProof): Promise<boolean> => {
+    restoring?.abort()
+    const controller = new AbortController()
+    restoring = controller
+    return identityRestore.restore(proof, controller.signal)
+  }
+
   const scanning = useSheetScan(problem, async (proof) => {
-    if (await identityRestore.restore(proof)) onRestored()
+    if (await restoreWith(proof)) onRestored()
   })
 
   const restoreWords = async (): Promise<void> => {
-    if (!isBusy() && (await identityRestore.restore())) onRestored()
+    if (!isBusy() && (await restoreWith())) onRestored()
   }
 
   const restoreTyped = async (): Promise<void> => {
-    if (!isBusy() && (await identityRestore.restore(typed.read()))) onRestored()
+    if (!isBusy() && (await restoreWith(typed.read()))) onRestored()
   }
 
   const clear = (): void => {
+    restoring?.abort()
+    restoring = undefined
     words.clear()
     typed.clear()
     scanning.clear()

@@ -4,7 +4,7 @@
  */
 import { shallowRef } from 'vue'
 import { createRequestGuard } from '@numen/ui'
-import type { Result } from '@numen/result'
+import { ReportedError, type Result } from '@numen/result'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { IdentityApi } from '../api/identity'
@@ -15,19 +15,45 @@ import { createDeviceStore } from './devices'
 const RESTORE_POLL_MS = 1000
 const RESTORE_READ_FAILURES = 5
 
-const waitForIdentity = async (api: IdentityApi): Promise<IdentityInfo> => {
+const RESTORE_LIMIT_MS = 60_000
+
+const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
+  new Promise<void>((resolve, reject) => {
+    if (signal?.aborted === true) {
+      reject(signal.reason)
+      return
+    }
+    const onAbort = (): void => {
+      clearTimeout(timer)
+      reject(signal?.reason)
+    }
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
+
+/** Polls the core for the restored identity until it appears, the signal aborts or the limit of a minute passes. */
+const waitForIdentity = async (
+  api: IdentityApi,
+  signal: AbortSignal | undefined,
+): Promise<IdentityInfo> => {
   let failures = 0
-  for (;;) {
-    await new Promise<void>((resolve) => setTimeout(resolve, RESTORE_POLL_MS))
+  for (let polls = 0; polls < RESTORE_LIMIT_MS / RESTORE_POLL_MS; polls += 1) {
+    await sleep(RESTORE_POLL_MS, signal)
     try {
       const found = await api.account.getIdentity()
       failures = 0
+      signal?.throwIfAborted()
       if (found !== undefined) return found
     } catch (caughtError) {
+      if (signal?.aborted === true) throw caughtError
       failures += 1
       if (failures >= RESTORE_READ_FAILURES) throw caughtError
     }
   }
+  throw new ReportedError(IDENTITY_WORDS.loadFailed)
 }
 
 const attempt = async <T>(call: () => Promise<T>): Promise<Result<T, string>> => {
@@ -102,7 +128,10 @@ export function createIdentityStore(
     }
   }
 
-  const restore = async (proof: KitProof): Promise<Result<IdentityInfo, string>> => {
+  const restore = async (
+    proof: KitProof,
+    signal?: AbortSignal,
+  ): Promise<Result<IdentityInfo, string>> => {
     const started = await retryAfterAsking(() =>
       settle(
         () =>
@@ -114,7 +143,7 @@ export function createIdentityStore(
     )
     if (!started.ok) return started
     return attempt(async () => {
-      const found = await waitForIdentity(api)
+      const found = await waitForIdentity(api, signal)
       guard.acquireRequest()
       identity.value = found
       return found

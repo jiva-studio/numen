@@ -281,7 +281,7 @@ function createInstallationIdentity(
     delete: () => identity.delete(),
     recovery: {
       generateWords: () => identity.generateWords(),
-      restore: (proof: KitProof) => identity.restore(proof),
+      restore: (proof: KitProof, signal?: AbortSignal) => identity.restore(proof, signal),
       saveKit: (proof: KitProof) => identity.saveKit(proof),
     },
   }
