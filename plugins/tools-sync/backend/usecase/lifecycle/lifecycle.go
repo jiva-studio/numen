@@ -163,7 +163,9 @@ func (u *Lifecycle) flush(ctx context.Context) error {
 	select {
 	case <-ended:
 		endGrace()
-		<-graced
+		if err := <-graced; !isIgnored(err) {
+			graceFailure = err
+		}
 	case err := <-graced:
 		endGrace()
 		if !isIgnored(err) {

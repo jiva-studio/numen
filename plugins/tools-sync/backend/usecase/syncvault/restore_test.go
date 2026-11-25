@@ -432,7 +432,7 @@ func TestSyncVault_IgnoresARestoreAnnouncementNoKnownRootVouchesForAndKeepsTheLo
 	wantNote(t, p.a, source, "Shopping list.md", "milk")
 }
 
-func TestSyncVault_CreatesTheVaultAgainWhenTheCachedCatalogHoldsAnEntryOfAnotherIdentity(t *testing.T) {
+func TestSyncVault_RecreatesVaultOnCatalogEntryOfOtherIdentity(t *testing.T) {
 	p := newSubscribedPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	sync(t, p.a, source)

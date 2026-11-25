@@ -80,17 +80,15 @@ func TestWriteJournal_FailsWhenNoFolderExists(t *testing.T) {
 	}
 }
 
-func TestWritePin_KeepsEveryKeyWrittenAtOnce(t *testing.T) {
+func TestWritePin_ConcurrentWrites(t *testing.T) {
 	state := newState(hosttest.CreateOnDisk(t, "first", nil))
 	const count = 32
 	var group sync.WaitGroup
 	errs := make(chan error, count)
 	for i := range count {
-		group.Add(1)
-		go func() {
-			defer group.Done()
+		group.Go(func() {
 			errs <- state.WritePin(t.Context(), fmt.Sprintf("sync-%d.example", i), []byte{byte(i + 1)})
-		}()
+		})
 	}
 	group.Wait()
 	close(errs)

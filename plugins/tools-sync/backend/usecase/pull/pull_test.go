@@ -369,7 +369,7 @@ func TestPullChanges_DownloadsANoteAgainAfterAStopBetweenTheBaseAndTheWrite(t *t
 	}
 }
 
-func TestPullChanges_HoldsThePositionBeforeARevisionOfAnEpochItHasNotFetched(t *testing.T) {
+func TestPullChanges_KeepsPositionOnRevisionOfUnfetchedEpoch(t *testing.T) {
 	p := newPair(t)
 	if _, err := chaincourier.NewAdopt(p.a.ChainDeps()).Execute(t.Context()); err != nil {
 		t.Fatal(err)
