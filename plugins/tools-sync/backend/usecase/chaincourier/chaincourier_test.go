@@ -309,3 +309,43 @@ func TestLoop_DoesNothingWhileIdleAndWorksAgainWhenNotIdle(t *testing.T) {
 	current.Clock.Advance(time.Second)
 	synctest.WaitUntil(t, "the failed publish", func() bool { return len(current.Health.List()) == 1 })
 }
+
+func TestAdopt_NeverRaisesAnAcknowledgedNoticeAgain(t *testing.T) {
+	t.Parallel()
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	words := synctest.NewWords(t)
+	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
+	observer := synctest.NewSecondComputer(t, server, clock, "Tablet", words)
+	if _, err := chaincourier.NewAdopt(first.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	stranger, err := identity.NewDeviceKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Fake.AddDeviceAt(stranger.Public(), "Stranger", clock.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(first.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the addition published", published, err)
+	}
+	adopt := chaincourier.NewAdopt(observer.ChainDeps())
+	if _, err := adopt.Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if len(observer.Health.List()) != 1 {
+		t.Fatalf("health items = %+v, want the notice raised", observer.Health.List())
+	}
+
+	if err := adopt.Acknowledge(t.Context()); err != nil {
+		t.Fatalf("Acknowledge() = %v", err)
+	}
+	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	if items := observer.Health.List(); len(items) != 0 {
+		t.Errorf("health items = %+v, want none after the entry was acknowledged", items)
+	}
+}
