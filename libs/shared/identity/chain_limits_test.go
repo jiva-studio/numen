@@ -87,12 +87,15 @@ func TestChain_RefusesADeviceEntryAfterTheRecoveryKeyUsedTheReserve(t *testing.T
 		t.Fatalf("error = %v, want ErrChainTooLong", err)
 	}
 	at := epoch().Add(24 * time.Hour)
-	withRecovery, err := appended(full.chain, full.recovery, newDeviceOf(t).Public(), "Owner", at)
-	if err != nil {
-		t.Fatalf("an entry signed by the recovery key does not fit: %v", err)
+	chain := full.chain
+	for i := 0; len(chain.Bytes()) <= identity.MaxChainBytes-identity.RecoveryReserveBytes; i++ {
+		var err error
+		if chain, err = appended(chain, full.recovery, newDeviceOf(t).Public(), "Owner", at.Add(time.Duration(i)*time.Second)); err != nil {
+			t.Fatalf("an entry signed by the recovery key does not fit: %v", err)
+		}
 	}
-	if _, err := appended(withRecovery, full.device, newDeviceOf(t).Public(), "Guest", at.Add(time.Hour)); !errors.Is(err, identity.ErrChainTooLong) {
-		t.Errorf("a device entry after the recovery entry: error = %v, want ErrChainTooLong", err)
+	if _, err := appended(chain, full.device, newDeviceOf(t).Public(), "Guest", at.Add(time.Hour)); !errors.Is(err, identity.ErrChainTooLong) {
+		t.Errorf("a device entry in the reserve of the recovery key: error = %v, want ErrChainTooLong", err)
 	}
 }
 
