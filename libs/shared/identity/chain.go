@@ -128,6 +128,9 @@ func (c Chain) AppendDevice(by Signer, device DevicePublicKey, name string, at t
 // MaxChainBytes is the longest encoded chain a device or the server accepts.
 const MaxChainBytes = 192 << 10
 
+// RecoveryReserveBytes is the last part of MaxChainBytes that only entries signed by the recovery key may fill.
+const RecoveryReserveBytes = 32 << 10
+
 // MaxActiveDevices is the most devices a chain lists as active.
 const MaxActiveDevices = 32
 
