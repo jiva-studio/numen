@@ -26,4 +26,4 @@ Feature: Download a recovery kit
     Scenario: Words of another identity make no kit
       Given the person downloads the recovery kit
       When the person downloads the recovery kit of another identity
-      Then the identity warns about "another identity"
+      Then the person is told "another identity"

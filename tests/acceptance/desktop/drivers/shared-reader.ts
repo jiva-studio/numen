@@ -229,21 +229,24 @@ export class SharedReaderDriver {
     await reader.vaults.connectNew(vault)
   }
 
-  /** Expects the words in the answer of the core, in the open dialog, or on the page "Shared folders" of the reader. */
-  async expectTold(name: ReaderName, text: string): Promise<void> {
+  /** Expects the words in the answer of the core, in the open dialog, on the page "Shared folders" of the reader, or in the card of its subscription; with a vault, the reader must have that vault. */
+  async expectTold(name: ReaderName, text: string, vault?: string): Promise<void> {
     const reader = this.require(name)
-    if (reader.lastError?.includes(text) === true) return
-    const dialog = reader.scenario.page.getByRole('dialog')
-    if ((await dialog.count()) > 0) {
-      await expect(dialog.getByText(text).first()).toBeVisible({ timeout: ARRIVAL_LIMIT_MS })
-      return
-    }
-    const panel = await this.showShares(reader)
-    await expect(panel.getByText(text).first()).toBeVisible({ timeout: ARRIVAL_LIMIT_MS })
-  }
-
-  async expectSubscription(name: ReaderName, text: string): Promise<void> {
-    await this.require(name).subscription.expectSubscription(text)
+    const { page } = reader.scenario
+    const isShown = (panel: Locator): Promise<boolean> => panel.getByText(text).first().isVisible()
+    await expect
+      .poll(
+        async () => {
+          if (vault !== undefined && (await this.findVaultFolder(reader, vault)) === undefined) return false
+          if (reader.lastError?.includes(text) === true) return true
+          const dialog = page.getByRole('dialog')
+          if ((await dialog.count()) > 0) return isShown(dialog)
+          if (await isShown(await this.showShares(reader))) return true
+          return reader.subscription.isShown(text)
+        },
+        { message: `the ${name} is told "${text}"`, timeout: ARRIVAL_LIMIT_MS },
+      )
+      .toBe(true)
   }
 
   async remove(): Promise<void> {

@@ -18,21 +18,21 @@ Feature: Sync after a long absence
     And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
     And the person writes the note "Plan" with the text "tea" in the vault "Test"
     And the second computer has the note "Plan" with the text "tea" in its vault "Copy"
-    And the second computer is offline
+    And the second computer goes offline
 
   Rule: A note removed while a computer was away stays removed
 
     Scenario: A removed note does not come back
       Given the person removes the note "Shopping list" in the vault "Test"
-      And the sync server forgets which notes were removed
-      When the second computer is online
+      And the second computer was away longer than the sync server keeps removals
+      When the second computer goes online
       Then the vault "Test" is without the note "Shopping list"
       And the second computer is without the note "Shopping list" in its vault "Copy"
 
     Scenario: A note that did not change stays
       Given the person removes the note "Shopping list" in the vault "Test"
-      And the sync server forgets which notes were removed
-      When the second computer is online
+      And the second computer was away longer than the sync server keeps removals
+      When the second computer goes online
       Then the second computer has the note "Plan" with the text "tea" in its vault "Copy"
 
   Rule: A change made while a computer was away is kept
@@ -40,12 +40,12 @@ Feature: Sync after a long absence
     Scenario: A changed note of the away computer comes back
       Given the second computer writes the note "Shopping list" with the text "bread" in its vault "Copy"
       And the person removes the note "Shopping list" in the vault "Test"
-      And the sync server forgets which notes were removed
-      When the second computer is online
+      And the second computer was away longer than the sync server keeps removals
+      When the second computer goes online
       Then the vault "Test" has the note "Shopping list" with the text "bread"
 
     Scenario: A new note of the away computer arrives
       Given the second computer writes the note "Ideas" with the text "eggs" in its vault "Copy"
-      And the sync server forgets which notes were removed
-      When the second computer is online
+      And the second computer was away longer than the sync server keeps removals
+      When the second computer goes online
       Then the vault "Test" has the note "Ideas" with the text "eggs"

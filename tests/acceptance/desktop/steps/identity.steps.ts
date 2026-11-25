@@ -51,23 +51,12 @@ When('the person restores the identity from its recovery words', async ({ person
   await person.identity.restoreFromRecoveryWords()
 })
 
-When(
-  'the person restores an identity from the word {string} written {int} times',
-  async ({ person }, word: string, count: number) => {
-    await person.identity.restoreFromWords(Array.from({ length: count }, () => word).join(' '))
-  },
-)
+When('the person restores the identity from {int} wrong words', async ({ person }, count: number) => {
+  await person.identity.restoreFromWrongWords(count)
+})
 
 Then('the identity fingerprint is the same as before', async ({ person }) => {
   await person.identity.expectSameAccount()
-})
-
-Then('the restore dialog says {string}', async ({ person }, text: string) => {
-  await person.identity.expectRestoreNote(text)
-})
-
-Then('the identity warns about {string}', async ({ person }, text: string) => {
-  await person.identity.expectWarning(text)
 })
 
 When('the person downloads the recovery kit', async ({ person }) => {

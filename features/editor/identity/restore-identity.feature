@@ -23,11 +23,11 @@ Feature: Restore an identity
       Then the identity fingerprint is the same as before
 
     Scenario: Words with a mistake are refused
-      When the person restores an identity from the word "abandon" written 12 times
-      Then the identity warns about "words are not valid"
+      When the person restores the identity from 12 wrong words
+      Then the person is told "words are not valid"
       And this device has no identity
 
     Scenario: A 13th word is not accepted
-      When the person restores an identity from the word "abandon" written 13 times
-      Then the restore dialog says "13 words"
+      When the person restores the identity from 13 wrong words
+      Then the person is told "13 words"
       And this device has no identity

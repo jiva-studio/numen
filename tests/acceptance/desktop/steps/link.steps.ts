@@ -40,10 +40,6 @@ Then('the identity has {int} device(s)', async ({ person }, count: number) => {
   await person.computers.expectActiveDevices(count)
 })
 
-Then('the second computer warns about {string}', async ({ person }, text: string) => {
-  await person.computers.expectWarning('second', text)
-})
-
 Given('the second computer is linked to the identity of the person', async ({ person }) => {
   await person.computers.linkSecond()
 })
@@ -56,7 +52,7 @@ Then('the person cannot revoke this device', async ({ person }) => {
   await person.computers.expectCannotRevokeThisDevice()
 })
 
-Then('the sync server has no session for the second computer', async ({ person }) => {
+Then('the sync server no longer lets the second computer in', async ({ person }) => {
   await person.computers.expectNoSessionOfSecond()
 })
 

@@ -18,18 +18,16 @@ import { SyncVaultsDriver } from './sync-vaults.js'
 const SECOND_VAULT = 'Copy'
 /** A note arrives within a few passes of the plugin on both computers. */
 const ARRIVAL_LIMIT_MS = 30_000
-/** How long the plugin has to make a copy before a scenario may say there is none: a few passes. */
-const QUIET_MS = 6_000
 /** The vault of the computer that only reads the synced vault, to see what the server holds. */
 const CHECK_VAULT = 'Check'
-/** The server holds no note when a computer that joined waits this long and has none. */
-const ABSENCE_WAIT_MS = 8_000
 /** The plugin of the sync, by the name its settings page has. */
 const SYNC_PLUGIN_NAME = 'Numen Sync'
 /** The setting that says how often a computer asks the sync server for changes. */
 const INTERVAL_SETTING = 'Sync interval'
 /** Both computers hold a stream open to the server once their plugin runs. */
 const STREAMS_OF_BOTH = 2
+/** An interval so long that a computer asks for changes only when the server tells it to. */
+const NO_LOOK_INTERVAL = '1 hour'
 const ADDRESS_PATTERN = /^(?:the|its) vault "([^"]+)"$/
 
 /** The folders of a computer and the name of one vault in them. */
@@ -179,7 +177,7 @@ export class ComputerDriver {
       await expect.poll(() => world.readText(CHECK_VAULT, path)?.trimEnd(), { timeout: ARRIVAL_LIMIT_MS }).toBe(text)
       return
     }
-    await new Promise((resolve) => setTimeout(resolve, ABSENCE_WAIT_MS))
+    await this.owner.sync.expectSettled()
     expect(world.getEntryKind(CHECK_VAULT, path)).toBeUndefined()
   }
 
@@ -188,10 +186,6 @@ export class ComputerDriver {
     await this.restoreWords(started)
     await started.vaults.connectExisting(CHECK_VAULT, synced)
     return started
-  }
-
-  private getDevices(computer: ComputerName): DevicesDriver {
-    return computer === 'first' ? this.owner.devices : this.requireSecond().devices
   }
 
   private requireQr(): string {
@@ -278,10 +272,6 @@ export class ComputerDriver {
     await this.owner.sync.expectNoSessionOfDevice(this.secondFingerprint)
   }
 
-  async expectWarning(computer: ComputerName, text: string): Promise<void> {
-    await this.getDevices(computer).expectWarning(text)
-  }
-
   private resolveVault(computer: ComputerName, vault: string | undefined): string {
     const scenario = this.getScenario(computer)
     return scenario.getVault(vault ?? SECOND_VAULT)
@@ -307,9 +297,9 @@ export class ComputerDriver {
     await expect.poll(() => world.readText(name, getNotePath(title))?.trimEnd(), { timeout }).toBe(text)
   }
 
-  /** Asks every computer for changes only after the interval the text names. */
-  async setInterval(text: string): Promise<void> {
-    const seconds = String(getIntervalSeconds(text))
+  /** Makes every computer ask for changes only when the server tells it to. */
+  async stopLookingForChanges(): Promise<void> {
+    const seconds = String(getIntervalSeconds(NO_LOOK_INTERVAL))
     await this.owner.settings.set(INTERVAL_SETTING, seconds, SYNC_PLUGIN_NAME)
     await this.requireSecond().settings.set(INTERVAL_SETTING, seconds, SYNC_PLUGIN_NAME)
     await this.owner.sync.expectStreams(STREAMS_OF_BOTH)
@@ -334,11 +324,11 @@ export class ComputerDriver {
       .toContain(text)
   }
 
-  /** The copies a conflict makes arrive within a few passes, so the check waits for the passes to end before it looks. */
+  /** The copies a conflict makes arrive within a few passes, so the check waits until every computer ran its passes before it looks. */
   async expectNoConflictCopy(holder: Holder, title: string, vault: string | undefined): Promise<void> {
     const world = this.getScenario(holder.computer).getWorld()
     const name = this.resolveVault(holder.computer, holder.vault ?? vault)
-    await new Promise((resolve) => setTimeout(resolve, QUIET_MS))
+    await this.owner.sync.expectSettled()
     expect(findConflictCopies(world.listNoteFiles(name), title)).toEqual([])
   }
 
@@ -371,11 +361,6 @@ export class ComputerDriver {
     await this.getVaults(computer).expectConnected(vault)
   }
 
-  async expectSubscription(computer: ComputerName, text: string): Promise<void> {
-    const subscription = computer === 'first' ? this.owner.subscription : this.requireSecond().subscription
-    await subscription.expectSubscription(text)
-  }
-
   async expectPlan(computer: ComputerName, name: string, gigabytes: number): Promise<void> {
     const subscription = computer === 'first' ? this.owner.subscription : this.requireSecond().subscription
     await subscription.expectPlan(name, gigabytes)
@@ -398,7 +383,7 @@ export class ComputerDriver {
 
   /** Makes the computer unable to reach the sync server, or able again. */
   setOnline(computer: ComputerName, isOnline: boolean): void {
-    this.sync.setReachable(this.getScenario(computer), isOnline)
+    this.owner.sync.setReachable(this.getScenario(computer), isOnline)
   }
 
   async answerConfirmation(computer: ComputerName, answer: 'Connect' | 'Cancel'): Promise<void> {

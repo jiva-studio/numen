@@ -97,9 +97,4 @@ export class ShareDriver {
     await device.getByRole('button', { name: REMOVE, exact: true }).click()
     await expect(device.getByRole('button', { name: REMOVE, exact: true })).toHaveCount(0, { timeout: SHARE_LIMIT_MS })
   }
-
-  /** Expects the open dialog of a refused share to show the words. */
-  async expectTold(text: string): Promise<void> {
-    await expect(this.scenario.page.getByText(text).first()).toBeVisible({ timeout: SHARE_LIMIT_MS })
-  }
 }

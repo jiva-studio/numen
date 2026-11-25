@@ -23,7 +23,7 @@ Feature: Read a shared folder
 
     Scenario: A reader without a subscription reads the folder
       Then the reader has the note "Shopping list" with the text "milk" in the shared vault "Food"
-      And the subscription shows "No subscription" on the reader
+      And the reader is told "No subscription"
 
   Rule: The reader only reads
 

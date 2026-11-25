@@ -47,7 +47,7 @@ Feature: Sync a note changed on two computers
       And the second computer writes the note "Shopping list" with the text "eggs" in its vault "Copy"
       And the second computer is the first to reach the sync server
       When the sync server runs again
-      Then the plugin "Numen Sync" warns about "1 note changed on two computers"
+      Then the person is told "1 note changed on two computers"
 
     Scenario: The same text on both computers makes no conflict copy
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"

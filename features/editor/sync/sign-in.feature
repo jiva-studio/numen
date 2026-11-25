@@ -1,6 +1,6 @@
 Feature: Numen Sync signs in
 
-  The plugin "Numen Sync" signs in to the sync server with the identity of this device.
+  Numen Sync signs in to the sync server with the identity of this device.
 
   As a person who uses Numen on more than one device
   I want Numen Sync to sign in with my identity
@@ -15,36 +15,31 @@ Feature: Numen Sync signs in
     Scenario: Numen Sync signs in to the server
       Given the person creates an identity
       When the application "editor" starts
-      Then the sync server has a session for this device
-
-    Scenario: The server knows the identity
-      Given the person creates an identity
-      When the application "editor" starts
-      Then the sync server has a session for the fingerprint of the identity
+      Then this device is signed in to the sync server
 
     Scenario: Numen Sync does not sign in without an identity
       When the application "editor" starts
-      Then the plugin "Numen Sync" warns about "No identity on this device"
-      And the sync server has no session
+      Then the person is told "No identity on this device"
+      And this device is not signed in to the sync server
 
     Scenario: Numen Sync signs in after the identity is created
       Given the application "editor" starts
       When the person creates an identity
-      Then the sync server has a session for this device
+      Then this device is signed in to the sync server
 
-  Rule: Numen Sync asks for an update when the server needs a newer protocol
+  Rule: Numen Sync asks for an update when the server needs a newer Numen
 
     Scenario: An old Numen is asked to update
       Given the person creates an identity
-      And the sync server needs a newer protocol
+      And the sync server needs a newer Numen
       When the application "editor" starts
-      Then the plugin "Numen Sync" warns about "Update Numen"
-      And the sync server has no session
+      Then the person is told "Update Numen"
+      And this device is not signed in to the sync server
 
-  Rule: A session ends when the server ends it
+  Rule: Numen Sync signs in again when the server signs it out
 
-    Scenario: Numen Sync signs in again after the server ends the session
+    Scenario: Numen Sync signs in again after the server signs this device out
       Given the person creates an identity
       And the application "editor" starts
-      When the sync server ends the session of this device
-      Then the sync server has a session for this device
+      When the sync server signs this device out
+      Then this device is signed in to the sync server

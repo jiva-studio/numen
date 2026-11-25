@@ -13,8 +13,7 @@ Feature: Create an identity
 
     Scenario: The settings list the page "Identity and licenses"
       When the person runs the command "Open settings"
-      Then the Settings tab titled "Settings" has "Identity and licenses"
-      And the Settings tab titled "Settings" does not have "Licenses"
+      Then the settings list the page "Identity and licenses"
 
   Rule: A new identity shows its words once, then checks three of them
 

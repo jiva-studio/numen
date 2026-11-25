@@ -40,12 +40,12 @@ Feature: Connect a vault to Numen Sync
       Given the person syncs the vault "Test"
       And the person adds a copy of the vault "Test" as the vault "Copy"
       When the person syncs the vault "Copy"
-      Then the sync settings warn about "a copy of a connected vault"
+      Then the person is told "a copy of a connected vault"
 
   Rule: Numen Sync needs an identity to connect
 
     Scenario: A vault is not connected without an identity
       Given the person deletes the identity from this device
       When the person opens the sync settings
-      Then the sync settings warn about "No identity on this device"
+      Then the person is told "No identity on this device"
       And the vault "Test" is not synced

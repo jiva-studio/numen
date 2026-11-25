@@ -24,7 +24,6 @@ Feature: Numen Sync after the server is restored from a backup
       And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
       When the operator restores the sync server from the backup
-      And the operator announces the restore
       Then the synced vault "Test" holds the note "Shopping list" with the text "milk"
 
     Scenario: A restored server does not bring back an old text
@@ -33,7 +32,6 @@ Feature: Numen Sync after the server is restored from a backup
       And the person writes the note "Shopping list" with the text "bread" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "bread" in its vault "Copy"
       When the operator restores the sync server from the backup
-      And the operator announces the restore
       Then the vault "Test" has the note "Shopping list" with the text "bread"
       And the second computer has the note "Shopping list" with the text "bread" in its vault "Copy"
       And the synced vault "Test" holds the note "Shopping list" with the text "bread"
@@ -44,7 +42,6 @@ Feature: Numen Sync after the server is restored from a backup
       And the person removes the note "Shopping list" in the vault "Test"
       And the second computer does not have the file "Shopping list.md" in its vault "Copy"
       When the operator restores the sync server from the backup
-      And the operator announces the restore
       Then the synced vault "Test" does not hold the note "Shopping list"
       And the second computer does not have the file "Shopping list.md" in its vault "Copy"
 
@@ -53,7 +50,6 @@ Feature: Numen Sync after the server is restored from a backup
       And the second computer goes offline
       And the second computer writes the note "Shopping list" with the text "eggs" in its vault "Copy"
       And the operator restores the sync server from the backup
-      And the operator announces the restore
       When the second computer goes online
       Then the synced vault "Test" holds the note "Shopping list" with the text "eggs"
 
@@ -64,7 +60,6 @@ Feature: Numen Sync after the server is restored from a backup
       And the operator makes a backup of the sync server
       And the person syncs the vault "Work"
       When the operator restores the sync server from the backup
-      And the operator announces the restore
       Then the second computer can connect to the synced vault "Work"
 
   Rule: The subscription stays after a restore
@@ -74,15 +69,14 @@ Feature: Numen Sync after the server is restored from a backup
       And the person opens the page "Identity and licenses"
       And the person buys the subscription
       When the operator restores the sync server from the backup
-      And the operator announces the restore
-      Then the subscription shows "Active"
+      Then the person is told "Active"
 
-  Rule: A restore that is not announced changes nothing on the computers
+  Rule: A restore the computers are not told of changes nothing on them
 
-    Scenario: A computer waits for the announcement
+    Scenario: A computer waits until it is told of the restore
       Given the person writes the note "Shopping list" with the text "bread" in the vault "Test"
       And the operator makes a backup of the sync server
       And the person writes the note "Shopping list" with the text "eggs" in the vault "Test"
-      When the operator restores the sync server from the backup
-      Then the plugin "Numen Sync" warns about "The sync server went back to an earlier state"
+      When the operator restores the sync server from the backup without telling the computers
+      Then the person is told "The sync server went back to an earlier state"
       And the vault "Test" has the note "Shopping list" with the text "eggs"

@@ -35,10 +35,10 @@ const GRACE_DAYS = 7
 const RETENTION_DAYS = 60
 /** A protocol version no build of the application implements. */
 const NEWER_PROTOCOL = 1000
-/** The plugin tries to sign in within this time of its start; a server that has no session after it has none to give. */
-const SETTLE_MS = 3_000
-/** The computer that reaches the server first commits its changes within a few passes, which come every second. */
-const LEAD_MS = 5_000
+/** A device that ran this many passes after a moment ran one pass that began after it: the pass that began first may have been under way. */
+const PASSES_AFTER = 2
+/** The passes come every second; a device that does not run them in this time is not working. */
+const PASS_LIMIT_MS = 30_000
 
 /** A number and a unit, as a scenario writes an interval. */
 const INTERVAL_PATTERN = /^(\d+) (second|minute|hour)s?$/
@@ -133,15 +133,19 @@ export const getPlansFlag = (plans: readonly PlanSpec[]): string =>
 /** The bytes the cloud holds when it holds some GB of the notes. */
 export const getCloudBytes = (gigabytes: number): number => gigabytes * BYTES_IN_GB
 
-/** The days a trial of a plan runs on the stand-in of the payment. */
-export const TRIAL_DAYS = 14
-
 /** The ids of the processes whose program is the file of the backend of a plugin, as the system lists them. */
 export const findBackendPids = (processes: string, backend: string): number[] =>
   processes
     .split('\n')
     .map((line) => /^\s*(\d+)\s+(\S+)/.exec(line))
     .flatMap((found) => (found?.[1] !== undefined && found[2].endsWith(`/bin/${backend}`) ? [Number(found[1])] : []))
+
+/** The warnings the application lists for the plugin "Numen Sync" of a computer. */
+export const readSyncWarnings = async (scenario: Scenario): Promise<string[]> => {
+  const head = await scenario.getServer().readStreamHead('PluginHealthService/WatchHealth', {})
+  const items = (head['items'] ?? []) as { pluginId?: string; text?: string }[]
+  return items.flatMap((one) => (one.pluginId === SYNC_PLUGIN && one.text !== undefined ? [one.text] : []))
+}
 
 export class SyncDriver {
   private running: RunningSync | undefined
@@ -173,25 +177,20 @@ export class SyncDriver {
   /** Starts a trial of the plan on the identity, as the stand-in of the payment does for an identity that asked for one. */
   async startTrial(plan: string): Promise<void> {
     await this.expectSessionForAccount()
-    await this.sendAdminRequest(`trial?plan=${plan.toLowerCase()}`, 'the start of the trial')
-    this.trial = { plan, endsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000) }
+    const ends = await this.sendAdminRequest(`/admin/trial?plan=${plan.toLowerCase()}`, 'the start of the trial')
+    this.trial = { plan, endsAt: new Date(ends.trim()) }
   }
 
   /** Cancels the trial the identity runs: the subscription stays until the trial ends. */
   async cancelTrial(): Promise<void> {
     if (this.trial === undefined) throw new Error('no trial started: begin with the person starts a trial of a plan')
-    await this.sendAdminRequest(`cancel-trial?plan=${this.trial.plan.toLowerCase()}`, 'the cancel of the trial')
+    await this.sendAdminRequest(`/admin/cancel-trial?plan=${this.trial.plan.toLowerCase()}`, 'the cancel of the trial')
   }
 
-  /** The day the trial that started last ends. */
+  /** The day the trial that started last ends, as the sync server stored it. */
   getTrialEnd(): Date {
     if (this.trial === undefined) throw new Error('no trial started: begin with the person starts a trial of a plan')
     return this.trial.endsAt
-  }
-
-  private async sendAdminRequest(request: string, what: string): Promise<void> {
-    const answer = await fetch(`${this.requireRunning().address}/admin/${request}`, { method: 'POST' })
-    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to ${what}`)
   }
 
   /** Makes the cloud hold some GB of the notes of the person. */
@@ -264,19 +263,16 @@ export class SyncDriver {
     await this.sendAdminRequest('/admin/backup', 'the backup')
   }
 
-  /** Puts the server back to the copy of the backup: what it received after is gone, and the computers are not told. */
-  async restoreFromBackup(): Promise<void> {
+  /** Puts the server back to the copy of the backup: what it received after is gone. The computers are told it was restored, unless the operator does not tell them. */
+  async restoreFromBackup(isTold: boolean): Promise<void> {
     await this.sendAdminRequest('/admin/restore', 'the restore')
+    if (isTold) await this.sendAdminRequest('/admin/announce', 'the announcement of the restore')
   }
 
-  /** Tells the computers that the server was restored. */
-  async announceRestore(): Promise<void> {
-    await this.sendAdminRequest('/admin/announce', 'the announcement of the restore')
-  }
-
-  private async sendAdminRequest(path: string, what: string): Promise<void> {
+  private async sendAdminRequest(path: string, what: string): Promise<string> {
     const answer = await fetch(`${this.requireRunning().address}${path}`, { method: 'POST' })
     if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to ${what}`)
+    return answer.text()
   }
 
   /** Ends the sync server and keeps its state and its address, as a server that goes away does. */
@@ -302,7 +298,7 @@ export class SyncDriver {
     }
     this.running = await startProgram(this.listen, this.getStateFlags())
     if (this.held.length > 0) {
-      await new Promise((resolve) => setTimeout(resolve, LEAD_MS))
+      await this.expectPassesOfAnyDevice(PASSES_AFTER)
       for (const gate of this.held) gate.reopen()
       this.held = []
     }
@@ -368,10 +364,6 @@ export class SyncDriver {
     await expect.poll(() => this.readStreamCount(), { timeout: STREAM_TIMEOUT_MS }).toBe(count)
   }
 
-  async expectSession(): Promise<void> {
-    await expect.poll(async () => (await this.readSessions()).length, { timeout: 15_000 }).toBeGreaterThan(0)
-  }
-
   private async readSessionDevices(): Promise<string[]> {
     return (await this.readSessions()).map((one) => getDeviceFingerprint(one.deviceSignKey))
   }
@@ -384,6 +376,11 @@ export class SyncDriver {
     await expect.poll(() => this.readSessionDevices(), { timeout: 15_000 }).not.toContain(fingerprint)
   }
 
+  /** Expects a session of the identity: the plugin signed in with it. */
+  async expectSignedIn(): Promise<void> {
+    await this.expectSessionForAccount()
+  }
+
   async expectSessionForAccount(): Promise<void> {
     const account = this.identity.getAccountFingerprint()
     await expect
@@ -391,9 +388,38 @@ export class SyncDriver {
       .toContain(account)
   }
 
-  async expectNoSession(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, SETTLE_MS))
+  /** Expects no session. The step before it names the warning the plugin shows when it does not sign in, so the plugin has tried by now. */
+  async expectNotSignedIn(): Promise<void> {
     expect(await this.readSessions()).toEqual([])
+  }
+
+  /** Waits until every device that has a session ran passes of its own after this call, twice over: the first round sends what the devices hold, the second brings it to the others. */
+  async expectSettled(): Promise<void> {
+    for (let round = 0; round < 2; round += 1) {
+      const devices = (await this.readSessions()).map((one) => one.deviceSignKey)
+      const before = await this.readPulls()
+      await expect
+        .poll(
+          async () => {
+            const now = await this.readPulls()
+            return devices.every((device) => (now.get(device) ?? 0) >= (before.get(device) ?? 0) + PASSES_AFTER)
+          },
+          { message: 'every device signed in ran its passes', timeout: PASS_LIMIT_MS },
+        )
+        .toBe(true)
+    }
+  }
+
+  private async expectPassesOfAnyDevice(count: number): Promise<void> {
+    await expect
+      .poll(async () => Math.max(0, ...(await this.readPulls()).values()), { message: 'a device ran its passes', timeout: PASS_LIMIT_MS })
+      .toBeGreaterThanOrEqual(count)
+  }
+
+  private async readPulls(): Promise<Map<string, number>> {
+    const answer = await fetch(`${this.requireRunning().address}/admin/pulls`)
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the count of its passes`)
+    return new Map(Object.entries((await answer.json()) as Record<string, number>))
   }
 
   /** Ends every session of the server, so a session it lists afterwards is one the plugin opened again. */
@@ -423,20 +449,6 @@ export class SyncDriver {
         return now === undefined || now.startTimeUnixMs !== before?.startTimeUnixMs
       })
       .toBe(true)
-  }
-
-  async expectWarning(plugin: string, text: string): Promise<void> {
-    const { id } = findPlugin(plugin)
-    await expect
-      .poll(
-        async () => {
-          const head = await this.scenario.getServer().readStreamHead('PluginHealthService/WatchHealth', {})
-          const items = (head['items'] ?? []) as { pluginId?: string; text?: string }[]
-          return items.filter((one) => one.pluginId === id).map((one) => one.text)
-        },
-        { timeout: 15_000 },
-      )
-      .toContain(text)
   }
 
   private requireRunning(): RunningSync {

@@ -38,10 +38,10 @@ Feature: Sync a file removed on one computer and changed on the other
       And the vault "Test" has no conflict copy of the note "Shopping list"
 
     Scenario: A file changed on one computer and removed on the other stays
-      Given the person writes the file "Papers/Report.pdf" in the vault "Test"
+      Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
       And the sync server stops
-      And the person changes the file "Papers/Report.pdf" in the vault "Test"
+      And the person replaces the file "Papers/Report.pdf" with a new version in the vault "Test"
       And the second computer removes the file "Papers/Report.pdf" in its vault "Copy"
       When the sync server runs again
       Then the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
@@ -50,7 +50,7 @@ Feature: Sync a file removed on one computer and changed on the other
   Rule: A file removed on both computers stays removed
 
     Scenario: A file removed on both computers is removed
-      Given the person writes the file "Papers/Report.pdf" in the vault "Test"
+      Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
       And the sync server stops
       And the person removes the file "Papers/Report.pdf" in the vault "Test"

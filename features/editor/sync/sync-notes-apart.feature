@@ -25,4 +25,4 @@ Feature: Sync notes when the computers are apart
 
     Scenario: Numen Sync warns while the server is away
       When the sync server stops
-      Then the plugin "Numen Sync" warns about "Could not reach the sync server"
+      Then the person is told "Could not reach the sync server"

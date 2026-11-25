@@ -1,7 +1,7 @@
 Feature: Delete cloud data
 
-  The person can delete everything Numen Sync holds of the identity, apart from deleting the identity on this computer. The server keeps
-  the data for 7 days, so a mistake can be undone, and then deletes it for good. The notes on the computers stay.
+  The person can delete everything Numen Sync holds of the identity. The notes on the computers stay.
+  The server keeps the data for 7 days, so a mistake can be undone. Then the server deletes the data.
 
   As a person who uses Numen Sync
   I want to delete my cloud data and see what the server holds
@@ -18,8 +18,8 @@ Feature: Delete cloud data
 
     Scenario: The question says what is deleted and what stays
       When the person asks to delete the cloud data
-      Then the question says "7 days"
-      And the question says "Your notes stay on your devices"
+      Then the person is told "7 days"
+      And the person is told "Your notes stay on your devices"
 
     Scenario: Cancelling the question deletes nothing
       Given the person asks to delete the cloud data
@@ -31,7 +31,7 @@ Feature: Delete cloud data
     Scenario: The card shows that the cloud data is being deleted
       When the person deletes the cloud data
       Then the cloud data is being deleted
-      And the page says "Restore cloud data"
+      And the person is told "Restore cloud data"
 
     Scenario: Restoring the cloud data stops the deletion
       Given the person deletes the cloud data

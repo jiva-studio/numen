@@ -20,17 +20,18 @@ Feature: Revoke a device
       Then the identity has 1 device
 
     Scenario: A device does not revoke itself
+      When the person opens the page "Identity and licenses"
       Then the person cannot revoke this device
 
-    Scenario: A revoked device does not sign in to the sync server
+    Scenario: A revoked device is no longer let in by the sync server
       When the person revokes the second computer
-      Then the sync server has no session for the second computer
+      Then the sync server no longer lets the second computer in
 
   Rule: A revoked device says it was revoked and keeps its files
 
     Scenario: A revoked device says it was revoked
       When the person revokes the second computer
-      Then the second computer warns about "This device was revoked"
+      Then the second computer is told "This device was revoked"
 
     Scenario: A revoked device keeps its local notes
       Given the second computer writes the note "Eggs" with the text "eggs" in its vault "Copy"

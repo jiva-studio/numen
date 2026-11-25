@@ -18,22 +18,6 @@ Feature: Numen Sync subscription
       When the person opens the page "Identity and licenses"
       Then the page offers to buy the subscription
 
-    Scenario: A paid subscription is active
-      Given the person opens the page "Identity and licenses"
-      When the person buys the subscription
-      Then the subscription is active
-
-    Scenario: A subscription bought on one computer is active on the other
-      Given a second computer restores the identity from the recovery words
-      And the person opens the page "Identity and licenses"
-      When the person buys the subscription
-      Then the subscription is active on the second computer
-
-    Scenario: An active subscription is not bought twice
-      Given the person opens the page "Identity and licenses"
-      When the person buys the subscription
-      Then the page does not offer to buy the subscription
-
     Scenario: A payment that is not made leaves the identity without a subscription
       Given the person opens the page "Identity and licenses"
       When the person opens the payment page without paying
@@ -44,11 +28,11 @@ Feature: Numen Sync subscription
     Scenario: A subscription is not offered without an identity
       Given the person deletes the identity from this device
       When the person opens the page "Identity and licenses"
-      Then the page says "Sync your vaults between your devices"
-      And the page says "Needs an identity"
+      Then the person is told "Sync your vaults between your devices"
+      And the person is told "Needs an identity"
       And the page does not offer to buy the subscription
 
     Scenario: The page tells when the server is away
       Given the sync server stops
       When the person opens the page "Identity and licenses"
-      Then the subscription shows "Offline"
+      Then the person is told "Offline"

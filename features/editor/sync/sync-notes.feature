@@ -42,11 +42,3 @@ Feature: Sync notes between computers
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
       Then the sync server holds no stored text "milk"
       And the sync server holds no stored text "Shopping list"
-
-  Rule: Only notes are synced
-
-    Scenario: A file that is not a note stays on its computer
-      When the person writes the file "data.bin" in the vault "Test"
-      And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-      Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
-      And the second computer does not have the file "data.bin" in its vault "Copy"

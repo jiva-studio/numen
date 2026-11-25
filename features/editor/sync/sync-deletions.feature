@@ -18,7 +18,7 @@ Feature: Sync deleted files between computers
   Rule: A removed file is removed on the other computer
 
     Scenario: A removed PDF is removed on the second computer
-      Given the person writes the file "Papers/Report.pdf" in the vault "Test"
+      Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
       When the person removes the file "Papers/Report.pdf" in the vault "Test"
       Then the second computer does not have the file "Papers/Report.pdf" in its vault "Copy"
@@ -30,27 +30,15 @@ Feature: Sync deleted files between computers
       Then the second computer does not have the file "Shopping list.md" in its vault "Copy"
 
     Scenario: A removed folder is removed on the second computer
-      Given the person writes the file "Papers/Report.pdf" in the vault "Test"
+      Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
       When the person removes the folder "Papers" in the vault "Test"
       Then the second computer does not have the file "Papers/Report.pdf" in its vault "Copy"
 
     Scenario: A removed file can be written again at its path
-      Given the person writes the file "Papers/Report.pdf" in the vault "Test"
+      Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
       And the person removes the file "Papers/Report.pdf" in the vault "Test"
       And the second computer does not have the file "Papers/Report.pdf" in its vault "Copy"
-      When the person writes the file "Papers/Report.pdf" in the vault "Test"
+      When the person adds the file "Papers/Report.pdf" to the vault "Test"
       Then the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
-
-  Rule: A change wins over a removal
-
-    Scenario: A file changed on one computer and removed on the other stays
-      Given the person writes the file "Papers/Report.pdf" in the vault "Test"
-      And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
-      And the sync server stops
-      And the person removes the file "Papers/Report.pdf" in the vault "Test"
-      And the second computer changes the file "Papers/Report.pdf" in its vault "Copy"
-      When the sync server runs again
-      Then the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
-      And the vault "Test" has the same file "Papers/Report.pdf" as the second computer

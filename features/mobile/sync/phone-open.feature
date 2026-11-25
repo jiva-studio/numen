@@ -32,12 +32,12 @@ Feature: Numen Sync on a phone
     Scenario: Numen asks for nothing when it leaves the screen
       Given Numen is open on the phone
       When Numen leaves the screen of the phone
-      Then the sync server has no open stream for the phone
+      Then the phone gets no changes
 
     Scenario: Numen asks again when it comes back
       Given Numen leaves the screen of the phone
       When Numen opens on the phone
-      Then the sync server has an open stream for the phone
+      Then the phone gets changes
 
   Rule: A note written on the phone is sent
 

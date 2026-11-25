@@ -7,8 +7,8 @@ Given('{reader} sets up an identity', async ({ person }, reader: ReaderName) => 
 
 When(
   'the person shares the folder {string} of the vault {string} with {reader}',
-  async ({ person }, folder: string, _vault: string, reader: ReaderName) => {
-    await person.sharing.shareFolder(folder, reader)
+  async ({ person }, folder: string, vault: string, reader: ReaderName) => {
+    await person.sharing.shareFolder(vault, folder, reader)
   },
 )
 
@@ -39,14 +39,13 @@ When('the link is given to a second reader', async ({ person }) => {
 })
 
 Then('{teller} is told {string}', async ({ person }, teller: string, text: string) => {
-  if (teller === 'the person') await person.sharing.expectTold(text)
-  else await person.readers.expectTold(teller === 'the reader' ? 'reader' : 'second reader', text)
+  await person.notices.expectTold(teller, text)
 })
 
 Then(
   '{reader} is told {string} in the shared vault {string}',
-  async ({ person }, reader: ReaderName, text: string, _vault: string) => {
-    await person.readers.expectTold(reader, text)
+  async ({ person }, reader: ReaderName, text: string, vault: string) => {
+    await person.readers.expectTold(reader, text, vault)
   },
 )
 
@@ -63,8 +62,8 @@ When(
 
 When(
   'the person declines the request of {reader} to read the folder {string} of the vault {string}',
-  async ({ person }, reader: ReaderName, folder: string, _vault: string) => {
-    await person.sharing.declineFolder(folder, reader)
+  async ({ person }, reader: ReaderName, folder: string, vault: string) => {
+    await person.sharing.declineFolder(vault, folder, reader)
   },
 )
 
@@ -81,10 +80,6 @@ When(
     await person.readers.connectVault(reader, vault)
   },
 )
-
-Then('the subscription shows {string} on the reader', async ({ person }, text: string) => {
-  await person.readers.expectSubscription('reader', text)
-})
 
 When('{reader} leaves the shared vault {string}', async ({ person }, reader: ReaderName, vault: string) => {
   await person.readers.leaveShare(reader, vault)

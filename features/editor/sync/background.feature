@@ -1,9 +1,9 @@
-Feature: Numen Sync keeps running
+Feature: Numen Sync keeps working
 
-  The plugin "Numen Sync" runs while it is enabled, also when nobody uses it.
+  Numen Sync works while it is on, also when nobody uses it.
 
   As a person who uses Numen Sync
-  I want the plugin to keep running in the background
+  I want Numen Sync to keep working in the background
   So that my changes can leave this device without my help
 
   Background:
@@ -11,24 +11,24 @@ Feature: Numen Sync keeps running
     And a sync server runs
     And the person creates an identity
 
-  Rule: A plugin that must stay on runs while it is enabled
+  Rule: Numen Sync works while it is on
 
-    Scenario: Numen Sync runs after the application starts
+    Scenario: Numen Sync works after the application starts
       When the application "editor" starts
-      Then the plugin "Numen Sync" runs
+      Then Numen Sync works
 
-    Scenario: Numen Sync runs again after its process ends
+    Scenario: Numen Sync works again after it stops by itself
       Given the application "editor" starts
-      When the process of the plugin "Numen Sync" ends
-      Then the plugin "Numen Sync" runs
+      When Numen Sync stops by itself
+      Then Numen Sync works
 
-    Scenario: A disabled Numen Sync does not run
+    Scenario: A disabled Numen Sync does not work
       Given the application "editor" starts
       When the person disables the plugin "Numen Sync"
-      Then the plugin "Numen Sync" does not run
+      Then Numen Sync does not work
 
-    Scenario: An enabled Numen Sync runs again
+    Scenario: An enabled Numen Sync works again
       Given the application "editor" starts
       And the person disables the plugin "Numen Sync"
       When the person enables the plugin "Numen Sync"
-      Then the plugin "Numen Sync" runs
+      Then Numen Sync works

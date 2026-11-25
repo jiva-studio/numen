@@ -21,6 +21,8 @@ import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
 
 const PAGE = 'Identity and licenses'
+/** A word of the list that makes no identity when it is written again and again. */
+const WRONG_WORD = 'abandon'
 const CONFIRMATIONS = 3
 const ACCOUNT_FINGERPRINT = 'Identity fingerprint'
 const NO_IDENTITY = 'Your identity in Numen lives on your own computer'
@@ -226,13 +228,6 @@ export class IdentityDriver {
     if (await restore.isEnabled()) await restore.click()
   }
 
-  async expectRestoreNote(text: string): Promise<void> {
-    const dialog = (await this.showPage()).getByRole('dialog', { name: /^(Recovery words|Recovery kit: type)$/ })
-    await expect(dialog.getByRole('status').or(dialog.getByRole('alert'))).toContainText(text, {
-      ignoreCase: true,
-    })
-  }
-
   async restoreFromRecoveryWords(): Promise<void> {
     await this.restore(this.words.join(' '))
   }
@@ -241,10 +236,9 @@ export class IdentityDriver {
     await this.restore(text)
   }
 
-  async expectWarning(text: string): Promise<void> {
-    await expect((await this.showPage()).getByRole('alert')).toContainText(text, {
-      ignoreCase: true,
-    })
+  /** Restores from a number of words that are not the words of an identity. */
+  async restoreFromWrongWords(count: number): Promise<void> {
+    await this.restore(Array.from({ length: count }, () => WRONG_WORD).join(' '))
   }
 
   /** The recovery words of the last identity this person started. */

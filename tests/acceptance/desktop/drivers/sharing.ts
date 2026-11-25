@@ -1,6 +1,7 @@
 /** The person who shares folders with readers: the dialog of the owner, the dialogs of the readers and the messages the owner receives. */
 import { expect } from 'playwright/test'
 import type { IdentityDriver } from './identity.js'
+import type { Scenario } from './scenario.js'
 import type { ShareDriver } from './share.js'
 import type { ReaderName, SharedReaderDriver } from './shared-reader.js'
 
@@ -10,6 +11,7 @@ export class SharingDriver {
   private fingerprint: string | undefined
 
   constructor(
+    private readonly scenario: Scenario,
     private readonly share: ShareDriver,
     private readonly readers: SharedReaderDriver,
     private readonly identity: IdentityDriver,
@@ -28,14 +30,22 @@ export class SharingDriver {
     return this.readers.ask(reader, started.link, this.identity.getAccountFingerprint())
   }
 
-  async shareFolder(folder: string, reader: ReaderName): Promise<void> {
+  /** The folder must be in the vault the step names, or the step names a folder that is not shared from there. */
+  private requireFolder(vault: string, folder: string): void {
+    const name = this.scenario.getVault(vault)
+    if (folder !== '') expect(this.scenario.getWorld().getEntryKind(name, folder), `the vault "${name}" has the folder "${folder}"`).toBe('folder')
+  }
+
+  async shareFolder(vault: string, folder: string, reader: ReaderName): Promise<void> {
+    this.requireFolder(vault, folder)
     const code = await this.ask(folder, reader)
     if (code === undefined) return
     await this.share.allow(this.getReaderFingerprint(), code)
     await this.readers.expectReceived(reader)
   }
 
-  async declineFolder(folder: string, reader: ReaderName): Promise<void> {
+  async declineFolder(vault: string, folder: string, reader: ReaderName): Promise<void> {
+    this.requireFolder(vault, folder)
     const code = await this.ask(folder, reader)
     if (code === undefined) return
     await this.share.decline(this.getReaderFingerprint(), code)
@@ -59,8 +69,8 @@ export class SharingDriver {
     await this.share.removeReader(folder, this.getReaderFingerprint())
   }
 
-  async expectTold(text: string): Promise<void> {
-    if (this.refusal !== undefined) expect(this.refusal).toContain(text)
-    else await this.share.expectTold(text)
+  /** Whether the share was refused with words that have the text. */
+  isRefusedWith(text: string): boolean {
+    return this.refusal?.includes(text) === true
   }
 }

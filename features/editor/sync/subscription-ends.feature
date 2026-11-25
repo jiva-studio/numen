@@ -28,7 +28,7 @@ Feature: Numen Sync after the subscription ends
     Scenario: The page warns that the subscription ended
       When the subscription ended 3 days ago
       And the person opens the page "Identity and licenses"
-      Then the subscription shows "Ended"
+      Then the person is told "Ended"
       And the page offers to buy the subscription
 
   Rule: Changes are not sent after the 7 days
@@ -36,18 +36,18 @@ Feature: Numen Sync after the subscription ends
     Scenario: A note stays on this computer
       Given the subscription ended 10 days ago
       When the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-      Then the plugin "Numen Sync" warns about "Subscription ended: changes stay on this device"
+      Then the person is told "Subscription ended: changes stay on this device"
       And the second computer does not have the file "Shopping list.md" in its vault "Copy"
 
     Scenario: The page tells that the vaults can only be read
       When the subscription ended 10 days ago
       And the person opens the page "Identity and licenses"
-      Then the subscription shows "Read only"
+      Then the person is told "Read only"
 
     Scenario: The page tells that the cloud deleted the vaults
       When the subscription ended 70 days ago
       And the person opens the page "Identity and licenses"
-      Then the subscription shows "Deleted"
+      Then the person is told "Deleted"
 
   Rule: A new subscription opens the writes again
 

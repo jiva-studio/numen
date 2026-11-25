@@ -33,6 +33,7 @@ import { SettingsDriver } from './settings.js'
 import { ShareDriver } from './share.js'
 import { SharedReaderDriver } from './shared-reader.js'
 import { SharingDriver } from './sharing.js'
+import { NoticeDriver } from './notices.js'
 import { TabDriver } from './tabs.js'
 import { TextDriver } from './text.js'
 import { VaultDriver } from './vault.js'
@@ -69,6 +70,7 @@ export class Person {
   readonly files: SyncedFilesDriver
   readonly readers: SharedReaderDriver
   readonly sharing: SharingDriver
+  readonly notices: NoticeDriver
   readonly scenario: Scenario
 
   constructor(page: Page, viewport: ViewportSize | null, recording?: Recording, isLive = false) {
@@ -104,7 +106,7 @@ export class Person {
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings, this.application)
     this.readers = new SharedReaderDriver({ first: this.scenario, viewport, sync: this.sync })
-    this.sharing = new SharingDriver(new ShareDriver(this.scenario, this.fileTree, this.application, this.settings), this.readers, this.identity)
+    this.sharing = new SharingDriver(this.scenario, new ShareDriver(this.scenario, this.fileTree, this.application, this.settings), this.readers, this.identity)
     this.computers = new ComputerDriver(this.scenario, viewport, {
       identity: this.identity,
       subscription: this.subscription,
@@ -113,6 +115,7 @@ export class Person {
       settings: this.settings,
       devices: new DevicesDriver(this.scenario, this.settings),
     })
+    this.notices = new NoticeDriver(this.computers, this.sharing, this.readers)
     this.files = new SyncedFilesDriver(this.computers, this.sync, this.syncVaults)
   }
 

@@ -18,27 +18,27 @@ Feature: Sync files between computers
   Rule: A file of any kind appears on the other computer
 
     Scenario: A PDF appears on the second computer
-      When the person writes the file "Papers/Report.pdf" in the vault "Test"
+      When the person adds the file "Papers/Report.pdf" to the vault "Test"
       Then the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
 
     Scenario: An image appears on the second computer
-      When the person writes the file "Pictures/Tree.png" in the vault "Test"
+      When the person adds the file "Pictures/Tree.png" to the vault "Test"
       Then the second computer has the same file "Pictures/Tree.png" in its vault "Copy"
 
     Scenario: A changed file changes on the second computer
-      Given the person writes the file "Papers/Report.pdf" in the vault "Test"
+      Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
-      When the person changes the file "Papers/Report.pdf" in the vault "Test"
+      When the person replaces the file "Papers/Report.pdf" with a new version in the vault "Test"
       Then the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
 
     Scenario: A file written on the second computer appears on the first
-      When the second computer writes the file "Papers/Plan.pdf" in its vault "Copy"
+      When the second computer adds the file "Papers/Plan.pdf" to its vault "Copy"
       Then the vault "Test" has the same file "Papers/Plan.pdf" as the second computer
 
   Rule: A moved file keeps its content
 
     Scenario: A renamed file is renamed on the second computer
-      Given the person writes the file "Papers/Report.pdf" in the vault "Test"
+      Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
       When the person moves the file "Papers/Report.pdf" to "Papers/Old report.pdf" in the vault "Test"
       Then the second computer has the same file "Papers/Old report.pdf" in its vault "Copy"
@@ -47,7 +47,7 @@ Feature: Sync files between computers
   Rule: The server holds no readable file
 
     Scenario: The sync server cannot read a file
-      When the person writes the file "Papers/Report.pdf" in the vault "Test"
+      When the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
       Then the sync server holds no stored text "Report.pdf"
       And the sync server holds no stored text "Papers"

@@ -189,11 +189,6 @@ export class DevicesDriver {
     await expect(this.scenario.page.getByRole('menuitem', { name: REVOKE })).toHaveCount(0)
   }
 
-  /** Expects a warning of the page, in the dialog or beside it. */
-  async expectWarning(text: string): Promise<void> {
-    await expect(this.scenario.page.getByRole('alert').filter({ hasText: text }).first()).toBeVisible({ timeout: STEP_LIMIT_MS })
-  }
-
   /** Expects the page of a revoked device: the notice and the way out. */
   async expectRevoked(): Promise<void> {
     await this.closeDialog()

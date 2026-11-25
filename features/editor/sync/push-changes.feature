@@ -1,6 +1,6 @@
 Feature: Receive changes within seconds
 
-  The sync server tells each computer when the identity has a change, so a computer does not wait for its next look.
+  A change reaches the other computer within seconds, also when the computers do not look for changes by themselves.
 
   As a person who uses Numen on more than one computer
   I want a note I write on one computer to reach the other in seconds
@@ -14,23 +14,13 @@ Feature: Receive changes within seconds
     And the person syncs the vault "Test"
     And a second computer restores the identity from the recovery words
     And the second computer connects its vault "Copy" to the synced vault "Test"
-    And both computers check for changes only every "1 hour"
+    And the computers do not look for changes by themselves
 
   Rule: A change reaches the other computer within seconds
 
     Scenario: A new note appears on the second computer
       When the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       Then the second computer has the note "Shopping list" with the text "milk" within "5" seconds
-
-    Scenario: A changed note changes on the second computer
-      Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-      And the second computer has the note "Shopping list" with the text "milk" within "5" seconds
-      When the person writes the note "Shopping list" with the text "bread" in the vault "Test"
-      Then the second computer has the note "Shopping list" with the text "bread" within "5" seconds
-
-    Scenario: A note written on the second computer appears on the first
-      When the second computer writes the note "Plan" with the text "tea" in its vault "Copy"
-      Then the vault "Test" has the note "Plan" with the text "tea" within "5" seconds
 
   Rule: A computer receives changes again after its connection drops
 

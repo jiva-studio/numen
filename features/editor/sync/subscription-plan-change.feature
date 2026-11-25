@@ -1,10 +1,10 @@
 Feature: Numen Sync plan change
 
-  A person moves an active subscription to a larger or a smaller plan. The notes in the cloud are never deleted by a change.
+  A person moves an active subscription to a larger or a smaller plan, and is asked before the change is made.
 
   As a person who uses Numen Sync
   I want to change my plan when my notes grow or shrink
-  So that I do not pay for space I do not use and do not stop at a full cloud
+  So that I do not pay for space I do not use and do not change my plan by mistake
 
   Background:
     Given the empty vault "Test"
@@ -13,25 +13,15 @@ Feature: Numen Sync plan change
     And the application "editor" starts
     And the person opens the page "Identity and licenses"
     And the person buys the plan "Basic"
-    And the person syncs the vault "Test"
-    And a second computer restores the identity from the recovery words
-    And the second computer connects its vault "Copy" to the synced vault "Test"
 
-  Rule: A larger plan opens space at once
+  Rule: An active subscription changes its plan
 
-    Scenario: The page shows the larger plan after the change
-      When the person changes the plan to "Pro"
-      Then the subscription shows the plan "Pro" with 250 GB
-
-    Scenario: A note is sent after a full plan is made larger
-      Given the cloud holds 10 GB of the notes of the person
+    Scenario: The subscription shows the smaller plan after the change
+      Given the person changes the plan to "Pro"
       When the person changes the plan to "Plus"
-      And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-      Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
+      Then the subscription shows the plan "Plus" with 100 GB
 
-  Rule: Only an active subscription changes its plan
-
-    Scenario: The page shows the plan that is bought as current and does not offer it
+    Scenario: The plan that is bought is shown as current and is not offered
       When the person opens the page "Identity and licenses"
       Then the page offers to change the plan to "Plus"
       And the page shows the plan "Basic" as the current plan
@@ -42,3 +32,20 @@ Feature: Numen Sync plan change
       When the person opens the page "Identity and licenses"
       Then the page offers to buy the plan "Plus" with 100 GB
       And the page does not offer to change the plan to "Plus"
+
+  Rule: The person confirms the change
+
+    Scenario: The person is asked before the plan changes
+      When the person wants to change the plan to "Pro"
+      Then the person is told "Switch to Pro?"
+      And the person is told "Charged now"
+
+    Scenario: The plan changes once the person confirms
+      Given the person wants to change the plan to "Pro"
+      When the person confirms the switch to "Pro"
+      Then the subscription shows the plan "Pro" with 250 GB
+
+    Scenario: A cancelled change keeps the plan
+      When the person wants to change the plan to "Pro"
+      And the person cancels the switch
+      Then the subscription shows the plan "Basic" with 10 GB

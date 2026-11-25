@@ -61,12 +61,6 @@ export class AccountDriver {
     await dialog.getByRole('button', { name: CANCEL }).click()
   }
 
-  /** Expects the question of the card to say what is deleted and for how long, and what stays. */
-  async expectDeleteQuestion(texts: readonly string[]): Promise<void> {
-    const dialog = (await this.getCard()).getByRole('alertdialog')
-    for (const text of texts) await expect(dialog.getByText(text, { exact: false }).first()).toBeVisible()
-  }
-
   /** Expects the card to show that the cloud data is being deleted, with the action to restore. */
   async expectDeleting(isDeleting: boolean): Promise<void> {
     const card = await this.getCard()

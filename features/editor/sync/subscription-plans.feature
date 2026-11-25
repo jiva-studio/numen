@@ -42,7 +42,7 @@ Feature: Numen Sync plans
       And the person buys the plan "Plus"
       When the subscription ended 3 days ago
       And the person opens the page "Identity and licenses"
-      Then the subscription shows "Ended"
+      Then the person is told "Ended"
       And the subscription shows the plan "Plus" with 100 GB
 
   Rule: The page shows how much of the plan is used
@@ -50,9 +50,9 @@ Feature: Numen Sync plans
     Scenario: The used space is shown against the plan
       Given the person opens the page "Identity and licenses"
       And the person buys the plan "Plus"
-      When the cloud holds 2 GB of the notes of the person
+      When the cloud holds 2 GB
       And the person opens the page "Identity and licenses"
-      Then the subscription shows "2 GB of 100 GB"
+      Then the person is told "2 GB of 100 GB"
 
   Rule: A full plan stops new changes
 
@@ -62,7 +62,7 @@ Feature: Numen Sync plans
       And the person syncs the vault "Test"
       And a second computer restores the identity from the recovery words
       And the second computer connects its vault "Copy" to the synced vault "Test"
-      And the cloud holds 10 GB of the notes of the person
+      And the cloud holds 10 GB
       When the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-      Then the plugin "Numen Sync" warns about "Cloud storage is full: changes stay on this device"
+      Then the person is told "Cloud storage is full: changes stay on this device"
       And the second computer does not have the file "Shopping list.md" in its vault "Copy"

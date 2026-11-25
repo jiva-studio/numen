@@ -55,9 +55,10 @@ export class SubscriptionDriver {
     await expect(card.getByText(text, { exact: true }).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 
-  /** Expects the page to have the text, in the card of the subscription or beside it. */
-  async expectPageSays(text: string): Promise<void> {
-    await expect((await this.showPage()).getByText(text).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+  /** Whether the card of the subscription shows the badge or the text now; it shows the page first. */
+  async isShown(text: string): Promise<boolean> {
+    const card = this.getCard(await this.showPage())
+    return card.getByText(text, { exact: true }).first().isVisible()
   }
 
   async expectOffer(isOffered: boolean): Promise<void> {

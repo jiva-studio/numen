@@ -6,40 +6,28 @@ Given('a sync server runs', async ({ person }) => {
   await person.sync.start()
 })
 
-Given('the sync server needs a newer protocol', async ({ person }) => {
+Given('the sync server needs a newer Numen', async ({ person }) => {
   await person.sync.needNewerProtocol()
 })
 
-Then('the sync server has a session for this device', async ({ person }) => {
-  await person.sync.expectSession()
+Then('this device is signed in to the sync server', async ({ person }) => {
+  await person.sync.expectSignedIn()
 })
 
-Then('the sync server has a session for the fingerprint of the identity', async ({ person }) => {
-  await person.sync.expectSessionForAccount()
+Then('this device is not signed in to the sync server', async ({ person }) => {
+  await person.sync.expectNotSignedIn()
 })
 
-Then('the sync server has no session', async ({ person }) => {
-  await person.sync.expectNoSession()
-})
-
-When('the sync server ends the session of this device', async ({ person }) => {
+When('the sync server signs this device out', async ({ person }) => {
   await person.sync.endSession()
 })
 
-Then('the plugin {string} runs', async ({ person }, name: string) => {
-  await person.sync.expectRunning(name, true)
+Then('Numen Sync {working}', async ({ person }, isWorking: boolean) => {
+  await person.sync.expectRunning('Numen Sync', isWorking)
 })
 
-Then('the plugin {string} does not run', async ({ person }, name: string) => {
-  await person.sync.expectRunning(name, false)
-})
-
-When('the process of the plugin {string} ends', async ({ person }, name: string) => {
-  await person.sync.endProcess(name)
-})
-
-Then('the plugin {string} warns about {string}', async ({ person }, name: string, text: string) => {
-  await person.sync.expectWarning(name, text)
+When('Numen Sync stops by itself', async ({ person }) => {
+  await person.sync.endProcess('Numen Sync')
 })
 
 When('the sync server stops', async ({ person }) => {
@@ -74,10 +62,6 @@ Then('the vault {string} is not synced', async ({ person }, vault: string) => {
   await person.computers.expectNotConnected('first', vault)
 })
 
-Then('the sync settings warn about {string}', async ({ person }, text: string) => {
-  await person.syncVaults.expectWarning(text)
-})
-
 When('the person renames the vault {string} to {string}', async ({ person }, vault: string, name: string) => {
   await person.syncVaults.rename(vault, name)
 })
@@ -109,7 +93,7 @@ When(
   },
 )
 
-When('{computer} writes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+When('{computer} adds the file {string} to {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
   person.files.writeFile(computer, filePath, undefined, vault)
 })
 
@@ -140,10 +124,6 @@ When('the subscription ended {int} days ago', async ({ person }, days: number) =
   await person.sync.endSubscription(days)
 })
 
-Then('the subscription shows {string}{on}', async ({ person }, text: string, computer: ComputerName) => {
-  await person.computers.expectSubscription(computer, text)
-})
-
 Then('the subscription is active{on}', async ({ person }, computer: ComputerName) => {
   await person.computers.expectActive(computer)
 })
@@ -162,10 +142,6 @@ Then('the page offers to buy the subscription', async ({ person }) => {
 
 Then('the page does not offer to buy the subscription', async ({ person }) => {
   await person.subscription.expectOffer(false)
-})
-
-Then('the page says {string}', async ({ person }, text: string) => {
-  await person.subscription.expectPageSays(text)
 })
 
 Given('a sync server that sells the plans {plans} runs', async ({ person }, plans: PlanSpec[]) => {
@@ -192,7 +168,7 @@ When('the person changes the plan to {string}', async ({ person }, name: string)
   await person.subscription.changePlan(name)
 })
 
-When('the person chooses the plan {string} in Change plan', async ({ person }, name: string) => {
+When('the person wants to change the plan to {string}', async ({ person }, name: string) => {
   await person.subscription.chooseChange(name)
 })
 
@@ -216,11 +192,11 @@ Then('the page does not offer to change the plan to {string}', async ({ person }
   await person.subscription.expectChangeOffer(name, false)
 })
 
-Given('the cloud holds {int} GB of the notes of the person', async ({ person }, gigabytes: number) => {
+Given('the cloud holds {int} GB', async ({ person }, gigabytes: number) => {
   await person.sync.holdInCloud(gigabytes)
 })
 
-When('the person deletes {int} GB of the notes of the person from the cloud', async ({ person }, gigabytes: number) => {
+When('{int} GB are removed from the cloud', async ({ person }, gigabytes: number) => {
   await person.sync.deleteFromCloud(gigabytes)
 })
 
@@ -240,12 +216,8 @@ When('the operator makes a backup of the sync server', async ({ person }) => {
   await person.sync.makeBackup()
 })
 
-When('the operator restores the sync server from the backup', async ({ person }) => {
-  await person.sync.restoreFromBackup()
-})
-
-When('the operator announces the restore', async ({ person }) => {
-  await person.sync.announceRestore()
+When('the operator restores the sync server from the backup{telling}', async ({ person }, isTold: boolean) => {
+  await person.sync.restoreFromBackup(isTold)
 })
 
 When('{computer} goes offline', ({ person }, computer: ComputerName) => {
@@ -272,15 +244,15 @@ Then('the vault {string} has the same file {string} as the second computer', asy
   await person.files.expectSameFileAsSecond(vault, filePath)
 })
 
-When('{computer} writes the file {string} of {int} MB in {owned}', ({ person }, computer: ComputerName, filePath: string, megabytes: number, vault: string) => {
+When('{computer} adds the file {string} of {int} MB to {owned}', ({ person }, computer: ComputerName, filePath: string, megabytes: number, vault: string) => {
   person.files.writeFile(computer, filePath, megabytes, vault)
 })
 
-When('{computer} writes {int} files in the folder {string} in {owned}', ({ person }, computer: ComputerName, count: number, folder: string, vault: string) => {
+When('{computer} adds {int} files to the folder {string} in {owned}', ({ person }, computer: ComputerName, count: number, folder: string, vault: string) => {
   person.files.writeFiles(computer, count, folder, vault)
 })
 
-When('{computer} changes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+When('{computer} replaces the file {string} with a new version in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
   person.files.changeFile(computer, filePath, vault)
 })
 
@@ -323,8 +295,8 @@ When('the person chooses {string}', async ({ person }, action: string) => {
   await person.files.choose(action)
 })
 
-When('both computers check for changes only every {string}', async ({ person }, interval: string) => {
-  await person.computers.setInterval(interval)
+When('the computers do not look for changes by themselves', async ({ person }) => {
+  await person.computers.stopLookingForChanges()
 })
 
 Given('the second computer goes offline for a moment', async ({ person }) => {
@@ -344,10 +316,6 @@ When('the person asks to delete the cloud data', async ({ person }) => {
 
 When('the person cancels the deletion of the cloud data', async ({ person }) => {
   await person.accounts.cancelDeleteCloudData()
-})
-
-Then('the question says {string}', async ({ person }, text: string) => {
-  await person.accounts.expectDeleteQuestion([text])
 })
 
 When('the person deletes the cloud data', async ({ person }) => {

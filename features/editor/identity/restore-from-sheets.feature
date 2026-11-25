@@ -29,10 +29,10 @@ Feature: Restore an identity from two sheets
 
     Scenario: One sheet is refused
       When the person restores the identity from the sheets "1"
-      Then the restore dialog says "one more sheet needed"
+      Then the person is told "one more sheet needed"
       And this device has no identity
 
     Scenario: A sheet with a mistake is refused
       When the person restores the identity from the sheets "1 and 3" with a wrong word in the sheet 3
-      Then the identity warns about "sheets are not valid"
+      Then the person is told "sheets are not valid"
       And this device has no identity

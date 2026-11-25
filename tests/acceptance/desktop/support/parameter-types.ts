@@ -185,7 +185,7 @@ defineParameterType({
 
 defineParameterType({
   name: 'teller',
-  regexp: /the person|the reader|the second reader/,
+  regexp: /the person|the second computer|the reader|the second reader/,
   transformer: (teller: string) => teller,
 })
 
@@ -193,4 +193,16 @@ defineParameterType({
   name: 'wait',
   regexp: /(?: within "\d+" seconds)?(?: in (?:the|its) vault "[^"]+")?/,
   transformer: (wait: string) => parseWait(wait),
+})
+
+defineParameterType({
+  name: 'working',
+  regexp: /works|does not work/,
+  transformer: (working: string) => working === 'works',
+})
+
+defineParameterType({
+  name: 'telling',
+  regexp: / without telling the computers|/,
+  transformer: (telling: string) => telling === '',
 })
