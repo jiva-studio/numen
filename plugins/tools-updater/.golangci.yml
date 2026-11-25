@@ -505,8 +505,10 @@ linters:
             - "**/libs/plugin/catalog/manifest/**"
             - "!$test"
           allow:
-            # The manifest checks the when clauses of its slot entries with package when.
+            # The manifest checks the when clauses of its slot entries with package when, its versions with semver and its search functions with searchfunction.
             - "github.com/jiva-studio/numen/libs/plugin/catalog/when"
+            - "github.com/jiva-studio/numen/libs/plugin/catalog/semver"
+            - "github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog"
               desc: "the manifest model depends on no other package of the catalog"
@@ -531,6 +533,8 @@ linters:
             - "!$test"
           allow:
             - "github.com/jiva-studio/numen/libs/plugin/catalog/manifest$"
+            - "github.com/jiva-studio/numen/libs/plugin/catalog/semver"
+            - "github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs"
               desc: "the catalog service depends on the manifest model only"
