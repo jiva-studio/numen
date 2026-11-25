@@ -150,6 +150,9 @@ func (r *batchRun) commit(ctx context.Context, items []*prepared, files []transf
 		if err != nil {
 			return err
 		}
+		if len(rest) == len(items) {
+			return errUnexpectedAnswer
+		}
 		items = rest
 	}
 	return nil

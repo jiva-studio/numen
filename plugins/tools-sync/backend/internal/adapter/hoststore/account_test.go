@@ -1,7 +1,10 @@
 package hoststore_test
 
 import (
+	"bytes"
+	"fmt"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
@@ -74,5 +77,32 @@ func TestWriteJournal_FailsWhenNoFolderExists(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("a journal kept nowhere must be an error")
+	}
+}
+
+func TestWritePin_KeepsEveryKeyWrittenAtOnce(t *testing.T) {
+	state := newState(hosttest.CreateOnDisk(t, "first", nil))
+	const count = 32
+	var group sync.WaitGroup
+	errs := make(chan error, count)
+	for i := range count {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			errs <- state.WritePin(t.Context(), fmt.Sprintf("sync-%d.example", i), []byte{byte(i + 1)})
+		}()
+	}
+	group.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for i := range count {
+		if key, err := state.ReadPin(t.Context(), fmt.Sprintf("sync-%d.example", i)); err != nil || !bytes.Equal(key, []byte{byte(i + 1)}) {
+			t.Errorf("pin %d = %v (%v), want it kept", i, key, err)
+		}
 	}
 }

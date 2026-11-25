@@ -52,7 +52,10 @@ func (s *State) ReadPin(ctx context.Context, address string) ([]byte, error) {
 	return nil, nil
 }
 
+// WritePin pins the key for the address in every vault. The reads and the writes of all vaults run as one step, so two pins written at once both stay.
 func (s *State) WritePin(ctx context.Context, address string, key []byte) error {
+	s.pins.Lock()
+	defer s.pins.Unlock()
 	ids, err := s.listVaults(ctx)
 	if err != nil {
 		return err

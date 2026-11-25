@@ -35,6 +35,7 @@ const (
 type State struct {
 	host ports.Host
 
+	pins   sync.Mutex
 	mu     sync.Mutex
 	vaults map[domain.VaultID]*vaultFiles
 }
@@ -47,7 +48,7 @@ type vaultFiles struct {
 
 // New returns the state kept through the host.
 func New(vaults ports.Host) *State {
-	return &State{host: vaults, mu: sync.Mutex{}, vaults: map[domain.VaultID]*vaultFiles{}}
+	return &State{host: vaults, pins: sync.Mutex{}, mu: sync.Mutex{}, vaults: map[domain.VaultID]*vaultFiles{}}
 }
 
 func (s *State) getVault(id domain.VaultID) *vaultFiles {

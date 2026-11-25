@@ -25,6 +25,8 @@ var ErrNotEndorsed = errors.New("the files of the devices to revoke changed whil
 
 var errNoConflict = errors.New("the server refused the endorsements and named no file")
 
+var errUnknownConflict = errors.New("the server refused the endorsements and named none of the files it was sent")
+
 // Deps are what the use case needs.
 type Deps struct {
 	Identity  ports.Identity
@@ -145,7 +147,11 @@ func (u *Endorse) commit(ctx context.Context, remote, own []byte, heads []*syncv
 		if len(response.GetConflicts()) == 0 {
 			return errNoConflict
 		}
-		revisions = withoutConflicts(revisions, response.GetConflicts())
+		rest := withoutConflicts(revisions, response.GetConflicts())
+		if len(rest) == len(revisions) {
+			return errUnknownConflict
+		}
+		revisions = rest
 	}
 	return nil
 }

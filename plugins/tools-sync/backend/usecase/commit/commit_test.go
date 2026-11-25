@@ -1,6 +1,7 @@
 package commit_test
 
 import (
+	"context"
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
@@ -282,5 +283,28 @@ func TestCommitRevisions_KeepsTheTextOfTheNoteOutOfTheError(t *testing.T) {
 
 	if err == nil || strings.Contains(err.Error(), "milk") || strings.Contains(err.Error(), hex.EncodeToString(s.vault.Key[:])) {
 		t.Errorf("error = %v, want an error with neither the text nor the vault key", err)
+	}
+}
+
+type nameless struct {
+	ports.Revisions
+	calls int
+}
+
+func (n *nameless) CommitRevisions(context.Context, []byte, []*syncv1.Revision) (*syncv1.CommitRevisionsResponse, error) {
+	n.calls++
+	return &syncv1.CommitRevisionsResponse{Conflicts: []*syncv1.Conflict{{FileId: []byte("not a file of the batch")}}}, nil
+}
+
+func TestCommitRevisions_StopsWhenTheConflictsNameNoFileOfTheBatch(t *testing.T) {
+	s := newSetup(t, fakeserver.Config{})
+	deps := s.c.CommitDeps()
+	server := &nameless{Revisions: deps.Revisions}
+	deps.Revisions = server
+
+	_, err := commit.NewCommitRevisions(deps).Execute(t.Context(), ports.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
+
+	if err == nil || server.calls != 1 {
+		t.Errorf("error = %v after %d commits, want an error after one", err, server.calls)
 	}
 }
