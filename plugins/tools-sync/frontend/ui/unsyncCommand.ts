@@ -19,10 +19,7 @@ export const registerUnsync = (
 ): void => {
   const { vaults: vaultsClient, shareInbox: shareInboxClient } = clients
   const show = (failure: unknown): void =>
-    host.ui.notices.show(
-      failure instanceof Error ? failure.message : formatErrorMessage(failure),
-      'error',
-    )
+    host.ui.notices.show(formatErrorMessage(failure), 'error')
   const ask = (kind: 'stop' | 'leave', vaultId: string, name: string): void => {
     const dialogs = host.ui.dialogs
     if (dialogs === undefined) return

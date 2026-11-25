@@ -199,6 +199,7 @@ export {
   asFailure,
   asValue,
   formatErrorMessage,
+  ReportedError,
   type ErrorCode,
   type Failure,
   type Result,

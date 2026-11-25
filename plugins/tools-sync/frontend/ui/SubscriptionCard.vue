@@ -109,7 +109,7 @@ function onExport(): void {
 }
 
 function onFailure(failure: unknown): void {
-  problem.value = failure instanceof Error ? failure.message : formatErrorMessage(failure)
+  problem.value = formatErrorMessage(failure)
 }
 </script>
 

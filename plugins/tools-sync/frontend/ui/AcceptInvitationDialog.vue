@@ -89,15 +89,17 @@ function onAccept(): void {
     </p>
     <template #actions>
       <template v-if="isLink">
-        <Button variant="ghost" @click="view.close">
+        <Button type="button" variant="ghost" @click="view.close">
           {{ canAccept ? words.decline : words.cancel }}
         </Button>
         <Button type="submit" :disabled="!canAccept">
           {{ canAccept ? words.accept : words.join }}
         </Button>
       </template>
-      <Button v-else-if="isWaiting" variant="ghost" @click="view.close">{{ words.cancel }}</Button>
-      <Button v-else @click="view.close">{{ words.done }}</Button>
+      <Button v-else-if="isWaiting" type="button" variant="ghost" @click="view.close">
+        {{ words.cancel }}
+      </Button>
+      <Button v-else type="button" @click="view.close">{{ words.done }}</Button>
     </template>
   </Dialog>
 </template>

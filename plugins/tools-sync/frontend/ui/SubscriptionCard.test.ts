@@ -1,6 +1,6 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { asValue, type PluginContext } from '@numen/plugin-sdk'
+import { asValue, ReportedError, type PluginContext } from '@numen/plugin-sdk'
 import type { SubscriptionClient } from '../api/subscription'
 import SubscriptionCard from './SubscriptionCard.vue'
 
@@ -254,7 +254,9 @@ describe('SubscriptionCard', () => {
   it('says the server cannot be reached and offers nothing', async () => {
     const client = createClient(() =>
       Promise.reject(
-        Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
+        Object.assign(new ReportedError('Could not reach the sync server'), {
+          code: 'unavailable',
+        }),
       ),
     )
     const wrapper = mountCard({
@@ -272,7 +274,7 @@ describe('SubscriptionCard', () => {
 
   it('says nothing more than that when the failure of the server has no known cause', async () => {
     const client = createClient(() =>
-      Promise.reject(new Error('Something went wrong in Numen Sync.')),
+      Promise.reject(new ReportedError('Something went wrong in Numen Sync.')),
     )
     const wrapper = mountCard({
       client,
@@ -381,7 +383,9 @@ describe('SubscriptionCard', () => {
   it('says the server is not available and opens the settings from the card', async () => {
     const client = createClient(() =>
       Promise.reject(
-        Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
+        Object.assign(new ReportedError('Could not reach the sync server'), {
+          code: 'unavailable',
+        }),
       ),
     )
     const openSettings = vi.fn<() => void>()
@@ -490,7 +494,7 @@ describe('SubscriptionCard', () => {
   it('shows the problem of a refused change and keeps the plan', async () => {
     const { wrapper, client } = await render(ACTIVE_ON_PLUS)
     client.changePlan.mockRejectedValue(
-      Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
+      Object.assign(new ReportedError('Could not reach the sync server'), { code: 'unavailable' }),
     )
 
     await changePlanTo(wrapper, 'Pro')
@@ -502,7 +506,7 @@ describe('SubscriptionCard', () => {
   it('shows why the server refused the change when the subscription reads the same', async () => {
     const { wrapper, client } = await render(ACTIVE_ON_PLUS)
     client.changePlan.mockRejectedValue(
-      Object.assign(new Error('the account has no active subscription to change'), {
+      Object.assign(new ReportedError('the account has no active subscription to change'), {
         code: 'failed_precondition',
       }),
     )

@@ -64,3 +64,21 @@ describe('CloudVaultDialog', () => {
     expect(wrapper.emitted('choose')).toStrictEqual([['Plain', 'bb22']])
   })
 })
+
+describe('CloudVaultDialog cancel', () => {
+  it('closes without choosing a vault when the person cancels', async () => {
+    const wrapper = mount(CloudVaultDialog, {
+      attachTo: document.body,
+      props: { cloudVaults: cloud, freeVaults: [device('Plain')], question: '' },
+    })
+    const cancel = [...document.body.querySelectorAll('button')].find((one) =>
+      one.textContent.includes('Cancel'),
+    )!
+
+    cancel.click()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted('choose')).toBeUndefined()
+    expect(wrapper.emitted('cancel')).toHaveLength(1)
+  })
+})

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ReportedError } from '@numen/plugin-sdk'
 import { createMockDialogHost } from '@numen/plugin-sdk/testing'
 import { createSaveFile } from './saveFile'
 
@@ -30,7 +31,7 @@ describe('createSaveFile', () => {
 
   it('says why the file could not be written', async () => {
     const dialogs = createMockDialogHost()
-    dialogs.saveText = () => Promise.reject(new Error('the disk is full'))
+    dialogs.saveText = () => Promise.reject(new ReportedError('the disk is full'))
 
     await expect(createSaveFile(dialogs)('data.json', '{}')).rejects.toThrow(
       'Could not save the file: the disk is full',

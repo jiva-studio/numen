@@ -2,6 +2,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
 import VaultsView from './VaultsView.vue'
+import { ReportedError } from '@numen/plugin-sdk'
 
 const NOW = new Date('2026-11-23T12:00:00Z')
 
@@ -140,7 +141,7 @@ describe('VaultsView', () => {
 
   it('offers to try again when the vaults cannot be read', async () => {
     const client = createClient()
-    client.listVaults.mockRejectedValueOnce(new Error('boom'))
+    client.listVaults.mockRejectedValueOnce(new ReportedError('boom'))
     const wrapper = mount(VaultsView, { props: { client, now: () => NOW } })
     await flushPromises()
     expect(wrapper.text()).toContain('boom')

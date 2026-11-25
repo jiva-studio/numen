@@ -2,7 +2,7 @@
  * The JSON messages of the identity methods the plugin's backend serves, and the client that calls them. Keys and
  * meaning match the Go messages in backend/api; testdata/api holds the fixtures both sides are tested against.
  */
-import type { Api, ApiError } from '@numen/plugin-sdk'
+import { ReportedError, type Api, type ApiError } from '@numen/plugin-sdk'
 
 import { REQUIREMENT_UNMET } from './call'
 
@@ -42,7 +42,7 @@ const NO_IDENTITY: AccountStateResponse = {
 }
 
 const createFailure = (error: ApiError): Error =>
-  Object.assign(new Error(error.message), { code: error.code })
+  Object.assign(new ReportedError(error.message), { code: error.code })
 
 export function createAccountClient(api: Api): AccountClient {
   async function call<Req extends object, Res>(

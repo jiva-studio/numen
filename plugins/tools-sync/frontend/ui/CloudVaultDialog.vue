@@ -104,7 +104,7 @@ function onSecondary(): void {
       {{ problem }}
     </p>
     <template #actions>
-      <Button variant="ghost" @click="onSecondary">{{ words.cancel }}</Button>
+      <Button type="button" variant="ghost" @click="onSecondary">{{ words.cancel }}</Button>
       <Button type="submit" :disabled="!isAsking && !canChoose">{{ words.getVault }}</Button>
     </template>
   </Dialog>

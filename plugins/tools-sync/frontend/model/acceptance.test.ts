@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AcceptInvitationClient, RequestStatus } from '../api/invitations'
 import { createAcceptanceView } from './acceptance'
+import { ReportedError } from '@numen/plugin-sdk'
 
 const PREVIEW = {
   folder: 'Food',
@@ -44,7 +45,7 @@ describe('the dialog that accepts a shared folder', () => {
 
   it('shows the words of a link the backend refuses', async () => {
     const client = createClient([])
-    vi.mocked(client.readSharePreview).mockRejectedValue(new Error('The link expired'))
+    vi.mocked(client.readSharePreview).mockRejectedValue(new ReportedError('The link expired'))
     const view = create(client)
 
     await view.setLink('numen-share:abc')
@@ -112,7 +113,7 @@ describe('the dialog that accepts a shared folder', () => {
 
   it('goes back to the link with the words of a request the backend refuses', async () => {
     const client = createClient([])
-    vi.mocked(client.acceptShareInvitation).mockRejectedValue(new Error('No identity'))
+    vi.mocked(client.acceptShareInvitation).mockRejectedValue(new ReportedError('No identity'))
     const view = create(client)
     await view.setLink('numen-share:abc')
 
@@ -124,7 +125,7 @@ describe('the dialog that accepts a shared folder', () => {
   it('stops asking about a request after the asks keep failing, and ends it as failed', async () => {
     vi.useFakeTimers()
     const client = createClient([])
-    vi.mocked(client.getShareInvitationStatus).mockRejectedValue(new Error('No identity'))
+    vi.mocked(client.getShareInvitationStatus).mockRejectedValue(new ReportedError('No identity'))
     const view = create(client)
     await view.setLink('numen-share:abc')
 

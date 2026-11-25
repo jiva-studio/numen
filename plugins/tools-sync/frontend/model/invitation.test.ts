@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ShareInvitationClient, ShareRequest } from '../api/invitations'
 import type { FolderSharesClient, SharedFolder } from '../api/shares'
 import { createInvitationView } from './invitation'
+import { ReportedError } from '@numen/plugin-sdk'
 
 const TARGET = { vaultId: 'v1', folder: 'Food' }
 const PHONE = { label: 'Phone', fingerprint: '1111 2222', state: 'active' } as const
@@ -154,7 +155,7 @@ describe('the dialog of a folder shared by a link', () => {
 
   it('keeps the words of a failure to start the link', async () => {
     const { invitations, view } = create()
-    vi.mocked(invitations.startShareInvitation).mockRejectedValue(new Error('No identity'))
+    vi.mocked(invitations.startShareInvitation).mockRejectedValue(new ReportedError('No identity'))
 
     await view.start()
 
@@ -184,7 +185,7 @@ describe('the dialog of a folder shared by a link', () => {
     vi.useFakeTimers()
     const { invitations, view } = create(1000)
     await view.start()
-    vi.mocked(invitations.listShareInvitations).mockRejectedValue(new Error('No identity'))
+    vi.mocked(invitations.listShareInvitations).mockRejectedValue(new ReportedError('No identity'))
 
     await vi.advanceTimersByTimeAsync(30_000)
     const asked = vi.mocked(invitations.listShareInvitations).mock.calls.length

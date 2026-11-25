@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Vault, VaultsClient } from '../api/vaults'
 import { useVaults } from './vaults'
+import { ReportedError } from '@numen/plugin-sdk'
 
 const NOW = new Date('2026-11-23T12:00:00Z')
 
@@ -138,7 +139,7 @@ describe('useVaults', () => {
 
   it('keeps the error of a list that cannot be read', async () => {
     const client = createClient()
-    client.listVaults.mockRejectedValue(new Error('boom'))
+    client.listVaults.mockRejectedValue(new ReportedError('boom'))
     const model = createModel(client)
 
     await model.actions.load()
@@ -171,7 +172,7 @@ describe('useVaults', () => {
 
   it('still lists the vaults when the vaults of the identity cannot be read', async () => {
     const client = createClient([createVault({ state: 'connected' })])
-    client.listRemoteVaults.mockRejectedValue(new Error('down'))
+    client.listRemoteVaults.mockRejectedValue(new ReportedError('down'))
     const model = createModel(client)
 
     await model.actions.load()
@@ -196,7 +197,7 @@ describe('useVaults', () => {
 
   it('keeps the message of a connection the backend refuses', async () => {
     const client = createClient()
-    client.connectVault.mockRejectedValue(new Error('a copy of a connected vault'))
+    client.connectVault.mockRejectedValue(new ReportedError('a copy of a connected vault'))
     const model = createModel(client)
 
     await model.actions.connectExisting('Test', 'aa11')
@@ -258,7 +259,7 @@ describe('useVaults', () => {
 
     it('keeps the message of a preview the backend refuses and does not connect', async () => {
       const { client, model } = differ(0)
-      client.getConnectPreview.mockRejectedValue(new Error('no preview'))
+      client.getConnectPreview.mockRejectedValue(new ReportedError('no preview'))
 
       await model.actions.connectExisting('Test', 'aa11')
 
@@ -316,7 +317,7 @@ describe('useVaults', () => {
 
   it('deletes the cloud copy with the answer, and keeps the vault linked when the server refuses', async () => {
     const client = createClient([createVault({ id: 'a', state: 'connected' })])
-    client.stopSyncingVault.mockRejectedValue(new Error('away'))
+    client.stopSyncingVault.mockRejectedValue(new ReportedError('away'))
     const model = createModel(client)
     await model.actions.load()
 
@@ -367,11 +368,22 @@ describe('useVaults', () => {
 
   it('keeps the message of an answer the backend refuses', async () => {
     const client = createClient()
-    client.resolveDeletions.mockRejectedValue(new Error('refused'))
+    client.resolveDeletions.mockRejectedValue(new ReportedError('refused'))
     const model = createModel(client)
 
     await model.actions.resolveDeletions('Test', 'remove')
 
     expect(model.state.error.value).toBe('refused')
+  })
+
+  it('shows the generic text for an error that is not a message for display', async () => {
+    const client = createClient()
+    client.resolveDeletions.mockRejectedValue(new Error('rpc failed at 10.0.0.1'))
+    const model = createModel(client)
+
+    await model.actions.resolveDeletions('Test', 'remove')
+
+    expect(model.state.error.value).not.toContain('10.0.0.1')
+    expect(model.state.error.value).not.toBe('')
   })
 })

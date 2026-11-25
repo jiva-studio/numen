@@ -57,7 +57,7 @@ const isServerAway = (failure: unknown): boolean => getFailureCode(failure) === 
 
 /** The text of a failure; empty for an unreachable server, which the subscription card says. */
 export const getErrorMessage = (error: unknown): string =>
-  isServerAway(error) ? '' : error instanceof Error ? error.message : formatErrorMessage(error)
+  isServerAway(error) ? '' : formatErrorMessage(error)
 
 const getSyncedLabel = (vault: Vault, now: Date): string => {
   if (vault.lastSyncedAt === '') return ''

@@ -21,8 +21,7 @@ export interface SubscriptionAccount {
   readonly plans: Ref<readonly PlanResponse[]>
 }
 
-export const getMessage = (failure: unknown): string =>
-  failure instanceof Error ? failure.message : formatErrorMessage(failure)
+export const getMessage = (failure: unknown): string => formatErrorMessage(failure)
 
 export function createAccount(): SubscriptionAccount {
   return {

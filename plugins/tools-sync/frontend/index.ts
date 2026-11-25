@@ -50,12 +50,7 @@ const createSettingsOpener = (
   return () => {
     commands
       .run(SETTINGS_OPEN_COMMAND, undefined, undefined, { plugin: plugin.identity.id })
-      .catch((error: unknown) =>
-        host.ui.notices.show(
-          error instanceof Error ? error.message : formatErrorMessage(error),
-          'error',
-        ),
-      )
+      .catch((error: unknown) => host.ui.notices.show(formatErrorMessage(error), 'error'))
   }
 }
 
@@ -121,7 +116,7 @@ const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
 }
 
 const getFailureText = (failure: unknown): string => {
-  const text = failure instanceof Error ? failure.message : formatErrorMessage(failure)
+  const text = formatErrorMessage(failure)
   return text.trim() === '' ? words.syncFailed : text
 }
 

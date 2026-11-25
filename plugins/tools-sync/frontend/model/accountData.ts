@@ -13,8 +13,7 @@ export interface AccountDataOptions {
   readonly refreshMs?: number | undefined
 }
 
-const getMessage = (failure: unknown): string =>
-  failure instanceof Error ? failure.message : formatErrorMessage(failure)
+const getMessage = (failure: unknown): string => formatErrorMessage(failure)
 
 /**
  * The deletion of the identity as the sign-in of this device knows it, kept up to date; the deletion of the cloud

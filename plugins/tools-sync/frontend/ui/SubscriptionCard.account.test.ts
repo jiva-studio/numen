@@ -1,6 +1,6 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { asValue, type PluginContext } from '@numen/plugin-sdk'
+import { asValue, ReportedError, type PluginContext } from '@numen/plugin-sdk'
 import type { AccountClient } from '../api/account'
 import type { SaveFile } from '../api/saveFile'
 import type { SubscriptionClient } from '../api/subscription'
@@ -253,7 +253,7 @@ describe('SubscriptionCard account actions', () => {
 
   it('shows the reason under the card when the file cannot be saved', async () => {
     const { wrapper, saveFile } = await render(createState())
-    saveFile.mockRejectedValueOnce(new Error('Could not save the file: the disk is full'))
+    saveFile.mockRejectedValueOnce(new ReportedError('Could not save the file: the disk is full'))
 
     await pressMenu('Export identity data')
 
@@ -262,7 +262,9 @@ describe('SubscriptionCard account actions', () => {
 
   it('shows the reason under the card when the export fails', async () => {
     const { wrapper, accountClient } = await render(createState())
-    accountClient.exportAccountData.mockRejectedValueOnce(new Error('Could not reach the server'))
+    accountClient.exportAccountData.mockRejectedValueOnce(
+      new ReportedError('Could not reach the server'),
+    )
 
     await pressMenu('Export identity data')
 

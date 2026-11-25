@@ -3,7 +3,7 @@
  * Keys and meaning match the Go messages in backend/api; testdata/api holds the fixtures both sides
  * are tested against.
  */
-import type { Api, ApiError } from '@numen/plugin-sdk'
+import { ReportedError, type Api, type ApiError } from '@numen/plugin-sdk'
 
 import { REQUIREMENT_UNMET } from './call'
 
@@ -102,7 +102,7 @@ export interface VaultsClient {
 
 const NO_IDENTITY: GetStatusResponse = { hasIdentity: false, isReachable: false, items: [] }
 
-const createFailure = (error: ApiError): Error => new Error(error.message)
+const createFailure = (error: ApiError): Error => new ReportedError(error.message)
 
 export function createVaultsClient(api: Api): VaultsClient {
   async function call<Req, Res>(method: string, request: Req, ifNoIdentity?: Res): Promise<Res> {

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { asFailure, asValue, type PluginContext } from '@numen/plugin-sdk'
+import { asFailure, asValue, ReportedError, type PluginContext } from '@numen/plugin-sdk'
 import type { SubscriptionClient } from '../api/subscription'
 import { useSubscription } from './subscription'
 
@@ -48,7 +48,7 @@ const ACTIVE_ON_PLUS = createResponse({
 })
 
 const createFailure = (code: string, message: string): Error =>
-  Object.assign(new Error(message), { code })
+  Object.assign(new ReportedError(message), { code })
 
 const createClient = (answers: readonly SubscriptionResponse[]) => {
   let read = 0

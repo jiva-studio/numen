@@ -3,7 +3,7 @@
  * them. Keys and meaning match the Go messages in backend/api; testdata/api holds the fixtures both sides
  * are tested against.
  */
-import type { Api, ApiError } from '@numen/plugin-sdk'
+import { ReportedError, type Api, type ApiError } from '@numen/plugin-sdk'
 
 import { REQUIREMENT_UNMET } from './call'
 
@@ -80,7 +80,7 @@ const NO_IDENTITY: SubscriptionResponse = {
 }
 
 const createFailure = (error: ApiError): SubscriptionFailure =>
-  Object.assign(new Error(error.message), { code: error.code })
+  Object.assign(new ReportedError(error.message), { code: error.code })
 
 export function createSubscriptionClient(api: Api): SubscriptionClient {
   async function call<Req extends object, Res>(

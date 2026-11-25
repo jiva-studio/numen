@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { FolderSharesClient, ReceivedSharesClient, SharedFolder } from '../api/shares'
 import { createSharesView } from './shares'
+import { ReportedError } from '@numen/plugin-sdk'
 
 const FOOD: SharedFolder = {
   vaultId: 'v1',
@@ -122,7 +123,7 @@ describe('the page of the shared folders', () => {
 
   it('shows the words of a failed list', async () => {
     const { given, view } = createClients()
-    vi.mocked(given.listShares).mockRejectedValue(new Error('No identity'))
+    vi.mocked(given.listShares).mockRejectedValue(new ReportedError('No identity'))
 
     await view.load()
 
