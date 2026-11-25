@@ -69,7 +69,7 @@ describe('tapping a file', () => {
     const core = coreWith([list, guide])
     const page = await showFiles()
 
-    await rowOf(page, 'Shopping list.md')?.trigger('click')
+    await rowOf(page, 'Shopping list.md')?.get('[data-testid="row-tap"]').trigger('click')
     await flushPromises()
 
     expect(core.fetchFile).not.toHaveBeenCalled()
@@ -80,7 +80,7 @@ describe('tapping a file', () => {
     const core = coreWith([guide])
     const page = await showFiles()
 
-    await rowOf(page, 'Guide.pdf')?.trigger('click')
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
     await flushPromises()
 
     expect(core.fetchFile).toHaveBeenCalledExactlyOnceWith('Books/Guide.pdf')
@@ -99,7 +99,7 @@ describe('tapping a file', () => {
     })
     const page = await showFiles()
 
-    await rowOf(page, 'Guide.pdf')?.trigger('click')
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
 
     expect(rowOf(page, 'Guide.pdf')?.text()).toContain('Downloading')
     expect(page.emitted('open')).toBeUndefined()
@@ -115,8 +115,8 @@ describe('tapping a file', () => {
     })
     const page = await showFiles()
 
-    await rowOf(page, 'Guide.pdf')?.trigger('click')
-    await rowOf(page, 'Guide.pdf')?.trigger('click')
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
 
     expect(core.fetchFile).toHaveBeenCalledTimes(1)
   })
@@ -130,7 +130,7 @@ describe('tapping a file', () => {
     })
     const page = await showFiles()
 
-    await rowOf(page, 'Guide.pdf')?.trigger('click')
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
     await flushPromises()
 
     expect(page.find('[data-testid="error"]').text()).toContain('Could not reach the sync server')
@@ -186,7 +186,7 @@ describe('a failure that is thrown', () => {
     coreWith([guide], { fetchFile: vi.fn(() => Promise.reject(new Error('the link broke'))) })
     const page = await showFiles()
 
-    await rowOf(page, 'Guide.pdf')?.trigger('click')
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
     await flushPromises()
 
     expect(rowOf(page, 'Guide.pdf')?.text()).not.toContain('Downloading')
@@ -233,8 +233,8 @@ describe('moving between folders', () => {
     )
     const page = await showFiles()
 
-    await rowOf(page, 'Books')?.trigger('click')
-    await rowOf(page, 'Notes')?.trigger('click')
+    await rowOf(page, 'Books')?.get('[data-testid="row-tap"]').trigger('click')
+    await rowOf(page, 'Notes')?.get('[data-testid="row-tap"]').trigger('click')
     answers.get('Notes')?.([inNotes])
     await flushPromises()
     answers.get('Books')?.([inBooks])
@@ -252,11 +252,11 @@ describe('moving between folders', () => {
     core.listFiles.mockImplementationOnce(() => Promise.resolve([inBooks]))
     const page = await showFiles()
 
-    await rowOf(page, 'Books')?.trigger('click')
+    await rowOf(page, 'Books')?.get('[data-testid="row-tap"]').trigger('click')
     await flushPromises()
     expect(page.find('[data-testid="error"]').exists()).toBe(true)
 
-    await rowOf(page, 'Books')?.trigger('click')
+    await rowOf(page, 'Books')?.get('[data-testid="row-tap"]').trigger('click')
     await flushPromises()
     expect(page.find('[data-testid="error"]').exists()).toBe(false)
   })
