@@ -26,6 +26,7 @@ type AbsentFiles interface {
 func serveAbsent[Q, R any](
 	ctx context.Context, c *calls, req *connect.Request[Q],
 	withCode func(code v1.ErrorCode) *R, work func(pluginID string, absent AbsentFiles) (*R, error),
+	whenNone ...func() *R,
 ) (*connect.Response[R], error) {
 	pluginID, access, err := c.beginAs(req.Header())
 	if err != nil {
@@ -35,6 +36,9 @@ func serveAbsent[Q, R any](
 		return connect.NewResponse(withCode(noVault)), nil
 	}
 	if access.Absent == nil {
+		if len(whenNone) > 0 {
+			return connect.NewResponse(whenNone[0]()), nil
+		}
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoAbsentFiles)
 	}
 	out, err := work(pluginID, access.Absent)
@@ -79,7 +83,8 @@ func (e *absentCalls) ListAbsentFiles(
 				files[i] = &v1.HostAbsentFile{Path: file.Path, Size: file.Size, ModifiedUnixMs: file.Mtime.UnixMilli(), Hash: file.Hash}
 			}
 			return &v1.ListAbsentFilesResponse{Files: files}, nil
-		})
+		},
+		func() *v1.ListAbsentFilesResponse { return &v1.ListAbsentFilesResponse{} })
 }
 
 func (e *absentCalls) FillFile(
