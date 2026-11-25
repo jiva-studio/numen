@@ -147,7 +147,7 @@ func TestGetCodeAndGetText_AnswerAStoppedOrCancelledTransferWithAPlainSentence(t
 	}{
 		"stalled":   {err: fmt.Errorf("download a range: %w", syncclient.ErrTransferStalled), wantText: "The sync server stopped sending. Try again."},
 		"cut short": {err: fmt.Errorf("stopped: %w", io.ErrUnexpectedEOF), wantText: "The sync server stopped sending. Try again."},
-		"cancelled": {err: fmt.Errorf("download: %w", context.Canceled), wantText: "The transfer was cancelled."},
+		"canceled": {err: fmt.Errorf("download: %w", context.Canceled), wantText: "The transfer was canceled."},
 		"too late":  {err: context.DeadlineExceeded, wantText: "The sync server stopped sending. Try again."},
 	} {
 		if got := GetCode(one.err); got != server.CodeUnavailable {

@@ -273,7 +273,11 @@ func TestFetchFile_SecondTapStillGetsTheFileWhenTheFirstTapIsCancelled(t *testin
 	first, cancelFirst := context.WithCancel(t.Context())
 	t.Cleanup(cancelFirst)
 	var wg sync.WaitGroup
-	wg.Go(func() { _ = w.Fetch(first, guidePath) })
+	wg.Go(func() {
+		if err := w.Fetch(first, guidePath); err != nil && !errors.Is(err, context.Canceled) {
+			t.Errorf("the first tap failed with %v, want it canceled or done", err)
+		}
+	})
 	for w.Server.CountBlobGets() == before {
 		time.Sleep(time.Millisecond)
 	}
@@ -302,7 +306,7 @@ func TestFetchFile_EndsTheDownloadWhenNoCallWaitsForIt(t *testing.T) {
 		t.Errorf("error = %v, want context.Canceled", err)
 	}
 	if err := w.Fetch(t.Context(), guidePath); err != nil {
-		t.Errorf("a download after a cancelled one failed: %v", err)
+		t.Errorf("a download after a canceled one failed: %v", err)
 	}
 }
 

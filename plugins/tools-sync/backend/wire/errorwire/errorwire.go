@@ -125,7 +125,7 @@ func getEntries() []entry {
 		{syncprotocol.ErrUnreachable, server.CodeUnavailable, textUnreachable},
 		{syncclient.ErrTransferStalled, server.CodeUnavailable, textStalled},
 		{io.ErrUnexpectedEOF, server.CodeUnavailable, textStalled},
-		{context.Canceled, server.CodeUnavailable, "The transfer was cancelled."},
+		{context.Canceled, server.CodeUnavailable, "The transfer was canceled."},
 		{context.DeadlineExceeded, server.CodeUnavailable, textStalled},
 		{sessiondomain.ErrUnreachable, server.CodeUnavailable, textUnreachable},
 		{sessiondomain.ErrNoServer, server.CodeUnavailable, "No sync server is set. Enter the server address in the settings."},

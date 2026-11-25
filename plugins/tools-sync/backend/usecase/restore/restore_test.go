@@ -338,6 +338,9 @@ func TestRecoverVault_SkipsRevisionWithBadSignature(t *testing.T) {
 	if err := usecase.NewRecoverVault(p.a.RestoreDeps()).Execute(t.Context(), source); err != nil {
 		t.Fatal(err)
 	}
+	if err := p.a.Sync(t.Context(), source); err != nil {
+		t.Fatal(err)
+	}
 	if text, isThere := p.a.ReadNote(source, "Plan.md"); !isThere || text != "tea" {
 		t.Errorf("note = %q (there: %v), want tea from the honest server", text, isThere)
 	}
