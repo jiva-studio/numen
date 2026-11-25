@@ -422,6 +422,87 @@ func (x *Bounds) GetMax() float64 {
 	return 0
 }
 
+// Option is one value a setting or connection field can take.
+type Option struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Value string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	// What a person reads for the value. Empty shows the value.
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// The heading the option is shown under. Empty is no heading.
+	Group string `protobuf:"bytes,3,opt,name=group,proto3" json:"group,omitempty"`
+	// What a person reads under the setting while the value is in force.
+	Detail string `protobuf:"bytes,4,opt,name=detail,proto3" json:"detail,omitempty"`
+	// The condition the option is offered under, as in the manifest. Empty offers it always.
+	When          string `protobuf:"bytes,5,opt,name=when,proto3" json:"when,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Option) Reset() {
+	*x = Option{}
+	mi := &file_numen_v1_shared_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Option) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Option) ProtoMessage() {}
+
+func (x *Option) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_shared_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Option.ProtoReflect.Descriptor instead.
+func (*Option) Descriptor() ([]byte, []int) {
+	return file_numen_v1_shared_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Option) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *Option) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Option) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
+}
+
+func (x *Option) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *Option) GetWhen() string {
+	if x != nil {
+		return x.When
+	}
+	return ""
+}
+
 var File_numen_v1_shared_proto protoreflect.FileDescriptor
 
 const file_numen_v1_shared_proto_rawDesc = "" +
@@ -439,7 +520,13 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x03end\x18\x02 \x01(\x05R\x03end\",\n" +
 	"\x06Bounds\x12\x10\n" +
 	"\x03min\x18\x01 \x01(\x01R\x03min\x12\x10\n" +
-	"\x03max\x18\x02 \x01(\x01R\x03max*\xc7\b\n" +
+	"\x03max\x18\x02 \x01(\x01R\x03max\"v\n" +
+	"\x06Option\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
+	"\x05group\x18\x03 \x01(\tR\x05group\x12\x16\n" +
+	"\x06detail\x18\x04 \x01(\tR\x06detail\x12\x12\n" +
+	"\x04when\x18\x05 \x01(\tR\x04when*\xc7\b\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ERROR_CODE_NOT_FOUND\x10\x01\x12\x19\n" +
@@ -495,12 +582,13 @@ func file_numen_v1_shared_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_shared_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_numen_v1_shared_proto_goTypes = []any{
 	(ErrorCode)(0),   // 0: numen.v1.ErrorCode
 	(*FileStat)(nil), // 1: numen.v1.FileStat
 	(*Range)(nil),    // 2: numen.v1.Range
 	(*Bounds)(nil),   // 3: numen.v1.Bounds
+	(*Option)(nil),   // 4: numen.v1.Option
 }
 var file_numen_v1_shared_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -521,7 +609,7 @@ func file_numen_v1_shared_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_shared_proto_rawDesc), len(file_numen_v1_shared_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

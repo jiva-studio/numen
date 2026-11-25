@@ -88,7 +88,7 @@ func newLicenses(wire []*v1.ManifestLicense) []manifest.License {
 func newSlotPoints(wire []*v1.ManifestSlotPoint) []manifest.SlotPoint {
 	var out []manifest.SlotPoint
 	for _, one := range wire {
-		out = append(out, manifest.SlotPoint{Slot: one.GetSlot(), Title: one.GetTitle(), Menu: one.GetMenu()})
+		out = append(out, manifest.SlotPoint{Slot: one.GetSlot(), Title: one.GetTitle(), Menu: one.GetIsMenu()})
 	}
 	return out
 }
@@ -140,7 +140,7 @@ func newNoteTypes(wire []*v1.ManifestNoteType) ([]manifest.NoteType, error) {
 		}
 		out = append(out, manifest.NoteType{
 			Type:            one.GetType(),
-			Chunks:          one.Chunks,
+			Chunks:          one.HasChunks,
 			Headings:        headings,
 			IDHeadingLevels: levels,
 			IDPattern:       one.GetIdPattern(),

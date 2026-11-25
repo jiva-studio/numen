@@ -40,8 +40,8 @@ message PluginSetting {
   // The full text the info button beside the title opens. Empty shows no button.
   string details = 25;
   string default_json = 5;
-  bool palette = 6;
-  repeated PluginSettingOption options = 7;
+  bool is_palette = 6;
+  repeated Option options = 7;
   optional double min = 8;
   optional double max = 9;
   optional double step = 10;
@@ -55,16 +55,16 @@ message PluginSetting {
   // The icon the setting shows in the palette, by its Lucide name. Empty shows the default setting icon.
   string icon = 15;
   // Whether a setting of type file holds a list of paths, one per line.
-  bool multiple = 16;
+  bool is_multiple = 16;
   // Whether the window applies the value while its control is focused, and restores the saved value
   // on leaving.
-  bool preview = 17;
+  bool is_preview = 17;
   // The registry the options are listed from, such as the installed themes. Empty where the setting
   // lists its own options.
   string options_from = 18;
   // The options in force under the values in force, resolved by the core. A window draws these and
   // follows no rule of options_by.
-  repeated PluginSettingOption active_options = 19;
+  repeated Option active_options = 19;
   // Whether the condition of the setting holds under the values in force, resolved by the core.
   bool is_shown = 20;
   // The value in force as JSON, resolved by the core: the stored value, else the default, else the
@@ -74,25 +74,13 @@ message PluginSetting {
   repeated string operations = 23;
   // Whether the manifest lets a setting of type connections that holds no row use every connection
   // whose type serves the operation. The person's choice is in the plugin field "discover".
-  bool discover = 24;
+  bool is_discover = 24;
   // The id of the group the setting is drawn under. Empty draws it in a card without a heading above the islands.
   string group = 26;
 }
 
-// PluginSettingOption is one value an enum setting can hold.
-message PluginSettingOption {
-  string value = 1;
-  // What a person reads for the value. Empty shows the value.
-  string title = 2;
-  // What a person reads under the setting while the value is in force.
-  string detail = 3;
-  // The condition the option is offered under, as in the manifest. The window evaluates it; an
-  // option whose condition does not hold is shown and cannot be chosen. Empty offers it always.
-  string when = 4;
-}
-
 message PluginSettingOptions {
-  repeated PluginSettingOption options = 1;
+  repeated Option options = 1;
 }
 
 // PluginSettingOptionsBy gives a setting its options from the value of another setting.

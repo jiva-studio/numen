@@ -6,7 +6,7 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { HealthSeverity } from "./health_pb.js";
 import { file_numen_v1_health } from "./health_pb.js";
-import type { ErrorCode } from "./shared_pb.js";
+import type { ErrorCode, Option } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugin.proto.
  */
 export const file_numen_v1_plugin: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IiAKDFBpbmdSZXNwb25zZRIQCghwcm90b2NvbBgBIAEoBSIRCg9TaHV0ZG93blJlcXVlc3QiEgoQU2h1dGRvd25SZXNwb25zZSJ5ChBDb25maWd1cmVSZXF1ZXN0EjYKBnZhbHVlcxgBIAMoCzImLm51bWVuLnYxLkNvbmZpZ3VyZVJlcXVlc3QuVmFsdWVzRW50cnkaLQoLVmFsdWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASITChFDb25maWd1cmVSZXNwb25zZSLVBAoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIPCgdkZXRhaWxzGBkgASgJEhQKDGRlZmF1bHRfanNvbhgFIAEoCRIPCgdwYWxldHRlGAYgASgIEi4KB29wdGlvbnMYByADKAsyHS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uEhAKA21pbhgIIAEoAUgAiAEBEhAKA21heBgJIAEoAUgBiAEBEhEKBHN0ZXAYCiABKAFIAogBARI0CgpvcHRpb25zX2J5GAwgASgLMiAubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbnNCeRIuCgR3aGVuGA0gASgLMiAubnVtZW4udjEuUGx1Z2luU2V0dGluZ0NvbmRpdGlvbhIOCgZhY2NlcHQYDiADKAkSDAoEaWNvbhgPIAEoCRIQCghtdWx0aXBsZRgQIAEoCBIPCgdwcmV2aWV3GBEgASgIEhQKDG9wdGlvbnNfZnJvbRgSIAEoCRI1Cg5hY3RpdmVfb3B0aW9ucxgTIAMoCzIdLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb24SEAoIaXNfc2hvd24YFCABKAgSEgoKdmFsdWVfanNvbhgVIAEoCRISCgpvcGVyYXRpb25zGBcgAygJEhAKCGRpc2NvdmVyGBggASgIEg0KBWdyb3VwGBogASgJQgYKBF9taW5CBgoEX21heEIHCgVfc3RlcCJRChNQbHVnaW5TZXR0aW5nT3B0aW9uEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJEg4KBmRldGFpbBgDIAEoCRIMCgR3aGVuGAQgASgJIkYKFFBsdWdpblNldHRpbmdPcHRpb25zEi4KB29wdGlvbnMYASADKAsyHS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uIrkBChZQbHVnaW5TZXR0aW5nT3B0aW9uc0J5Eg8KB3NldHRpbmcYASABKAkSPgoHb3B0aW9ucxgCIAMoCzItLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb25zQnkuT3B0aW9uc0VudHJ5Gk4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSLQoFdmFsdWUYAiABKAsyHi5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uczoCOAEiNQoWUGx1Z2luU2V0dGluZ0NvbmRpdGlvbhIPCgdzZXR0aW5nGAEgASgJEgoKAmlzGAIgAygJIsUDCgpQbHVnaW5JbmZvEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdmVyc2lvbhgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxjYXBhYmlsaXRpZXMYBSADKAkSKQoIc2V0dGluZ3MYBiADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEhEKCWlzX2FjdGl2ZRgHIAEoCBITCgtwZXJtaXNzaW9ucxgIIAMoCRIUCgxoYXNfZnJvbnRlbmQYCyABKAgSJwoHcmVhZGVycxgMIAMoCzIWLm51bWVuLnYxLlBsdWdpblJlYWRlchI0Cg5zZXR0aW5nc192aWV3cxgNIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdzVmlldxITCgtoYXNfYmFja2VuZBgOIAEoCBIzCg1jb250cmlidXRpb25zGA8gAygLMhwubnVtZW4udjEuUGx1Z2luQ29udHJpYnV0aW9uEhkKEWlzX29mZl9ieV9kZWZhdWx0GBAgASgIEjQKDnNldHRpbmdfZ3JvdXBzGBEgAygLMhwubnVtZW4udjEuUGx1Z2luU2V0dGluZ0dyb3VwInUKElBsdWdpbkNvbnRyaWJ1dGlvbhIuCgRraW5kGAEgASgOMiAubnVtZW4udjEuUGx1Z2luQ29udHJpYnV0aW9uS2luZBIvCgVpdGVtcxgCIAMoCzIgLm51bWVuLnYxLlBsdWdpbkNvbnRyaWJ1dGlvbkl0ZW0iRAoWUGx1Z2luQ29udHJpYnV0aW9uSXRlbRIMCgR0ZXh0GAEgASgJEg4KBmRldGFpbBgCIAEoCRIMCgRrZXlzGAMgASgJIi8KElBsdWdpblNldHRpbmdHcm91cBIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCSIvChJQbHVnaW5TZXR0aW5nc1ZpZXcSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkiLgoMUGx1Z2luUmVhZGVyEgoKAmlkGAEgASgJEhIKCmV4dGVuc2lvbnMYAiADKAkiFAoSTGlzdFBsdWdpbnNSZXF1ZXN0IjwKE0xpc3RQbHVnaW5zUmVzcG9uc2USJQoHcGx1Z2lucxgBIAMoCzIULm51bWVuLnYxLlBsdWdpbkluZm8iHQobV2F0Y2hQbHVnaW5Qcm9jZXNzZXNSZXF1ZXN0IicKElJldHJ5UGx1Z2luUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiSQoTUmV0cnlQbHVnaW5SZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiYAocV2F0Y2hQbHVnaW5Qcm9jZXNzZXNSZXNwb25zZRIqCglwcm9jZXNzZXMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Qcm9jZXNzEhQKDHRpbWVfdW5peF9tcxgCIAEoAyLcAgoNUGx1Z2luUHJvY2VzcxIRCglwbHVnaW5faWQYASABKAkSEwoLcGx1Z2luX25hbWUYAiABKAkSGgoSc3RhcnRfdGltZV91bml4X21zGAMgASgDEh0KFWxhc3RfdXNlX3RpbWVfdW5peF9tcxgEIAEoAxITCgtsZWFzZV9jb3VudBgFIAEoBRIVCg1pc19pbl9wcm9jZXNzGAYgASgIEh4KFmlkbGVfc3RvcF90aW1lX3VuaXhfbXMYByABKAMSKAoGaGVhbHRoGAggASgOMhgubnVtZW4udjEuSGVhbHRoU2V2ZXJpdHkSEwoLaGVhbHRoX3RleHQYCSABKAkSLwoKc3RhcnRlZF9ieRgKIAEoCzIbLm51bWVuLnYxLlBsdWdpbkxlYXNlSG9sZGVyEiwKB2hvbGRlcnMYCyADKAsyGy5udW1lbi52MS5QbHVnaW5MZWFzZUhvbGRlciI2ChFQbHVnaW5MZWFzZUhvbGRlchIRCglyZXF1ZXN0ZXIYASABKAkSDgoGcmVhc29uGAIgASgJIiQKE0RlbGl2ZXJFdmVudFJlcXVlc3QSDQoFZXZlbnQYASABKAkiSgoURGVsaXZlckV2ZW50UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJKtMIChZQbHVnaW5Db250cmlidXRpb25LaW5kEigKJFBMVUdJTl9DT05UUklCVVRJT05fS0lORF9VTlNQRUNJRklFRBAAEiUKIVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9DT01NQU5EUxABEigKJFBMVUdJTl9DT05UUklCVVRJT05fS0lORF9LRVlCSU5ESU5HUxACEiYKIlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9UQUJfS0lORFMQAxIkCiBQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfUkVBREVSUxAEEiUKIVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9IQU5ETEVSUxAFEiUKIVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9UUklHR0VSUxAGEicKI1BMVUdJTl9DT05UUklCVVRJT05fS0lORF9URVhUX0tJTkRTEAcSJwojUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX05PVEVfVFlQRVMQCBIjCh9QTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfVEhFTUVTEAkSIgoeUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1NMT1RTEAoSJgoiUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0xJU1RFTkVSUxALEi4KKlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9WSUVXX0NBUEFCSUxJVElFUxAMEioKJlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9EUk9QX0hBTkRMRVJTEA0SKgomUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0ZSQU1FX09SSUdJTlMQDhItCilQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfQ09OTkVDVElPTl9UWVBFUxAPEicKI1BMVUdJTl9DT05UUklCVVRJT05fS0lORF9PUEVSQVRJT05TEBASJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0xJQ0VOU0VTEBYSKAokUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1BFUk1JU1NJT05TEBESKQolUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0RFUEVOREVOQ0lFUxASEiUKIVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9TRVJWSUNFUxATEikKJVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9DQVBBQklMSVRJRVMQFBIuCipQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfQUNUSVZBVElPTl9FVkVOVFMQFRItCilQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfU0VBUkNIX0ZVTkNUSU9OUxAXEiIKHlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9UT09MUxAYEi4KKlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9FRElUT1JfRVhURU5TSU9OUxAZMtgBChZQbHVnaW5MaWZlY3ljbGVTZXJ2aWNlEjUKBFBpbmcSFS5udW1lbi52MS5QaW5nUmVxdWVzdBoWLm51bWVuLnYxLlBpbmdSZXNwb25zZRJBCghTaHV0ZG93bhIZLm51bWVuLnYxLlNodXRkb3duUmVxdWVzdBoaLm51bWVuLnYxLlNodXRkb3duUmVzcG9uc2USRAoJQ29uZmlndXJlEhoubnVtZW4udjEuQ29uZmlndXJlUmVxdWVzdBobLm51bWVuLnYxLkNvbmZpZ3VyZVJlc3BvbnNlMlsKDVBsdWdpblNlcnZpY2USSgoLTGlzdFBsdWdpbnMSHC5udW1lbi52MS5MaXN0UGx1Z2luc1JlcXVlc3QaHS5udW1lbi52MS5MaXN0UGx1Z2luc1Jlc3BvbnNlMssBChRQbHVnaW5Qcm9jZXNzU2VydmljZRJnChRXYXRjaFBsdWdpblByb2Nlc3NlcxIlLm51bWVuLnYxLldhdGNoUGx1Z2luUHJvY2Vzc2VzUmVxdWVzdBomLm51bWVuLnYxLldhdGNoUGx1Z2luUHJvY2Vzc2VzUmVzcG9uc2UwARJKCgtSZXRyeVBsdWdpbhIcLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVxdWVzdBodLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVzcG9uc2UyYwoSUGx1Z2luRXZlbnRTZXJ2aWNlEk0KDERlbGl2ZXJFdmVudBIdLm51bWVuLnYxLkRlbGl2ZXJFdmVudFJlcXVlc3QaHi5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_health, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IiAKDFBpbmdSZXNwb25zZRIQCghwcm90b2NvbBgBIAEoBSIRCg9TaHV0ZG93blJlcXVlc3QiEgoQU2h1dGRvd25SZXNwb25zZSJ5ChBDb25maWd1cmVSZXF1ZXN0EjYKBnZhbHVlcxgBIAMoCzImLm51bWVuLnYxLkNvbmZpZ3VyZVJlcXVlc3QuVmFsdWVzRW50cnkaLQoLVmFsdWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASITChFDb25maWd1cmVSZXNwb25zZSLHBAoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIPCgdkZXRhaWxzGBkgASgJEhQKDGRlZmF1bHRfanNvbhgFIAEoCRISCgppc19wYWxldHRlGAYgASgIEiEKB29wdGlvbnMYByADKAsyEC5udW1lbi52MS5PcHRpb24SEAoDbWluGAggASgBSACIAQESEAoDbWF4GAkgASgBSAGIAQESEQoEc3RlcBgKIAEoAUgCiAEBEjQKCm9wdGlvbnNfYnkYDCABKAsyIC5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Ei4KBHdoZW4YDSABKAsyIC5udW1lbi52MS5QbHVnaW5TZXR0aW5nQ29uZGl0aW9uEg4KBmFjY2VwdBgOIAMoCRIMCgRpY29uGA8gASgJEhMKC2lzX211bHRpcGxlGBAgASgIEhIKCmlzX3ByZXZpZXcYESABKAgSFAoMb3B0aW9uc19mcm9tGBIgASgJEigKDmFjdGl2ZV9vcHRpb25zGBMgAygLMhAubnVtZW4udjEuT3B0aW9uEhAKCGlzX3Nob3duGBQgASgIEhIKCnZhbHVlX2pzb24YFSABKAkSEgoKb3BlcmF0aW9ucxgXIAMoCRITCgtpc19kaXNjb3ZlchgYIAEoCBINCgVncm91cBgaIAEoCUIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXAiOQoUUGx1Z2luU2V0dGluZ09wdGlvbnMSIQoHb3B0aW9ucxgBIAMoCzIQLm51bWVuLnYxLk9wdGlvbiK5AQoWUGx1Z2luU2V0dGluZ09wdGlvbnNCeRIPCgdzZXR0aW5nGAEgASgJEj4KB29wdGlvbnMYAiADKAsyLS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Lk9wdGlvbnNFbnRyeRpOCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEi0KBXZhbHVlGAIgASgLMh4ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbnM6AjgBIjUKFlBsdWdpblNldHRpbmdDb25kaXRpb24SDwoHc2V0dGluZxgBIAEoCRIKCgJpcxgCIAMoCSLFAwoKUGx1Z2luSW5mbxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB3ZlcnNpb24YAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSFAoMY2FwYWJpbGl0aWVzGAUgAygJEikKCHNldHRpbmdzGAYgAygLMhcubnVtZW4udjEuUGx1Z2luU2V0dGluZxIRCglpc19hY3RpdmUYByABKAgSEwoLcGVybWlzc2lvbnMYCCADKAkSFAoMaGFzX2Zyb250ZW5kGAsgASgIEicKB3JlYWRlcnMYDCADKAsyFi5udW1lbi52MS5QbHVnaW5SZWFkZXISNAoOc2V0dGluZ3Nfdmlld3MYDSADKAsyHC5udW1lbi52MS5QbHVnaW5TZXR0aW5nc1ZpZXcSEwoLaGFzX2JhY2tlbmQYDiABKAgSMwoNY29udHJpYnV0aW9ucxgPIAMoCzIcLm51bWVuLnYxLlBsdWdpbkNvbnRyaWJ1dGlvbhIZChFpc19vZmZfYnlfZGVmYXVsdBgQIAEoCBI0Cg5zZXR0aW5nX2dyb3VwcxgRIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdHcm91cCJ1ChJQbHVnaW5Db250cmlidXRpb24SLgoEa2luZBgBIAEoDjIgLm51bWVuLnYxLlBsdWdpbkNvbnRyaWJ1dGlvbktpbmQSLwoFaXRlbXMYAiADKAsyIC5udW1lbi52MS5QbHVnaW5Db250cmlidXRpb25JdGVtIkQKFlBsdWdpbkNvbnRyaWJ1dGlvbkl0ZW0SDAoEdGV4dBgBIAEoCRIOCgZkZXRhaWwYAiABKAkSDAoEa2V5cxgDIAEoCSIvChJQbHVnaW5TZXR0aW5nR3JvdXASCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkiLwoSUGx1Z2luU2V0dGluZ3NWaWV3EgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJIi4KDFBsdWdpblJlYWRlchIKCgJpZBgBIAEoCRISCgpleHRlbnNpb25zGAIgAygJIhQKEkxpc3RQbHVnaW5zUmVxdWVzdCI8ChNMaXN0UGx1Z2luc1Jlc3BvbnNlEiUKB3BsdWdpbnMYASADKAsyFC5udW1lbi52MS5QbHVnaW5JbmZvIh0KG1dhdGNoUGx1Z2luUHJvY2Vzc2VzUmVxdWVzdCInChJSZXRyeVBsdWdpblJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIkkKE1JldHJ5UGx1Z2luUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJImAKHFdhdGNoUGx1Z2luUHJvY2Vzc2VzUmVzcG9uc2USKgoJcHJvY2Vzc2VzGAEgAygLMhcubnVtZW4udjEuUGx1Z2luUHJvY2VzcxIUCgx0aW1lX3VuaXhfbXMYAiABKAMi3AIKDVBsdWdpblByb2Nlc3MSEQoJcGx1Z2luX2lkGAEgASgJEhMKC3BsdWdpbl9uYW1lGAIgASgJEhoKEnN0YXJ0X3RpbWVfdW5peF9tcxgDIAEoAxIdChVsYXN0X3VzZV90aW1lX3VuaXhfbXMYBCABKAMSEwoLbGVhc2VfY291bnQYBSABKAUSFQoNaXNfaW5fcHJvY2VzcxgGIAEoCBIeChZpZGxlX3N0b3BfdGltZV91bml4X21zGAcgASgDEigKBmhlYWx0aBgIIAEoDjIYLm51bWVuLnYxLkhlYWx0aFNldmVyaXR5EhMKC2hlYWx0aF90ZXh0GAkgASgJEi8KCnN0YXJ0ZWRfYnkYCiABKAsyGy5udW1lbi52MS5QbHVnaW5MZWFzZUhvbGRlchIsCgdob2xkZXJzGAsgAygLMhsubnVtZW4udjEuUGx1Z2luTGVhc2VIb2xkZXIiNgoRUGx1Z2luTGVhc2VIb2xkZXISEQoJcmVxdWVzdGVyGAEgASgJEg4KBnJlYXNvbhgCIAEoCSIkChNEZWxpdmVyRXZlbnRSZXF1ZXN0Eg0KBWV2ZW50GAEgASgJIkoKFERlbGl2ZXJFdmVudFJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSrTCAoWUGx1Z2luQ29udHJpYnV0aW9uS2luZBIoCiRQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfVU5TUEVDSUZJRUQQABIlCiFQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfQ09NTUFORFMQARIoCiRQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfS0VZQklORElOR1MQAhImCiJQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfVEFCX0tJTkRTEAMSJAogUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1JFQURFUlMQBBIlCiFQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfSEFORExFUlMQBRIlCiFQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfVFJJR0dFUlMQBhInCiNQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfVEVYVF9LSU5EUxAHEicKI1BMVUdJTl9DT05UUklCVVRJT05fS0lORF9OT1RFX1RZUEVTEAgSIwofUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RIRU1FUxAJEiIKHlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9TTE9UUxAKEiYKIlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9MSVNURU5FUlMQCxIuCipQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfVklFV19DQVBBQklMSVRJRVMQDBIqCiZQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfRFJPUF9IQU5ETEVSUxANEioKJlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9GUkFNRV9PUklHSU5TEA4SLQopUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0NPTk5FQ1RJT05fVFlQRVMQDxInCiNQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfT1BFUkFUSU9OUxAQEiUKIVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9MSUNFTlNFUxAWEigKJFBMVUdJTl9DT05UUklCVVRJT05fS0lORF9QRVJNSVNTSU9OUxAREikKJVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9ERVBFTkRFTkNJRVMQEhIlCiFQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfU0VSVklDRVMQExIpCiVQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfQ0FQQUJJTElUSUVTEBQSLgoqUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0FDVElWQVRJT05fRVZFTlRTEBUSLQopUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1NFQVJDSF9GVU5DVElPTlMQFxIiCh5QTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfVE9PTFMQGBIuCipQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfRURJVE9SX0VYVEVOU0lPTlMQGTLYAQoWUGx1Z2luTGlmZWN5Y2xlU2VydmljZRI1CgRQaW5nEhUubnVtZW4udjEuUGluZ1JlcXVlc3QaFi5udW1lbi52MS5QaW5nUmVzcG9uc2USQQoIU2h1dGRvd24SGS5udW1lbi52MS5TaHV0ZG93blJlcXVlc3QaGi5udW1lbi52MS5TaHV0ZG93blJlc3BvbnNlEkQKCUNvbmZpZ3VyZRIaLm51bWVuLnYxLkNvbmZpZ3VyZVJlcXVlc3QaGy5udW1lbi52MS5Db25maWd1cmVSZXNwb25zZTJbCg1QbHVnaW5TZXJ2aWNlEkoKC0xpc3RQbHVnaW5zEhwubnVtZW4udjEuTGlzdFBsdWdpbnNSZXF1ZXN0Gh0ubnVtZW4udjEuTGlzdFBsdWdpbnNSZXNwb25zZTLLAQoUUGx1Z2luUHJvY2Vzc1NlcnZpY2USZwoUV2F0Y2hQbHVnaW5Qcm9jZXNzZXMSJS5udW1lbi52MS5XYXRjaFBsdWdpblByb2Nlc3Nlc1JlcXVlc3QaJi5udW1lbi52MS5XYXRjaFBsdWdpblByb2Nlc3Nlc1Jlc3BvbnNlMAESSgoLUmV0cnlQbHVnaW4SHC5udW1lbi52MS5SZXRyeVBsdWdpblJlcXVlc3QaHS5udW1lbi52MS5SZXRyeVBsdWdpblJlc3BvbnNlMmMKElBsdWdpbkV2ZW50U2VydmljZRJNCgxEZWxpdmVyRXZlbnQSHS5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXF1ZXN0Gh4ubnVtZW4udjEuRGVsaXZlckV2ZW50UmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_health, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.PingRequest
@@ -143,14 +143,14 @@ export type PluginSetting = Message<"numen.v1.PluginSetting"> & {
   defaultJson: string;
 
   /**
-   * @generated from field: bool palette = 6;
+   * @generated from field: bool is_palette = 6;
    */
-  palette: boolean;
+  isPalette: boolean;
 
   /**
-   * @generated from field: repeated numen.v1.PluginSettingOption options = 7;
+   * @generated from field: repeated numen.v1.Option options = 7;
    */
-  options: PluginSettingOption[];
+  options: Option[];
 
   /**
    * @generated from field: optional double min = 8;
@@ -199,17 +199,17 @@ export type PluginSetting = Message<"numen.v1.PluginSetting"> & {
   /**
    * Whether a setting of type file holds a list of paths, one per line.
    *
-   * @generated from field: bool multiple = 16;
+   * @generated from field: bool is_multiple = 16;
    */
-  multiple: boolean;
+  isMultiple: boolean;
 
   /**
    * Whether the window applies the value while its control is focused, and restores the saved value
    * on leaving.
    *
-   * @generated from field: bool preview = 17;
+   * @generated from field: bool is_preview = 17;
    */
-  preview: boolean;
+  isPreview: boolean;
 
   /**
    * The registry the options are listed from, such as the installed themes. Empty where the setting
@@ -223,9 +223,9 @@ export type PluginSetting = Message<"numen.v1.PluginSetting"> & {
    * The options in force under the values in force, resolved by the core. A window draws these and
    * follows no rule of options_by.
    *
-   * @generated from field: repeated numen.v1.PluginSettingOption active_options = 19;
+   * @generated from field: repeated numen.v1.Option active_options = 19;
    */
-  activeOptions: PluginSettingOption[];
+  activeOptions: Option[];
 
   /**
    * Whether the condition of the setting holds under the values in force, resolved by the core.
@@ -253,9 +253,9 @@ export type PluginSetting = Message<"numen.v1.PluginSetting"> & {
    * Whether the manifest lets a setting of type connections that holds no row use every connection
    * whose type serves the operation. The person's choice is in the plugin field "discover".
    *
-   * @generated from field: bool discover = 24;
+   * @generated from field: bool is_discover = 24;
    */
-  discover: boolean;
+  isDiscover: boolean;
 
   /**
    * The id of the group the setting is drawn under. Empty draws it in a card without a heading above the islands.
@@ -273,54 +273,13 @@ export const PluginSettingSchema: GenMessage<PluginSetting> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugin, 6);
 
 /**
- * PluginSettingOption is one value an enum setting can hold.
- *
- * @generated from message numen.v1.PluginSettingOption
- */
-export type PluginSettingOption = Message<"numen.v1.PluginSettingOption"> & {
-  /**
-   * @generated from field: string value = 1;
-   */
-  value: string;
-
-  /**
-   * What a person reads for the value. Empty shows the value.
-   *
-   * @generated from field: string title = 2;
-   */
-  title: string;
-
-  /**
-   * What a person reads under the setting while the value is in force.
-   *
-   * @generated from field: string detail = 3;
-   */
-  detail: string;
-
-  /**
-   * The condition the option is offered under, as in the manifest. The window evaluates it; an
-   * option whose condition does not hold is shown and cannot be chosen. Empty offers it always.
-   *
-   * @generated from field: string when = 4;
-   */
-  when: string;
-};
-
-/**
- * Describes the message numen.v1.PluginSettingOption.
- * Use `create(PluginSettingOptionSchema)` to create a new message.
- */
-export const PluginSettingOptionSchema: GenMessage<PluginSettingOption> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 7);
-
-/**
  * @generated from message numen.v1.PluginSettingOptions
  */
 export type PluginSettingOptions = Message<"numen.v1.PluginSettingOptions"> & {
   /**
-   * @generated from field: repeated numen.v1.PluginSettingOption options = 1;
+   * @generated from field: repeated numen.v1.Option options = 1;
    */
-  options: PluginSettingOption[];
+  options: Option[];
 };
 
 /**
@@ -328,7 +287,7 @@ export type PluginSettingOptions = Message<"numen.v1.PluginSettingOptions"> & {
  * Use `create(PluginSettingOptionsSchema)` to create a new message.
  */
 export const PluginSettingOptionsSchema: GenMessage<PluginSettingOptions> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 8);
+  messageDesc(file_numen_v1_plugin, 7);
 
 /**
  * PluginSettingOptionsBy gives a setting its options from the value of another setting.
@@ -354,7 +313,7 @@ export type PluginSettingOptionsBy = Message<"numen.v1.PluginSettingOptionsBy"> 
  * Use `create(PluginSettingOptionsBySchema)` to create a new message.
  */
 export const PluginSettingOptionsBySchema: GenMessage<PluginSettingOptionsBy> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 9);
+  messageDesc(file_numen_v1_plugin, 8);
 
 /**
  * PluginSettingCondition holds while a setting holds one of the values listed.
@@ -378,7 +337,7 @@ export type PluginSettingCondition = Message<"numen.v1.PluginSettingCondition"> 
  * Use `create(PluginSettingConditionSchema)` to create a new message.
  */
 export const PluginSettingConditionSchema: GenMessage<PluginSettingCondition> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 10);
+  messageDesc(file_numen_v1_plugin, 9);
 
 /**
  * PluginInfo describes a discovered plugin and its declarative settings.
@@ -484,7 +443,7 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
  * Use `create(PluginInfoSchema)` to create a new message.
  */
 export const PluginInfoSchema: GenMessage<PluginInfo> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 11);
+  messageDesc(file_numen_v1_plugin, 10);
 
 /**
  * PluginContribution is one section of a plugin's manifest and the entries it declares, in the
@@ -509,7 +468,7 @@ export type PluginContribution = Message<"numen.v1.PluginContribution"> & {
  * Use `create(PluginContributionSchema)` to create a new message.
  */
 export const PluginContributionSchema: GenMessage<PluginContribution> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 12);
+  messageDesc(file_numen_v1_plugin, 11);
 
 /**
  * PluginContributionItem is one entry of a section of a manifest.
@@ -545,7 +504,7 @@ export type PluginContributionItem = Message<"numen.v1.PluginContributionItem"> 
  * Use `create(PluginContributionItemSchema)` to create a new message.
  */
 export const PluginContributionItemSchema: GenMessage<PluginContributionItem> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 13);
+  messageDesc(file_numen_v1_plugin, 12);
 
 /**
  * PluginSettingGroup is an island of the settings page, with the heading over it.
@@ -569,7 +528,7 @@ export type PluginSettingGroup = Message<"numen.v1.PluginSettingGroup"> & {
  * Use `create(PluginSettingGroupSchema)` to create a new message.
  */
 export const PluginSettingGroupSchema: GenMessage<PluginSettingGroup> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 14);
+  messageDesc(file_numen_v1_plugin, 13);
 
 /**
  * PluginSettingsView is a component of a plugin's frontend drawn among its settings.
@@ -595,7 +554,7 @@ export type PluginSettingsView = Message<"numen.v1.PluginSettingsView"> & {
  * Use `create(PluginSettingsViewSchema)` to create a new message.
  */
 export const PluginSettingsViewSchema: GenMessage<PluginSettingsView> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 15);
+  messageDesc(file_numen_v1_plugin, 14);
 
 /**
  * PluginReader is a tab of a plugin's frontend that opens files.
@@ -625,7 +584,7 @@ export type PluginReader = Message<"numen.v1.PluginReader"> & {
  * Use `create(PluginReaderSchema)` to create a new message.
  */
 export const PluginReaderSchema: GenMessage<PluginReader> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 16);
+  messageDesc(file_numen_v1_plugin, 15);
 
 /**
  * @generated from message numen.v1.ListPluginsRequest
@@ -638,7 +597,7 @@ export type ListPluginsRequest = Message<"numen.v1.ListPluginsRequest"> & {
  * Use `create(ListPluginsRequestSchema)` to create a new message.
  */
 export const ListPluginsRequestSchema: GenMessage<ListPluginsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 17);
+  messageDesc(file_numen_v1_plugin, 16);
 
 /**
  * @generated from message numen.v1.ListPluginsResponse
@@ -655,7 +614,7 @@ export type ListPluginsResponse = Message<"numen.v1.ListPluginsResponse"> & {
  * Use `create(ListPluginsResponseSchema)` to create a new message.
  */
 export const ListPluginsResponseSchema: GenMessage<ListPluginsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 18);
+  messageDesc(file_numen_v1_plugin, 17);
 
 /**
  * @generated from message numen.v1.WatchPluginProcessesRequest
@@ -668,7 +627,7 @@ export type WatchPluginProcessesRequest = Message<"numen.v1.WatchPluginProcesses
  * Use `create(WatchPluginProcessesRequestSchema)` to create a new message.
  */
 export const WatchPluginProcessesRequestSchema: GenMessage<WatchPluginProcessesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 19);
+  messageDesc(file_numen_v1_plugin, 18);
 
 /**
  * @generated from message numen.v1.RetryPluginRequest
@@ -685,7 +644,7 @@ export type RetryPluginRequest = Message<"numen.v1.RetryPluginRequest"> & {
  * Use `create(RetryPluginRequestSchema)` to create a new message.
  */
 export const RetryPluginRequestSchema: GenMessage<RetryPluginRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 20);
+  messageDesc(file_numen_v1_plugin, 19);
 
 /**
  * @generated from message numen.v1.RetryPluginResponse
@@ -709,7 +668,7 @@ export type RetryPluginResponse = Message<"numen.v1.RetryPluginResponse"> & {
  * Use `create(RetryPluginResponseSchema)` to create a new message.
  */
 export const RetryPluginResponseSchema: GenMessage<RetryPluginResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 21);
+  messageDesc(file_numen_v1_plugin, 20);
 
 /**
  * @generated from message numen.v1.WatchPluginProcessesResponse
@@ -736,7 +695,7 @@ export type WatchPluginProcessesResponse = Message<"numen.v1.WatchPluginProcesse
  * Use `create(WatchPluginProcessesResponseSchema)` to create a new message.
  */
 export const WatchPluginProcessesResponseSchema: GenMessage<WatchPluginProcessesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 22);
+  messageDesc(file_numen_v1_plugin, 21);
 
 /**
  * @generated from message numen.v1.PluginProcess
@@ -828,7 +787,7 @@ export type PluginProcess = Message<"numen.v1.PluginProcess"> & {
  * Use `create(PluginProcessSchema)` to create a new message.
  */
 export const PluginProcessSchema: GenMessage<PluginProcess> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 23);
+  messageDesc(file_numen_v1_plugin, 22);
 
 /**
  * PluginLeaseHolder is who holds a lease on a plugin process and why.
@@ -855,7 +814,7 @@ export type PluginLeaseHolder = Message<"numen.v1.PluginLeaseHolder"> & {
  * Use `create(PluginLeaseHolderSchema)` to create a new message.
  */
 export const PluginLeaseHolderSchema: GenMessage<PluginLeaseHolder> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 24);
+  messageDesc(file_numen_v1_plugin, 23);
 
 /**
  * @generated from message numen.v1.DeliverEventRequest
@@ -874,7 +833,7 @@ export type DeliverEventRequest = Message<"numen.v1.DeliverEventRequest"> & {
  * Use `create(DeliverEventRequestSchema)` to create a new message.
  */
 export const DeliverEventRequestSchema: GenMessage<DeliverEventRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 25);
+  messageDesc(file_numen_v1_plugin, 24);
 
 /**
  * @generated from message numen.v1.DeliverEventResponse
@@ -896,7 +855,7 @@ export type DeliverEventResponse = Message<"numen.v1.DeliverEventResponse"> & {
  * Use `create(DeliverEventResponseSchema)` to create a new message.
  */
 export const DeliverEventResponseSchema: GenMessage<DeliverEventResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 26);
+  messageDesc(file_numen_v1_plugin, 25);
 
 /**
  * PluginContributionKind is a section of a manifest, named after its key. The zero value means

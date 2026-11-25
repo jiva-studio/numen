@@ -617,73 +617,11 @@ func (x *Options) GetIsPartial() bool {
 	return false
 }
 
-type Option struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Value string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	// title is shown in place of the value; empty shows the value.
-	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// group is the heading the option is shown under; empty is no heading.
-	Group         string `protobuf:"bytes,3,opt,name=group,proto3" json:"group,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Option) Reset() {
-	*x = Option{}
-	mi := &file_numen_v1_settings_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Option) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Option) ProtoMessage() {}
-
-func (x *Option) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Option.ProtoReflect.Descriptor instead.
-func (*Option) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *Option) GetValue() string {
-	if x != nil {
-		return x.Value
-	}
-	return ""
-}
-
-func (x *Option) GetTitle() string {
-	if x != nil {
-		return x.Title
-	}
-	return ""
-}
-
-func (x *Option) GetGroup() string {
-	if x != nil {
-		return x.Group
-	}
-	return ""
-}
-
 var File_numen_v1_settings_proto protoreflect.FileDescriptor
 
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\"\x14\n" +
+	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\x1a\x15numen/v1/shared.proto\"\x14\n" +
 	"\x12GetSettingsRequest\"\x80\x02\n" +
 	"\x13GetSettingsResponse\x12#\n" +
 	"\rsettings_json\x18\x01 \x01(\tR\fsettingsJson\x12\x12\n" +
@@ -720,11 +658,7 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\aOptions\x12*\n" +
 	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions\x12\x1d\n" +
 	"\n" +
-	"is_partial\x18\x02 \x01(\bR\tisPartial\"J\n" +
-	"\x06Option\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
-	"\x05group\x18\x03 \x01(\tR\x05group2\xde\x02\n" +
+	"is_partial\x18\x02 \x01(\bR\tisPartial2\xde\x02\n" +
 	"\x0fSettingsService\x12J\n" +
 	"\vGetSettings\x12\x1c.numen.v1.GetSettingsRequest\x1a\x1d.numen.v1.GetSettingsResponse\x12P\n" +
 	"\rWriteSettings\x12\x1e.numen.v1.WriteSettingsRequest\x1a\x1f.numen.v1.WriteSettingsResponse\x12Y\n" +
@@ -743,7 +677,7 @@ func file_numen_v1_settings_proto_rawDescGZIP() []byte {
 	return file_numen_v1_settings_proto_rawDescData
 }
 
-var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_settings_proto_goTypes = []any{
 	(*GetSettingsRequest)(nil),       // 0: numen.v1.GetSettingsRequest
 	(*GetSettingsResponse)(nil),      // 1: numen.v1.GetSettingsResponse
@@ -756,18 +690,18 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*ChoosePluginPathResponse)(nil), // 8: numen.v1.ChoosePluginPathResponse
 	(*OptionsRequest)(nil),           // 9: numen.v1.OptionsRequest
 	(*Options)(nil),                  // 10: numen.v1.Options
-	(*Option)(nil),                   // 11: numen.v1.Option
-	(*PluginInfo)(nil),               // 12: numen.v1.PluginInfo
-	(*PluginSetting)(nil),            // 13: numen.v1.PluginSetting
-	(*PluginSettingGroup)(nil),       // 14: numen.v1.PluginSettingGroup
+	(*PluginInfo)(nil),               // 11: numen.v1.PluginInfo
+	(*PluginSetting)(nil),            // 12: numen.v1.PluginSetting
+	(*PluginSettingGroup)(nil),       // 13: numen.v1.PluginSettingGroup
+	(*Option)(nil),                   // 14: numen.v1.Option
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
-	12, // 0: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
-	13, // 1: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
-	14, // 2: numen.v1.GetSettingsResponse.app_groups:type_name -> numen.v1.PluginSettingGroup
+	11, // 0: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
+	12, // 1: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
+	13, // 2: numen.v1.GetSettingsResponse.app_groups:type_name -> numen.v1.PluginSettingGroup
 	2,  // 3: numen.v1.WatchSettingsResponse.settings:type_name -> numen.v1.Setting
 	2,  // 4: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	11, // 5: numen.v1.Options.options:type_name -> numen.v1.Option
+	14, // 5: numen.v1.Options.options:type_name -> numen.v1.Option
 	0,  // 6: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
 	5,  // 7: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
 	7,  // 8: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
@@ -789,13 +723,14 @@ func file_numen_v1_settings_proto_init() {
 		return
 	}
 	file_numen_v1_plugin_proto_init()
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_settings_proto_rawDesc), len(file_numen_v1_settings_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

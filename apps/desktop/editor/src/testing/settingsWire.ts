@@ -42,7 +42,7 @@ const toWireCondition = (when: PluginSettingCondition) => ({
 const toWireOptions = (setting: PluginSettingInfo) => ({
   optionsFrom: setting.optionsFrom ?? '',
   operations: [...(setting.operations ?? [])],
-  discover: setting.discover ?? false,
+  isDiscover: setting.discover ?? false,
   options: (setting.options ?? []).map(toWireOption),
   activeOptions: (setting.activeOptions ?? []).map(toWireOption),
   ...(setting.optionsBy
@@ -75,10 +75,10 @@ export const toWireSetting = (setting: PluginSettingInfo) => ({
   description: setting.description,
   group: setting.group ?? '',
   defaultJson: JSON.stringify(setting.default),
-  palette: Boolean(setting.palette),
+  isPalette: Boolean(setting.palette),
   icon: setting.icon ?? '',
-  preview: Boolean(setting.preview),
-  multiple: Boolean(setting.multiple),
+  isPreview: Boolean(setting.preview),
+  isMultiple: Boolean(setting.multiple),
   accept: [...(setting.accept ?? [])],
   ...toWireOptions(setting),
   ...toWireBounds(setting),

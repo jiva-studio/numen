@@ -270,9 +270,9 @@ message ManifestSlotPoint {
   string slot = 1;
   // title is what the settings page of the plugin calls the slot.
   string title = 2;
-  // menu marks a slot that draws its entries as the rows of a context menu: the settings page does not
+  // is_menu marks a slot that draws its entries as the rows of a context menu: the settings page does not
   // list it, and its order comes from the manifests.
-  bool menu = 3;
+  bool is_menu = 3 [json_name = "menu"];
 }
 
 // ManifestSlotEntry places one thing in a slot of a window, or in a submenu a plugin declares. The
@@ -449,7 +449,7 @@ message ManifestSetting {
   // details is the full text the info button beside the title opens. Empty shows no button.
   string details = 24;
   google.protobuf.Value default = 5;
-  bool palette = 6;
+  bool is_palette = 6 [json_name = "palette"];
   string icon = 7;
   // options is a JSON list of options.
   google.protobuf.ListValue options = 8;
@@ -459,11 +459,11 @@ message ManifestSetting {
   ManifestOptionsBy options_by = 14;
   ManifestCondition when = 15;
   repeated string accept = 16;
-  // multiple makes a file setting hold a list of paths, one per line.
-  bool multiple = 17;
-  // preview makes the window apply the value while its control is focused, and restore the saved
+  // is_multiple makes a file setting hold a list of paths, one per line.
+  bool is_multiple = 17 [json_name = "multiple"];
+  // is_preview makes the window apply the value while its control is focused, and restore the saved
   // value on leaving.
-  bool preview = 18;
+  bool is_preview = 18 [json_name = "preview"];
   // options_from names a registry the options are listed from, such as the installed themes.
   string options_from = 19;
   // generate makes the host fill an empty value; "token" is 32 random bytes in hex.
@@ -472,16 +472,16 @@ message ManifestSetting {
   // call of the plugin for one of them goes through the rows of the setting, and a plugin calls no
   // operation no setting names. max is the number of rows.
   repeated string operations = 22;
-  // discover makes a setting of type connections that holds no row use every connection whose type
+  // is_discover makes a setting of type connections that holds no row use every connection whose type
   // serves the operation, in the order of the connections, while the person leaves it on.
-  bool discover = 23;
+  bool is_discover = 23 [json_name = "discover"];
   // group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in a card without a heading above the islands.
   string group = 25;
 }
 
 message ManifestNoteType {
   string type = 1;
-  optional bool chunks = 2;
+  optional bool has_chunks = 2 [json_name = "chunks"];
   // headings is a JSON list of heading levels. Absent keeps every heading, and
   // an empty list keeps none.
   google.protobuf.ListValue headings = 3;

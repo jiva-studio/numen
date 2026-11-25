@@ -70,7 +70,7 @@ func TestNewWirePluginInfos_CarriesMultiple(t *testing.T) {
 	}})
 
 	got := wire[0].GetSettings()
-	if !got[0].GetMultiple() || got[1].GetMultiple() {
+	if !got[0].GetIsMultiple() || got[1].GetIsMultiple() {
 		t.Errorf("the settings carry %v and %v", got[0], got[1])
 	}
 }
@@ -109,11 +109,11 @@ func TestNewWirePluginInfos_CarriesThePreviewFlagAndTheRegistry(t *testing.T) {
 	}})
 
 	got := wire[0].GetSettings()
-	if !got[0].GetPreview() || got[0].GetOptionsFrom() != "themes" {
-		t.Errorf("the theme carries preview=%v from %q", got[0].GetPreview(), got[0].GetOptionsFrom())
+	if !got[0].GetIsPreview() || got[0].GetOptionsFrom() != "themes" {
+		t.Errorf("the theme carries preview=%v from %q", got[0].GetIsPreview(), got[0].GetOptionsFrom())
 	}
-	if got[1].GetPreview() || got[1].GetOptionsFrom() != "" {
-		t.Errorf("a plain setting carries preview=%v from %q", got[1].GetPreview(), got[1].GetOptionsFrom())
+	if got[1].GetIsPreview() || got[1].GetOptionsFrom() != "" {
+		t.Errorf("a plain setting carries preview=%v from %q", got[1].GetIsPreview(), got[1].GetOptionsFrom())
 	}
 }
 
