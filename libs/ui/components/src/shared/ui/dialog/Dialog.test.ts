@@ -62,6 +62,70 @@ describe('Dialog', () => {
   })
 })
 
+describe('Dialog accessibility', () => {
+  it('describes the dialog by its hint', () => {
+    mountDialog()
+    const box = getBody().get('[role="dialog"]')
+    expect(document.getElementById(box.attributes('aria-describedby')!)?.textContent).toBe(
+      'Enter the words.',
+    )
+  })
+
+  it('describes the dialog by the element given, not by the hint', () => {
+    mountDialog({ describedBy: 'elsewhere' })
+    expect(getBody().get('[role="dialog"]').attributes('aria-describedby')).toBe('elsewhere')
+  })
+
+  it('has no description when it has no hint', () => {
+    mountDialog({ hint: '' })
+    expect(getBody().get('[role="dialog"]').attributes('aria-describedby')).toBeUndefined()
+  })
+
+  it('makes the rest of the page inert while it is open and restores it after', () => {
+    const page = document.createElement('main')
+    const kept = document.createElement('aside')
+    kept.inert = true
+    document.body.append(page, kept)
+    const dialog = mountDialog()
+    expect(page.inert).toBe(true)
+    expect(getBody().get('[data-slot="dialog-backdrop"]').element.inert).toBeFalsy()
+    dialog.unmount()
+    expect(page.inert).toBe(false)
+    expect(kept.inert).toBe(true)
+  })
+
+  it('focuses the panel when it has no control', () => {
+    const dialog = mount(Dialog, { attachTo: document.body, props: { label: 'Done' } })
+    expect(document.activeElement).toBe(getBody().get('[role="dialog"]').element)
+    dialog.unmount()
+  })
+
+  it('keeps the focus on the panel when Tab is pressed and it has no control', async () => {
+    mount(Dialog, { attachTo: document.body, props: { label: 'Done' } })
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+    getBody().get('[role="dialog"]').element.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(getBody().get('[role="dialog"]').element)
+  })
+
+  it('skips a control that tabindex takes out of the order and wraps at a control that tabindex adds', async () => {
+    mount(Dialog, {
+      attachTo: document.body,
+      props: { label: 'Pick' },
+      slots: {
+        default:
+          '<button>First</button><div tabindex="0" data-testid="last">Last</div><button tabindex="-1">Skipped</button>',
+      },
+    })
+    const last = getBody().get('[data-testid="last"]').element as HTMLElement
+    last.focus()
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+    last.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
+    expect(document.activeElement?.textContent).toBe('First')
+  })
+})
+
 describe('Dialog host', () => {
   const mountDialogInHost = () => {
     const host = document.createElement('main')

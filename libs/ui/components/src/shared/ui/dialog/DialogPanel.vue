@@ -3,6 +3,8 @@
 import { onBeforeUnmount, onMounted, useId, useTemplateRef, watch } from 'vue'
 import { doc } from '@/shared/api/dom'
 import type { DialogEvents, DialogPanelProps } from './Dialog.types'
+import { getTabbables } from './focusables'
+import { makeOutsideInert } from './inertOutside'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<DialogPanelProps>(), {
@@ -18,16 +20,22 @@ const props = withDefaults(defineProps<DialogPanelProps>(), {
 const emit = defineEmits<DialogEvents>()
 
 /* --------------------------------- State ---------------------------------- */
-const CONTROLS = 'input, textarea, select, button, [href], [role="combobox"], [role="switch"]'
 const titleId = useId()
+const hintId = useId()
+const backdrop = useTemplateRef<HTMLElement>('backdrop')
 const panel = useTemplateRef<HTMLElement>('panel')
 const active = doc.activeElement
 const opener = active instanceof HTMLElement ? active : null
 
 /* ---------------------------------- Hooks --------------------------------- */
-onMounted(focusFirst)
+let restorePage: (() => void) | undefined
+onMounted(() => {
+  if (backdrop.value) restorePage = makeOutsideInert(backdrop.value)
+  focusFirst()
+})
 watch(() => props.step, focusFirst, { flush: 'post' })
 onBeforeUnmount(() => {
+  restorePage?.()
   if (opener?.isConnected) opener.focus()
 })
 
@@ -36,7 +44,11 @@ function onKeepFocus(event: KeyboardEvent): void {
   const items = getControls()
   const first = items[0]
   const last = items[items.length - 1]
-  if (!first || !last) return
+  if (!first || !last) {
+    event.preventDefault()
+    panel.value?.focus()
+    return
+  }
   if (event.shiftKey && event.target === first) {
     event.preventDefault()
     last.focus()
@@ -48,18 +60,19 @@ function onKeepFocus(event: KeyboardEvent): void {
 
 /* -------------------------------- Helpers --------------------------------- */
 function getControls(): HTMLElement[] {
-  return Array.from(panel.value?.querySelectorAll<HTMLElement>(CONTROLS) ?? []).filter(
-    (one) => !one.hasAttribute('disabled'),
-  )
+  return panel.value ? getTabbables(panel.value) : []
 }
 
 function focusFirst(): void {
-  getControls()[0]?.focus()
+  const first = getControls()[0]
+  if (first) first.focus()
+  else panel.value?.focus()
 }
 </script>
 
 <template>
   <div
+    ref="backdrop"
     data-slot="dialog-backdrop"
     class="dialog-backdrop"
     :data-scope="scope"
@@ -75,14 +88,15 @@ function focusFirst(): void {
       :role="role"
       aria-modal="true"
       :aria-labelledby="titleId"
-      :aria-describedby="describedBy === '' ? undefined : describedBy"
+      :aria-describedby="describedBy !== '' ? describedBy : hint !== '' ? hintId : undefined"
+      tabindex="-1"
       :data-tone="tone"
       :data-size="size"
       @submit.prevent="emit('submit')"
     >
       <header class="dialog__head">
         <h2 :id="titleId" class="dialog__title">{{ label }}</h2>
-        <p v-if="hint !== ''" class="dialog__hint">{{ hint }}</p>
+        <p v-if="hint !== ''" :id="hintId" class="dialog__hint">{{ hint }}</p>
       </header>
       <div class="dialog__body"><slot /></div>
       <div v-if="$slots['actions']" class="dialog__actions"><slot name="actions" /></div>
