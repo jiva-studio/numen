@@ -20,6 +20,7 @@ message FetchModelFileRequest {
 
 message FetchModelFileResponse {
   string path = 1;
-  ErrorCode error = 2;
-  string detail = 3;
+  // Error text preserved on wire tag 2 for compatibility with protocol v1 plugin binaries.
+  string detail = 2;
+  ErrorCode error = 3;
 }

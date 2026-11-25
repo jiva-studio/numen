@@ -75,10 +75,11 @@ func (x *FetchModelFileRequest) GetSha256() string {
 }
 
 type FetchModelFileResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
-	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Error text preserved on wire tag 2 for compatibility with protocol v1 plugin binaries.
+	Detail        string    `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	Error         ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -120,18 +121,18 @@ func (x *FetchModelFileResponse) GetPath() string {
 	return ""
 }
 
-func (x *FetchModelFileResponse) GetError() ErrorCode {
-	if x != nil {
-		return x.Error
-	}
-	return ErrorCode_ERROR_CODE_UNSPECIFIED
-}
-
 func (x *FetchModelFileResponse) GetDetail() string {
 	if x != nil {
 		return x.Detail
 	}
 	return ""
+}
+
+func (x *FetchModelFileResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 var File_numen_v1_hostdependency_proto protoreflect.FileDescriptor
@@ -143,9 +144,9 @@ const file_numen_v1_hostdependency_proto_rawDesc = "" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
 	"\x06sha256\x18\x02 \x01(\tR\x06sha256\"o\n" +
 	"\x16FetchModelFileResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12)\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail2l\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\x12)\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error2l\n" +
 	"\x15HostDependencyService\x12S\n" +
 	"\x0eFetchModelFile\x12\x1f.numen.v1.FetchModelFileRequest\x1a .numen.v1.FetchModelFileResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 

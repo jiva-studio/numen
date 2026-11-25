@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostdependency.proto.
  */
 export const file_numen_v1_hostdependency: GenFile = /*@__PURE__*/
-  fileDesc("Ch1udW1lbi92MS9ob3N0ZGVwZW5kZW5jeS5wcm90bxIIbnVtZW4udjEiNAoVRmV0Y2hNb2RlbEZpbGVSZXF1ZXN0EgsKA3VybBgBIAEoCRIOCgZzaGEyNTYYAiABKAkiWgoWRmV0Y2hNb2RlbEZpbGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEiIKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCTJsChVIb3N0RGVwZW5kZW5jeVNlcnZpY2USUwoORmV0Y2hNb2RlbEZpbGUSHy5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlcXVlc3QaIC5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("Ch1udW1lbi92MS9ob3N0ZGVwZW5kZW5jeS5wcm90bxIIbnVtZW4udjEiNAoVRmV0Y2hNb2RlbEZpbGVSZXF1ZXN0EgsKA3VybBgBIAEoCRIOCgZzaGEyNTYYAiABKAkiWgoWRmV0Y2hNb2RlbEZpbGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg4KBmRldGFpbBgCIAEoCRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZTJsChVIb3N0RGVwZW5kZW5jeVNlcnZpY2USUwoORmV0Y2hNb2RlbEZpbGUSHy5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlcXVlc3QaIC5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.FetchModelFileRequest
@@ -48,14 +48,16 @@ export type FetchModelFileResponse = Message<"numen.v1.FetchModelFileResponse"> 
   path: string;
 
   /**
-   * @generated from field: numen.v1.ErrorCode error = 2;
-   */
-  error: ErrorCode;
-
-  /**
-   * @generated from field: string detail = 3;
+   * Error text preserved on wire tag 2 for compatibility with protocol v1 plugin binaries.
+   *
+   * @generated from field: string detail = 2;
    */
   detail: string;
+
+  /**
+   * @generated from field: numen.v1.ErrorCode error = 3;
+   */
+  error: ErrorCode;
 };
 
 /**
