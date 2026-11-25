@@ -25,7 +25,7 @@ export class NoticeDriver {
     private readonly readers: SharedReaderDriver,
   ) {}
 
-  /** Expects the teller to be told the words: by a warning of Numen Sync, or by any text the window shows, whatever its case. */
+  /** Expects the teller to see the words: in a warning of Numen Sync, or by any text the window shows, whatever its case. */
   async expectTold(teller: string, text: string): Promise<void> {
     if (teller === 'the reader') return this.readers.expectTold('reader', text)
     if (teller === 'the second reader') return this.readers.expectTold('second reader', text)

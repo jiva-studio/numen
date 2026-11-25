@@ -261,7 +261,7 @@ export class SyncDriver {
     await this.sendAdminRequest('/admin/backup', 'the backup')
   }
 
-  /** Puts the server back to the copy of the backup: what it received after is gone. The computers are told it was restored, unless the operator does not tell them. */
+  /** Puts the server back to the copy of the backup: what it received after is gone. The computers learn that it was restored, unless the operator keeps it from them. */
   async restoreFromBackup(isTold: boolean): Promise<void> {
     await this.sendAdminRequest('/admin/restore', 'the restore')
     if (isTold) await this.sendAdminRequest('/admin/announce', 'the announcement of the restore')
