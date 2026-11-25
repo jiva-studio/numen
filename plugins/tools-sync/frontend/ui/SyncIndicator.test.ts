@@ -64,6 +64,7 @@ describe('SyncIndicator', () => {
 
     await wrapper.find('button').trigger('click')
 
+    expect(wrapper.get('[role="dialog"] h3').text()).toBe('Synced vaults')
     const rows = wrapper.findAll('[role="dialog"] li')
     expect(rows).toHaveLength(2)
     expect(rows[0]?.text()).toContain('Busy')

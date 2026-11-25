@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * A row of the card "Synced vaults": a square icon tinted with the state (ringed with the progress while it syncs), the name, the state word with its
- * qualifier, the facts on a quiet line of their own, and what the person does with the vault on the right.
+ * A row of the card "Synced vaults": a square icon tinted with the state (ringed with the progress while it syncs), the name, the state word (only while it syncs or has a problem) with its
+ * qualifier or the last sync, the facts on a quiet line of their own, and what the person does with the vault on the right.
  */
 import { computed } from 'vue'
 import { Check, CircleAlert, CloudOff, RefreshCw } from '@lucide/vue'
@@ -42,8 +42,12 @@ const percent = computed(() => Math.round(Math.min(Math.max(ring.value ?? 0, 0),
     </span>
     <div class="vault-row__label">
       <span class="vault-row__name">{{ name }}</span>
-      <span class="vault-row__line vault-row__line--state" role="status">
-        <span class="vault-row__piece vault-row__state">
+      <span
+        v-if="status !== '' || qualifier !== ''"
+        class="vault-row__line vault-row__line--state"
+        role="status"
+      >
+        <span v-if="status !== ''" class="vault-row__piece vault-row__state">
           {{ qualifier === '' ? status : `${status} ·` }}
         </span>
         <span v-if="qualifier !== ''" class="vault-row__piece">{{ qualifier }}</span>

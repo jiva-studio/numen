@@ -635,6 +635,14 @@
   --vault-row-radius: var(--numen-radius);
 }
 
+.sync-indicator__popover .sync-indicator__title {
+  margin: 0;
+  padding-block: var(--numen-inset-wide) var(--numen-inset);
+  font-size: var(--numen-text-2);
+  font-weight: 600;
+  color: var(--numen-ink);
+}
+
 .sync-indicator__popover .sync-indicator__empty {
   margin: 0;
   padding-block: var(--numen-inset-wide);

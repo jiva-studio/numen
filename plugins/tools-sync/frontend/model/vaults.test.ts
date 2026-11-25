@@ -62,7 +62,7 @@ describe('useVaults', () => {
     expect(model.state.rows.value.map((row) => row.name)).toStrictEqual(['Synced', 'Work'])
   })
 
-  it('says a synced vault is up to date and how long ago it synced', async () => {
+  it('says how long ago a synced vault it synced', async () => {
     const client = createClient([
       createVault({ state: 'connected', lastSyncedAt: '2026-11-23T11:55:00Z' }),
     ])
@@ -71,7 +71,7 @@ describe('useVaults', () => {
     await model.actions.load()
 
     expect(model.state.rows.value.at(0)).toMatchObject({
-      status: 'Up to date',
+      status: '',
       tone: 'ok',
       kind: 'ok',
       qualifier: 'Last sync 5 minutes ago',
@@ -95,7 +95,7 @@ describe('useVaults', () => {
     await model.actions.load()
 
     expect(model.state.rows.value.at(0)).toMatchObject({
-      status: 'Up to date',
+      status: '',
       kind: 'ok',
       facts: ['12 files on demand', '501 MB in the cloud'],
       isTransferring: false,
@@ -182,7 +182,7 @@ describe('useVaults', () => {
     expect(getSyncPercent(vaults)).toBe(50)
   })
 
-  it('says one minute in the singular and less than a minute for a fresh sync', async () => {
+  it('says a minute in the singular and just now for a fresh sync', async () => {
     const client = createClient([
       createVault({ id: 'a', state: 'connected', lastSyncedAt: '2026-11-23T11:59:00Z' }),
       createVault({ id: 'b', state: 'connected', lastSyncedAt: '2026-11-23T11:59:50Z' }),
@@ -193,8 +193,8 @@ describe('useVaults', () => {
 
     const synced = model.state.rows.value.filter((row) => row.isSynced)
     expect(synced.map((row) => row.qualifier)).toStrictEqual([
-      'Last sync 1 minute ago',
-      'Last sync less than a minute ago',
+      'Last sync a minute ago',
+      'Last sync just now',
     ])
   })
 
@@ -219,18 +219,14 @@ describe('useVaults', () => {
     })
   })
 
-  it('says the sync waits when the server is unreachable', async () => {
+  it('shows no connection state on a vault row when the server is unreachable', async () => {
     const client = createClient([createVault({ state: 'connected' })])
     client.getStatus.mockResolvedValue({ hasIdentity: true, isReachable: false, items: [] })
     const model = createModel(client)
 
     await model.actions.load()
 
-    expect(model.state.rows.value.at(0)).toMatchObject({
-      status: 'Connecting…',
-      tone: 'warning',
-      kind: 'syncing',
-    })
+    expect(model.state.rows.value.at(0)).toMatchObject({ status: '', tone: 'ok', kind: 'ok' })
     expect(model.state.canGetFromCloud.value).toBe(false)
   })
 

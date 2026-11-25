@@ -122,8 +122,8 @@ export const Synced: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Work')).toBeVisible()
-    await expect(canvas.getAllByText('Up to date ·')).toHaveLength(2)
     await expect(canvas.getByText('Last sync 5 minutes ago')).toBeVisible()
+    await expect(canvas.getByText('Last sync just now')).toBeVisible()
     await expect(canvas.queryByText('Plain')).toBeNull()
   },
 }
@@ -155,7 +155,7 @@ export const DeletionsPaused: Story = {
 export const ServerAway: Story = {
   args: { client: createClient({ vaults: [work], isReachable: false }), now: () => NOW },
   play: async ({ canvasElement }) => {
-    await expect(await within(canvasElement).findByText('Connecting… ·')).toBeVisible()
+    await expect(await within(canvasElement).findByText('Last sync 5 minutes ago')).toBeVisible()
   },
 }
 

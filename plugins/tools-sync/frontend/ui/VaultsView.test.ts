@@ -106,7 +106,6 @@ describe('VaultsView', () => {
     })
 
     expect(wrapper.text()).toContain('Synced')
-    expect(wrapper.text()).toContain('Up to date')
     expect(wrapper.text()).not.toContain('Plain')
     expect(wrapper.text()).not.toContain('Not connected')
   })
@@ -122,7 +121,7 @@ describe('VaultsView', () => {
 
     const rows = wrapper.findAll('li').map((one) => one.text())
     expect(rows).toHaveLength(2)
-    expect(rows[0]).toContain('Up to date')
+    expect(rows[0]).toContain('Synced')
     expect(rows[0]).toContain('1 MB in the cloud')
     expect(rows[1]).toContain('Work')
     expect(rows[1]).toContain('Not syncing')
@@ -152,7 +151,7 @@ describe('VaultsView', () => {
         .findAll(selector)
         .flatMap((line) => line.findAll('.vault-row__piece'))
         .map((one) => one.text())
-    expect(getPieces('[role="status"]')).toStrictEqual(['Up to date ·', 'Last sync 5 minutes ago'])
+    expect(getPieces('[role="status"]')).toStrictEqual(['Last sync 5 minutes ago'])
     expect(getPieces('.vault-row__line--facts')).toStrictEqual([
       '151 files on demand ·',
       '1 MB in the cloud',
@@ -281,7 +280,7 @@ describe('VaultsView', () => {
     expect(ring?.attributes('aria-valuenow')).toBe('25')
     expect(ring?.find('svg.sync-ring').exists()).toBe(true)
     expect(rows[0]?.find('.vault-row__progress').exists()).toBe(false)
-    expect(rows[1]?.text()).toContain('Up to date')
+    expect(rows[1]?.text()).toContain('Calm')
     expect(rows[1]?.find('[role="progressbar"]').exists()).toBe(false)
     expect(rows[1]?.find('.vault-row__icon svg.lucide-check').exists()).toBe(true)
   })

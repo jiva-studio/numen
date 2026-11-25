@@ -10,9 +10,9 @@ import type {
 import { getFailureCode } from '../api/subscription'
 import { vaultsClient } from '../api/wire'
 import { formatCloudSize } from '../lib/cloudSize'
+import { formatLastSync } from '../lib/lastSync'
 import { WORDS as words } from '../words'
 
-const MS_PER_MINUTE = 60_000
 const REFRESH_MS = 15_000
 const MAX_SKELETON_ROWS = 5
 
@@ -69,8 +69,7 @@ export const getErrorMessage = (error: unknown): string =>
 
 const getSyncedLabel = (vault: Vault, now: Date): string => {
   if (vault.lastSyncedAt === '') return ''
-  const minutes = Math.floor((now.getTime() - Date.parse(vault.lastSyncedAt)) / MS_PER_MINUTE)
-  return minutes < 1 ? words.syncedJustNow : words.syncedMinutesAgo(minutes)
+  return words.lastSync(formatLastSync(new Date(vault.lastSyncedAt), now))
 }
 
 const getPausedQualifier = (paused: PausedDeletions | null | undefined): string => {
@@ -152,12 +151,7 @@ export const getRow = (
     const status = words.statusProblem
     return { ...base, status, tone: 'alarm', kind: 'conflict', qualifier, canResolve: false }
   }
-  if (!isReachable) {
-    const status = words.statusWaiting
-    const qualifier = synced
-    return { ...base, status, tone: 'warning', kind: 'syncing', qualifier, canResolve: false }
-  }
-  if (vault.syncing) {
+  if (isReachable && vault.syncing) {
     const synced = vault.syncedBytes
     const total = getDownloadTotal(vault)
     const qualifier = words.syncProgress(formatCloudSize(synced), formatCloudSize(total))
@@ -177,9 +171,8 @@ export const getRow = (
   }
   const onDemand = getOnDemandFacts(vault)
   const facts = onDemand.length === 0 ? base.facts : onDemand
-  const status = words.statusUpToDate
   const qualifier = synced
-  return { ...base, status, tone: 'ok', kind: 'ok', qualifier, canResolve: false, facts }
+  return { ...base, status: '', tone: 'ok', kind: 'ok', qualifier, canResolve: false, facts }
 }
 
 export function useVaults(options: UseVaultsOptions) {

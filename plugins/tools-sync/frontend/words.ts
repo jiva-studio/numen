@@ -99,12 +99,15 @@ export const WORDS = {
   loadFailed: 'The vaults could not be loaded.',
   tryAgain: 'Try again',
   noIdentity: 'No identity on this device',
-  statusUpToDate: 'Up to date',
   statusWaiting: 'Connecting…',
   statusProblem: 'Needs attention',
-  syncedJustNow: 'Last sync less than a minute ago',
-  syncedMinutesAgo: (count: number): string =>
-    `Last sync ${count} ${count === 1 ? 'minute' : 'minutes'} ago`,
+  lastSync: (when: string): string => `Last sync ${when}`,
+  justNow: 'just now',
+  minutesAgo: (count: number): string => (count === 1 ? 'a minute ago' : `${count} minutes ago`),
+  hoursAgo: (count: number): string =>
+    count === 1 ? 'about an hour ago' : `about ${count} hours ago`,
+  yesterday: 'yesterday',
+  daysAgo: (count: number): string => `${count} days ago`,
   conflicts: (count: number): string =>
     `${count} ${count === 1 ? 'note' : 'notes'} changed on two devices`,
   deletionsPausedSend: (count: number, total: number): string =>

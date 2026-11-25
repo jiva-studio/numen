@@ -49,6 +49,7 @@ function onClose(): void {
       role="dialog"
       :aria-label="words.vaultsTitle"
     >
+      <h3 class="sync-indicator__title">{{ words.vaultsTitle }}</h3>
       <p v-if="props.state.rows.value.length === 0" class="sync-indicator__empty">
         {{ words.noVaultsTitle }}
       </p>
