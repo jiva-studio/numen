@@ -1,6 +1,6 @@
 import { defineComponent, h } from 'vue'
 import type { HostServices, PluginContext } from '@numen/plugin-sdk'
-import { accountClient } from '../api/wire'
+import type { AccountClient } from '../api/account'
 import { createSaveFile } from '../api/saveFile'
 import SubscriptionCard from './SubscriptionCard.vue'
 
@@ -9,6 +9,7 @@ export function createSubscriptionView(
     identity: Pick<PluginContext['identity'], 'openExternal'>
   },
   host: Pick<HostServices, 'ui'>,
+  accountClient: AccountClient,
   openSettings?: (() => void) | undefined,
 ) {
   const saveFile = createSaveFile(host.ui.dialogs)

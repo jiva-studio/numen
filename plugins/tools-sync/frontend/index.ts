@@ -6,8 +6,10 @@ import {
   formatErrorMessage,
 } from '@numen/plugin-sdk'
 import {
+  accountClient,
   acceptInvitationClient,
   folderSharesClient,
+  shareInboxClient,
   shareInvitationClient,
   vaultsClient,
 } from './api/wire'
@@ -184,7 +186,12 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   plugin.register.settingsView({ id: SHARES_VIEW, component: createSharesPage() })
   plugin.register.settingsView({
     id: SUBSCRIPTION_VIEW,
-    component: createSubscriptionView(plugin, host, createSettingsOpener(plugin, host)),
+    component: createSubscriptionView(
+      plugin,
+      host,
+      accountClient,
+      createSettingsOpener(plugin, host),
+    ),
   })
   registerShare(plugin, host)
   const flags = host.ui.vaultFlags
@@ -195,7 +202,7 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
     getVaultIds: () => host.vault.vaults?.getState().vaults.map((one) => one.id) ?? [],
   })
   registerSync(plugin, host, flagSync.refresh)
-  registerUnsync(plugin, host)
+  registerUnsync(plugin, host, { vaults: vaultsClient, shareInbox: shareInboxClient })
   registerDialogs(plugin, host)
   plugin.identity.subscriptions.push({ dispose: () => state.stop() })
   flagSync.start()

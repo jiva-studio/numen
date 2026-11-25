@@ -1,6 +1,7 @@
 import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { HostServices, PluginContext } from '@numen/plugin-sdk'
-import { shareInboxClient, vaultsClient } from '../api/wire'
+import type { ReceivedSharesClient } from '../api/shares'
+import type { VaultsClient } from '../api/vaults'
 import { WORDS as words } from '../words'
 import EndSyncDialog from './EndSyncDialog.vue'
 
@@ -11,7 +12,12 @@ const getCurrentVault = (host: HostServices): string =>
  * Registers the command that ends the sync of the vault the file tree shows: it asks first, a synced vault stops
  * syncing and a received folder is left, and any other vault gets a notice that it is not synced. The files stay.
  */
-export const registerUnsync = (plugin: PluginContext, host: HostServices): void => {
+export const registerUnsync = (
+  plugin: PluginContext,
+  host: HostServices,
+  clients: { vaults: VaultsClient; shareInbox: ReceivedSharesClient },
+): void => {
+  const { vaults: vaultsClient, shareInbox: shareInboxClient } = clients
   const show = (failure: unknown): void =>
     host.ui.notices.show(
       failure instanceof Error ? failure.message : formatErrorMessage(failure),
