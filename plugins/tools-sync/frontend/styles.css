@@ -93,7 +93,7 @@
   --vault-row-glyph: calc(1.125 * var(--numen-chrome-unit));
   --vault-row-gap: var(--numen-chrome-unit);
   --vault-row-pad: calc(0.75 * var(--numen-chrome-unit));
-  --vault-row-piece-gap: calc(0.5 * var(--numen-chrome-unit));
+  --vault-row-piece-gap: calc(0.25 * var(--numen-chrome-unit));
   --vault-row-label-gap: calc(0.125 * var(--numen-chrome-unit));
   --vault-row-name-text: var(--numen-chrome-text-2);
   --vault-row-line-text: var(--numen-chrome-text-1);
@@ -595,7 +595,7 @@
 }
 
 .sync-indicator__popover {
-  --popover-pad: 0.75rem;
+  --popover-pad: var(--numen-inset-wide);
   --popover-offset: calc(0.25 * var(--numen-chrome-unit));
   position: absolute;
   top: calc(100% + var(--popover-offset));
@@ -618,18 +618,21 @@
 }
 
 .sync-indicator__popover .vault-row {
-  --vault-row-icon: 2.5rem;
-  --vault-row-glyph: 1.125rem;
-  --vault-row-gap: 1rem;
-  --vault-row-pad: 0.75rem;
-  --vault-row-label-gap: 0.125rem;
   --vault-row-name-text: var(--numen-text-2);
   --vault-row-line-text: var(--numen-text-1);
+  --vault-row-icon: calc(
+    (var(--vault-row-name-text) + 2 * var(--vault-row-line-text)) * var(--numen-line-height)
+  );
+  --vault-row-glyph: var(--numen-text-3);
+  --vault-row-gap: calc(2 * var(--numen-inset));
+  --vault-row-pad: var(--numen-inset-wide);
+  --vault-row-label-gap: calc(var(--numen-inset) / 4);
+  --vault-row-piece-gap: calc(var(--numen-inset) / 2);
   --vault-row-radius: var(--numen-radius);
 }
 
 .sync-indicator__popover .sync-indicator__empty {
   margin: 0;
-  padding-block: 0.75rem;
+  padding-block: var(--numen-inset-wide);
   color: var(--numen-hushed);
 }
