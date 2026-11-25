@@ -2,7 +2,6 @@ package vaultbridge
 
 import (
 	"context"
-	"errors"
 
 	"connectrpc.com/connect"
 
@@ -59,7 +58,7 @@ func (p *Provider) ConnectRemoteVault(ctx context.Context, remoteID string, vaul
 	})
 }
 
-func call(ctx context.Context, p *Provider, why string, run func(numenv1connect.VaultProviderServiceClient) error) (err error) {
+func call(ctx context.Context, p *Provider, why string, run func(numenv1connect.VaultProviderServiceClient) error) error {
 	found, err := p.plugins.ResolveCapability(bridge.CapabilityVaultProvider)
 	if err != nil {
 		return err
@@ -68,6 +67,6 @@ func call(ctx context.Context, p *Provider, why string, run func(numenv1connect.
 	if err != nil {
 		return err
 	}
-	defer func() { err = errors.Join(err, lease.Close()) }()
+	defer lease.Release()
 	return run(client)
 }

@@ -2,7 +2,6 @@ package filebridge
 
 import (
 	"context"
-	"errors"
 
 	"connectrpc.com/connect"
 
@@ -48,7 +47,7 @@ func (p *Provider) DropDownload(ctx context.Context, v domain.Vault, path string
 	})
 }
 
-func call(ctx context.Context, p *Provider, why string, run func(numenv1connect.FileProviderServiceClient) error) (err error) {
+func call(ctx context.Context, p *Provider, why string, run func(numenv1connect.FileProviderServiceClient) error) error {
 	found, err := p.plugins.ResolveCapability(bridge.CapabilityFilesProvider)
 	if err != nil {
 		return err
@@ -57,6 +56,6 @@ func call(ctx context.Context, p *Provider, why string, run func(numenv1connect.
 	if err != nil {
 		return err
 	}
-	defer func() { err = errors.Join(err, lease.Close()) }()
+	defer lease.Release()
 	return run(client)
 }
