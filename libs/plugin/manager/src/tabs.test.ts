@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   getFirstPluginTab,
+  isContributedTab,
   getPanelElementId,
   getPluginTabs,
   getTabElementId,
@@ -96,5 +97,18 @@ describe('the tabs a plugin contributes', () => {
   it('get element ids from their own id', () => {
     expect(getTabElementId('plugin-a', 'sync')).toBe('plugin-a-tab-sync')
     expect(getPanelElementId('plugin-a', 'sync')).toBe('plugin-a-panel-sync')
+  })
+})
+
+describe('isContributedTab', () => {
+  const contributed = [{ id: 'chart', title: 'Chart' }] as never
+
+  it('is true for the id of a tab the plugin contributes', () => {
+    expect(isContributedTab(contributed, 'chart')).toBe(true)
+  })
+
+  it('is false for a built-in tab and where nothing is contributed', () => {
+    expect(isContributedTab(contributed, 'about')).toBe(false)
+    expect(isContributedTab([], 'chart')).toBe(false)
   })
 })

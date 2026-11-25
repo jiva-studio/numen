@@ -58,6 +58,10 @@ export const getPluginTabs = (facts: PluginTabsFacts): readonly PluginTab[] => {
   return [...own.slice(0, at), ...contributed, ...own.slice(at)]
 }
 
+/** Whether the tab with this id is one the plugin contributes. */
+export const isContributedTab = (contributed: readonly ContributedTab[], id: string): boolean =>
+  contributed.some((one) => one.id === id)
+
 /** The tab a plugin page opens on: Settings where it has settings, else About. */
 export const getFirstPluginTab = (hasSettings: boolean): PluginTabId =>
   hasSettings ? 'settings' : 'about'

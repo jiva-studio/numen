@@ -6,6 +6,7 @@
 import { computed, ref } from 'vue'
 import { Button, Dialog } from '@numen/ui'
 import type { RemoteVault, Vault } from '../api/vaults'
+import { getChoice } from '../lib/choice'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -24,8 +25,24 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const remoteId = ref(props.cloudVaults[0]?.remoteId ?? '')
-const vaultId = ref(props.freeVaults[0]?.id ?? '')
+const pickedRemote = ref('')
+const pickedVault = ref('')
+const remoteId = computed({
+  get: () =>
+    getChoice(
+      pickedRemote.value,
+      props.cloudVaults.map((one) => one.remoteId),
+    ),
+  set: (next: string) => (pickedRemote.value = next),
+})
+const vaultId = computed({
+  get: () =>
+    getChoice(
+      pickedVault.value,
+      props.freeVaults.map((one) => one.id),
+    ),
+  set: (next: string) => (pickedVault.value = next),
+})
 const isAsking = computed(() => props.question !== '')
 const canChoose = computed(() => remoteId.value !== '' && vaultId.value !== '')
 

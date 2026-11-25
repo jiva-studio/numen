@@ -19,7 +19,13 @@ import { isInstalled } from './plugins'
 import SettingsPage from './SettingsPage.vue'
 import { getReadmeText } from './readme'
 import { getPluginState, getStartItem, getWorstItem, hasConnectionSettings } from './state'
-import { getFirstPluginTab, getPanelElementId, getPluginTabs, getTabElementId } from './tabs'
+import {
+  getFirstPluginTab,
+  getPanelElementId,
+  getPluginTabs,
+  getTabElementId,
+  isContributedTab,
+} from './tabs'
 import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -70,9 +76,7 @@ const tabs = computed(() =>
   }),
 )
 const activeTab = ref(getFirstPluginTab(hasSettingsTab.value))
-const isContributed = computed(() =>
-  (props.contributedTabs ?? []).some((one) => one.id === activeTab.value),
-)
+const isContributed = computed(() => isContributedTab(props.contributedTabs ?? [], activeTab.value))
 const idBase = computed(() => `plugin-${props.plugin.id.replaceAll('.', '-')}`)
 
 /* --------------------------------- Hooks ---------------------------------- */
