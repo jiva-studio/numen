@@ -9,82 +9,72 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { Result } from '@numen/result'
 import type { LinkInfo, LinkMode, LinkRole } from '@/entities/identity'
-import { isEnded } from '../lib/phases'
+import { createLinkWatch } from './createLinkWatch'
 import type { LinkCalls } from '../lib/types'
 
-const POLL_MS = 500
 const STALL_MS = 15_000
 
-export function useLinkSession(
-  getCalls: () => LinkCalls,
-  role: LinkRole,
-  stallMs = STALL_MS,
-) {
-  const stallPolls = Math.ceil(stallMs / POLL_MS)
+export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole, stallMs = STALL_MS) {
   const link = ref<LinkInfo | undefined>(undefined)
   const problem = ref('')
   const isBusy = ref(false)
   const isStalled = ref(false)
-  let timer: ReturnType<typeof setInterval> | undefined
-  let waits = 0
   let lastMode: LinkMode = 'show'
   let lastText = ''
+  let isDisposed = false
+  let generation = 0
 
-  const stopPoll = (): void => {
-    if (timer !== undefined) clearInterval(timer)
-    timer = undefined
-  }
+  const { poll, cancel } = createLinkWatch(getCalls, link, isStalled, stallMs)
 
-  const cancel = async (): Promise<void> => {
-    stopPoll()
-    if (link.value !== undefined && !isEnded(link.value)) await getCalls().cancel()
-  }
-
-  const markStalled = (): void => {
-    isStalled.value = true
-    runInBackground(cancel(), () => undefined)
-  }
-
-  const poll = async (): Promise<void> => {
-    const answer = await getCalls().get()
-    if (!answer.ok) return
-    link.value = answer.value
-    waits = answer.value.phase === 'waitingForChannel' ? waits + 1 : 0
-    if (waits >= stallPolls) markStalled()
-    if (isEnded(answer.value)) stopPoll()
+  const requestStart = async (mode: LinkMode, scannedText: string): Promise<boolean> => {
+    isBusy.value = true
+    const started = generation
+    try {
+      const answer = await getCalls().start(role, mode, scannedText)
+      if (isDisposed && answer.ok) await getCalls().cancel()
+      if (isDisposed || started !== generation) return false
+      if (!answer.ok) {
+        problem.value = answer.error
+        return false
+      }
+      link.value = answer.value
+      return true
+    } finally {
+      if (started === generation) isBusy.value = false
+    }
   }
 
   const start = async (mode: LinkMode, scannedText = ''): Promise<void> => {
     lastMode = mode
     lastText = scannedText
+    generation += 1
+    const started = generation
+    poll.reset()
     await cancel()
+    if (isDisposed || started !== generation) return
     link.value = undefined
     isStalled.value = false
-    waits = 0
-    isBusy.value = true
     problem.value = ''
-    const answer = await getCalls().start(role, mode, scannedText)
-    isBusy.value = false
-    if (!answer.ok) {
-      problem.value = answer.error
-      return
-    }
-    link.value = answer.value
-    timer = setInterval(() => runInBackground(poll(), () => undefined), POLL_MS)
+    if (await requestStart(mode, scannedText)) poll.arm()
   }
 
   const ask = async (call: () => Promise<Result<unknown, string>>): Promise<void> => {
     isBusy.value = true
-    const answer = await call()
-    isBusy.value = false
-    problem.value = answer.ok ? '' : answer.error
-    await poll()
+    try {
+      const answer = await call()
+      problem.value = answer.ok ? '' : answer.error
+    } finally {
+      isBusy.value = false
+    }
+    await poll.readOnce()
   }
 
   onMounted(() => {
     if (role === 'host') runInBackground(start('show'), () => undefined)
   })
   onBeforeUnmount(() => {
+    isDisposed = true
+    poll.dispose()
     runInBackground(cancel(), () => undefined)
   })
 

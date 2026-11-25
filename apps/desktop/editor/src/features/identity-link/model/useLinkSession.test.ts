@@ -120,4 +120,79 @@ describe('useLinkSession', () => {
     expect(decideLink).toHaveBeenCalledWith(true)
     expect(getLink).toHaveBeenCalled()
   })
+  it('leaves no timer and cancels the link when the dialog closes while the link starts', async () => {
+    let finish: (value: ReturnType<typeof createLinkInfo>) => void = () => undefined
+    const cancelLink = vi.fn(() => ok(undefined))
+    const getLink = vi.fn(() => ok(createLinkInfo()))
+    const { session, wrapper } = mountSession({
+      startLink: () =>
+        new Promise((resolve) => (finish = (value) => resolve({ ok: true as const, value }))),
+      getLink,
+      cancelLink,
+    })
+    const starting = session.start('show')
+    await vi.advanceTimersByTimeAsync(0)
+    wrapper.unmount()
+    finish(createLinkInfo())
+    await starting
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(getLink).not.toHaveBeenCalled()
+    expect(cancelLink).toHaveBeenCalled()
+  })
+
+  it('does not stay busy when a call throws', async () => {
+    const { session } = mountSession({
+      startLink: () => Promise.reject(new Error('down')),
+    })
+    await session.start('show').catch(() => undefined)
+    expect(session.isBusy.value).toBe(false)
+  })
+
+  it('does not stay busy when an answer throws', async () => {
+    const { session, answers } = mountSession({
+      startLink: () => ok(createLinkInfo()),
+      getLink: () => ok(createLinkInfo()),
+      decideLink: () => Promise.reject(new Error('down')),
+    })
+    await session.start('show')
+    await answers.decide(true).catch(() => undefined)
+    expect(session.isBusy.value).toBe(false)
+  })
+
+  it('keeps one timer when it starts twice', async () => {
+    const getLink = vi.fn(() => ok(createLinkInfo()))
+    const { session } = mountSession({ startLink: () => ok(createLinkInfo()), getLink })
+    await Promise.all([session.start('show'), session.start('show')])
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(getLink).toHaveBeenCalledTimes(2)
+  })
+
+  it('drops an answer to an older read when a newer one came', async () => {
+    const resolvers: Array<(info: ReturnType<typeof createLinkInfo>) => void> = []
+    const getLink = vi.fn(
+      () =>
+        new Promise<{ ok: true; value: ReturnType<typeof createLinkInfo> }>((resolve) =>
+          resolvers.push((value) => resolve({ ok: true as const, value })),
+        ),
+    )
+    const { session } = mountSession({ startLink: () => ok(createLinkInfo()), getLink })
+    await session.start('show')
+    await vi.advanceTimersByTimeAsync(1000)
+    resolvers[1]?.(createLinkInfo({ phase: 'confirmPeer' }))
+    await vi.advanceTimersByTimeAsync(0)
+    resolvers[0]?.(createLinkInfo({ phase: 'waitingForChannel' }))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(session.link.value?.phase).toBe('confirmPeer')
+  })
+
+  it('reports the link as stalled and stops reading after the reads keep failing', async () => {
+    const getLink = vi.fn(() => Promise.reject<never>(new Error('down')))
+    const { session } = mountSession({ startLink: () => ok(createLinkInfo()), getLink })
+    await session.start('show')
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(session.isStalled.value).toBe(true)
+    const reads = getLink.mock.calls.length
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(getLink.mock.calls.length).toBe(reads)
+  })
 })
