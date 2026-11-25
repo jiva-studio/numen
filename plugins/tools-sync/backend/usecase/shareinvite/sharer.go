@@ -64,7 +64,6 @@ func receiveAtSharer(ctx context.Context, deps Deps, o *offer, body []byte) {
 	}
 	plain, err := channel.Open(body)
 	if err != nil {
-		refuseOther(ctx, deps, o)
 		return
 	}
 	read(ctx, deps, o, plain)
@@ -81,13 +80,6 @@ func bind(ctx context.Context, deps Deps, o *offer, first []byte) {
 	deps.Hub.mu.Lock()
 	o.channel = channel
 	deps.Hub.mu.Unlock()
-}
-
-func refuseOther(ctx context.Context, deps Deps, o *offer) {
-	_, err := deps.Relay.SendMessage(ctx, o.id, ports.LinkSideScanner, []byte(usedMarker))
-	if err != nil && !errors.Is(err, syncprotocol.ErrChannelGone) {
-		return
-	}
 }
 
 func read(ctx context.Context, deps Deps, o *offer, plain []byte) {

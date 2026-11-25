@@ -1,13 +1,17 @@
 package shareinvite_test
 
 import (
+	"context"
 	"errors"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	domainshare "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/shareinvite"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
@@ -312,4 +316,28 @@ func TestApprove_ShareTheWholeVaultWhenTheFolderIsEmpty(t *testing.T) {
 	if text, ok := reader.ReadNote(received[0].VaultID, "Food/Soup.md"); !ok || text != "carrots" {
 		t.Errorf("note = %q (%v), want carrots", text, ok)
 	}
+}
+
+type markedRelay struct {
+	ports.Relay
+
+	isMarked atomic.Bool
+}
+
+func (m *markedRelay) WaitMessages(ctx context.Context, channelID []byte, reader syncclient.LinkSide, afterSeq uint32, wait time.Duration) (syncclient.LinkMessages, error) {
+	if reader == ports.LinkSideScanner && m.isMarked.CompareAndSwap(false, true) {
+		return syncclient.LinkMessages{Messages: []syncclient.LinkMessage{{Seq: 0, Body: []byte("numen-share-used")}}, IsClosed: false}, nil
+	}
+	return m.Relay.WaitMessages(ctx, channelID, reader, afterSeq, wait)
+}
+
+func TestJoin_IgnoresAnUnauthenticatedUsedMarkerBeforeTheHandshake(t *testing.T) {
+	w := newWorld(t)
+	_, readerDeps := w.newReader(t, "Reader")
+	readerDeps.Relay = &markedRelay{Relay: readerDeps.Relay}
+	link := w.start(t).Link
+
+	id := join(t, readerDeps, link, "Anna laptop")
+
+	waitPhase(t, readerDeps, id, shareinvite.PhaseWaiting)
 }

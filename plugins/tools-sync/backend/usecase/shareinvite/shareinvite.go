@@ -21,7 +21,6 @@ const (
 	retryAfter  = time.Second
 	taskBuffer  = 16
 	idSize      = 16
-	usedMarker  = "numen-share-used"
 )
 
 // Deps are what the use cases of sharing by link need.

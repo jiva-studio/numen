@@ -256,10 +256,6 @@ func receiveAtJoin(ctx context.Context, deps Deps, mine *join, body []byte) {
 }
 
 func bindJoin(ctx context.Context, deps Deps, mine *join, body []byte) {
-	if string(body) == usedMarker {
-		finishJoin(deps.Hub, mine, PhaseUsed, domainshare.ErrLinkUsed)
-		return
-	}
 	channel, err := mine.scanner.Accept(body)
 	if err != nil {
 		return
