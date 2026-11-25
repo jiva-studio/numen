@@ -69,9 +69,10 @@ function onPress(item: CardActionItem, event: Event): void {
   choice.value = { item, at: { x: box.left, y: box.bottom }, wide: box.width, from }
 }
 
-function onChooseChoice(id: string): void {
+async function onChooseChoice(id: string): Promise<void> {
   choice.value = null
-  void nextTick(() => emit('choose', id))
+  await nextTick()
+  emit('choose', id)
 }
 
 function onClose(): void {
