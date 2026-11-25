@@ -16,14 +16,17 @@ import (
 // Downloads fills the absent files of the vault and takes their bytes off the device again, by the file
 // provider.
 type Downloads struct {
-	vault Vault
-	fetch *file.FetchFile
-	drop  *file.DropDownload
+	vault    Vault
+	fetch    *file.FetchFile
+	drop     *file.DropDownload
+	progress *file.GetDownloadProgress
 }
 
 // NewDownloads is the part of FileService that fills and drops the files the provider keeps.
-func NewDownloads(window Vault, fetch *file.FetchFile, drop *file.DropDownload) *Downloads {
-	return &Downloads{vault: window, fetch: fetch, drop: drop}
+func NewDownloads(
+	window Vault, fetch *file.FetchFile, drop *file.DropDownload, progress *file.GetDownloadProgress,
+) *Downloads {
+	return &Downloads{vault: window, fetch: fetch, drop: drop, progress: progress}
 }
 
 // FetchFile fills the absent file at the path.
@@ -52,6 +55,27 @@ func (h *Downloads) DropDownload(
 		return nil, newDownloadError(err)
 	}
 	return connect.NewResponse(&v1.DropDownloadResponse{}), nil
+}
+
+// GetDownloadProgress says how far the download of the file at the path has come. It is not known when no
+// plugin provides files or the provider runs no download of the file.
+func (h *Downloads) GetDownloadProgress(
+	ctx context.Context, r *connect.Request[v1.GetDownloadProgressRequest],
+) (*connect.Response[v1.GetDownloadProgressResponse], error) {
+	showing, err := getShownVault(h.vault)
+	if err != nil {
+		return nil, err
+	}
+	progress, err := h.progress.Execute(ctx, showing, r.Msg.GetPath())
+	if _, isUnavailable := errors.AsType[*plugindomain.UnavailableError](err); isUnavailable {
+		return connect.NewResponse(&v1.GetDownloadProgressResponse{}), nil
+	}
+	if err != nil {
+		return nil, newDownloadError(err)
+	}
+	return connect.NewResponse(&v1.GetDownloadProgressResponse{
+		IsKnown: progress.IsKnown, BytesDone: progress.BytesDone, BytesTotal: progress.BytesTotal,
+	}), nil
 }
 
 const interruptedText = "The download was interrupted. Try again."

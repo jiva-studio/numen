@@ -12,6 +12,16 @@ type FileProvider interface {
 	FetchFile(ctx context.Context, v domain.Vault, path string) error
 	// DropDownload takes the bytes of the file at path off the device and lists the file as absent again.
 	DropDownload(ctx context.Context, v domain.Vault, path string) error
+	// GetFetchProgress says how far the download of the file at path has come.
+	GetFetchProgress(ctx context.Context, v domain.Vault, path string) (DownloadProgress, error)
+}
+
+// DownloadProgress is how far a download has come. Without a running download it is not known and the
+// sizes are zero.
+type DownloadProgress struct {
+	IsKnown    bool
+	BytesDone  int64
+	BytesTotal int64
 }
 
 // FetchFile brings the bytes of an absent file onto the device by the file provider.
@@ -34,4 +44,16 @@ func NewDropDownload(provider FileProvider) *DropDownload {
 // Execute lists the file at path as absent again, or returns the failure of the provider.
 func (u *DropDownload) Execute(ctx context.Context, v domain.Vault, path string) error {
 	return u.provider.DropDownload(ctx, v, path)
+}
+
+// GetDownloadProgress reads how far the download of a file has come from the file provider.
+type GetDownloadProgress struct{ provider FileProvider }
+
+func NewGetDownloadProgress(provider FileProvider) *GetDownloadProgress {
+	return &GetDownloadProgress{provider: provider}
+}
+
+// Execute returns the progress of the download of the file at path, or the failure of the provider.
+func (u *GetDownloadProgress) Execute(ctx context.Context, v domain.Vault, path string) (DownloadProgress, error) {
+	return u.provider.GetFetchProgress(ctx, v, path)
 }

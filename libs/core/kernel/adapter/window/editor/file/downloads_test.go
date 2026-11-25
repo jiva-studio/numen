@@ -18,8 +18,14 @@ import (
 // provider is the file provider plugin, at the edge of the core: it records what it is asked and answers
 // with a failure set by the test.
 type provider struct {
-	calls []string
-	err   error
+	calls    []string
+	err      error
+	progress file.DownloadProgress
+}
+
+func (p *provider) GetFetchProgress(_ context.Context, v domain.Vault, path string) (file.DownloadProgress, error) {
+	p.calls = append(p.calls, "progress "+string(v.ID)+" "+path)
+	return p.progress, p.err
 }
 
 func (p *provider) FetchFile(_ context.Context, v domain.Vault, path string) error {
@@ -33,7 +39,7 @@ func (p *provider) DropDownload(_ context.Context, v domain.Vault, path string) 
 }
 
 func newDownloadsHandler(shown window, p *provider) *filewindow.Handler {
-	return filewindow.NewHandler(nil, nil, filewindow.NewDownloads(shown, file.NewFetchFile(p), file.NewDropDownload(p)))
+	return filewindow.NewHandler(nil, nil, filewindow.NewDownloads(shown, file.NewFetchFile(p), file.NewDropDownload(p), file.NewGetDownloadProgress(p)))
 }
 
 func TestFetchingAFileAsksTheProviderForTheFileOfTheShownVault(t *testing.T) {
@@ -113,5 +119,58 @@ func TestFetchFile_ProviderConnectionBreaksOrTimesOut_AnswersWithTheSentenceOfTh
 		if !errors.As(err, &failure) || failure.Code() != connect.CodeUnavailable || failure.Message() != "The download was interrupted. Try again." {
 			t.Errorf("%s: the call failed with %v", name, err)
 		}
+	}
+}
+
+func TestGetDownloadProgress_RunningDownload_AnswersWithTheBytesOfTheProviderForTheShownVault(t *testing.T) {
+	p := &provider{progress: file.DownloadProgress{IsKnown: true, BytesDone: 5, BytesTotal: 9}}
+	handler := newDownloadsHandler(window{vault: domain.Vault{ID: "v-1"}}, p)
+
+	answer, err := handler.GetDownloadProgress(t.Context(), connect.NewRequest(&v1.GetDownloadProgressRequest{Path: "Books/Guide.pdf"}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !answer.Msg.GetIsKnown() || answer.Msg.GetBytesDone() != 5 || answer.Msg.GetBytesTotal() != 9 {
+		t.Errorf("the answer is %v", answer.Msg)
+	}
+	if len(p.calls) != 1 || p.calls[0] != "progress v-1 Books/Guide.pdf" {
+		t.Errorf("the provider was asked %q", p.calls)
+	}
+}
+
+func TestGetDownloadProgress_NoProviderPlugin_AnswersNotKnown(t *testing.T) {
+	missing := &plugindomain.UnavailableError{Capability: "files.provider", Reason: plugindomain.NotInstalled}
+	handler := newDownloadsHandler(window{vault: domain.Vault{ID: "v-1"}}, &provider{err: missing})
+
+	answer, err := handler.GetDownloadProgress(t.Context(), connect.NewRequest(&v1.GetDownloadProgressRequest{Path: "a.pdf"}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetIsKnown() {
+		t.Errorf("the answer is %v", answer.Msg)
+	}
+}
+
+func TestGetDownloadProgress_ProviderFails_ReturnsTheFailure(t *testing.T) {
+	refusal := connect.NewError(connect.CodeFailedPrecondition, errors.New("refused"))
+	handler := newDownloadsHandler(window{vault: domain.Vault{ID: "v-1"}}, &provider{err: refusal})
+
+	_, err := handler.GetDownloadProgress(t.Context(), connect.NewRequest(&v1.GetDownloadProgressRequest{Path: "a.pdf"}))
+
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Errorf("the call failed with %v", err)
+	}
+}
+
+func TestGetDownloadProgress_WindowWithoutAVault_Fails(t *testing.T) {
+	p := &provider{}
+	handler := newDownloadsHandler(window{}, p)
+
+	_, err := handler.GetDownloadProgress(t.Context(), connect.NewRequest(&v1.GetDownloadProgressRequest{Path: "a.pdf"}))
+
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition || len(p.calls) != 0 {
+		t.Errorf("the call failed with %v and asked the provider %q", err, p.calls)
 	}
 }

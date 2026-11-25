@@ -29,6 +29,11 @@ func (r *recorder) DropDownload(_ context.Context, vaultID, path string) error {
 	return r.err
 }
 
+func (r *recorder) GetFetchProgress(_ context.Context, path string) (Progress, error) {
+	r.calls = append(r.calls, "progress "+path)
+	return Progress{IsKnown: true, BytesDone: 4, BytesTotal: 7}, r.err
+}
+
 func serve(t *testing.T, h Handler) numenv1connect.FileProviderServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -62,5 +67,22 @@ func TestAFailureOfThePluginReachesTheClientWithItsCodeAndMessage(t *testing.T) 
 	var failure *connect.Error
 	if !errors.As(err, &failure) || failure.Code() != connect.CodeFailedPrecondition || failure.Message() != "The file has changes that are not sent" {
 		t.Errorf("the call failed with %v", err)
+	}
+}
+
+func TestTheHandlerAnswersTheProgressOfThePluginForThePath(t *testing.T) {
+	plugin := &recorder{}
+	client := serve(t, plugin)
+
+	answer, err := client.GetFetchProgress(t.Context(), connect.NewRequest(&v1.GetFetchProgressRequest{Path: "a.pdf"}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !answer.Msg.GetIsKnown() || answer.Msg.GetBytesDone() != 4 || answer.Msg.GetBytesTotal() != 7 {
+		t.Errorf("the answer is %v", answer.Msg)
+	}
+	if len(plugin.calls) != 1 || plugin.calls[0] != "progress a.pdf" {
+		t.Errorf("the plugin was called with %q", plugin.calls)
 	}
 }

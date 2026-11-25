@@ -137,7 +137,7 @@ func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tab
 	moveFile := note.NewMoveFile(placing.Move, db.Sources(), w.page.Writes.AdmitWrite, w.page.Writes).WithAbsent(vaultDeps.AbsentFiles)
 	removeFile := note.NewRemoveFile(&placing.Remove, w.page.Writes)
 	changes := filewindow.NewChanges(&w.session.Runtime, w.session.Notices, &moveFile, &removeFile, &placing.EmptyTrash)
-	downloads := filewindow.NewDownloads(&w.session.Runtime, file.NewFetchFile(files), file.NewDropDownload(files))
+	downloads := filewindow.NewDownloads(&w.session.Runtime, file.NewFetchFile(files), file.NewDropDownload(files), file.NewGetDownloadProgress(files))
 	handler := filewindow.NewHandler(folders, changes, downloads)
 	path, served := filewindow.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served))

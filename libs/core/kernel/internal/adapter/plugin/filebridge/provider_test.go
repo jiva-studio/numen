@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 // storage is a plugin serving FileProviderService: it records the calls and answers them with err.
@@ -46,6 +47,13 @@ func (s *storage) DropDownload(
 ) (*connect.Response[v1.FileProviderServiceDropDownloadResponse], error) {
 	s.record("drop " + r.Msg.GetVaultId() + " " + r.Msg.GetPath())
 	return connect.NewResponse(&v1.FileProviderServiceDropDownloadResponse{}), s.err
+}
+
+func (s *storage) GetFetchProgress(
+	_ context.Context, r *connect.Request[v1.GetFetchProgressRequest],
+) (*connect.Response[v1.GetFetchProgressResponse], error) {
+	s.record("progress " + r.Msg.GetPath())
+	return connect.NewResponse(&v1.GetFetchProgressResponse{IsKnown: true, BytesDone: 3 << 20, BytesTotal: 10 << 20}), s.err
 }
 
 func (s *storage) record(call string) {
@@ -143,5 +151,24 @@ func TestAFileCannotBeFetchedWhenNoPluginProvidesFiles(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("the fetch went through with no plugin to provide files")
+	}
+}
+
+func TestGetFetchProgress_PluginAnswers_ReturnsTheBytesOfThePlugin(t *testing.T) {
+	plugin := &storage{}
+	host := startHost(t, providerManifest, func(mux *http.ServeMux) {
+		mux.Handle(numenv1connect.NewFileProviderServiceHandler(plugin))
+	})
+
+	got, err := newProvider(host).GetFetchProgress(t.Context(), domain.Vault{ID: "v-1"}, "Books/Guide.pdf")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (file.DownloadProgress{IsKnown: true, BytesDone: 3 << 20, BytesTotal: 10 << 20}); got != want {
+		t.Errorf("the progress is %+v, want %+v", got, want)
+	}
+	if calls := plugin.getCalls(); len(calls) != 1 || calls[0] != "progress Books/Guide.pdf" {
+		t.Errorf("the plugin was called with %q", calls)
 	}
 }

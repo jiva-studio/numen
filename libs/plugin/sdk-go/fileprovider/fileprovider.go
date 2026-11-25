@@ -24,6 +24,17 @@ type Handler interface {
 	// DropDownload removes the download of the file at path of the vault. A file with changes the plugin
 	// has not kept is a failed precondition, and its bytes stay.
 	DropDownload(ctx context.Context, vaultID, path string) error
+	// GetFetchProgress says how far the download at path has come. It is not known when no download of
+	// that path runs.
+	GetFetchProgress(ctx context.Context, path string) (Progress, error)
+}
+
+// Progress is how far a download has come. Without a running download IsKnown is false and the sizes are
+// zero.
+type Progress struct {
+	IsKnown    bool
+	BytesDone  int64
+	BytesTotal int64
 }
 
 type adapter struct {
@@ -47,6 +58,18 @@ func (a *adapter) DropDownload(
 		return nil, err
 	}
 	return connect.NewResponse(&v1.FileProviderServiceDropDownloadResponse{}), nil
+}
+
+func (a *adapter) GetFetchProgress(
+	ctx context.Context, req *connect.Request[v1.GetFetchProgressRequest],
+) (*connect.Response[v1.GetFetchProgressResponse], error) {
+	progress, err := a.h.GetFetchProgress(ctx, req.Msg.GetPath())
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&v1.GetFetchProgressResponse{
+		IsKnown: progress.IsKnown, BytesDone: progress.BytesDone, BytesTotal: progress.BytesTotal,
+	}), nil
 }
 
 // NewHandler returns the path and the handler of the file provider service over h.
