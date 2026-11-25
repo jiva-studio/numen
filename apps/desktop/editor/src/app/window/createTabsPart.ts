@@ -17,6 +17,7 @@ import { focusWindow, isSecondaryWindow } from '@/entities/window'
 import { createTabLinking, createWindowTabLinkSession } from '@/features/tab-linking'
 import { createMoveAcceptor, createMovedTabStarter } from '@/features/tab-move'
 import { formatError } from '@/shared/api/errors'
+import { WORDS } from '@/shared/ui/words'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowApi } from './createWindowApi'
 
@@ -60,6 +61,10 @@ export function createTabsPart(deps: TabsPartDeps) {
   })
   const tabOpeners = createFileOpeners({
     readFileKinds: api.vault.file.getFileKinds,
+    isFileAbsent: api.vault.file.isFileAbsent,
+    fetchFile: api.vault.downloads.fetch,
+    onDownloadChange: (isRunning) => writeMessage(isRunning ? WORDS.downloading : ''),
+    onDownloadFailure: (error) => writeMessage(formatError(error), 'error'),
     reconcileTab: windowTabs.panes.reconcileTab,
     startTabKind: pluginStarts.startTabKind,
     startExtensionReader: pluginStarts.startExtensionReader,

@@ -38,6 +38,14 @@ export interface FileOpenerDeps {
   reconcileTab?(path: string, newKind: string): void
   startTabKind?(kind: string): Promise<void>
   startExtensionReader?(extension: string): Promise<void>
+  /** Whether the bytes of the file are not on this device. */
+  isFileAbsent?(path: string): Promise<boolean>
+  /** Brings the bytes of an absent file onto this device; rejects with the reason to show. */
+  fetchFile?(path: string): Promise<void>
+  /** Tells that a download starts or ends. */
+  onDownloadChange?(isRunning: boolean): void
+  /** Tells that a download failed. */
+  onDownloadFailure?(error: unknown): void
 }
 
 /** A reader registered for an extension, with the icon its files carry. */
@@ -59,6 +67,21 @@ const fetchFileKind = async (vault: FileOpenerDeps, path: string): Promise<FileK
 }
 
 export function createFileOpeners(vault: FileOpenerDeps) {
+  /** Brings an absent file onto this device; false where it could not, after the failure is reported. */
+  const downloadFile = async (path: string): Promise<boolean> => {
+    if (!vault.fetchFile || !(await vault.isFileAbsent?.(path))) return true
+    vault.onDownloadChange?.(true)
+    try {
+      await vault.fetchFile(path)
+      vault.onDownloadChange?.(false)
+      return true
+    } catch (error) {
+      vault.onDownloadChange?.(false)
+      vault.onDownloadFailure?.(error)
+      return false
+    }
+  }
+
   /** How each tab kind opens a file, by the kind. */
   const editors = new Map<string, FileOpener>()
 
@@ -138,6 +161,7 @@ export function createFileOpeners(vault: FileOpenerDeps) {
     options?: FilePlacement | OpenPlacement,
   ): Promise<void> => {
     const placement = typeof options === 'string' ? { where: options } : options
+    if (!(await downloadFile(path))) return
     const kind = await fetchFileKind(vault, path)
     if (kind && (await openNote(path, kind, title, placement))) return
     await readFile(path, placement?.selector ?? null)
@@ -145,6 +169,7 @@ export function createFileOpeners(vault: FileOpenerDeps) {
 
   /** Opens a file at ranges of its text: a note in its editor, whole, any other file in its reader. */
   const openFileAt = async (path: string, spans: readonly TextRange[]): Promise<void> => {
+    if (!(await downloadFile(path))) return
     const kind = await fetchFileKind(vault, path)
     if (kind && (await openNote(path, kind, ''))) return
     await readFile(path, null, spans)

@@ -373,3 +373,73 @@ describe('an editor registered twice', () => {
     expect(activeEditors).toStrictEqual(['second'])
   })
 })
+
+describe('a file that is not on this device', () => {
+  const absentVault = (fetchFile: (path: string) => Promise<void>) => {
+    const events: string[] = []
+    const core: FileOpenerDeps = {
+      ...vault({ 'Lecture.mp4': OTHER }).core,
+      isFileAbsent: async (path) => path === 'Lecture.mp4',
+      fetchFile: async (path) => {
+        events.push(`fetch ${path}`)
+        await fetchFile(path)
+      },
+      onDownloadChange: (isRunning) => events.push(isRunning ? 'downloading' : 'downloaded'),
+      onDownloadFailure: (error) => events.push(`failed ${String(error)}`),
+    }
+    return { core, events }
+  }
+
+  it('is downloaded before its reader opens it, and the download is shown while it runs', async () => {
+    const { core, events } = absentVault(async () => undefined)
+    const tabOpeners = createFileOpeners(core)
+    tabOpeners.registerExtensionReader('mp4', (path) => events.push(`reader ${path}`))
+
+    await tabOpeners.openFile('Lecture.mp4')
+
+    expect(events).toStrictEqual([
+      'downloading',
+      'fetch Lecture.mp4',
+      'downloaded',
+      'reader Lecture.mp4',
+    ])
+  })
+
+  it('is not opened when the download fails, and the failure is reported after the download ends', async () => {
+    const { core, events } = absentVault(async () => {
+      throw new Error('offline')
+    })
+    const tabOpeners = createFileOpeners(core)
+    tabOpeners.registerExtensionReader('mp4', (path) => events.push(`reader ${path}`))
+
+    await tabOpeners.openFile('Lecture.mp4')
+
+    expect(events).toStrictEqual([
+      'downloading',
+      'fetch Lecture.mp4',
+      'downloaded',
+      'failed Error: offline',
+    ])
+  })
+
+  it('is downloaded before it is opened at a place in its text', async () => {
+    const { core, events } = absentVault(async () => undefined)
+    const tabOpeners = createFileOpeners(core)
+    tabOpeners.registerExtensionReader('mp4', (path) => events.push(`reader ${path}`))
+
+    await tabOpeners.openFileAt('Lecture.mp4', [{ start: 0, end: 1 }])
+
+    expect(events.at(-1)).toBe('reader Lecture.mp4')
+    expect(events).toContain('fetch Lecture.mp4')
+  })
+
+  it('leaves a file that is here alone', async () => {
+    const { core, events } = absentVault(async () => undefined)
+    const here = createFileOpeners({ ...core, isFileAbsent: async () => false })
+    here.registerExtensionReader('mp4', (path) => events.push(`reader ${path}`))
+
+    await here.openFile('Lecture.mp4')
+
+    expect(events).toStrictEqual(['reader Lecture.mp4'])
+  })
+})
