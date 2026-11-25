@@ -90,7 +90,7 @@ func TestListNotices_RaisesTheAddedNoticeOnlyOnTheDeviceThatNeitherAddedNorWasAd
 	c.add(t, c.devices["B"], "C")
 	now := c.at.Add(time.Hour)
 
-	if got := listNotices(c.chain, c.getSign("A"), now); len(got) != 1 || !strings.Contains(got[0].text, "added another device") {
+	if got := listNotices(c.chain, c.getSign("A"), now); len(got) != 1 || !strings.Contains(got[0], "added another device") {
 		t.Errorf("device A: notices = %+v, want the added notice", got)
 	}
 	for _, own := range []string{"B", "C"} {
