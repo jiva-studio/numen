@@ -16,6 +16,10 @@ import (
 // ErrWrongPassphrase is returned when the passphrase does not open the credentials file, or the file was changed.
 var ErrWrongPassphrase = errors.New("the passphrase does not open the credentials file")
 
+// ErrPlaintextCredentials is returned when the person chose a passphrase and the credentials file holds plaintext
+// entries, which anyone who can write the file could have planted.
+var ErrPlaintextCredentials = errors.New("the credentials file is not encrypted although a passphrase is chosen")
+
 var errBadEncryptedFile = errors.New("the credentials file is not a valid encrypted file")
 
 const (
@@ -23,9 +27,9 @@ const (
 	encryptedVersion = 1
 	saltSize         = 16
 	headerSize       = 6 + 1 + 4 + 4 + 1 + saltSize
-	maxKDFMemoryKiB  = 1 << 20
-	maxKDFTime       = 16
-	maxKDFThreads    = 16
+	maxKDFMemoryKiB  = 256 * 1024
+	maxKDFTime       = 10
+	maxKDFThreads    = 4
 	minKDFMemoryKiB  = 8
 )
 

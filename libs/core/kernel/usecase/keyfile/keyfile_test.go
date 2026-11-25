@@ -77,6 +77,7 @@ func TestChooseRefusesWithoutChangingAnything(t *testing.T) {
 		want       error
 	}{
 		"empty passphrase": {domainkeyfile.Passphrase, "", domainkeyfile.ErrEmptyPassphrase},
+		"short passphrase": {domainkeyfile.Passphrase, "nine char", domainkeyfile.ErrShortPassphrase},
 		"unset":            {domainkeyfile.Unset, "", keyfile.ErrInvalidMode},
 		"unknown":          {domainkeyfile.Mode("other"), "", keyfile.ErrInvalidMode},
 	}
@@ -108,7 +109,7 @@ func TestChooseRefusesAWrongPassphrase(t *testing.T) {
 	file := &recordingFile{fail: domainkeyfile.ErrWrongPassphrase}
 	choose := keyfile.NewChoose(file, func(domainkeyfile.Mode) error { t.Fatal("remembered"); return nil })
 
-	err := choose.Execute(t.Context(), domainkeyfile.Passphrase, "wrong")
+	err := choose.Execute(t.Context(), domainkeyfile.Passphrase, "wrong passphrase")
 
 	if !errors.Is(err, domainkeyfile.ErrWrongPassphrase) {
 		t.Fatalf("err %v", err)
