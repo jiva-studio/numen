@@ -15,10 +15,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
@@ -363,5 +366,37 @@ func TestPullChanges_DownloadsANoteAgainAfterAStopBetweenTheBaseAndTheWrite(t *t
 	}
 	if len(result.Conflicts) != 0 {
 		t.Errorf("conflicts = %v, want none", result.Conflicts)
+	}
+}
+
+func TestPullChanges_HoldsThePositionBeforeARevisionOfAnEpochItHasNotFetched(t *testing.T) {
+	p := newPair(t)
+	if _, err := chaincourier.NewAdopt(p.a.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.a.Fake.AdvanceEpoch(); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(p.a.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the chain of the epoch published", published, err)
+	}
+	if rotated, err := rotatevaultkeys.NewRotateVaultKeys(p.a.RotateDeps()).Execute(t.Context()); err != nil || rotated != 1 {
+		t.Fatalf("rotated = %d, error = %v, want the vault rotated", rotated, err)
+	}
+	keys, err := vaultlink.OpenKeys(t.Context(), p.a.Account, p.a.Link(t, source))
+	if err != nil || len(keys) != 2 {
+		t.Fatalf("keys = %d, error = %v, want epochs 0 and 1", len(keys), err)
+	}
+	p.vault.Later = []transfer.EpochKey{{Epoch: keys[1].Epoch, Key: [32]byte(keys[1].Key)}}
+	p.vault.Key = [32]byte(keys[0].Key)
+	p.push(t, "Shopping list.md", "milk", nil)
+
+	result := p.pull(t, trustAll)
+
+	if result.Unverified != 1 || len(result.Applied) != 0 {
+		t.Errorf("result = %+v, want one unverified revision and none applied", result)
+	}
+	if link := p.b.Link(t, target); link.ServerSeq != 0 {
+		t.Errorf("position on the server = %d, want it held at 0 until the key of the epoch arrives", link.ServerSeq)
 	}
 }

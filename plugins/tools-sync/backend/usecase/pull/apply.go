@@ -132,7 +132,7 @@ func (r *run) addConflict(path string, seq uint64) {
 
 func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 	meta, err := r.check(stored)
-	if errors.Is(err, errUnknownShare) {
+	if errors.Is(err, errUnknownShare) || errors.Is(err, errUnknownEpoch) {
 		r.hold(stored.GetSeq())
 	}
 	if err != nil {
@@ -143,6 +143,8 @@ func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 }
 
 var errUnknownShare = errors.New("the revision belongs to a share this device does not know")
+
+var errUnknownEpoch = errors.New("the revision is sealed with a key epoch this device has not fetched")
 
 func (r *run) checkSharedRevision(stored *syncv1.StoredRevision) (note.Meta, error) {
 	rev := stored.GetRevision()
@@ -155,7 +157,7 @@ func (r *run) checkSharedRevision(stored *syncv1.StoredRevision) (note.Meta, err
 	}
 	key, isKnown := root.Keys.Get(rev.GetEpoch())
 	if !isKnown {
-		return note.Meta{}, note.ErrUnverified
+		return note.Meta{}, errUnknownEpoch
 	}
 	meta, err := share.OpenMeta[note.Meta](key, root.ID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
 	if err != nil || len(meta.Key) != 32 {
@@ -178,7 +180,7 @@ func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 	}
 	key, isKnown := r.getKey(rev.GetEpoch())
 	if !isKnown && !rev.GetDeleted() {
-		return note.Meta{}, note.ErrUnverified
+		return note.Meta{}, errUnknownEpoch
 	}
 	return note.OpenRevision(key, stored, r.in.IsAuthor)
 }
