@@ -142,7 +142,7 @@ export const DeletionsPaused: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Paused: 5 of 10 files are removed here')).toBeVisible()
+    await expect(await canvas.findByText('5 of 10 files are removed here')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Remove the files' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Keep the files' })).toBeVisible()
   },

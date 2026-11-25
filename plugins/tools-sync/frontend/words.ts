@@ -1,6 +1,7 @@
 export const WORDS = {
   syncingLabel: 'Syncing…',
   statusSyncing: 'Syncing',
+  statusPaused: 'Paused',
   syncProgress: (synced: string, total: string): string => `${synced} of ${total}`,
   syncingPercent: (percent: number): string => `Syncing ${percent}%`,
   syncProgressName: 'Sync progress',
@@ -107,9 +108,9 @@ export const WORDS = {
   conflicts: (count: number): string =>
     `${count} ${count === 1 ? 'note' : 'notes'} changed on two devices`,
   deletionsPausedSend: (count: number, total: number): string =>
-    `Paused: ${count} of ${total} files are removed here`,
+    `${count} of ${total} files are removed here`,
   deletionsPausedApply: (count: number, total: number): string =>
-    `Paused: ${count} of ${total} files were removed on another device`,
+    `${count} of ${total} files were removed on another device`,
   stopSyncing: 'Stop syncing',
   stopSyncingVault: 'Stop syncing this vault',
   stopSyncingQuestion: (name: string): string => `Stop syncing ${name}?`,

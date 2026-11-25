@@ -92,6 +92,7 @@
   --vault-row-glyph: calc(1.125 * var(--numen-chrome-unit));
   --vault-row-gap: var(--numen-chrome-unit);
   --vault-row-pad: calc(0.75 * var(--numen-chrome-unit));
+  --vault-row-piece-gap: calc(0.5 * var(--numen-chrome-unit));
   --vault-row-label-gap: calc(0.125 * var(--numen-chrome-unit));
   --vault-row-name-text: var(--numen-chrome-text-2);
   --vault-row-line-text: var(--numen-chrome-text-1);
@@ -217,10 +218,16 @@
 }
 
 .vault-row__line {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--vault-row-piece-gap);
   color: var(--numen-hushed);
   font-size: var(--vault-row-line-text);
   line-height: var(--numen-line-height);
-  overflow-wrap: anywhere;
+}
+
+.vault-row__piece {
+  white-space: nowrap;
 }
 
 .vault-row__state {

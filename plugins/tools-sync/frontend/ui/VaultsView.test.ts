@@ -127,15 +127,45 @@ describe('VaultsView', () => {
     expect(rows[1]).toContain('3.5 MB in the cloud')
   })
 
-  it('shows the state word and the size of a vault in one line', async () => {
+  it('puts the state word with its qualifier on one line and the facts on another, one unit per fact', async () => {
     const { wrapper } = await render({
-      vaults: [createVault({ id: 'b', name: 'Synced', state: 'connected', remoteId: 'bb22' })],
+      vaults: [
+        createVault({
+          id: 'b',
+          name: 'Synced',
+          state: 'connected',
+          remoteId: 'bb22',
+          lastSyncedAt: '2026-11-23T11:55:00Z',
+          onDemandFiles: 151,
+          totalBytes: 1_048_576,
+        }),
+      ],
       remote: [{ remoteId: 'bb22', name: 'Synced', isConnected: true, sizeBytes: 1_048_576 }],
     })
 
-    const line = wrapper.get('li').get('[role="status"]').text()
-    expect(line.startsWith('Up to date')).toBe(true)
-    expect(line).toContain('1 MB in the cloud')
+    const label = wrapper.get('li .vault-row__label')
+    expect(label.get('.vault-row__name').text()).toBe('Synced')
+    const getPieces = (selector: string): string[] =>
+      label
+        .findAll(selector)
+        .flatMap((line) => line.findAll('.vault-row__piece'))
+        .map((one) => one.text())
+    expect(getPieces('[role="status"]')).toStrictEqual(['Up to date ·', 'Last sync 5 minutes ago'])
+    expect(getPieces('.vault-row__line--facts')).toStrictEqual([
+      '151 files on demand ·',
+      '1 MB in the cloud',
+    ])
+  })
+
+  it('shows no line of facts for a vault that syncs now', async () => {
+    const { wrapper } = await render({
+      vaults: [
+        createVault({ state: 'connected', syncing: true, syncedBytes: 1, totalBytes: 4_194_304 }),
+      ],
+      remote: [],
+    })
+
+    expect(wrapper.findAll('li .vault-row__line')).toHaveLength(1)
   })
 
   it('shows one placeholder row without text on the first load, then the rows', async () => {
@@ -191,7 +221,7 @@ describe('VaultsView', () => {
       remote: [],
     })
 
-    expect(wrapper.text()).toContain('Paused: 5 of 10 files are removed here')
+    expect(wrapper.text()).toContain('5 of 10 files are removed here')
     await findButton(wrapper, 'Keep the files')?.trigger('click')
 
     expect(client.resolveDeletions).toHaveBeenCalledWith({ vaultId: 'Test', choice: 'keep' })
@@ -244,7 +274,7 @@ describe('VaultsView', () => {
     })
 
     const rows = wrapper.findAll('li')
-    expect(rows[0]?.text()).toContain('Syncing · 1 MB of 4 MB')
+    expect(rows[0]?.text()).toContain('1 MB of 4 MB')
     const ring = rows[0]?.find('[role="progressbar"]')
     expect(ring?.attributes('aria-valuenow')).toBe('25')
     expect(ring?.find('svg.vault-row__ring').exists()).toBe(true)

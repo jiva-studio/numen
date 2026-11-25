@@ -28,11 +28,11 @@ export interface VaultRow {
   readonly status: string
   readonly tone: RowTone
   readonly kind: VaultRowKind
-  readonly detail: string
+  readonly qualifier: string
   readonly canResolve: boolean
   readonly remoteId: string
   readonly isSynced: boolean
-  readonly size: string
+  readonly facts: readonly string[]
   readonly isTransferring: boolean
   readonly progress: number | null
 }
@@ -73,22 +73,22 @@ const getSyncedLabel = (vault: Vault, now: Date): string => {
   return minutes < 1 ? words.syncedJustNow : words.syncedMinutesAgo(minutes)
 }
 
-const getPausedLabel = (paused: PausedDeletions | null | undefined): string => {
+const getPausedQualifier = (paused: PausedDeletions | null | undefined): string => {
   if (paused === null || paused === undefined) return ''
   return paused.direction === 'apply'
     ? words.deletionsPausedApply(paused.count, paused.tracked)
     : words.deletionsPausedSend(paused.count, paused.tracked)
 }
 
-const getSize = (cloud: readonly RemoteVault[], remoteId: string): string => {
+const getCloudFacts = (cloud: readonly RemoteVault[], remoteId: string): readonly string[] => {
   const one = cloud.find((vault) => vault.remoteId === remoteId)
-  return one === undefined ? '' : words.sizeInCloud(formatCloudSize(one.sizeBytes))
+  return one === undefined ? [] : [words.sizeInCloud(formatCloudSize(one.sizeBytes))]
 }
 
-const getOnDemandSize = (vault: Vault): string => {
+const getOnDemandFacts = (vault: Vault): readonly string[] => {
   const count = vault.onDemandFiles ?? 0
-  if (count <= 0) return ''
-  return `${words.filesOnDemand(count)} · ${words.sizeInCloud(formatCloudSize(vault.totalBytes ?? 0))}`
+  if (count <= 0) return []
+  return [words.filesOnDemand(count), words.sizeInCloud(formatCloudSize(vault.totalBytes ?? 0))]
 }
 
 const getDownloadTotal = (vault: Vault): number =>
@@ -111,11 +111,11 @@ const getCloudRow = (one: RemoteVault): VaultRow => ({
   status: words.notSyncing,
   tone: 'warning',
   kind: 'off',
-  detail: '',
+  qualifier: '',
   canResolve: false,
   remoteId: one.remoteId,
   isSynced: false,
-  size: words.sizeInCloud(formatCloudSize(one.sizeBytes)),
+  facts: [words.sizeInCloud(formatCloudSize(one.sizeBytes))],
   isTransferring: false,
   progress: null,
 })
@@ -131,35 +131,36 @@ export const getRow = (
     name: vault.name,
     remoteId: vault.remoteId,
     isSynced: true,
-    size: getSize(cloud, vault.remoteId),
+    facts: getCloudFacts(cloud, vault.remoteId),
     isTransferring: false,
     progress: null,
   }
-  const paused = getPausedLabel(vault.pausedDeletions)
+  const paused = getPausedQualifier(vault.pausedDeletions)
   if (paused !== '') {
     return {
       ...base,
-      status: paused,
+      status: words.statusPaused,
       tone: 'warning',
       kind: 'syncing',
-      detail: '',
+      qualifier: paused,
       canResolve: true,
     }
   }
   const synced = getSyncedLabel(vault, now)
   if (vault.conflictCount > 0) {
-    const detail = words.conflicts(vault.conflictCount)
+    const qualifier = words.conflicts(vault.conflictCount)
     const status = words.statusProblem
-    return { ...base, status, tone: 'alarm', kind: 'conflict', detail, canResolve: false }
+    return { ...base, status, tone: 'alarm', kind: 'conflict', qualifier, canResolve: false }
   }
   if (!isReachable) {
     const status = words.statusWaiting
-    return { ...base, status, tone: 'warning', kind: 'syncing', detail: synced, canResolve: false }
+    const qualifier = synced
+    return { ...base, status, tone: 'warning', kind: 'syncing', qualifier, canResolve: false }
   }
   if (vault.syncing === true) {
     const synced = vault.syncedBytes ?? 0
     const total = getDownloadTotal(vault)
-    const size = words.syncProgress(formatCloudSize(synced), formatCloudSize(total))
+    const qualifier = words.syncProgress(formatCloudSize(synced), formatCloudSize(total))
     const progress = total > 0 ? getProgress(synced, total) : null
     const status = words.statusSyncing
     return {
@@ -167,17 +168,18 @@ export const getRow = (
       status,
       tone: 'warning',
       kind: 'syncing',
-      detail: '',
+      qualifier,
       canResolve: false,
-      size,
+      facts: [],
       isTransferring: true,
       progress,
     }
   }
-  const onDemand = getOnDemandSize(vault)
-  const size = onDemand === '' ? base.size : onDemand
+  const onDemand = getOnDemandFacts(vault)
+  const facts = onDemand.length === 0 ? base.facts : onDemand
   const status = words.statusUpToDate
-  return { ...base, status, tone: 'ok', kind: 'ok', detail: synced, canResolve: false, size }
+  const qualifier = synced
+  return { ...base, status, tone: 'ok', kind: 'ok', qualifier, canResolve: false, facts }
 }
 
 export function useVaults(options: UseVaultsOptions) {

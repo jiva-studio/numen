@@ -54,7 +54,8 @@ function onClose(): void {
           :name="row.name"
           :kind="row.kind"
           :status="row.status"
-          :details="[row.size, row.detail]"
+          :qualifier="row.qualifier"
+          :facts="row.facts"
           :is-transferring="row.isTransferring"
           :progress="row.progress"
         />

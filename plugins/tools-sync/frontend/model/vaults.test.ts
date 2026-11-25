@@ -72,7 +72,8 @@ describe('useVaults', () => {
       status: 'Up to date',
       tone: 'ok',
       kind: 'ok',
-      detail: 'Last sync 5 minutes ago',
+      qualifier: 'Last sync 5 minutes ago',
+      facts: [],
     })
   })
 
@@ -94,7 +95,7 @@ describe('useVaults', () => {
     expect(model.state.rows.value.at(0)).toMatchObject({
       status: 'Up to date',
       kind: 'ok',
-      size: '12 files on demand · 501 MB in the cloud',
+      facts: ['12 files on demand', '501 MB in the cloud'],
       isTransferring: false,
     })
   })
@@ -107,7 +108,7 @@ describe('useVaults', () => {
 
     await model.actions.load()
 
-    expect(model.state.rows.value.at(0)?.size).toBe('1 file on demand · 1 MB in the cloud')
+    expect(model.state.rows.value.at(0)?.facts).toStrictEqual(['1 file on demand', '1 MB in the cloud'])
   })
 
   it('says nothing about files on demand when none stay in the cloud', async () => {
@@ -123,7 +124,7 @@ describe('useVaults', () => {
 
     await model.actions.load()
 
-    expect(model.state.rows.value.at(0)?.size).not.toContain('on demand')
+    expect(model.state.rows.value.at(0)?.facts.join(' ')).not.toContain('on demand')
   })
 
   it('leaves the files on demand out of the progress of a syncing vault', async () => {
@@ -186,7 +187,7 @@ describe('useVaults', () => {
     await model.actions.load()
 
     const synced = model.state.rows.value.filter((row) => row.isSynced)
-    expect(synced.map((row) => row.detail)).toStrictEqual([
+    expect(synced.map((row) => row.qualifier)).toStrictEqual([
       'Last sync 1 minute ago',
       'Last sync less than a minute ago',
     ])
@@ -197,7 +198,7 @@ describe('useVaults', () => {
 
     await model.actions.load()
 
-    expect(model.state.rows.value.at(0)?.detail).toBe('')
+    expect(model.state.rows.value.at(0)?.qualifier).toBe('')
   })
 
   it('counts the notes changed on two devices as a problem', async () => {
@@ -209,7 +210,7 @@ describe('useVaults', () => {
       status: 'Needs attention',
       tone: 'alarm',
       kind: 'conflict',
-      detail: '2 notes changed on two devices',
+      qualifier: '2 notes changed on two devices',
     })
   })
 
@@ -389,8 +390,8 @@ describe('useVaults', () => {
     await model.actions.load()
 
     expect(model.state.rows.value.map((row) => [row.status, row.canResolve])).toStrictEqual([
-      ['Paused: 5 of 10 files are removed here', true],
-      ['Paused: 3 of 9 files were removed on another device', true],
+      ['Paused', true],
+      ['Paused', true],
       ['Not syncing', false],
     ])
   })
@@ -437,9 +438,9 @@ describe('useVaults', () => {
 
     await model.actions.load()
 
-    expect(model.state.rows.value.map((row) => [row.name, row.size])).toStrictEqual([
-      ['Test', '0 MB in the cloud'],
-      ['Work', '3.5 MB in the cloud'],
+    expect(model.state.rows.value.map((row) => [row.name, row.facts])).toStrictEqual([
+      ['Test', ['0 MB in the cloud']],
+      ['Work', ['3.5 MB in the cloud']],
     ])
     expect(model.state.rows.value.map((row) => row.isSynced)).toStrictEqual([true, false])
   })
