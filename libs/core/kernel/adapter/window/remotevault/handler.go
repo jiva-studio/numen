@@ -81,14 +81,13 @@ func (h *Handler) OpenRemoteVault(
 }
 
 func newOpenError(err error) error {
-	var answered *connect.Error
-	if errors.As(err, &answered) {
+	if answered, ok := errors.AsType[*connect.Error](err); ok {
 		return answered
 	}
-	var unavailable *plugindomain.UnavailableError
-	switch {
-	case errors.As(err, &unavailable):
+	if _, ok := errors.AsType[*plugindomain.UnavailableError](err); ok {
 		return connect.NewError(connect.CodeFailedPrecondition, err)
+	}
+	switch {
 	case errors.Is(err, vaultdomain.ErrInvalidPath), errors.Is(err, domain.ErrOverlaps),
 		errors.Is(err, vaultdomain.ErrUnreadable), errors.Is(err, vaultdomain.ErrCopy):
 		return connect.NewError(connect.CodeInvalidArgument, err)

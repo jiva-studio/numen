@@ -55,12 +55,10 @@ func (h *Downloads) DropDownload(
 }
 
 func newDownloadError(err error) error {
-	var answered *connect.Error
-	if errors.As(err, &answered) {
+	if answered, ok := errors.AsType[*connect.Error](err); ok {
 		return answered
 	}
-	var unavailable *plugindomain.UnavailableError
-	if errors.As(err, &unavailable) {
+	if _, ok := errors.AsType[*plugindomain.UnavailableError](err); ok {
 		return connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	return wire.NewInternalError(err)
