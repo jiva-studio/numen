@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
+
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -52,7 +54,7 @@ type Contributes struct {
 	DropHandlers     []DropHandler
 	ConnectionTypes  []ConnectionType
 	Operations       []Operation
-	SearchFunctions  SearchFunctions
+	SearchFunctions  searchfunction.Set
 	Licenses         []License
 	Editor           Editor
 }

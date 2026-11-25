@@ -5,18 +5,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 const shelfPlugin = "md.test.shelf"
 
 func getShelfCatalog() searchquery.Catalog {
-	return searchquery.MergeCatalog(searchquery.GetBuiltinCatalog(), searchquery.ConvertManifestFunctions(shelfPlugin, manifest.SearchFunctions{
-		Version: 1, Functions: []manifest.SearchFunction{
-			{Name: "shelved", Args: []manifest.SearchFunctionArg{{Name: "shelf", Type: manifest.SearchFunctionArgString}}, Level: manifest.SearchFunctionLevelDocument},
-			{Name: "isShelved", Level: manifest.SearchFunctionLevelDocument},
+	return searchquery.MergeCatalog(searchquery.GetBuiltinCatalog(), searchquery.ConvertManifestFunctions(shelfPlugin, searchfunction.Set{
+		Version: 1, Functions: []searchfunction.Function{
+			{Name: "shelved", Args: []searchfunction.Arg{{Name: "shelf", Type: searchfunction.ArgString}}, Level: searchfunction.LevelDocument},
+			{Name: "isShelved", Level: searchfunction.LevelDocument},
 		},
 	}))
 }

@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -89,8 +91,8 @@ func TestListContributions_ListsNothingForAnEmptyManifest(t *testing.T) {
 
 func TestListContributions_SearchFunctionsShowTheirSignature(t *testing.T) {
 	got := plugin.ListContributions(manifest.Manifest{Contributes: manifest.Contributes{
-		SearchFunctions: manifest.SearchFunctions{Version: 1, Functions: []manifest.SearchFunction{{
-			Name: "rhymes", Args: []manifest.SearchFunctionArg{{Name: "word", Type: manifest.SearchFunctionArgString}},
+		SearchFunctions: searchfunction.Set{Version: 1, Functions: []searchfunction.Function{{
+			Name: "rhymes", Args: []searchfunction.Arg{{Name: "word", Type: searchfunction.ArgString}},
 		}}},
 	}})
 

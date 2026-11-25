@@ -3,14 +3,16 @@ package pluginmanifest
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
+
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func shelfFunctions(names ...string) manifest.SearchFunctions {
-	declared := manifest.SearchFunctions{Version: 1}
+func shelfFunctions(names ...string) searchfunction.Set {
+	declared := searchfunction.Set{Version: 1}
 	for _, name := range names {
-		declared.Functions = append(declared.Functions, manifest.SearchFunction{
-			Name: name, Level: manifest.SearchFunctionLevelDocument, Description: name, Example: name + "()",
+		declared.Functions = append(declared.Functions, searchfunction.Function{
+			Name: name, Level: searchfunction.LevelDocument, Description: name, Example: name + "()",
 		})
 	}
 	return declared

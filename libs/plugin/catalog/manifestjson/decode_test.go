@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/semver"
+
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 	"github.com/jiva-studio/numen/libs/shared/protocol"
@@ -183,9 +185,9 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		want error
 	}{
 		{"id with a space", `{"id":"bad id","name":"A","version":"1.0.0"}`, manifest.ErrInvalidID},
-		{"version without patch", `{"id":"a.b","name":"A","version":"1.0"}`, manifest.ErrInvalidVersion},
-		{"version with leading zero", `{"id":"a.b","name":"A","version":"01.0.0"}`, manifest.ErrInvalidVersion},
-		{"prerelease with leading zero", `{"id":"a.b","name":"A","version":"1.0.0-01"}`, manifest.ErrInvalidVersion},
+		{"version without patch", `{"id":"a.b","name":"A","version":"1.0"}`, semver.ErrInvalid},
+		{"version with leading zero", `{"id":"a.b","name":"A","version":"01.0.0"}`, semver.ErrInvalid},
+		{"prerelease with leading zero", `{"id":"a.b","name":"A","version":"1.0.0-01"}`, semver.ErrInvalid},
 		{"id of one segment", `{"id":"foo","name":"A","version":"1.0.0"}`, manifest.ErrInvalidID},
 		{"protocol newer than the host", `{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, manifest.ErrUnsupportedProtocol},
 		{"negative protocol", `{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, manifest.ErrUnsupportedProtocol},
@@ -281,7 +283,7 @@ func TestManifestListIssuesReportsEveryViolation(t *testing.T) {
 
 	issues := m.ListIssues()
 
-	for _, want := range []error{manifest.ErrInvalidID, manifest.ErrEmptyName, manifest.ErrInvalidVersion, manifest.ErrInvalidPermission} {
+	for _, want := range []error{manifest.ErrInvalidID, manifest.ErrEmptyName, semver.ErrInvalid, manifest.ErrInvalidPermission} {
 		if !slices.ContainsFunc(issues, func(e error) bool { return errors.Is(e, want) }) {
 			t.Errorf("issues %v lack %v", issues, want)
 		}

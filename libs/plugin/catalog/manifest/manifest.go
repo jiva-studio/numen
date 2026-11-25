@@ -131,7 +131,6 @@ var (
 	ErrInvalidID    = errors.New(
 		"plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. org.example.sample)",
 	)
-	ErrInvalidVersion         = semver.ErrInvalid
 	ErrUnsupportedProtocol    = errors.New("unsupported plugin protocol")
 	ErrEmptySettingTitle      = errors.New("setting title cannot be empty")
 	ErrInvalidBackend         = errors.New("invalid backend")
@@ -376,7 +375,7 @@ func (m Manifest) listIdentityIssues() []error {
 	case strings.TrimSpace(m.Version) == "":
 		issues = append(issues, ErrEmptyVersion)
 	case !semver.IsValid(m.Version):
-		issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidVersion, m.Version))
+		issues = append(issues, fmt.Errorf("%w: %q", semver.ErrInvalid, m.Version))
 	}
 	return issues
 }

@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
+
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -205,7 +207,7 @@ func joinContentTypes(reader manifest.Reader) string {
 	return strings.Join(types, ", ")
 }
 
-func newSearchFunctionItem(one manifest.SearchFunction) ContributionItem {
+func newSearchFunctionItem(one searchfunction.Function) ContributionItem {
 	args := make([]string, 0, len(one.Args))
 	for _, arg := range one.Args {
 		args = append(args, arg.Name+": "+string(arg.Type))

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/semver"
+
 	. "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
@@ -302,7 +304,7 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"invalid id":            {`{"id":"bad","name":"A","version":"1.0.0"}`, []error{ErrInvalidID}},
 		"empty name":            {`{"id":"a.b","version":"1.0.0"}`, []error{ErrEmptyName}},
 		"empty version":         {`{"id":"a.b","name":"A"}`, []error{ErrEmptyVersion}},
-		"invalid version":       {`{"id":"a.b","name":"A","version":"1.0"}`, []error{ErrInvalidVersion}},
+		"invalid version":       {`{"id":"a.b","name":"A","version":"1.0"}`, []error{semver.ErrInvalid}},
 		"protocol negative":     {`{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, []error{ErrUnsupportedProtocol}},
 		"protocol too high":     {`{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, []error{ErrUnsupportedProtocol}},
 		"invalid capability":    {`{"id":"a.b","name":"A","version":"1.0.0","capabilities":["none"]}`, []error{ErrInvalidCapability}},

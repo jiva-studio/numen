@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
+
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -281,15 +283,15 @@ func newDropHandlers(wire []*v1.ManifestDropHandler) []manifest.DropHandler {
 	return out
 }
 
-func newSearchFunctions(wire *v1.ManifestSearchFunctions) manifest.SearchFunctions {
-	out := manifest.SearchFunctions{Version: int(wire.GetVersion())}
+func newSearchFunctions(wire *v1.ManifestSearchFunctions) searchfunction.Set {
+	out := searchfunction.Set{Version: int(wire.GetVersion())}
 	for _, one := range wire.GetFunctions() {
-		var args []manifest.SearchFunctionArg
+		var args []searchfunction.Arg
 		for _, arg := range one.GetArgs() {
-			args = append(args, manifest.SearchFunctionArg{Name: arg.GetName(), Type: manifest.SearchFunctionArgType(arg.GetType())})
+			args = append(args, searchfunction.Arg{Name: arg.GetName(), Type: searchfunction.ArgType(arg.GetType())})
 		}
-		out.Functions = append(out.Functions, manifest.SearchFunction{
-			Name: one.GetName(), Args: args, Level: manifest.SearchFunctionLevel(one.GetLevel()),
+		out.Functions = append(out.Functions, searchfunction.Function{
+			Name: one.GetName(), Args: args, Level: searchfunction.Level(one.GetLevel()),
 			Description: one.GetDescription(), Example: one.GetExample(),
 		})
 	}
