@@ -22,7 +22,7 @@ defineProps<{ title: string; detail?: string; isDone?: boolean }>()
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--numen-inset);
   padding-block: 1rem;
   text-align: center;
 }
@@ -41,7 +41,7 @@ defineProps<{ title: string; detail?: string; isDone?: boolean }>()
   block-size: 1.75rem;
   border-radius: 50%;
   background: var(--numen-accent);
-  color: var(--numen-raised);
+  color: var(--numen-accent-ink);
 }
 
 .link-status__title {

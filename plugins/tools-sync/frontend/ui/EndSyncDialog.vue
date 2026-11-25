@@ -3,7 +3,7 @@
  * The question before a vault stops syncing or a received folder is left: the files stay on this device either way.
  * A synced vault also asks whether its copy in the cloud stays or is deleted.
  */
-import { onMounted, useTemplateRef } from 'vue'
+import { onMounted, useId, useTemplateRef } from 'vue'
 import { Button, ConfirmDialog, Dialog } from '@numen/ui'
 import { WORDS as words } from '../words'
 
@@ -16,6 +16,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const textId = useId()
 const cancel = useTemplateRef<InstanceType<typeof Button>>('cancel')
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -30,9 +31,10 @@ onMounted(() => {
     v-if="kind === 'stop'"
     role="alertdialog"
     :label="words.stopSyncingQuestion(name)"
+    :described-by="textId"
     @cancel="emit('cancel')"
   >
-    <p class="sync-dialog__text">{{ words.stopSyncingText }}</p>
+    <p :id="textId" class="sync-dialog__text">{{ words.stopSyncingText }}</p>
     <template #actions>
       <Button ref="cancel" variant="ghost" @click="emit('cancel')">{{ words.cancel }}</Button>
       <Button variant="solid" @click="emit('confirm', false)">{{ words.keepCloudCopy }}</Button>

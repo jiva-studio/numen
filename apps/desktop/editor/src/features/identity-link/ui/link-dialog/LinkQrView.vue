@@ -5,14 +5,11 @@ import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{ qrText: string }>()
-
-/* --------------------------------- State ---------------------------------- */
-const QR_SIZE = 200
 </script>
 
 <template>
-  <div class="link-qr" :style="{ '--qr-size': `${QR_SIZE}px` }">
-    <QrCode v-if="qrText !== ''" :text="qrText" :label="words.linkQr" :size="QR_SIZE" />
+  <div class="link-qr">
+    <QrCode v-if="qrText !== ''" class="link-qr__code" :text="qrText" :label="words.linkQr" />
     <Spinner v-else />
   </div>
 </template>
@@ -23,10 +20,15 @@ const QR_SIZE = 200
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  inline-size: var(--qr-size);
-  block-size: var(--qr-size);
+  inline-size: 12.5rem;
+  block-size: 12.5rem;
   margin-inline: auto;
   border-radius: var(--numen-radius);
   background: var(--numen-field-bg);
+}
+
+.link-qr__code {
+  inline-size: 100%;
+  block-size: 100%;
 }
 </style>

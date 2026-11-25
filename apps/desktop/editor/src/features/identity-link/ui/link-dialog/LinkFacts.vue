@@ -23,14 +23,14 @@ defineProps<{ facts: readonly Fact[] }>()
 .link-facts {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--numen-card-inset);
   margin: 0;
 }
 
 .link-facts__row {
   display: grid;
   grid-template-columns: 8rem minmax(0, 1fr);
-  gap: 0.75rem;
+  gap: var(--numen-inset-wide);
 }
 
 .link-facts__label {

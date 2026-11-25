@@ -55,16 +55,9 @@ function onDecline(): void {
         :value="state.link"
         :aria-label="words.shareLinkField"
       />
-      <Button variant="outline" @click="onCopy">
-        <Copy :size="14" aria-hidden="true" />
-        {{ words.copyLinkButton }}
-      </Button>
       <p class="sync-dialog__text sync-dialog__text--hushed">
         {{ words.validUntil(state.getTimeLeft()) }}
       </p>
-      <Button variant="ghost" size="small" :disabled="state.isBusy" @click="onRevoke">
-        {{ words.revoke }}
-      </Button>
     </div>
     <p v-if="isWaiting" class="sync-dialog__text" role="status">
       <Spinner class="sync-dialog__spinner" />
@@ -114,7 +107,18 @@ function onDecline(): void {
         </Button>
         <Button :disabled="state.isBusy" @click="onAllow">{{ words.approve }}</Button>
       </template>
-      <Button v-else @click="state.close">{{ words.done }}</Button>
+      <template v-else>
+        <template v-if="state.isLinkAlive">
+          <Button variant="ghost" :disabled="state.isBusy" @click="onRevoke">
+            {{ words.revoke }}
+          </Button>
+          <Button variant="outline" @click="onCopy">
+            <Copy :size="14" aria-hidden="true" />
+            {{ words.copyLinkButton }}
+          </Button>
+        </template>
+        <Button @click="state.close">{{ words.done }}</Button>
+      </template>
     </template>
   </Dialog>
 </template>

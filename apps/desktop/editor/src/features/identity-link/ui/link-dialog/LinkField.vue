@@ -46,13 +46,13 @@ function onInput(event: Event): void {
 .link-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--numen-card-inset);
 }
 
 .link-field__row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--numen-inset);
 }
 
 .link-field__label {

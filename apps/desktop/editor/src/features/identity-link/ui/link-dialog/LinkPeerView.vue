@@ -29,7 +29,7 @@ const facts = computed<Fact[]>(() => [
 .link-peer {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--numen-inset-wide);
 }
 
 .link-peer__ask {

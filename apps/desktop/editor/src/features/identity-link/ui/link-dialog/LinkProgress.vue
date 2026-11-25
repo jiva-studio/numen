@@ -29,9 +29,12 @@ const ownFacts = computed<Fact[]>(() =>
       ]
     : [],
 )
-const isQrShown = computed(() => props.role === 'host' && (props.view === 'qr' || props.view === 'preparing'))
+const isQrShown = computed(
+  () => props.role === 'host' && (props.view === 'qr' || props.view === 'preparing'),
+)
 const isStepsShown = computed(
-  () => props.role === 'host' && ['qr', 'preparing', 'peer', 'linking', 'linked'].includes(props.view),
+  () =>
+    props.role === 'host' && ['qr', 'preparing', 'peer', 'linking', 'linked'].includes(props.view),
 )
 const isOwnShown = computed(() => ['waiting', 'account'].includes(props.view))
 </script>
@@ -92,7 +95,7 @@ const isOwnShown = computed(() => ['waiting', 'account'].includes(props.view))
 .link-progress {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--numen-inset-wide);
 }
 
 .link-progress__problem {
