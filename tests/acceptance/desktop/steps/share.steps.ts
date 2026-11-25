@@ -62,8 +62,8 @@ When(
 )
 
 When(
-  'the person shares the folder {string} of the vault {string} with {reader} and declines the request',
-  async ({ person }, folder: string, _vault: string, reader: ReaderName) => {
+  'the person declines the request of {reader} to read the folder {string} of the vault {string}',
+  async ({ person }, reader: ReaderName, folder: string, _vault: string) => {
     await person.sharing.declineFolder(folder, reader)
   },
 )

@@ -24,7 +24,7 @@ Then('the second computer asks to join the identity of the person', async ({ per
   await person.computers.expectAsksToJoin()
 })
 
-Then('the second computer has no identity', async ({ person }) => {
+Then('the second computer holds no identity', async ({ person }) => {
   await person.computers.expectSecondHasNoIdentity()
 })
 
@@ -38,10 +38,6 @@ Given('the second computer creates an identity', async ({ person }) => {
 
 Then('the identity has {int} device(s)', async ({ person }, count: number) => {
   await person.computers.expectActiveDevices(count)
-})
-
-Then('the person sees the second computer in the request', async ({ person }) => {
-  await person.computers.expectPeerIsSecond()
 })
 
 Then('the second computer warns about {string}', async ({ person }, text: string) => {

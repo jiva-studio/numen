@@ -30,7 +30,7 @@ Feature: Link a device to the identity
       When the person shows the QR code to link a new device
       And the second computer scans the QR code
       And the person declines the new device
-      Then the second computer has no identity
+      Then the second computer holds no identity
       And the identity has 1 device
 
     Scenario: A QR code links one device only
@@ -39,7 +39,7 @@ Feature: Link a device to the identity
       And the person approves the new device
       And the second computer deletes the identity from this device
       When the second computer scans the QR code
-      Then the second computer has no identity
+      Then the second computer holds no identity
 
   Rule: A device that has an identity does not join another identity
 

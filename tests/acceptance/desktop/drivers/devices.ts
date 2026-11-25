@@ -22,8 +22,6 @@ const REVOKE = 'Remove'
 const THIS_DEVICE = 'This device'
 const REVOKED = 'Revoked'
 const DELETE_REVOKED = 'Delete identity from this device'
-const DEVICE_NAME = 'Device name'
-const DEVICE_FINGERPRINT = 'Device fingerprint'
 const ACCOUNT_FINGERPRINT = 'Identity fingerprint'
 /** The people at the two computers act within seconds; the plugin carries a message in about a second. */
 const STEP_LIMIT_MS = 30_000
@@ -56,12 +54,6 @@ export class DevicesDriver {
     if ((await dialog.count()) === 0) return
     await this.scenario.page.keyboard.press('Escape')
     await expect(dialog).toHaveCount(0)
-  }
-
-  private async readValue(root: Locator, label: string): Promise<string> {
-    const value = root.locator('dt', { hasText: label }).locator('xpath=following-sibling::dd[1]')
-    await expect(value).toBeVisible({ timeout: STEP_LIMIT_MS })
-    return (await value.innerText()).trim()
   }
 
   private async openLinkDialog(): Promise<Locator> {
@@ -109,20 +101,6 @@ export class DevicesDriver {
 
   async decline(): Promise<void> {
     await this.getDialog().getByRole('button', { name: DECLINE, exact: true }).click({ timeout: STEP_LIMIT_MS })
-  }
-
-  /** The name and the fingerprint of this device that the page of a new device shows while it waits. */
-  async readOwnDevice(): Promise<{ readonly name: string; readonly fingerprint: string }> {
-    const dialog = this.getDialog()
-    return {
-      name: await this.readValue(dialog, DEVICE_NAME),
-      fingerprint: readFingerprint(await this.readValue(dialog, DEVICE_FINGERPRINT)),
-    }
-  }
-
-  /** The name and the fingerprint of the new device that the dialog of the device that has the identity shows. */
-  async readPeer(): Promise<{ readonly name: string; readonly fingerprint: string }> {
-    return this.readOwnDevice()
   }
 
   /** Expects the page of a new device to ask whether to join the identity with this fingerprint, and answers Join where answer is set. */

@@ -45,7 +45,7 @@ Feature: Share a folder with another person
   Rule: The person allows a device before it gets anything
 
     Scenario: A device that is declined gets nothing
-      When the person shares the folder "Food" of the vault "Test" with the reader and declines the request
+      When the person declines the request of the reader to read the folder "Food" of the vault "Test"
       Then the reader is told "The owner declined the request. Nothing is shared."
       And the reader has no vault "Food"
 

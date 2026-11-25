@@ -217,13 +217,6 @@ export class ComputerDriver {
     await this.owner.devices.decline()
   }
 
-  /** The dialog of the person shows the name and the fingerprint the new computer shows for itself. */
-  async expectPeerIsSecond(): Promise<void> {
-    const own = await this.requireSecond().devices.readOwnDevice()
-    const seen = await this.owner.devices.readPeer()
-    expect(seen).toStrictEqual(own)
-  }
-
   async expectAsksToJoin(): Promise<void> {
     await this.requireSecond().devices.expectAskedToJoin(this.owner.identity.getAccountFingerprint(), false)
   }
