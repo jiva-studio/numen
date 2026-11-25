@@ -3,7 +3,7 @@
  * window dispatches it and reads its result.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { COMMAND_ERROR_CODE } from '@numen/core-client'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import { createAnsweredClients } from '@/testing/coreAnswers'
 import { createDeclaredCommandsApi } from './declaredCommands'
 
@@ -336,7 +336,7 @@ describe('the confirmation a command declares', () => {
 describe('a run', () => {
   it('sends the file and values and returns the plugin message', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      error: WIRE_ERROR_CODE.UNSPECIFIED,
       message: 'Converted 3 pages',
       openedPath: 'a.md',
     })
@@ -358,7 +358,7 @@ describe('a run', () => {
 
   it('of a command over no file is handed none', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      error: WIRE_ERROR_CODE.UNSPECIFIED,
       message: '',
       openedPath: '',
     })
@@ -373,7 +373,7 @@ describe('a run', () => {
 
   it('of a command over no file is handed the file a place named', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      error: WIRE_ERROR_CODE.UNSPECIFIED,
       message: '',
       openedPath: '',
     })
@@ -388,7 +388,7 @@ describe('a run', () => {
 
   it('that did not succeed answers why', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: COMMAND_ERROR_CODE.FAILED,
+      error: WIRE_ERROR_CODE.INTERNAL,
       message: 'the disk is full',
     })
 
@@ -406,14 +406,14 @@ describe('the items of a command', () => {
           pluginId: 'org.example.ink',
           command: 'ink.proofread',
           items: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }],
-          error: COMMAND_ERROR_CODE.UNSPECIFIED,
+          error: WIRE_ERROR_CODE.UNSPECIFIED,
           message: '',
         },
         {
           pluginId: 'md.numen.pages',
           command: 'convert',
           items: [],
-          error: COMMAND_ERROR_CODE.FAILED,
+          error: WIRE_ERROR_CODE.INTERNAL,
           message: 'talks/a.mp3 is not in the vault',
         },
       ],
@@ -447,7 +447,7 @@ describe('the items of a command', () => {
 
   it('run the command over the file with the item picked as its itemId', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      error: WIRE_ERROR_CODE.UNSPECIFIED,
       message: '',
       openedPath: '',
     })
@@ -522,7 +522,7 @@ describe('the handlers of shared commands', () => {
 
   it('run in the backend under the full id of the command, with the item picked and the values', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      error: WIRE_ERROR_CODE.UNSPECIFIED,
       message: 'Deleted',
       openedPath: '',
     })
@@ -544,7 +544,7 @@ describe('the handlers of shared commands', () => {
 
   it('that did not succeed answer why', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: COMMAND_ERROR_CODE.FAILED,
+      error: WIRE_ERROR_CODE.INTERNAL,
       message: 'no such version',
     })
 
@@ -565,14 +565,14 @@ describe('the commands the application serves itself', () => {
           pluginId: 'org.example.ink',
           command: 'ink.proofread',
           items: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }],
-          error: COMMAND_ERROR_CODE.UNSPECIFIED,
+          error: WIRE_ERROR_CODE.UNSPECIFIED,
           message: '',
         },
       ],
     })
     request.listVersionItems.mockResolvedValue({
       items: [{ id: 'org.example.viewer/edit-1', title: 'transcript', detail: 'edited' }],
-      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      error: WIRE_ERROR_CODE.UNSPECIFIED,
       message: '',
     })
 
@@ -606,7 +606,7 @@ describe('the commands the application serves itself', () => {
     request.listCommandItems.mockClear()
     request.listVersionItems.mockResolvedValue({
       items: [],
-      error: COMMAND_ERROR_CODE.FAILED,
+      error: WIRE_ERROR_CODE.INTERNAL,
       message: 'talks/a.mp3 is not in the vault',
     })
 
@@ -624,7 +624,7 @@ describe('the commands the application serves itself', () => {
 
   it('delete the version picked through the text versions', async () => {
     request.runPluginCommand.mockClear()
-    request.deleteVersion.mockResolvedValue({ error: COMMAND_ERROR_CODE.UNSPECIFIED, message: '' })
+    request.deleteVersion.mockResolvedValue({ error: WIRE_ERROR_CODE.UNSPECIFIED, message: '' })
 
     const outcome = await runDeclaredHandler(
       { pluginId: '', command: 'app:version.delete' },

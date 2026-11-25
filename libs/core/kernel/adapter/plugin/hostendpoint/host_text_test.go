@@ -94,7 +94,7 @@ func TestHostEndpointSavesListsAndReadsVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if put.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED || put.Msg.GetVersion().GetId() != "md.numen.a/k" ||
+	if put.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || put.Msg.GetVersion().GetId() != "md.numen.a/k" ||
 		put.Msg.GetVersion().GetPluginId() != "md.numen.a" {
 		t.Fatalf("put answered %v, want the version recorded as the calling plugin's", put.Msg)
 	}
@@ -118,7 +118,7 @@ func TestHostEndpointSavesListsAndReadsVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if missing.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND {
+	if missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Fatalf("a version that is not there answered %v", missing.Msg)
 	}
 	if !slices.Contains(fakeCallers.checked, "md.numen.a vault:write") || !slices.Contains(fakeCallers.checked, "md.numen.a vault:read") {
@@ -134,7 +134,7 @@ func TestHostText_InvalidVersionReturnsErrorCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_INVALID || res.Msg.GetVersion() != nil {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INVALID || res.Msg.GetVersion() != nil {
 		t.Fatalf("answered %v, want INVALID and no version", res.Msg)
 	}
 }
@@ -145,7 +145,7 @@ func TestHostText_ErrorWithoutVaultOrPermission(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Fatalf("a host showing no vault answered %v", res.Msg)
 	}
 	fakeCallers.texts = newMemoryTexts()
@@ -168,7 +168,7 @@ func TestTextCallsWithoutVaultReturnNoVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Fatalf("a host with texts and no vault answered %v", res.Msg)
 	}
 }

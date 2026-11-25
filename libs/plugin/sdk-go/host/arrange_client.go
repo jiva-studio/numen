@@ -9,7 +9,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
-func getVaultsError(code v1.VaultsErrorCode, detail string) error {
+func getVaultsError(code v1.ErrorCode, detail string) error {
 	return addDetail(readVaultsError(code), detail)
 }
 
@@ -20,25 +20,25 @@ func addDetail(err error, detail string) error {
 	return notesdomain.NewDetailError(detail, err)
 }
 
-func readVaultsError(code v1.VaultsErrorCode) error {
+func readVaultsError(code v1.ErrorCode) error {
 	switch code {
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED:
+	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
 		return nil
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE:
+	case v1.ErrorCode_ERROR_CODE_UNREADABLE:
 		return ErrVaultUnreadable
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:
+	case v1.ErrorCode_ERROR_CODE_VAULT_COPY:
 		return ErrVaultDuplicate
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:
+	case v1.ErrorCode_ERROR_CODE_VAULT_OVERLAPS:
 		return ErrVaultOverlaps
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN:
+	case v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:
 		return ErrVaultNameTaken
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT:
+	case v1.ErrorCode_ERROR_CODE_LAST_VAULT:
 		return ErrLastVault
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:
+	case v1.ErrorCode_ERROR_CODE_VAULT_CURRENT:
 		return ErrVaultActive
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:
+	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
 		return ErrUnknownVault
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:
+	case v1.ErrorCode_ERROR_CODE_UNSAVED:
 		return ErrUnsavedChanges
 	default:
 		return fmt.Errorf("the list of vaults is unchanged; the host returned the code %s", code)

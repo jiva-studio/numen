@@ -77,20 +77,20 @@ func (h *Handler) UnlockKeyFile(
 	return connect.NewResponse(&v1.UnlockKeyFileResponse{Error: code}), nil
 }
 
-func getErrorCode(err error) (v1.KeyFileErrorCode, error) {
+func getErrorCode(err error) (v1.ErrorCode, error) {
 	switch {
 	case err == nil:
-		return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_UNSPECIFIED, nil
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, nil
 	case errors.Is(err, domainkeyfile.ErrWrongPassphrase):
-		return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE, nil
+		return v1.ErrorCode_ERROR_CODE_WRONG_PASSPHRASE, nil
 	case errors.Is(err, domainkeyfile.ErrEmptyPassphrase):
-		return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE, nil
+		return v1.ErrorCode_ERROR_CODE_EMPTY_PASSPHRASE, nil
 	case errors.Is(err, keyfile.ErrNotSaved):
-		return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_SAVE_FAILED, nil
+		return v1.ErrorCode_ERROR_CODE_INTERNAL, nil
 	case errors.Is(err, keyfile.ErrInvalidMode):
-		return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_INVALID_MODE, nil
+		return v1.ErrorCode_ERROR_CODE_INVALID, nil
 	}
-	return v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_UNSPECIFIED, err
+	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, err
 }
 
 func writeMode(mode domainkeyfile.Mode) v1.KeyFileMode {

@@ -50,7 +50,7 @@ func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSAVED {
 		t.Errorf("OpenVault of a window with unsaved changes returned %v, want error UNSAVED", res.Msg)
 	}
 	const question = "the window has unsaved changes and is prompting the user; retry after the prompt closes"

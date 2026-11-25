@@ -72,7 +72,7 @@ func (h *Handler) RunPluginCommand(
 ) (*connect.Response[v1.RunPluginCommandResponse], error) {
 	if r.Msg.GetPluginId() == "" {
 		return connect.NewResponse(&v1.RunPluginCommandResponse{
-			Error: v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND, Message: errNoPlugin.Error(),
+			Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND, Message: errNoPlugin.Error(),
 		}), nil
 	}
 	result, err := h.runCommand.Execute(ctx, h.vaults.GetCurrentVault(), plugin.CommandCall{
@@ -95,22 +95,22 @@ func (h *Handler) RunPluginCommand(
 
 func getMessage(err error) string {
 	var failed *plugin.CommandFailedError
-	if getErrorCode(err) == v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED && !errors.As(err, &failed) {
+	if getErrorCode(err) == v1.ErrorCode_ERROR_CODE_INTERNAL && !errors.As(err, &failed) {
 		return errFailed.Error()
 	}
 	return err.Error()
 }
 
-func getErrorCode(err error) v1.CommandErrorCode {
+func getErrorCode(err error) v1.ErrorCode {
 	switch {
 	case errors.Is(err, plugin.ErrUnknownCommand):
-		return v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND
 	case errors.Is(err, plugin.ErrBadArguments):
-		return v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS
+		return v1.ErrorCode_ERROR_CODE_INVALID
 	case errors.Is(err, domain.ErrUnavailable):
-		return v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE
+		return v1.ErrorCode_ERROR_CODE_UNAVAILABLE
 	}
-	return v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
+	return v1.ErrorCode_ERROR_CODE_INTERNAL
 }
 
 func newWireCommand(entry plugincommand.ListedCommand) *v1.PluginCommand {

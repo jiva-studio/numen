@@ -6,22 +6,22 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
 
 func TestErrorCodesAreProducedFromFailures(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.ProviderConnectionErrorCode]error{
-		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED:          nil,
-		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND:            connection.ErrNotFound,
-		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN:           connections.ErrNameTaken,
-		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD:        connections.ErrInvalidField,
-		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE:     connection.ErrTypeUnavailable,
-		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED:     connection.ErrKeyStore,
-		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION:       connection.ErrStaleRevision,
-		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE: connections.ErrProviderUnavailable,
-	}, func(failure error) v1.ProviderConnectionErrorCode {
-		code, _ := getErrorCode(failure)
-		return code
-	})
+	for want, failure := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_UNSPECIFIED:      nil,
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:        connection.ErrNotFound,
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:   connections.ErrNameTaken,
+		v1.ErrorCode_ERROR_CODE_INVALID:          connections.ErrInvalidField,
+		v1.ErrorCode_ERROR_CODE_TYPE_UNAVAILABLE: connection.ErrTypeUnavailable,
+		v1.ErrorCode_ERROR_CODE_KEY_STORE_FAILED: connection.ErrKeyStore,
+		v1.ErrorCode_ERROR_CODE_CONFLICT:         connection.ErrStaleRevision,
+		v1.ErrorCode_ERROR_CODE_UNAVAILABLE:      connections.ErrProviderUnavailable,
+	} {
+		if got, _ := getErrorCode(failure); got != want {
+			t.Errorf("%v produced %v, want %v", failure, got, want)
+		}
+	}
 }

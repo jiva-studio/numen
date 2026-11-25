@@ -59,20 +59,21 @@ func newTextRequest[T any](c *TextClient, msg *T) *connect.Request[T] {
 	return req
 }
 
-func failText(code v1.TextErrorCode) error {
+func failText(code v1.ErrorCode) error {
 	switch code {
-	case v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED:
+	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
 		return nil
-	case v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND:
+	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
 		return ErrNotExist
-	case v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT:
+	case v1.ErrorCode_ERROR_CODE_NO_VAULT:
 		return ErrNoVault
-	case v1.TextErrorCode_TEXT_ERROR_CODE_INVALID:
+	case v1.ErrorCode_ERROR_CODE_INVALID:
 		return ErrInvalidVersion
-	case v1.TextErrorCode_TEXT_ERROR_CODE_NOT_OWNER:
+	case v1.ErrorCode_ERROR_CODE_NOT_OWNER:
 		return ErrNotOwner
+	default:
+		return fmt.Errorf("host: rejected with code %s", code)
 	}
-	return fmt.Errorf("host: rejected with code %s", code)
 }
 
 func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error) {

@@ -3,7 +3,7 @@
  * hands the vault to write.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { PLUGIN_CONTRIBUTION_KIND } from '@numen/core-client'
+import { PLUGIN_CONTRIBUTION_KIND, WIRE_ERROR_CODE } from '@numen/core-client'
 import { createAnsweredClients } from '@/testing/coreAnswers'
 import { createSettingsApi } from './settings'
 
@@ -228,7 +228,8 @@ describe('a plugin whose last start failed', () => {
   it('is started again by its id, and the answer is why it failed again', async () => {
     const core = getCore()
     processes.retryPlugin.mockResolvedValue({
-      failure: 'Timed out while starting',
+      error: WIRE_ERROR_CODE.INTERNAL,
+      detail: 'Timed out while starting',
     })
 
     const failure = await core.retryPlugin('sample.plugin')
@@ -239,7 +240,7 @@ describe('a plugin whose last start failed', () => {
 
   it('is answered with a value where it started', async () => {
     const core = getCore()
-    processes.retryPlugin.mockResolvedValue({ failure: '' })
+    processes.retryPlugin.mockResolvedValue({ error: WIRE_ERROR_CODE.UNSPECIFIED, detail: '' })
 
     expect(await core.retryPlugin('sample.plugin')).toStrictEqual({ ok: true, value: null })
   })

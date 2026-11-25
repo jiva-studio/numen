@@ -6,13 +6,15 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { ManifestContributes } from "./manifest_pb.js";
 import { file_numen_v1_manifest } from "./manifest_pb.js";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/catalog.proto.
  */
 export const file_numen_v1_catalog: GenFile = /*@__PURE__*/
-  fileDesc("ChZudW1lbi92MS9jYXRhbG9nLnByb3RvEghudW1lbi52MSKmAgoMQ2F0YWxvZ0VudHJ5EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdmVyc2lvbhgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIQCghjYXRlZ29yeRgFIAEoCRIyCgtjb250cmlidXRlcxgGIAEoCzIdLm51bWVuLnYxLk1hbmlmZXN0Q29udHJpYnV0ZXMSDgoGc291cmNlGAcgASgJEiUKBXN0YXRlGAggASgOMhYubnVtZW4udjEuQ2F0YWxvZ1N0YXRlEjkKD2luY29tcGF0aWJpbGl0eRgJIAEoDjIgLm51bWVuLnYxLkNhdGFsb2dJbmNvbXBhdGliaWxpdHkSHgoWaW5jb21wYXRpYmlsaXR5X2RldGFpbBgKIAEoCSI1ChJDYXRhbG9nU291cmNlRXJyb3ISDgoGc291cmNlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkiFAoSTGlzdENhdGFsb2dSZXF1ZXN0InMKE0xpc3RDYXRhbG9nUmVzcG9uc2USJwoHZW50cmllcxgBIAMoCzIWLm51bWVuLnYxLkNhdGFsb2dFbnRyeRIzCg1zb3VyY2VfZXJyb3JzGAIgAygLMhwubnVtZW4udjEuQ2F0YWxvZ1NvdXJjZUVycm9yIiQKFkdldENhdGFsb2dFbnRyeVJlcXVlc3QSCgoCaWQYASABKAkioAEKF0dldENhdGFsb2dFbnRyeVJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ2F0YWxvZ0Vycm9yQ29kZRIlCgVlbnRyeRgCIAEoCzIWLm51bWVuLnYxLkNhdGFsb2dFbnRyeRIzCg1zb3VyY2VfZXJyb3JzGAMgAygLMhwubnVtZW4udjEuQ2F0YWxvZ1NvdXJjZUVycm9yIiUKF0dldENhdGFsb2dSZWFkbWVSZXF1ZXN0EgoKAmlkGAEgASgJIigKGEdldENhdGFsb2dSZWFkbWVSZXNwb25zZRIMCgR0ZXh0GAEgASgJIjAKIEZpbmRDYXRhbG9nRW50cnlCeVRhYktpbmRSZXF1ZXN0EgwKBGtpbmQYASABKAkiqgEKIUZpbmRDYXRhbG9nRW50cnlCeVRhYktpbmRSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLkNhdGFsb2dFcnJvckNvZGUSJQoFZW50cnkYAiABKAsyFi5udW1lbi52MS5DYXRhbG9nRW50cnkSMwoNc291cmNlX2Vycm9ycxgDIAMoCzIcLm51bWVuLnYxLkNhdGFsb2dTb3VyY2VFcnJvciqDAQoMQ2F0YWxvZ1N0YXRlEh0KGUNBVEFMT0dfU1RBVEVfVU5TUEVDSUZJRUQQABIbChdDQVRBTE9HX1NUQVRFX0lOU1RBTExFRBABEhoKFkNBVEFMT0dfU1RBVEVfRElTQUJMRUQQAhIbChdDQVRBTE9HX1NUQVRFX0FWQUlMQUJMRRADKosBChZDYXRhbG9nSW5jb21wYXRpYmlsaXR5EicKI0NBVEFMT0dfSU5DT01QQVRJQklMSVRZX1VOU1BFQ0lGSUVEEAASIgoeQ0FUQUxPR19JTkNPTVBBVElCSUxJVFlfVEFSR0VUEAESJAogQ0FUQUxPR19JTkNPTVBBVElCSUxJVFlfUFJPVE9DT0wQAipYChBDYXRhbG9nRXJyb3JDb2RlEiIKHkNBVEFMT0dfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiAKHENBVEFMT0dfRVJST1JfQ09ERV9OT1RfRk9VTkQQATKFAwoOQ2F0YWxvZ1NlcnZpY2USSgoLTGlzdENhdGFsb2cSHC5udW1lbi52MS5MaXN0Q2F0YWxvZ1JlcXVlc3QaHS5udW1lbi52MS5MaXN0Q2F0YWxvZ1Jlc3BvbnNlElYKD0dldENhdGFsb2dFbnRyeRIgLm51bWVuLnYxLkdldENhdGFsb2dFbnRyeVJlcXVlc3QaIS5udW1lbi52MS5HZXRDYXRhbG9nRW50cnlSZXNwb25zZRJ0ChlGaW5kQ2F0YWxvZ0VudHJ5QnlUYWJLaW5kEioubnVtZW4udjEuRmluZENhdGFsb2dFbnRyeUJ5VGFiS2luZFJlcXVlc3QaKy5udW1lbi52MS5GaW5kQ2F0YWxvZ0VudHJ5QnlUYWJLaW5kUmVzcG9uc2USWQoQR2V0Q2F0YWxvZ1JlYWRtZRIhLm51bWVuLnYxLkdldENhdGFsb2dSZWFkbWVSZXF1ZXN0GiIubnVtZW4udjEuR2V0Q2F0YWxvZ1JlYWRtZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_manifest]);
+  fileDesc("ChZudW1lbi92MS9jYXRhbG9nLnByb3RvEghudW1lbi52MSKmAgoMQ2F0YWxvZ0VudHJ5EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdmVyc2lvbhgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIQCghjYXRlZ29yeRgFIAEoCRIyCgtjb250cmlidXRlcxgGIAEoCzIdLm51bWVuLnYxLk1hbmlmZXN0Q29udHJpYnV0ZXMSDgoGc291cmNlGAcgASgJEiUKBXN0YXRlGAggASgOMhYubnVtZW4udjEuQ2F0YWxvZ1N0YXRlEjkKD2luY29tcGF0aWJpbGl0eRgJIAEoDjIgLm51bWVuLnYxLkNhdGFsb2dJbmNvbXBhdGliaWxpdHkSHgoWaW5jb21wYXRpYmlsaXR5X2RldGFpbBgKIAEoCSI1ChJDYXRhbG9nU291cmNlRXJyb3ISDgoGc291cmNlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkiFAoSTGlzdENhdGFsb2dSZXF1ZXN0InMKE0xpc3RDYXRhbG9nUmVzcG9uc2USJwoHZW50cmllcxgBIAMoCzIWLm51bWVuLnYxLkNhdGFsb2dFbnRyeRIzCg1zb3VyY2VfZXJyb3JzGAIgAygLMhwubnVtZW4udjEuQ2F0YWxvZ1NvdXJjZUVycm9yIiQKFkdldENhdGFsb2dFbnRyeVJlcXVlc3QSCgoCaWQYASABKAkimQEKF0dldENhdGFsb2dFbnRyeVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEiUKBWVudHJ5GAIgASgLMhYubnVtZW4udjEuQ2F0YWxvZ0VudHJ5EjMKDXNvdXJjZV9lcnJvcnMYAyADKAsyHC5udW1lbi52MS5DYXRhbG9nU291cmNlRXJyb3IiJQoXR2V0Q2F0YWxvZ1JlYWRtZVJlcXVlc3QSCgoCaWQYASABKAkiKAoYR2V0Q2F0YWxvZ1JlYWRtZVJlc3BvbnNlEgwKBHRleHQYASABKAkiMAogRmluZENhdGFsb2dFbnRyeUJ5VGFiS2luZFJlcXVlc3QSDAoEa2luZBgBIAEoCSKjAQohRmluZENhdGFsb2dFbnRyeUJ5VGFiS2luZFJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEiUKBWVudHJ5GAIgASgLMhYubnVtZW4udjEuQ2F0YWxvZ0VudHJ5EjMKDXNvdXJjZV9lcnJvcnMYAyADKAsyHC5udW1lbi52MS5DYXRhbG9nU291cmNlRXJyb3IqgwEKDENhdGFsb2dTdGF0ZRIdChlDQVRBTE9HX1NUQVRFX1VOU1BFQ0lGSUVEEAASGwoXQ0FUQUxPR19TVEFURV9JTlNUQUxMRUQQARIaChZDQVRBTE9HX1NUQVRFX0RJU0FCTEVEEAISGwoXQ0FUQUxPR19TVEFURV9BVkFJTEFCTEUQAyqLAQoWQ2F0YWxvZ0luY29tcGF0aWJpbGl0eRInCiNDQVRBTE9HX0lOQ09NUEFUSUJJTElUWV9VTlNQRUNJRklFRBAAEiIKHkNBVEFMT0dfSU5DT01QQVRJQklMSVRZX1RBUkdFVBABEiQKIENBVEFMT0dfSU5DT01QQVRJQklMSVRZX1BST1RPQ09MEAIyhQMKDkNhdGFsb2dTZXJ2aWNlEkoKC0xpc3RDYXRhbG9nEhwubnVtZW4udjEuTGlzdENhdGFsb2dSZXF1ZXN0Gh0ubnVtZW4udjEuTGlzdENhdGFsb2dSZXNwb25zZRJWCg9HZXRDYXRhbG9nRW50cnkSIC5udW1lbi52MS5HZXRDYXRhbG9nRW50cnlSZXF1ZXN0GiEubnVtZW4udjEuR2V0Q2F0YWxvZ0VudHJ5UmVzcG9uc2USdAoZRmluZENhdGFsb2dFbnRyeUJ5VGFiS2luZBIqLm51bWVuLnYxLkZpbmRDYXRhbG9nRW50cnlCeVRhYktpbmRSZXF1ZXN0GisubnVtZW4udjEuRmluZENhdGFsb2dFbnRyeUJ5VGFiS2luZFJlc3BvbnNlElkKEEdldENhdGFsb2dSZWFkbWUSIS5udW1lbi52MS5HZXRDYXRhbG9nUmVhZG1lUmVxdWVzdBoiLm51bWVuLnYxLkdldENhdGFsb2dSZWFkbWVSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_manifest, file_numen_v1_shared]);
 
 /**
  * CatalogEntry is one plugin as the catalog knows it.
@@ -164,9 +166,9 @@ export const GetCatalogEntryRequestSchema: GenMessage<GetCatalogEntryRequest> = 
  */
 export type GetCatalogEntryResponse = Message<"numen.v1.GetCatalogEntryResponse"> & {
   /**
-   * @generated from field: numen.v1.CatalogErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: CatalogErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: numen.v1.CatalogEntry entry = 2;
@@ -244,9 +246,9 @@ export const FindCatalogEntryByTabKindRequestSchema: GenMessage<FindCatalogEntry
  */
 export type FindCatalogEntryByTabKindResponse = Message<"numen.v1.FindCatalogEntryByTabKindResponse"> & {
   /**
-   * @generated from field: numen.v1.CatalogErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: CatalogErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: numen.v1.CatalogEntry entry = 2;
@@ -336,33 +338,6 @@ export enum CatalogIncompatibility {
  */
 export const CatalogIncompatibilitySchema: GenEnum<CatalogIncompatibility> = /*@__PURE__*/
   enumDesc(file_numen_v1_catalog, 1);
-
-/**
- * CatalogErrorCode is why a call was served without an entry.
- *
- * @generated from enum numen.v1.CatalogErrorCode
- */
-export enum CatalogErrorCode {
-  /**
-   * CATALOG_ERROR_CODE_UNSPECIFIED is a call that was served in full.
-   *
-   * @generated from enum value: CATALOG_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * CATALOG_ERROR_CODE_NOT_FOUND is no plugin of the id, or none providing the kind of tab.
-   *
-   * @generated from enum value: CATALOG_ERROR_CODE_NOT_FOUND = 1;
-   */
-  NOT_FOUND = 1,
-}
-
-/**
- * Describes the enum numen.v1.CatalogErrorCode.
- */
-export const CatalogErrorCodeSchema: GenEnum<CatalogErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_catalog, 2);
 
 /**
  * CatalogService answers which plugins the application has, which it could have, and which plugin

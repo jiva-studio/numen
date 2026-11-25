@@ -67,7 +67,7 @@ func TestRunPluginCommand_AnswersUnknownForACommandOfAPluginWithoutABackend(t *t
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("the run answered %v", res.Msg)
 	}
 }

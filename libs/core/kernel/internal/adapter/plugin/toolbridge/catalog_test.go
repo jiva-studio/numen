@@ -259,7 +259,7 @@ func TestADisabledPluginsToolsAreNotListed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL {
+	if res.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a call to a tool of a disabled plugin answered %v", res)
 	}
 }
@@ -323,7 +323,7 @@ func TestAToolIsOfferedOnlyToACallerWithThePermissionsOfItsEffect(t *testing.T) 
 		}
 		res, err := catalog.CallTool(t.Context(), callerPlugin, &v1.CallToolRequest{Name: "bed_plant"})
 		isOffered := slices.Contains(c.want, "bed_plant")
-		if err != nil || isOffered != (res.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL) {
+		if err != nil || isOffered != (res.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND) {
 			t.Errorf("a caller with %v calling bed_plant was answered %v (%v)", c.permissions, res, err)
 		}
 	}

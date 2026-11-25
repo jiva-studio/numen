@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/keyfile.proto.
  */
 export const file_numen_v1_keyfile: GenFile = /*@__PURE__*/
-  fileDesc("ChZudW1lbi92MS9rZXlmaWxlLnByb3RvEghudW1lbi52MSIYChZHZXRLZXlGaWxlU3RhdGVSZXF1ZXN0Io8BChdHZXRLZXlGaWxlU3RhdGVSZXNwb25zZRIRCglpc19pbl91c2UYASABKAgSIwoEbW9kZRgCIAEoDjIVLm51bWVuLnYxLktleUZpbGVNb2RlEhgKEGlzX2Nob2ljZV9uZWVkZWQYAyABKAgSEQoJaXNfbG9ja2VkGAQgASgIEg8KB3dhcm5pbmcYBSABKAkiVAoUQ2hvb3NlS2V5RmlsZVJlcXVlc3QSIwoEbW9kZRgBIAEoDjIVLm51bWVuLnYxLktleUZpbGVNb2RlEhcKCnBhc3NwaHJhc2UYAiABKAlCA4ABASJCChVDaG9vc2VLZXlGaWxlUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5LZXlGaWxlRXJyb3JDb2RlIi8KFFVubG9ja0tleUZpbGVSZXF1ZXN0EhcKCnBhc3NwaHJhc2UYASABKAlCA4ABASJCChVVbmxvY2tLZXlGaWxlUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5LZXlGaWxlRXJyb3JDb2RlKoABCgtLZXlGaWxlTW9kZRIdChlLRVlfRklMRV9NT0RFX1VOU1BFQ0lGSUVEEAASFwoTS0VZX0ZJTEVfTU9ERV9VTlNFVBABEhsKF0tFWV9GSUxFX01PREVfUExBSU5URVhUEAISHAoYS0VZX0ZJTEVfTU9ERV9QQVNTUEhSQVNFEAMq1gEKEEtleUZpbGVFcnJvckNvZGUSIwofS0VZX0ZJTEVfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEigKJEtFWV9GSUxFX0VSUk9SX0NPREVfV1JPTkdfUEFTU1BIUkFTRRABEigKJEtFWV9GSUxFX0VSUk9SX0NPREVfRU1QVFlfUEFTU1BIUkFTRRACEiMKH0tFWV9GSUxFX0VSUk9SX0NPREVfU0FWRV9GQUlMRUQQAxIkCiBLRVlfRklMRV9FUlJPUl9DT0RFX0lOVkFMSURfTU9ERRAEMowCCg5LZXlGaWxlU2VydmljZRJWCg9HZXRLZXlGaWxlU3RhdGUSIC5udW1lbi52MS5HZXRLZXlGaWxlU3RhdGVSZXF1ZXN0GiEubnVtZW4udjEuR2V0S2V5RmlsZVN0YXRlUmVzcG9uc2USUAoNQ2hvb3NlS2V5RmlsZRIeLm51bWVuLnYxLkNob29zZUtleUZpbGVSZXF1ZXN0Gh8ubnVtZW4udjEuQ2hvb3NlS2V5RmlsZVJlc3BvbnNlElAKDVVubG9ja0tleUZpbGUSHi5udW1lbi52MS5VbmxvY2tLZXlGaWxlUmVxdWVzdBofLm51bWVuLnYxLlVubG9ja0tleUZpbGVSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChZudW1lbi92MS9rZXlmaWxlLnByb3RvEghudW1lbi52MSIYChZHZXRLZXlGaWxlU3RhdGVSZXF1ZXN0Io8BChdHZXRLZXlGaWxlU3RhdGVSZXNwb25zZRIRCglpc19pbl91c2UYASABKAgSIwoEbW9kZRgCIAEoDjIVLm51bWVuLnYxLktleUZpbGVNb2RlEhgKEGlzX2Nob2ljZV9uZWVkZWQYAyABKAgSEQoJaXNfbG9ja2VkGAQgASgIEg8KB3dhcm5pbmcYBSABKAkiVAoUQ2hvb3NlS2V5RmlsZVJlcXVlc3QSIwoEbW9kZRgBIAEoDjIVLm51bWVuLnYxLktleUZpbGVNb2RlEhcKCnBhc3NwaHJhc2UYAiABKAlCA4ABASI7ChVDaG9vc2VLZXlGaWxlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiLwoUVW5sb2NrS2V5RmlsZVJlcXVlc3QSFwoKcGFzc3BocmFzZRgBIAEoCUIDgAEBIjsKFVVubG9ja0tleUZpbGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZSqAAQoLS2V5RmlsZU1vZGUSHQoZS0VZX0ZJTEVfTU9ERV9VTlNQRUNJRklFRBAAEhcKE0tFWV9GSUxFX01PREVfVU5TRVQQARIbChdLRVlfRklMRV9NT0RFX1BMQUlOVEVYVBACEhwKGEtFWV9GSUxFX01PREVfUEFTU1BIUkFTRRADMowCCg5LZXlGaWxlU2VydmljZRJWCg9HZXRLZXlGaWxlU3RhdGUSIC5udW1lbi52MS5HZXRLZXlGaWxlU3RhdGVSZXF1ZXN0GiEubnVtZW4udjEuR2V0S2V5RmlsZVN0YXRlUmVzcG9uc2USUAoNQ2hvb3NlS2V5RmlsZRIeLm51bWVuLnYxLkNob29zZUtleUZpbGVSZXF1ZXN0Gh8ubnVtZW4udjEuQ2hvb3NlS2V5RmlsZVJlc3BvbnNlElAKDVVubG9ja0tleUZpbGUSHi5udW1lbi52MS5VbmxvY2tLZXlGaWxlUmVxdWVzdBofLm51bWVuLnYxLlVubG9ja0tleUZpbGVSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetKeyFileStateRequest
@@ -101,9 +103,9 @@ export const ChooseKeyFileRequestSchema: GenMessage<ChooseKeyFileRequest> = /*@_
  */
 export type ChooseKeyFileResponse = Message<"numen.v1.ChooseKeyFileResponse"> & {
   /**
-   * @generated from field: numen.v1.KeyFileErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: KeyFileErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -135,9 +137,9 @@ export const UnlockKeyFileRequestSchema: GenMessage<UnlockKeyFileRequest> = /*@_
  */
 export type UnlockKeyFileResponse = Message<"numen.v1.UnlockKeyFileResponse"> & {
   /**
-   * @generated from field: numen.v1.KeyFileErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: KeyFileErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -181,53 +183,6 @@ export enum KeyFileMode {
  */
 export const KeyFileModeSchema: GenEnum<KeyFileMode> = /*@__PURE__*/
   enumDesc(file_numen_v1_keyfile, 0);
-
-/**
- * KeyFileErrorCode is why a key file call was refused. The zero value is a call that succeeded.
- *
- * @generated from enum numen.v1.KeyFileErrorCode
- */
-export enum KeyFileErrorCode {
-  /**
-   * @generated from enum value: KEY_FILE_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE is a passphrase that does not open the file.
-   *
-   * @generated from enum value: KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE = 1;
-   */
-  WRONG_PASSPHRASE = 1,
-
-  /**
-   * KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE is a passphrase of no characters, or a choice of a passphrase
-   * that gives none.
-   *
-   * @generated from enum value: KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE = 2;
-   */
-  EMPTY_PASSPHRASE = 2,
-
-  /**
-   * KEY_FILE_ERROR_CODE_SAVE_FAILED is a choice the core could not keep for the next start.
-   *
-   * @generated from enum value: KEY_FILE_ERROR_CODE_SAVE_FAILED = 3;
-   */
-  SAVE_FAILED = 3,
-
-  /**
-   * KEY_FILE_ERROR_CODE_INVALID_MODE is a choice of a mode that cannot be chosen.
-   *
-   * @generated from enum value: KEY_FILE_ERROR_CODE_INVALID_MODE = 4;
-   */
-  INVALID_MODE = 4,
-}
-
-/**
- * Describes the enum numen.v1.KeyFileErrorCode.
- */
-export const KeyFileErrorCodeSchema: GenEnum<KeyFileErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_keyfile, 1);
 
 /**
  * KeyFileService is where this computer keeps the keys of the account when it has no system keychain:

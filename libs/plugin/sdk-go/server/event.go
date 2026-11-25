@@ -32,7 +32,7 @@ func (s eventServer) DeliverEvent(
 ) (*connect.Response[v1.DeliverEventResponse], error) {
 	answer := &v1.DeliverEventResponse{}
 	if err := s.handle(ctx, req.Msg.GetEvent()); err != nil {
-		answer.Error = v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED
+		answer.Error = v1.ErrorCode_ERROR_CODE_INTERNAL
 		answer.Detail = err.Error()
 	}
 	return connect.NewResponse(answer), nil

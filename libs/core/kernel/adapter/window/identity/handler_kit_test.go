@@ -116,7 +116,7 @@ func newKitFixture(t *testing.T) kitFixture {
 	words := makeWords(t, h)
 	create(t, h, words)
 	answer := saveKit(t, h, wordsProof(words))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED || !answer.GetIsSaved() {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || !answer.GetIsSaved() {
 		t.Fatalf("SaveRecoveryKit() = %v", answer)
 	}
 	return kitFixture{handler: h, keys: keys, saver: saver, kit: saver.getLast(t), words: words}
@@ -149,7 +149,7 @@ func TestSaveRecoveryKit_AcceptsTwoSheetsAsTheProof(t *testing.T) {
 	t.Parallel()
 	f := newKitFixture(t)
 	answer := saveKit(t, f.handler, sheetsProof(pickSheets(t, f.kit, 1, 3)))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED || !answer.GetIsSaved() || f.saver.count() != 2 {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || !answer.GetIsSaved() || f.saver.count() != 2 {
 		t.Errorf("answer = %v after %d kits", answer, f.saver.count())
 	}
 }
@@ -159,7 +159,7 @@ func TestSaveRecoveryKit_AnswersNotSavedWhenNoFileIsChosen(t *testing.T) {
 	f := newKitFixture(t)
 	f.saver.isRefused = true
 	answer := saveKit(t, f.handler, wordsProof(f.words))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED || answer.GetIsSaved() {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || answer.GetIsSaved() {
 		t.Errorf("answer = %v", answer)
 	}
 }
@@ -192,7 +192,7 @@ func TestSaveRecoveryKit_RefusesWordsOfAnotherAccountAndSavesNothing(t *testing.
 	t.Parallel()
 	f := newKitFixture(t)
 	answer := saveKit(t, f.handler, wordsProof(getOtherWords()))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_OTHER_ACCOUNT || answer.GetIsSaved() || f.saver.count() != 1 {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_OTHER_ACCOUNT || answer.GetIsSaved() || f.saver.count() != 1 {
 		t.Fatalf("answer = %v after %d kits", answer, f.saver.count())
 	}
 	for _, word := range getOtherWords() {
@@ -208,7 +208,7 @@ func TestSaveRecoveryKit_RefusesWordsThatAreNotValid(t *testing.T) {
 	words := slices.Clone(f.words)
 	words[3] = "numen"
 	answer := saveKit(t, f.handler, wordsProof(words))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS || answer.GetIsSaved() {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_INVALID_WORDS || answer.GetIsSaved() {
 		t.Fatalf("answer = %v", answer)
 	}
 	if !strings.Contains(answer.GetDetail(), "4") || strings.Contains(answer.GetDetail(), "numen") {
@@ -226,7 +226,7 @@ func TestSaveRecoveryKit_NamesTheSheetWithAMistakeAndEchoesNoWord(t *testing.T) 
 		changed[5] = "acid"
 	}
 	answer := saveKit(t, f.handler, sheetsProof(sheets))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_SHEETS {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_INVALID_SHEETS {
 		t.Fatalf("answer = %v", answer)
 	}
 	if answer.GetDetail() != "sheet 2 is not valid" {
@@ -237,7 +237,7 @@ func TestSaveRecoveryKit_NamesTheSheetWithAMistakeAndEchoesNoWord(t *testing.T) 
 func TestSaveRecoveryKit_RefusesWithoutAnIdentity(t *testing.T) {
 	t.Parallel()
 	answer := saveKit(t, newHandler(newKeys()), wordsProof(getLegalWords()))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY || answer.GetIsSaved() {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_NO_IDENTITY || answer.GetIsSaved() {
 		t.Errorf("answer = %v", answer)
 	}
 }
@@ -270,7 +270,7 @@ func TestStartRestoreFromKit_RestoresTheSameAccountAfterADelete(t *testing.T) {
 		t.Fatal(err)
 	}
 	answer := restoreKit(t, h, pickSheets(t, made, 2, 3))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED || len(keys.keys) != 0 {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || len(keys.keys) != 0 {
 		t.Fatalf("answer = %v, keys = %v, want no error and nothing kept while the restore is pending", answer, keys.keys)
 	}
 
@@ -290,7 +290,7 @@ func TestStartRestoreFromKit_RefusesOneSheetAndKeepsNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	answer := restoreKit(t, f.handler, pickSheets(t, f.kit, 1))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS || len(f.keys.keys) != 0 {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_NOT_ENOUGH_SHEETS || len(f.keys.keys) != 0 {
 		t.Errorf("answer = %v, keys = %v", answer, f.keys.keys)
 	}
 }
@@ -307,7 +307,7 @@ func TestStartRestoreFromKit_NamesTheSheetWithAMistake(t *testing.T) {
 		sheets[1].GetWords()[0] = "acid"
 	}
 	answer := restoreKit(t, f.handler, sheets)
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_SHEETS || answer.GetDetail() != "sheet 2 is not valid" || len(f.keys.keys) != 0 {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_INVALID_SHEETS || answer.GetDetail() != "sheet 2 is not valid" || len(f.keys.keys) != 0 {
 		t.Errorf("answer = %v, keys = %v", answer, f.keys.keys)
 	}
 }
@@ -315,7 +315,7 @@ func TestStartRestoreFromKit_NamesTheSheetWithAMistake(t *testing.T) {
 func TestStartRestoreFromKit_RefusesOverAnExistingIdentity(t *testing.T) {
 	t.Parallel()
 	f := newKitFixture(t)
-	if answer := restoreKit(t, f.handler, pickSheets(t, f.kit, 1, 2)); answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS {
+	if answer := restoreKit(t, f.handler, pickSheets(t, f.kit, 1, 2)); answer.GetError() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("over an identity: answer = %v", answer)
 	}
 }

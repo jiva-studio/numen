@@ -108,7 +108,7 @@ func TestGetIdentity_AnswersNothingWithoutAnIdentityAndTheInfoAfterCreate(t *tes
 		t.Fatalf("GetIdentity() = %v, %v; want no identity", none, err)
 	}
 	created := createWithNewWords(t, h)
-	if created.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
+	if created.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("CreateIdentity() refused: %v %q", created.GetError(), created.GetDetail())
 	}
 	got, err := h.GetIdentity(t.Context(), connect.NewRequest(&v1.GetIdentityRequest{}))
@@ -145,7 +145,7 @@ func TestCreateIdentity_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testin
 	words := getLegalWords()
 	words[3] = "numen"
 	answer := create(t, h, words)
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS || answer.GetIdentity() != nil {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_INVALID_WORDS || answer.GetIdentity() != nil {
 		t.Fatalf("answer = %v", answer)
 	}
 	if !strings.Contains(answer.GetDetail(), "4") {
@@ -157,7 +157,7 @@ func TestCreateIdentity_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testin
 		}
 	}
 	abandon := create(t, h, strings.Fields(strings.Repeat("abandon ", 12)))
-	if abandon.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS || strings.Contains(abandon.GetDetail(), "abandon") {
+	if abandon.GetError() != v1.ErrorCode_ERROR_CODE_INVALID_WORDS || strings.Contains(abandon.GetDetail(), "abandon") {
 		t.Errorf("checksum answer = %v", abandon)
 	}
 }
@@ -166,7 +166,7 @@ func TestCreateIdentity_RefusesASecondIdentity(t *testing.T) {
 	t.Parallel()
 	h := newHandler(newKeys())
 	createWithNewWords(t, h)
-	if answer := createWithNewWords(t, h); answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS {
+	if answer := createWithNewWords(t, h); answer.GetError() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("answer = %v", answer)
 	}
 }
@@ -176,7 +176,7 @@ func TestCreateIdentity_AnswersAKeyStoreFailureAsACode(t *testing.T) {
 	keys := newKeys()
 	keys.setFails = errors.New("the keychain refuses")
 	answer := createWithNewWords(t, newHandler(keys))
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED || len(keys.keys) != 0 {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_KEY_STORE_FAILED || len(keys.keys) != 0 {
 		t.Errorf("answer = %v, keys = %v", answer, keys.keys)
 	}
 }
@@ -233,7 +233,7 @@ func TestCreateIdentity_RefusesValidWordsTheCoreDidNotMake(t *testing.T) {
 
 	answer := create(t, h, getLegalWords())
 
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS || len(keys.keys) != 0 {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_INVALID_WORDS || len(keys.keys) != 0 {
 		t.Errorf("answer = %v with %d entries kept, want INVALID_WORDS and nothing kept", answer.GetError(), len(keys.keys))
 	}
 }
@@ -246,7 +246,7 @@ func TestCreateIdentity_AcceptsTheGeneratedWordsOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	words := generated.Msg.GetWords()
-	if first := create(t, h, words); first.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
+	if first := create(t, h, words); first.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("first create = %v, want success", first.GetError())
 	}
 	if _, err := h.DeleteIdentity(t.Context(), connect.NewRequest(&v1.DeleteIdentityRequest{})); err != nil {
@@ -255,7 +255,7 @@ func TestCreateIdentity_AcceptsTheGeneratedWordsOnce(t *testing.T) {
 
 	again := create(t, h, words)
 
-	if again.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS {
+	if again.GetError() != v1.ErrorCode_ERROR_CODE_INVALID_WORDS {
 		t.Errorf("second create = %v, want INVALID_WORDS", again.GetError())
 	}
 }
@@ -265,7 +265,7 @@ func TestGetIdentity_AnswersNoIdentityForARecordThatDoesNotParse(t *testing.T) {
 	keys := newKeys()
 	keys.keys["identity"] = "not-a-record"
 	got, err := newHandler(keys).GetIdentity(t.Context(), connect.NewRequest(&v1.GetIdentityRequest{}))
-	if err != nil || got.Msg.GetIdentity() != nil || got.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
+	if err != nil || got.Msg.GetIdentity() != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("GetIdentity() = %v, %v; want no identity and no error", got, err)
 	}
 }

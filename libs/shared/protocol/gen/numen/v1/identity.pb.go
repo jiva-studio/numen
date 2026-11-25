@@ -21,122 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// IdentityErrorCode is why an identity call was refused. The zero value is a call that
-// succeeded.
-type IdentityErrorCode int32
-
-const (
-	IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED IdentityErrorCode = 0
-	// IDENTITY_ERROR_CODE_INVALID_WORDS is a set of words that is not 12 recovery words, or whose
-	// checksum fails.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS IdentityErrorCode = 1
-	// IDENTITY_ERROR_CODE_IDENTITY_EXISTS is a device that already holds an identity.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS IdentityErrorCode = 2
-	// IDENTITY_ERROR_CODE_KEY_STORE_FAILED is a key store that failed to read or keep the identity.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED IdentityErrorCode = 3
-	// IDENTITY_ERROR_CODE_INVALID_SHEETS is a sheet with a wrong or unknown word, sheets of two kits, or
-	// one sheet entered twice.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_SHEETS IdentityErrorCode = 4
-	// IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS is fewer than two sheets.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS IdentityErrorCode = 5
-	// IDENTITY_ERROR_CODE_OTHER_ACCOUNT is a proof that belongs to another account than this device.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_OTHER_ACCOUNT IdentityErrorCode = 6
-	// IDENTITY_ERROR_CODE_NO_IDENTITY is a device that holds no identity, or a call that needs one on a device with none.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY IdentityErrorCode = 7
-	// IDENTITY_ERROR_CODE_LINK_ACTIVE is a link that already runs on this device.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_ACTIVE IdentityErrorCode = 8
-	// IDENTITY_ERROR_CODE_NO_LINK is a call that needs a link and finds none.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK IdentityErrorCode = 9
-	// IDENTITY_ERROR_CODE_LINK_TEXT_INVALID is a text that is not the text of a QR code of a link.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_TEXT_INVALID IdentityErrorCode = 10
-	// IDENTITY_ERROR_CODE_LAST_DEVICE is a revoke that would leave the account with no device.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_LAST_DEVICE IdentityErrorCode = 11
-	// IDENTITY_ERROR_CODE_REVOKE_RACED is a revoke that was dropped because a device was added by the device to revoke.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_REVOKE_RACED IdentityErrorCode = 12
-	// IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE is a revoke of the device it was asked on.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE IdentityErrorCode = 13
-	// IDENTITY_ERROR_CODE_DEVICE_REVOKED is a call that the account refuses to a revoked device.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_DEVICE_REVOKED IdentityErrorCode = 14
-	// IDENTITY_ERROR_CODE_UNKNOWN_DEVICE is a device that is not active in the account.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_UNKNOWN_DEVICE IdentityErrorCode = 15
-	// IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK is a chain mark that is not a number, a dash and 12 hex digits.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK IdentityErrorCode = 16
-	// IDENTITY_ERROR_CODE_CHAIN_OUTDATED is a restore that the server answered with a chain that does not contain the chain mark of the
-	// kit: older, or another history, or none. The restore is over; nothing was kept.
-	IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED IdentityErrorCode = 17
-)
-
-// Enum value maps for IdentityErrorCode.
-var (
-	IdentityErrorCode_name = map[int32]string{
-		0:  "IDENTITY_ERROR_CODE_UNSPECIFIED",
-		1:  "IDENTITY_ERROR_CODE_INVALID_WORDS",
-		2:  "IDENTITY_ERROR_CODE_IDENTITY_EXISTS",
-		3:  "IDENTITY_ERROR_CODE_KEY_STORE_FAILED",
-		4:  "IDENTITY_ERROR_CODE_INVALID_SHEETS",
-		5:  "IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS",
-		6:  "IDENTITY_ERROR_CODE_OTHER_ACCOUNT",
-		7:  "IDENTITY_ERROR_CODE_NO_IDENTITY",
-		8:  "IDENTITY_ERROR_CODE_LINK_ACTIVE",
-		9:  "IDENTITY_ERROR_CODE_NO_LINK",
-		10: "IDENTITY_ERROR_CODE_LINK_TEXT_INVALID",
-		11: "IDENTITY_ERROR_CODE_LAST_DEVICE",
-		12: "IDENTITY_ERROR_CODE_REVOKE_RACED",
-		13: "IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE",
-		14: "IDENTITY_ERROR_CODE_DEVICE_REVOKED",
-		15: "IDENTITY_ERROR_CODE_UNKNOWN_DEVICE",
-		16: "IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK",
-		17: "IDENTITY_ERROR_CODE_CHAIN_OUTDATED",
-	}
-	IdentityErrorCode_value = map[string]int32{
-		"IDENTITY_ERROR_CODE_UNSPECIFIED":             0,
-		"IDENTITY_ERROR_CODE_INVALID_WORDS":           1,
-		"IDENTITY_ERROR_CODE_IDENTITY_EXISTS":         2,
-		"IDENTITY_ERROR_CODE_KEY_STORE_FAILED":        3,
-		"IDENTITY_ERROR_CODE_INVALID_SHEETS":          4,
-		"IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS":       5,
-		"IDENTITY_ERROR_CODE_OTHER_ACCOUNT":           6,
-		"IDENTITY_ERROR_CODE_NO_IDENTITY":             7,
-		"IDENTITY_ERROR_CODE_LINK_ACTIVE":             8,
-		"IDENTITY_ERROR_CODE_NO_LINK":                 9,
-		"IDENTITY_ERROR_CODE_LINK_TEXT_INVALID":       10,
-		"IDENTITY_ERROR_CODE_LAST_DEVICE":             11,
-		"IDENTITY_ERROR_CODE_REVOKE_RACED":            12,
-		"IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE": 13,
-		"IDENTITY_ERROR_CODE_DEVICE_REVOKED":          14,
-		"IDENTITY_ERROR_CODE_UNKNOWN_DEVICE":          15,
-		"IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK":      16,
-		"IDENTITY_ERROR_CODE_CHAIN_OUTDATED":          17,
-	}
-)
-
-func (x IdentityErrorCode) Enum() *IdentityErrorCode {
-	p := new(IdentityErrorCode)
-	*p = x
-	return p
-}
-
-func (x IdentityErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (IdentityErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_identity_proto_enumTypes[0].Descriptor()
-}
-
-func (IdentityErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_identity_proto_enumTypes[0]
-}
-
-func (x IdentityErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use IdentityErrorCode.Descriptor instead.
-func (IdentityErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{0}
-}
-
 type LinkRole int32
 
 const (
@@ -172,11 +56,11 @@ func (x LinkRole) String() string {
 }
 
 func (LinkRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_identity_proto_enumTypes[1].Descriptor()
+	return file_numen_v1_identity_proto_enumTypes[0].Descriptor()
 }
 
 func (LinkRole) Type() protoreflect.EnumType {
-	return &file_numen_v1_identity_proto_enumTypes[1]
+	return &file_numen_v1_identity_proto_enumTypes[0]
 }
 
 func (x LinkRole) Number() protoreflect.EnumNumber {
@@ -185,7 +69,7 @@ func (x LinkRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use LinkRole.Descriptor instead.
 func (LinkRole) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{0}
 }
 
 type LinkMode int32
@@ -223,11 +107,11 @@ func (x LinkMode) String() string {
 }
 
 func (LinkMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_identity_proto_enumTypes[2].Descriptor()
+	return file_numen_v1_identity_proto_enumTypes[1].Descriptor()
 }
 
 func (LinkMode) Type() protoreflect.EnumType {
-	return &file_numen_v1_identity_proto_enumTypes[2]
+	return &file_numen_v1_identity_proto_enumTypes[1]
 }
 
 func (x LinkMode) Number() protoreflect.EnumNumber {
@@ -236,7 +120,7 @@ func (x LinkMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use LinkMode.Descriptor instead.
 func (LinkMode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{1}
 }
 
 type LinkPhase int32
@@ -293,11 +177,11 @@ func (x LinkPhase) String() string {
 }
 
 func (LinkPhase) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_identity_proto_enumTypes[3].Descriptor()
+	return file_numen_v1_identity_proto_enumTypes[2].Descriptor()
 }
 
 func (LinkPhase) Type() protoreflect.EnumType {
-	return &file_numen_v1_identity_proto_enumTypes[3]
+	return &file_numen_v1_identity_proto_enumTypes[2]
 }
 
 func (x LinkPhase) Number() protoreflect.EnumNumber {
@@ -306,7 +190,7 @@ func (x LinkPhase) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use LinkPhase.Descriptor instead.
 func (LinkPhase) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{2}
 }
 
 type LinkReason int32
@@ -354,11 +238,11 @@ func (x LinkReason) String() string {
 }
 
 func (LinkReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_identity_proto_enumTypes[4].Descriptor()
+	return file_numen_v1_identity_proto_enumTypes[3].Descriptor()
 }
 
 func (LinkReason) Type() protoreflect.EnumType {
-	return &file_numen_v1_identity_proto_enumTypes[4]
+	return &file_numen_v1_identity_proto_enumTypes[3]
 }
 
 func (x LinkReason) Number() protoreflect.EnumNumber {
@@ -367,7 +251,7 @@ func (x LinkReason) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use LinkReason.Descriptor instead.
 func (LinkReason) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_identity_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_identity_proto_rawDescGZIP(), []int{3}
 }
 
 // IdentityInfo is what a person can see of the identity of this device.
@@ -501,8 +385,8 @@ type GetIdentityResponse struct {
 	// identity is unset when this device holds no identity.
 	Identity *IdentityInfo `protobuf:"bytes,1,opt,name=identity,proto3" json:"identity,omitempty"`
 	// error is CHAIN_OUTDATED while this device holds no identity because the restore it started was refused.
-	Error         IdentityErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
-	Detail        string            `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	Error         ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Detail        string    `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -544,11 +428,11 @@ func (x *GetIdentityResponse) GetIdentity() *IdentityInfo {
 	return nil
 }
 
-func (x *GetIdentityResponse) GetError() IdentityErrorCode {
+func (x *GetIdentityResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetIdentityResponse) GetDetail() string {
@@ -685,7 +569,7 @@ func (x *CreateIdentityRequest) GetWords() []string {
 type CreateIdentityResponse struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Identity *IdentityInfo          `protobuf:"bytes,1,opt,name=identity,proto3" json:"identity,omitempty"`
-	Error    IdentityErrorCode      `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error    ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// detail names the first wrong position and never holds a word.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -729,11 +613,11 @@ func (x *CreateIdentityResponse) GetIdentity() *IdentityInfo {
 	return nil
 }
 
-func (x *CreateIdentityResponse) GetError() IdentityErrorCode {
+func (x *CreateIdentityResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *CreateIdentityResponse) GetDetail() string {
@@ -809,7 +693,7 @@ func (x *StartRestoreRequest) GetConfirmUnmarked() bool {
 
 type StartRestoreResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// detail names the first wrong position and never holds a word.
 	Detail        string `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -846,11 +730,11 @@ func (*StartRestoreResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_identity_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *StartRestoreResponse) GetError() IdentityErrorCode {
+func (x *StartRestoreResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *StartRestoreResponse) GetDetail() string {
@@ -1152,8 +1036,8 @@ func (*SaveRecoveryKitRequest_Sheets) isSaveRecoveryKitRequest_Proof() {}
 type SaveRecoveryKitResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// is_saved is false when the person closed the save dialog without choosing a file.
-	IsSaved bool              `protobuf:"varint,1,opt,name=is_saved,json=isSaved,proto3" json:"is_saved,omitempty"`
-	Error   IdentityErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	IsSaved bool      `protobuf:"varint,1,opt,name=is_saved,json=isSaved,proto3" json:"is_saved,omitempty"`
+	Error   ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// detail names a position and never holds a word.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1197,11 +1081,11 @@ func (x *SaveRecoveryKitResponse) GetIsSaved() bool {
 	return false
 }
 
-func (x *SaveRecoveryKitResponse) GetError() IdentityErrorCode {
+func (x *SaveRecoveryKitResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *SaveRecoveryKitResponse) GetDetail() string {
@@ -1275,7 +1159,7 @@ func (x *StartRestoreFromKitRequest) GetConfirmUnmarked() bool {
 
 type StartRestoreFromKitResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// detail names a position and never holds a word.
 	Detail        string `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1312,11 +1196,11 @@ func (*StartRestoreFromKitResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_identity_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *StartRestoreFromKitResponse) GetError() IdentityErrorCode {
+func (x *StartRestoreFromKitResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *StartRestoreFromKitResponse) GetDetail() string {
@@ -1509,7 +1393,7 @@ func (x *StartLinkRequest) GetScannedText() string {
 type StartLinkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Link          *LinkInfo              `protobuf:"bytes,1,opt,name=link,proto3" json:"link,omitempty"`
-	Error         IdentityErrorCode      `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1552,11 +1436,11 @@ func (x *StartLinkResponse) GetLink() *LinkInfo {
 	return nil
 }
 
-func (x *StartLinkResponse) GetError() IdentityErrorCode {
+func (x *StartLinkResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *StartLinkResponse) GetDetail() string {
@@ -1605,7 +1489,7 @@ func (*GetLinkRequest) Descriptor() ([]byte, []int) {
 type GetLinkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Link          *LinkInfo              `protobuf:"bytes,1,opt,name=link,proto3" json:"link,omitempty"`
-	Error         IdentityErrorCode      `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1648,11 +1532,11 @@ func (x *GetLinkResponse) GetLink() *LinkInfo {
 	return nil
 }
 
-func (x *GetLinkResponse) GetError() IdentityErrorCode {
+func (x *GetLinkResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetLinkResponse) GetDetail() string {
@@ -1708,7 +1592,7 @@ func (x *DecideLinkRequest) GetApprove() bool {
 
 type DecideLinkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1744,11 +1628,11 @@ func (*DecideLinkResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_identity_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *DecideLinkResponse) GetError() IdentityErrorCode {
+func (x *DecideLinkResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *DecideLinkResponse) GetDetail() string {
@@ -1804,7 +1688,7 @@ func (x *ConfirmJoinRequest) GetApprove() bool {
 
 type ConfirmJoinResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1840,11 +1724,11 @@ func (*ConfirmJoinResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_identity_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *ConfirmJoinResponse) GetError() IdentityErrorCode {
+func (x *ConfirmJoinResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ConfirmJoinResponse) GetDetail() string {
@@ -1892,7 +1776,7 @@ func (*CancelLinkRequest) Descriptor() ([]byte, []int) {
 
 type CancelLinkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1928,11 +1812,11 @@ func (*CancelLinkResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_identity_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *CancelLinkResponse) GetError() IdentityErrorCode {
+func (x *CancelLinkResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *CancelLinkResponse) GetDetail() string {
@@ -2059,7 +1943,7 @@ func (*ListDevicesRequest) Descriptor() ([]byte, []int) {
 type ListDevicesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Devices       []*DeviceInfo          `protobuf:"bytes,1,rep,name=devices,proto3" json:"devices,omitempty"`
-	Error         IdentityErrorCode      `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2102,11 +1986,11 @@ func (x *ListDevicesResponse) GetDevices() []*DeviceInfo {
 	return nil
 }
 
-func (x *ListDevicesResponse) GetError() IdentityErrorCode {
+func (x *ListDevicesResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ListDevicesResponse) GetDetail() string {
@@ -2163,7 +2047,7 @@ func (x *RevokeDeviceRequest) GetFingerprint() string {
 
 type RevokeDeviceResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         IdentityErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.IdentityErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2199,11 +2083,11 @@ func (*RevokeDeviceResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_identity_proto_rawDescGZIP(), []int{33}
 }
 
-func (x *RevokeDeviceResponse) GetError() IdentityErrorCode {
+func (x *RevokeDeviceResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *RevokeDeviceResponse) GetDetail() string {
@@ -2217,7 +2101,7 @@ var File_numen_v1_identity_proto protoreflect.FileDescriptor
 
 const file_numen_v1_identity_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/identity.proto\x12\bnumen.v1\"\xf3\x01\n" +
+	"\x17numen/v1/identity.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\xf3\x01\n" +
 	"\fIdentityInfo\x12/\n" +
 	"\x13account_fingerprint\x18\x01 \x01(\tR\x12accountFingerprint\x12-\n" +
 	"\x12device_fingerprint\x18\x02 \x01(\tR\x11deviceFingerprint\x12\x1f\n" +
@@ -2227,27 +2111,27 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"is_revoked\x18\x05 \x01(\bR\tisRevoked\x12\x1b\n" +
 	"\tkey_epoch\x18\x06 \x01(\rR\bkeyEpoch\"\x14\n" +
-	"\x12GetIdentityRequest\"\x94\x01\n" +
+	"\x12GetIdentityRequest\"\x8c\x01\n" +
 	"\x13GetIdentityResponse\x122\n" +
-	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\x121\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x1e\n" +
 	"\x1cGenerateRecoveryWordsRequest\":\n" +
 	"\x1dGenerateRecoveryWordsResponse\x12\x19\n" +
 	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\"2\n" +
 	"\x15CreateIdentityRequest\x12\x19\n" +
-	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\"\x97\x01\n" +
+	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\"\x8f\x01\n" +
 	"\x16CreateIdentityResponse\x122\n" +
-	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\x121\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"z\n" +
 	"\x13StartRestoreRequest\x12\x19\n" +
 	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\x12\x1d\n" +
 	"\n" +
 	"chain_mark\x18\x02 \x01(\tR\tchainMark\x12)\n" +
-	"\x10confirm_unmarked\x18\x03 \x01(\bR\x0fconfirmUnmarked\"a\n" +
-	"\x14StartRestoreResponse\x121\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x10confirm_unmarked\x18\x03 \x01(\bR\x0fconfirmUnmarked\"Y\n" +
+	"\x14StartRestoreResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x17\n" +
 	"\x15DeleteIdentityRequest\"\x18\n" +
 	"\x16DeleteIdentityResponse\"*\n" +
@@ -2260,18 +2144,18 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x16SaveRecoveryKitRequest\x124\n" +
 	"\x05words\x18\x01 \x01(\v2\x1c.numen.v1.RecoveryWordsProofH\x00R\x05words\x127\n" +
 	"\x06sheets\x18\x02 \x01(\v2\x1d.numen.v1.RecoverySheetsProofH\x00R\x06sheetsB\a\n" +
-	"\x05proof\"\x7f\n" +
+	"\x05proof\"w\n" +
 	"\x17SaveRecoveryKitResponse\x12\x19\n" +
-	"\bis_saved\x18\x01 \x01(\bR\aisSaved\x121\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\bis_saved\x18\x01 \x01(\bR\aisSaved\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x97\x01\n" +
 	"\x1aStartRestoreFromKitRequest\x12/\n" +
 	"\x06sheets\x18\x01 \x03(\v2\x17.numen.v1.RecoverySheetR\x06sheets\x12\x1d\n" +
 	"\n" +
 	"chain_mark\x18\x02 \x01(\tR\tchainMark\x12)\n" +
-	"\x10confirm_unmarked\x18\x03 \x01(\bR\x0fconfirmUnmarked\"h\n" +
-	"\x1bStartRestoreFromKitResponse\x121\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x10confirm_unmarked\x18\x03 \x01(\bR\x0fconfirmUnmarked\"`\n" +
+	"\x1bStartRestoreFromKitResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x95\x03\n" +
 	"\bLinkInfo\x12)\n" +
 	"\x05phase\x18\x01 \x01(\x0e2\x13.numen.v1.LinkPhaseR\x05phase\x12&\n" +
@@ -2289,29 +2173,29 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x10StartLinkRequest\x12&\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x12.numen.v1.LinkRoleR\x04role\x12&\n" +
 	"\x04mode\x18\x02 \x01(\x0e2\x12.numen.v1.LinkModeR\x04mode\x12!\n" +
-	"\fscanned_text\x18\x03 \x01(\tR\vscannedText\"\x86\x01\n" +
+	"\fscanned_text\x18\x03 \x01(\tR\vscannedText\"~\n" +
 	"\x11StartLinkResponse\x12&\n" +
-	"\x04link\x18\x01 \x01(\v2\x12.numen.v1.LinkInfoR\x04link\x121\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x04link\x18\x01 \x01(\v2\x12.numen.v1.LinkInfoR\x04link\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x10\n" +
-	"\x0eGetLinkRequest\"\x84\x01\n" +
+	"\x0eGetLinkRequest\"|\n" +
 	"\x0fGetLinkResponse\x12&\n" +
-	"\x04link\x18\x01 \x01(\v2\x12.numen.v1.LinkInfoR\x04link\x121\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x04link\x18\x01 \x01(\v2\x12.numen.v1.LinkInfoR\x04link\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"-\n" +
 	"\x11DecideLinkRequest\x12\x18\n" +
-	"\aapprove\x18\x01 \x01(\bR\aapprove\"_\n" +
-	"\x12DecideLinkResponse\x121\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\aapprove\x18\x01 \x01(\bR\aapprove\"W\n" +
+	"\x12DecideLinkResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\".\n" +
 	"\x12ConfirmJoinRequest\x12\x18\n" +
-	"\aapprove\x18\x01 \x01(\bR\aapprove\"`\n" +
-	"\x13ConfirmJoinResponse\x121\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\aapprove\x18\x01 \x01(\bR\aapprove\"X\n" +
+	"\x13ConfirmJoinResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x13\n" +
-	"\x11CancelLinkRequest\"_\n" +
-	"\x12CancelLinkResponse\x121\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\x11CancelLinkRequest\"W\n" +
+	"\x12CancelLinkResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x95\x01\n" +
 	"\n" +
 	"DeviceInfo\x12\x12\n" +
@@ -2321,36 +2205,16 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\ais_this\x18\x04 \x01(\bR\x06isThis\x12\x1d\n" +
 	"\n" +
 	"is_revoked\x18\x05 \x01(\bR\tisRevoked\"\x14\n" +
-	"\x12ListDevicesRequest\"\x90\x01\n" +
+	"\x12ListDevicesRequest\"\x88\x01\n" +
 	"\x13ListDevicesResponse\x12.\n" +
-	"\adevices\x18\x01 \x03(\v2\x14.numen.v1.DeviceInfoR\adevices\x121\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
+	"\adevices\x18\x01 \x03(\v2\x14.numen.v1.DeviceInfoR\adevices\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"7\n" +
 	"\x13RevokeDeviceRequest\x12 \n" +
-	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\"a\n" +
-	"\x14RevokeDeviceResponse\x121\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x02 \x01(\tR\x06detail*\xe2\x05\n" +
-	"\x11IdentityErrorCode\x12#\n" +
-	"\x1fIDENTITY_ERROR_CODE_UNSPECIFIED\x10\x00\x12%\n" +
-	"!IDENTITY_ERROR_CODE_INVALID_WORDS\x10\x01\x12'\n" +
-	"#IDENTITY_ERROR_CODE_IDENTITY_EXISTS\x10\x02\x12(\n" +
-	"$IDENTITY_ERROR_CODE_KEY_STORE_FAILED\x10\x03\x12&\n" +
-	"\"IDENTITY_ERROR_CODE_INVALID_SHEETS\x10\x04\x12)\n" +
-	"%IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS\x10\x05\x12%\n" +
-	"!IDENTITY_ERROR_CODE_OTHER_ACCOUNT\x10\x06\x12#\n" +
-	"\x1fIDENTITY_ERROR_CODE_NO_IDENTITY\x10\a\x12#\n" +
-	"\x1fIDENTITY_ERROR_CODE_LINK_ACTIVE\x10\b\x12\x1f\n" +
-	"\x1bIDENTITY_ERROR_CODE_NO_LINK\x10\t\x12)\n" +
-	"%IDENTITY_ERROR_CODE_LINK_TEXT_INVALID\x10\n" +
-	"\x12#\n" +
-	"\x1fIDENTITY_ERROR_CODE_LAST_DEVICE\x10\v\x12$\n" +
-	" IDENTITY_ERROR_CODE_REVOKE_RACED\x10\f\x12/\n" +
-	"+IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE\x10\r\x12&\n" +
-	"\"IDENTITY_ERROR_CODE_DEVICE_REVOKED\x10\x0e\x12&\n" +
-	"\"IDENTITY_ERROR_CODE_UNKNOWN_DEVICE\x10\x0f\x12*\n" +
-	"&IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK\x10\x10\x12&\n" +
-	"\"IDENTITY_ERROR_CODE_CHAIN_OUTDATED\x10\x11*O\n" +
+	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\"Y\n" +
+	"\x14RevokeDeviceResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail*O\n" +
 	"\bLinkRole\x12\x19\n" +
 	"\x15LINK_ROLE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eLINK_ROLE_HOST\x10\x01\x12\x14\n" +
@@ -2408,105 +2272,105 @@ func file_numen_v1_identity_proto_rawDescGZIP() []byte {
 	return file_numen_v1_identity_proto_rawDescData
 }
 
-var file_numen_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_numen_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_numen_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_numen_v1_identity_proto_goTypes = []any{
-	(IdentityErrorCode)(0),                // 0: numen.v1.IdentityErrorCode
-	(LinkRole)(0),                         // 1: numen.v1.LinkRole
-	(LinkMode)(0),                         // 2: numen.v1.LinkMode
-	(LinkPhase)(0),                        // 3: numen.v1.LinkPhase
-	(LinkReason)(0),                       // 4: numen.v1.LinkReason
-	(*IdentityInfo)(nil),                  // 5: numen.v1.IdentityInfo
-	(*GetIdentityRequest)(nil),            // 6: numen.v1.GetIdentityRequest
-	(*GetIdentityResponse)(nil),           // 7: numen.v1.GetIdentityResponse
-	(*GenerateRecoveryWordsRequest)(nil),  // 8: numen.v1.GenerateRecoveryWordsRequest
-	(*GenerateRecoveryWordsResponse)(nil), // 9: numen.v1.GenerateRecoveryWordsResponse
-	(*CreateIdentityRequest)(nil),         // 10: numen.v1.CreateIdentityRequest
-	(*CreateIdentityResponse)(nil),        // 11: numen.v1.CreateIdentityResponse
-	(*StartRestoreRequest)(nil),           // 12: numen.v1.StartRestoreRequest
-	(*StartRestoreResponse)(nil),          // 13: numen.v1.StartRestoreResponse
-	(*DeleteIdentityRequest)(nil),         // 14: numen.v1.DeleteIdentityRequest
-	(*DeleteIdentityResponse)(nil),        // 15: numen.v1.DeleteIdentityResponse
-	(*RecoverySheet)(nil),                 // 16: numen.v1.RecoverySheet
-	(*RecoveryWordsProof)(nil),            // 17: numen.v1.RecoveryWordsProof
-	(*RecoverySheetsProof)(nil),           // 18: numen.v1.RecoverySheetsProof
-	(*SaveRecoveryKitRequest)(nil),        // 19: numen.v1.SaveRecoveryKitRequest
-	(*SaveRecoveryKitResponse)(nil),       // 20: numen.v1.SaveRecoveryKitResponse
-	(*StartRestoreFromKitRequest)(nil),    // 21: numen.v1.StartRestoreFromKitRequest
-	(*StartRestoreFromKitResponse)(nil),   // 22: numen.v1.StartRestoreFromKitResponse
-	(*LinkInfo)(nil),                      // 23: numen.v1.LinkInfo
-	(*StartLinkRequest)(nil),              // 24: numen.v1.StartLinkRequest
-	(*StartLinkResponse)(nil),             // 25: numen.v1.StartLinkResponse
-	(*GetLinkRequest)(nil),                // 26: numen.v1.GetLinkRequest
-	(*GetLinkResponse)(nil),               // 27: numen.v1.GetLinkResponse
-	(*DecideLinkRequest)(nil),             // 28: numen.v1.DecideLinkRequest
-	(*DecideLinkResponse)(nil),            // 29: numen.v1.DecideLinkResponse
-	(*ConfirmJoinRequest)(nil),            // 30: numen.v1.ConfirmJoinRequest
-	(*ConfirmJoinResponse)(nil),           // 31: numen.v1.ConfirmJoinResponse
-	(*CancelLinkRequest)(nil),             // 32: numen.v1.CancelLinkRequest
-	(*CancelLinkResponse)(nil),            // 33: numen.v1.CancelLinkResponse
-	(*DeviceInfo)(nil),                    // 34: numen.v1.DeviceInfo
-	(*ListDevicesRequest)(nil),            // 35: numen.v1.ListDevicesRequest
-	(*ListDevicesResponse)(nil),           // 36: numen.v1.ListDevicesResponse
-	(*RevokeDeviceRequest)(nil),           // 37: numen.v1.RevokeDeviceRequest
-	(*RevokeDeviceResponse)(nil),          // 38: numen.v1.RevokeDeviceResponse
+	(LinkRole)(0),                         // 0: numen.v1.LinkRole
+	(LinkMode)(0),                         // 1: numen.v1.LinkMode
+	(LinkPhase)(0),                        // 2: numen.v1.LinkPhase
+	(LinkReason)(0),                       // 3: numen.v1.LinkReason
+	(*IdentityInfo)(nil),                  // 4: numen.v1.IdentityInfo
+	(*GetIdentityRequest)(nil),            // 5: numen.v1.GetIdentityRequest
+	(*GetIdentityResponse)(nil),           // 6: numen.v1.GetIdentityResponse
+	(*GenerateRecoveryWordsRequest)(nil),  // 7: numen.v1.GenerateRecoveryWordsRequest
+	(*GenerateRecoveryWordsResponse)(nil), // 8: numen.v1.GenerateRecoveryWordsResponse
+	(*CreateIdentityRequest)(nil),         // 9: numen.v1.CreateIdentityRequest
+	(*CreateIdentityResponse)(nil),        // 10: numen.v1.CreateIdentityResponse
+	(*StartRestoreRequest)(nil),           // 11: numen.v1.StartRestoreRequest
+	(*StartRestoreResponse)(nil),          // 12: numen.v1.StartRestoreResponse
+	(*DeleteIdentityRequest)(nil),         // 13: numen.v1.DeleteIdentityRequest
+	(*DeleteIdentityResponse)(nil),        // 14: numen.v1.DeleteIdentityResponse
+	(*RecoverySheet)(nil),                 // 15: numen.v1.RecoverySheet
+	(*RecoveryWordsProof)(nil),            // 16: numen.v1.RecoveryWordsProof
+	(*RecoverySheetsProof)(nil),           // 17: numen.v1.RecoverySheetsProof
+	(*SaveRecoveryKitRequest)(nil),        // 18: numen.v1.SaveRecoveryKitRequest
+	(*SaveRecoveryKitResponse)(nil),       // 19: numen.v1.SaveRecoveryKitResponse
+	(*StartRestoreFromKitRequest)(nil),    // 20: numen.v1.StartRestoreFromKitRequest
+	(*StartRestoreFromKitResponse)(nil),   // 21: numen.v1.StartRestoreFromKitResponse
+	(*LinkInfo)(nil),                      // 22: numen.v1.LinkInfo
+	(*StartLinkRequest)(nil),              // 23: numen.v1.StartLinkRequest
+	(*StartLinkResponse)(nil),             // 24: numen.v1.StartLinkResponse
+	(*GetLinkRequest)(nil),                // 25: numen.v1.GetLinkRequest
+	(*GetLinkResponse)(nil),               // 26: numen.v1.GetLinkResponse
+	(*DecideLinkRequest)(nil),             // 27: numen.v1.DecideLinkRequest
+	(*DecideLinkResponse)(nil),            // 28: numen.v1.DecideLinkResponse
+	(*ConfirmJoinRequest)(nil),            // 29: numen.v1.ConfirmJoinRequest
+	(*ConfirmJoinResponse)(nil),           // 30: numen.v1.ConfirmJoinResponse
+	(*CancelLinkRequest)(nil),             // 31: numen.v1.CancelLinkRequest
+	(*CancelLinkResponse)(nil),            // 32: numen.v1.CancelLinkResponse
+	(*DeviceInfo)(nil),                    // 33: numen.v1.DeviceInfo
+	(*ListDevicesRequest)(nil),            // 34: numen.v1.ListDevicesRequest
+	(*ListDevicesResponse)(nil),           // 35: numen.v1.ListDevicesResponse
+	(*RevokeDeviceRequest)(nil),           // 36: numen.v1.RevokeDeviceRequest
+	(*RevokeDeviceResponse)(nil),          // 37: numen.v1.RevokeDeviceResponse
+	(ErrorCode)(0),                        // 38: numen.v1.ErrorCode
 }
 var file_numen_v1_identity_proto_depIdxs = []int32{
-	5,  // 0: numen.v1.GetIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
-	0,  // 1: numen.v1.GetIdentityResponse.error:type_name -> numen.v1.IdentityErrorCode
-	5,  // 2: numen.v1.CreateIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
-	0,  // 3: numen.v1.CreateIdentityResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 4: numen.v1.StartRestoreResponse.error:type_name -> numen.v1.IdentityErrorCode
-	16, // 5: numen.v1.RecoverySheetsProof.sheets:type_name -> numen.v1.RecoverySheet
-	17, // 6: numen.v1.SaveRecoveryKitRequest.words:type_name -> numen.v1.RecoveryWordsProof
-	18, // 7: numen.v1.SaveRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheetsProof
-	0,  // 8: numen.v1.SaveRecoveryKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	16, // 9: numen.v1.StartRestoreFromKitRequest.sheets:type_name -> numen.v1.RecoverySheet
-	0,  // 10: numen.v1.StartRestoreFromKitResponse.error:type_name -> numen.v1.IdentityErrorCode
-	3,  // 11: numen.v1.LinkInfo.phase:type_name -> numen.v1.LinkPhase
-	2,  // 12: numen.v1.LinkInfo.mode:type_name -> numen.v1.LinkMode
-	1,  // 13: numen.v1.LinkInfo.role:type_name -> numen.v1.LinkRole
-	4,  // 14: numen.v1.LinkInfo.reason:type_name -> numen.v1.LinkReason
-	1,  // 15: numen.v1.StartLinkRequest.role:type_name -> numen.v1.LinkRole
-	2,  // 16: numen.v1.StartLinkRequest.mode:type_name -> numen.v1.LinkMode
-	23, // 17: numen.v1.StartLinkResponse.link:type_name -> numen.v1.LinkInfo
-	0,  // 18: numen.v1.StartLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
-	23, // 19: numen.v1.GetLinkResponse.link:type_name -> numen.v1.LinkInfo
-	0,  // 20: numen.v1.GetLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 21: numen.v1.DecideLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 22: numen.v1.ConfirmJoinResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 23: numen.v1.CancelLinkResponse.error:type_name -> numen.v1.IdentityErrorCode
-	34, // 24: numen.v1.ListDevicesResponse.devices:type_name -> numen.v1.DeviceInfo
-	0,  // 25: numen.v1.ListDevicesResponse.error:type_name -> numen.v1.IdentityErrorCode
-	0,  // 26: numen.v1.RevokeDeviceResponse.error:type_name -> numen.v1.IdentityErrorCode
-	6,  // 27: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
-	8,  // 28: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
-	10, // 29: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
-	12, // 30: numen.v1.IdentityService.StartRestore:input_type -> numen.v1.StartRestoreRequest
-	14, // 31: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
-	19, // 32: numen.v1.IdentityService.SaveRecoveryKit:input_type -> numen.v1.SaveRecoveryKitRequest
-	21, // 33: numen.v1.IdentityService.StartRestoreFromKit:input_type -> numen.v1.StartRestoreFromKitRequest
-	24, // 34: numen.v1.IdentityService.StartLink:input_type -> numen.v1.StartLinkRequest
-	26, // 35: numen.v1.IdentityService.GetLink:input_type -> numen.v1.GetLinkRequest
-	28, // 36: numen.v1.IdentityService.DecideLink:input_type -> numen.v1.DecideLinkRequest
-	30, // 37: numen.v1.IdentityService.ConfirmJoin:input_type -> numen.v1.ConfirmJoinRequest
-	32, // 38: numen.v1.IdentityService.CancelLink:input_type -> numen.v1.CancelLinkRequest
-	35, // 39: numen.v1.IdentityService.ListDevices:input_type -> numen.v1.ListDevicesRequest
-	37, // 40: numen.v1.IdentityService.RevokeDevice:input_type -> numen.v1.RevokeDeviceRequest
-	7,  // 41: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
-	9,  // 42: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
-	11, // 43: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
-	13, // 44: numen.v1.IdentityService.StartRestore:output_type -> numen.v1.StartRestoreResponse
-	15, // 45: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
-	20, // 46: numen.v1.IdentityService.SaveRecoveryKit:output_type -> numen.v1.SaveRecoveryKitResponse
-	22, // 47: numen.v1.IdentityService.StartRestoreFromKit:output_type -> numen.v1.StartRestoreFromKitResponse
-	25, // 48: numen.v1.IdentityService.StartLink:output_type -> numen.v1.StartLinkResponse
-	27, // 49: numen.v1.IdentityService.GetLink:output_type -> numen.v1.GetLinkResponse
-	29, // 50: numen.v1.IdentityService.DecideLink:output_type -> numen.v1.DecideLinkResponse
-	31, // 51: numen.v1.IdentityService.ConfirmJoin:output_type -> numen.v1.ConfirmJoinResponse
-	33, // 52: numen.v1.IdentityService.CancelLink:output_type -> numen.v1.CancelLinkResponse
-	36, // 53: numen.v1.IdentityService.ListDevices:output_type -> numen.v1.ListDevicesResponse
-	38, // 54: numen.v1.IdentityService.RevokeDevice:output_type -> numen.v1.RevokeDeviceResponse
+	4,  // 0: numen.v1.GetIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
+	38, // 1: numen.v1.GetIdentityResponse.error:type_name -> numen.v1.ErrorCode
+	4,  // 2: numen.v1.CreateIdentityResponse.identity:type_name -> numen.v1.IdentityInfo
+	38, // 3: numen.v1.CreateIdentityResponse.error:type_name -> numen.v1.ErrorCode
+	38, // 4: numen.v1.StartRestoreResponse.error:type_name -> numen.v1.ErrorCode
+	15, // 5: numen.v1.RecoverySheetsProof.sheets:type_name -> numen.v1.RecoverySheet
+	16, // 6: numen.v1.SaveRecoveryKitRequest.words:type_name -> numen.v1.RecoveryWordsProof
+	17, // 7: numen.v1.SaveRecoveryKitRequest.sheets:type_name -> numen.v1.RecoverySheetsProof
+	38, // 8: numen.v1.SaveRecoveryKitResponse.error:type_name -> numen.v1.ErrorCode
+	15, // 9: numen.v1.StartRestoreFromKitRequest.sheets:type_name -> numen.v1.RecoverySheet
+	38, // 10: numen.v1.StartRestoreFromKitResponse.error:type_name -> numen.v1.ErrorCode
+	2,  // 11: numen.v1.LinkInfo.phase:type_name -> numen.v1.LinkPhase
+	1,  // 12: numen.v1.LinkInfo.mode:type_name -> numen.v1.LinkMode
+	0,  // 13: numen.v1.LinkInfo.role:type_name -> numen.v1.LinkRole
+	3,  // 14: numen.v1.LinkInfo.reason:type_name -> numen.v1.LinkReason
+	0,  // 15: numen.v1.StartLinkRequest.role:type_name -> numen.v1.LinkRole
+	1,  // 16: numen.v1.StartLinkRequest.mode:type_name -> numen.v1.LinkMode
+	22, // 17: numen.v1.StartLinkResponse.link:type_name -> numen.v1.LinkInfo
+	38, // 18: numen.v1.StartLinkResponse.error:type_name -> numen.v1.ErrorCode
+	22, // 19: numen.v1.GetLinkResponse.link:type_name -> numen.v1.LinkInfo
+	38, // 20: numen.v1.GetLinkResponse.error:type_name -> numen.v1.ErrorCode
+	38, // 21: numen.v1.DecideLinkResponse.error:type_name -> numen.v1.ErrorCode
+	38, // 22: numen.v1.ConfirmJoinResponse.error:type_name -> numen.v1.ErrorCode
+	38, // 23: numen.v1.CancelLinkResponse.error:type_name -> numen.v1.ErrorCode
+	33, // 24: numen.v1.ListDevicesResponse.devices:type_name -> numen.v1.DeviceInfo
+	38, // 25: numen.v1.ListDevicesResponse.error:type_name -> numen.v1.ErrorCode
+	38, // 26: numen.v1.RevokeDeviceResponse.error:type_name -> numen.v1.ErrorCode
+	5,  // 27: numen.v1.IdentityService.GetIdentity:input_type -> numen.v1.GetIdentityRequest
+	7,  // 28: numen.v1.IdentityService.GenerateRecoveryWords:input_type -> numen.v1.GenerateRecoveryWordsRequest
+	9,  // 29: numen.v1.IdentityService.CreateIdentity:input_type -> numen.v1.CreateIdentityRequest
+	11, // 30: numen.v1.IdentityService.StartRestore:input_type -> numen.v1.StartRestoreRequest
+	13, // 31: numen.v1.IdentityService.DeleteIdentity:input_type -> numen.v1.DeleteIdentityRequest
+	18, // 32: numen.v1.IdentityService.SaveRecoveryKit:input_type -> numen.v1.SaveRecoveryKitRequest
+	20, // 33: numen.v1.IdentityService.StartRestoreFromKit:input_type -> numen.v1.StartRestoreFromKitRequest
+	23, // 34: numen.v1.IdentityService.StartLink:input_type -> numen.v1.StartLinkRequest
+	25, // 35: numen.v1.IdentityService.GetLink:input_type -> numen.v1.GetLinkRequest
+	27, // 36: numen.v1.IdentityService.DecideLink:input_type -> numen.v1.DecideLinkRequest
+	29, // 37: numen.v1.IdentityService.ConfirmJoin:input_type -> numen.v1.ConfirmJoinRequest
+	31, // 38: numen.v1.IdentityService.CancelLink:input_type -> numen.v1.CancelLinkRequest
+	34, // 39: numen.v1.IdentityService.ListDevices:input_type -> numen.v1.ListDevicesRequest
+	36, // 40: numen.v1.IdentityService.RevokeDevice:input_type -> numen.v1.RevokeDeviceRequest
+	6,  // 41: numen.v1.IdentityService.GetIdentity:output_type -> numen.v1.GetIdentityResponse
+	8,  // 42: numen.v1.IdentityService.GenerateRecoveryWords:output_type -> numen.v1.GenerateRecoveryWordsResponse
+	10, // 43: numen.v1.IdentityService.CreateIdentity:output_type -> numen.v1.CreateIdentityResponse
+	12, // 44: numen.v1.IdentityService.StartRestore:output_type -> numen.v1.StartRestoreResponse
+	14, // 45: numen.v1.IdentityService.DeleteIdentity:output_type -> numen.v1.DeleteIdentityResponse
+	19, // 46: numen.v1.IdentityService.SaveRecoveryKit:output_type -> numen.v1.SaveRecoveryKitResponse
+	21, // 47: numen.v1.IdentityService.StartRestoreFromKit:output_type -> numen.v1.StartRestoreFromKitResponse
+	24, // 48: numen.v1.IdentityService.StartLink:output_type -> numen.v1.StartLinkResponse
+	26, // 49: numen.v1.IdentityService.GetLink:output_type -> numen.v1.GetLinkResponse
+	28, // 50: numen.v1.IdentityService.DecideLink:output_type -> numen.v1.DecideLinkResponse
+	30, // 51: numen.v1.IdentityService.ConfirmJoin:output_type -> numen.v1.ConfirmJoinResponse
+	32, // 52: numen.v1.IdentityService.CancelLink:output_type -> numen.v1.CancelLinkResponse
+	35, // 53: numen.v1.IdentityService.ListDevices:output_type -> numen.v1.ListDevicesResponse
+	37, // 54: numen.v1.IdentityService.RevokeDevice:output_type -> numen.v1.RevokeDeviceResponse
 	41, // [41:55] is the sub-list for method output_type
 	27, // [27:41] is the sub-list for method input_type
 	27, // [27:27] is the sub-list for extension type_name
@@ -2519,6 +2383,7 @@ func file_numen_v1_identity_proto_init() {
 	if File_numen_v1_identity_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_identity_proto_msgTypes[14].OneofWrappers = []any{
 		(*SaveRecoveryKitRequest_Words)(nil),
 		(*SaveRecoveryKitRequest_Sheets)(nil),
@@ -2528,7 +2393,7 @@ func file_numen_v1_identity_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_identity_proto_rawDesc), len(file_numen_v1_identity_proto_rawDesc)),
-			NumEnums:      5,
+			NumEnums:      4,
 			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,

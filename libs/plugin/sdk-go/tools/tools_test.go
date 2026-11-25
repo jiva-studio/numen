@@ -74,7 +74,7 @@ func TestListTools_ReturnsSchemasAndEffect(t *testing.T) {
 func TestACallRunsTheToolOnItsArgumentsAndAnswersStructured(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{"name":"Sita"}`)
 
-	if answer.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || answer.GetResult().GetIsError() {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || answer.GetResult().GetIsError() {
 		t.Fatalf("the call was answered %v", answer)
 	}
 	if string(answer.GetResult().GetStructured()) != `{"greeting":"hello Sita"}` {
@@ -93,13 +93,13 @@ func TestAToolThatReturnsAnErrorRanAndRefused(t *testing.T) {
 func TestCall_UnknownNameAndNonObjectArgsReturnErrorCode(t *testing.T) {
 	registry := newRegistry(t)
 
-	if got := call(t, registry, "other", `{}`).GetError(); got != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL {
+	if got := call(t, registry, "other", `{}`).GetError(); got != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("an unknown tool was answered %v", got)
 	}
-	if got := call(t, registry, "greet", `[1]`).GetError(); got != v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS {
+	if got := call(t, registry, "greet", `[1]`).GetError(); got != v1.ErrorCode_ERROR_CODE_INVALID {
 		t.Errorf("arguments that are no object were answered %v", got)
 	}
-	if got := call(t, registry, "greet", `1`).GetError(); got != v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS {
+	if got := call(t, registry, "greet", `1`).GetError(); got != v1.ErrorCode_ERROR_CODE_INVALID {
 		t.Errorf("single-byte non-object arguments were answered %v", got)
 	}
 }

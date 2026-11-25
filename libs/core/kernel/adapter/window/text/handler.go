@@ -79,9 +79,9 @@ func (h *Handler) CreateTextEdit(
 	case err == nil:
 		return connect.NewResponse(&v1.CreateTextEditResponse{Version: writeVersion(version)}), nil
 	case errors.Is(err, textdomain.ErrNoText):
-		return connect.NewResponse(&v1.CreateTextEditResponse{Error: v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND}), nil
+		return connect.NewResponse(&v1.CreateTextEditResponse{Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND}), nil
 	case errors.Is(err, textdomain.ErrInvalidVersion):
-		return connect.NewResponse(&v1.CreateTextEditResponse{Error: v1.TextErrorCode_TEXT_ERROR_CODE_INVALID}), nil
+		return connect.NewResponse(&v1.CreateTextEditResponse{Error: v1.ErrorCode_ERROR_CODE_INVALID}), nil
 	}
 	return nil, wire.NewInternalError(err)
 }

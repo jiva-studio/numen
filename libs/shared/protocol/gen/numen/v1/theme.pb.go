@@ -537,7 +537,8 @@ func (x *WriteAppearanceRequest) GetTextScale() float64 {
 
 type WriteAppearanceResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         string                 `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -572,9 +573,16 @@ func (*WriteAppearanceResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *WriteAppearanceResponse) GetError() string {
+func (x *WriteAppearanceResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *WriteAppearanceResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
 	}
 	return ""
 }
@@ -696,9 +704,10 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\n" +
 	"text_scale\x18\x04 \x01(\x01H\x01R\ttextScale\x88\x01\x01B\x12\n" +
 	"\x10_interface_scaleB\r\n" +
-	"\v_text_scale\"/\n" +
-	"\x17WriteAppearanceResponse\x12\x14\n" +
-	"\x05error\x18\x01 \x01(\tR\x05error\"\x14\n" +
+	"\v_text_scale\"\\\n" +
+	"\x17WriteAppearanceResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x14\n" +
 	"\x12WatchThemesRequest\"+\n" +
 	"\x13WatchThemesResponse\x12\x14\n" +
 	"\x05names\x18\x01 \x03(\tR\x05names*W\n" +
@@ -747,6 +756,7 @@ var file_numen_v1_theme_proto_goTypes = []any{
 	(*WatchThemesRequest)(nil),      // 9: numen.v1.WatchThemesRequest
 	(*WatchThemesResponse)(nil),     // 10: numen.v1.WatchThemesResponse
 	(*Bounds)(nil),                  // 11: numen.v1.Bounds
+	(ErrorCode)(0),                  // 12: numen.v1.ErrorCode
 }
 var file_numen_v1_theme_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Theme.origin:type_name -> numen.v1.Origin
@@ -755,19 +765,20 @@ var file_numen_v1_theme_proto_depIdxs = []int32{
 	11, // 3: numen.v1.ListThemesResponse.interface_scale_bounds:type_name -> numen.v1.Bounds
 	11, // 4: numen.v1.ListThemesResponse.text_scale_bounds:type_name -> numen.v1.Bounds
 	1,  // 5: numen.v1.WriteAppearanceRequest.mode:type_name -> numen.v1.Mode
-	3,  // 6: numen.v1.ThemeService.ListThemes:input_type -> numen.v1.ListThemesRequest
-	5,  // 7: numen.v1.ThemeService.ReadTheme:input_type -> numen.v1.ReadThemeRequest
-	7,  // 8: numen.v1.ThemeService.WriteAppearance:input_type -> numen.v1.WriteAppearanceRequest
-	9,  // 9: numen.v1.ThemeService.WatchThemes:input_type -> numen.v1.WatchThemesRequest
-	4,  // 10: numen.v1.ThemeService.ListThemes:output_type -> numen.v1.ListThemesResponse
-	6,  // 11: numen.v1.ThemeService.ReadTheme:output_type -> numen.v1.ReadThemeResponse
-	8,  // 12: numen.v1.ThemeService.WriteAppearance:output_type -> numen.v1.WriteAppearanceResponse
-	10, // 13: numen.v1.ThemeService.WatchThemes:output_type -> numen.v1.WatchThemesResponse
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	12, // 6: numen.v1.WriteAppearanceResponse.error:type_name -> numen.v1.ErrorCode
+	3,  // 7: numen.v1.ThemeService.ListThemes:input_type -> numen.v1.ListThemesRequest
+	5,  // 8: numen.v1.ThemeService.ReadTheme:input_type -> numen.v1.ReadThemeRequest
+	7,  // 9: numen.v1.ThemeService.WriteAppearance:input_type -> numen.v1.WriteAppearanceRequest
+	9,  // 10: numen.v1.ThemeService.WatchThemes:input_type -> numen.v1.WatchThemesRequest
+	4,  // 11: numen.v1.ThemeService.ListThemes:output_type -> numen.v1.ListThemesResponse
+	6,  // 12: numen.v1.ThemeService.ReadTheme:output_type -> numen.v1.ReadThemeResponse
+	8,  // 13: numen.v1.ThemeService.WriteAppearance:output_type -> numen.v1.WriteAppearanceResponse
+	10, // 14: numen.v1.ThemeService.WatchThemes:output_type -> numen.v1.WatchThemesResponse
+	11, // [11:15] is the sub-list for method output_type
+	7,  // [7:11] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_theme_proto_init() }

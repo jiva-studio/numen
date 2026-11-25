@@ -26,7 +26,7 @@ func TestStartRestore_AnswersWithoutAnErrorAndKeepsNoIdentityYet(t *testing.T) {
 
 	answer := startRestore(t, h, getLegalWords())
 
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED || answer.GetDetail() != "" {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || answer.GetDetail() != "" {
 		t.Errorf("answer = %v, want no error", answer)
 	}
 	if len(keys.keys) != 0 {
@@ -46,7 +46,7 @@ func TestStartRestore_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testing.
 
 	answer := startRestore(t, h, words)
 
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_INVALID_WORDS {
 		t.Fatalf("answer = %v, want the code of words that are not valid", answer)
 	}
 	for _, word := range append(words, "legal") {
@@ -55,7 +55,7 @@ func TestStartRestore_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testing.
 		}
 	}
 	checksum := startRestore(t, h, strings.Fields(strings.Repeat("abandon ", 12)))
-	if checksum.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS || strings.Contains(checksum.GetDetail(), "abandon") {
+	if checksum.GetError() != v1.ErrorCode_ERROR_CODE_INVALID_WORDS || strings.Contains(checksum.GetDetail(), "abandon") {
 		t.Errorf("checksum answer = %v", checksum)
 	}
 }
@@ -67,7 +67,7 @@ func TestStartRestore_RefusesADeviceThatHasAnIdentity(t *testing.T) {
 
 	answer := startRestore(t, h, getLegalWords())
 
-	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS {
+	if answer.GetError() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("answer = %v, want the code of an identity that exists", answer)
 	}
 }

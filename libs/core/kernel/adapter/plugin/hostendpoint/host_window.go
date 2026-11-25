@@ -33,14 +33,14 @@ func (e *windowEndpoint) begin(header http.Header) (WindowControl, error) {
 	return e.endpoint.callers.Lent.GetPluginWindow(), nil
 }
 
-func mapWindowError(ctx context.Context, err error) (v1.HostWindowErrorCode, error) {
+func mapWindowError(ctx context.Context, err error) (v1.ErrorCode, error) {
 	switch {
 	case err == nil:
-		return v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED, nil
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, nil
 	case errors.Is(err, plugin.ErrNoWindow):
-		return v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW, nil
+		return v1.ErrorCode_ERROR_CODE_NO_WINDOW, nil
 	case errors.Is(err, fs.ErrNotExist):
-		return v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND, nil
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, nil
 	case errors.Is(err, plugin.ErrTabNotShown):
 		return 0, connect.NewError(connect.CodeDeadlineExceeded, err)
 	case errors.Is(err, plugin.ErrInvalidFocus):
@@ -59,7 +59,7 @@ func (e *windowEndpoint) FocusNote(
 		return nil, err
 	}
 	if window == nil {
-		return connect.NewResponse(&v1.FocusNoteResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
+		return connect.NewResponse(&v1.FocusNoteResponse{Error: v1.ErrorCode_ERROR_CODE_NO_WINDOW}), nil
 	}
 	ref, err := window.FocusNote(ctx, req.Msg.GetPath())
 	code, err := mapWindowError(ctx, err)
@@ -77,7 +77,7 @@ func (e *windowEndpoint) FocusFile(
 		return nil, err
 	}
 	if window == nil {
-		return connect.NewResponse(&v1.FocusFileResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
+		return connect.NewResponse(&v1.FocusFileResponse{Error: v1.ErrorCode_ERROR_CODE_NO_WINDOW}), nil
 	}
 	spans := req.Msg.GetSpans()
 	ranges := make([]domain.ByteRange, 0, len(spans))
@@ -96,7 +96,7 @@ func (e *windowEndpoint) ReadOpenTabs(
 		return nil, err
 	}
 	if window == nil {
-		return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
+		return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Error: v1.ErrorCode_ERROR_CODE_NO_WINDOW}), nil
 	}
 	open, err := window.ReadOpenTabs(ctx)
 	code, err := mapWindowError(ctx, err)
@@ -118,7 +118,7 @@ func (e *windowEndpoint) ActivateTab(
 		return nil, err
 	}
 	if window == nil {
-		return connect.NewResponse(&v1.ActivateTabResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
+		return connect.NewResponse(&v1.ActivateTabResponse{Error: v1.ErrorCode_ERROR_CODE_NO_WINDOW}), nil
 	}
 	id := req.Msg.GetTabId()
 	open, err := window.ActivateTab(ctx, id)
@@ -128,7 +128,7 @@ func (e *windowEndpoint) ActivateTab(
 	}
 	index := slices.IndexFunc(open.Tabs, func(tab windowdomain.Tab) bool { return tab.ID == id })
 	if index < 0 {
-		return connect.NewResponse(&v1.ActivateTabResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND}), nil
+		return connect.NewResponse(&v1.ActivateTabResponse{Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND}), nil
 	}
 	return connect.NewResponse(&v1.ActivateTabResponse{
 		Tab:      convertTabToWire(open.Tabs[index]),

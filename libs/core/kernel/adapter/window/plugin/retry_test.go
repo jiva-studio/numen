@@ -29,7 +29,7 @@ func TestRetryPlugin_SuccessReturnsNoFailure(t *testing.T) {
 
 	answer, err := handler.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
 
-	if err != nil || answer.Msg.GetFailure() != "" || requestedID != "md.numen.sample" {
+	if err != nil || answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || answer.Msg.GetDetail() != "" || requestedID != "md.numen.sample" {
 		t.Fatalf("answered %v, %v for %q", answer, err, requestedID)
 	}
 }
@@ -42,7 +42,7 @@ func TestRetryPlugin_FailureReturnsReason(t *testing.T) {
 
 	answer, err := handler.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
 
-	if err != nil || answer.Msg.GetFailure() != "Timed out while starting" {
+	if err != nil || answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INTERNAL || answer.Msg.GetDetail() != "Timed out while starting" {
 		t.Fatalf("answered %v, %v", answer, err)
 	}
 }

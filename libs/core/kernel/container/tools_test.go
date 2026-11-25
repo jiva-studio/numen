@@ -223,7 +223,7 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if denial.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL || len(vault.getRequests()) != 1 {
+	if denial.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND || len(vault.getRequests()) != 1 {
 		t.Errorf("a tool the caller may not run answered %v", denial.Msg)
 	}
 }

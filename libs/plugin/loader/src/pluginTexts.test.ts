@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { TEXT_ERROR_CODE, type TextClient } from '@numen/core-client'
+import { WIRE_ERROR_CODE, type TextClient } from '@numen/core-client'
 import { createPluginTexts } from './pluginTexts'
 
 const version = {
@@ -23,7 +23,7 @@ const createClient = (requests: unknown[]): TextClient => ({
     requests.push(request)
     return {
       version: { ...version, pluginId: request.pluginId, sourceVersionId: request.sourceVersionId },
-      error: TEXT_ERROR_CODE.UNSPECIFIED,
+      error: WIRE_ERROR_CODE.UNSPECIFIED,
     } as unknown as Awaited<ReturnType<TextClient['createTextEdit']>>
   },
 })
@@ -139,7 +139,7 @@ describe('the text versions a plugin view reads', () => {
     })
 
     const missing = await createPluginTexts(
-      makeErrorClient(TEXT_ERROR_CODE.NOT_FOUND),
+      makeErrorClient(WIRE_ERROR_CODE.NOT_FOUND),
       'p',
     ).createEdit('a', 'v1', [])
     expect(missing).toEqual({
@@ -148,7 +148,7 @@ describe('the text versions a plugin view reads', () => {
     })
 
     const invalidWithVersion = await createPluginTexts(
-      makeErrorClient(TEXT_ERROR_CODE.INVALID, true),
+      makeErrorClient(WIRE_ERROR_CODE.INVALID, true),
       'p',
     ).createEdit('a', 'v1', [])
     expect(invalidWithVersion).toEqual({
@@ -157,7 +157,7 @@ describe('the text versions a plugin view reads', () => {
     })
 
     const unspecifiedWithoutVersion = await createPluginTexts(
-      makeErrorClient(TEXT_ERROR_CODE.UNSPECIFIED, false),
+      makeErrorClient(WIRE_ERROR_CODE.UNSPECIFIED, false),
       'p',
     ).createEdit('a', 'v1', [])
     expect(unspecifiedWithoutVersion).toEqual({

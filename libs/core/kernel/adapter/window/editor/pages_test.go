@@ -64,8 +64,8 @@ func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, re
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := out.Msg.GetError(); reason != "" {
-		t.Fatalf("failed: %s", reason)
+	if out.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("failed: %v %s", out.Msg.GetError(), out.Msg.GetDetail())
 	}
 }
 

@@ -3,6 +3,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/manifest.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -42,7 +43,7 @@ message RunCommandRequest {
 message RunCommandResponse {
   // Set when the command was served and did not run, or ran and failed. The
   // message then says why.
-  CommandErrorCode error = 1;
+  ErrorCode error = 1;
 
   // What a person reads about the outcome.
   string message = 2;
@@ -50,23 +51,6 @@ message RunCommandResponse {
   // The file a window opens once the command ran, as a path relative to the
   // vault folder. Empty for a command that leaves nothing to open.
   string opened_path = 3;
-}
-
-// CommandErrorCode is why a command was served and did not succeed.
-enum CommandErrorCode {
-  COMMAND_ERROR_CODE_UNSPECIFIED = 0;
-
-  // No plugin declares a command of that id.
-  COMMAND_ERROR_CODE_UNKNOWN_COMMAND = 1;
-
-  // The arguments or the file do not meet the declaration.
-  COMMAND_ERROR_CODE_BAD_ARGUMENTS = 2;
-
-  // The command ran and failed.
-  COMMAND_ERROR_CODE_FAILED = 3;
-
-  // The plugin that declares the command cannot be started or reached.
-  COMMAND_ERROR_CODE_UNAVAILABLE = 4;
 }
 
 // CommandService is what a window asks the host about the commands the enabled
@@ -176,7 +160,7 @@ message CommandItemList {
   repeated CommandItem items = 3;
 
   // Set when the items could not be listed; the message then says why.
-  CommandErrorCode error = 4;
+  ErrorCode error = 4;
 
   string message = 5;
 }
@@ -193,7 +177,7 @@ message CommandItem {
 }
 
 message RunPluginCommandResponse {
-  CommandErrorCode error = 1;
+  ErrorCode error = 1;
 
   // What a person reads about the outcome.
   string message = 2;

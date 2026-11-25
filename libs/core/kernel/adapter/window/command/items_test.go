@@ -85,7 +85,7 @@ func TestListCommandItems_ListsTheVersionsOfTheFileByKind(t *testing.T) {
 		got = append(got, [2]string{one.GetId(), one.GetTitle()})
 	}
 	want := [][2]string{{"org.example.ears/ears", "transcript (current)"}, {"org.example.ears/older", "transcript"}}
-	if !reflect.DeepEqual(got, want) || list.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
+	if !reflect.DeepEqual(got, want) || list.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("got %v, %v, want %v", got, list.GetError(), want)
 	}
 }
@@ -93,7 +93,7 @@ func TestListCommandItems_ListsTheVersionsOfTheFileByKind(t *testing.T) {
 func TestListCommandItems_AnswersNoneForACommandWithoutItems(t *testing.T) {
 	list := listItemsOfOne(t, newItemsHandler(&versionItems{}), "md.numen.tools.updater", "updater.check", "talks/a.mp3")
 
-	if len(list.GetItems()) != 0 || list.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
+	if len(list.GetItems()) != 0 || list.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("got %v, %v", list.GetItems(), list.GetError())
 	}
 }
@@ -101,10 +101,10 @@ func TestListCommandItems_AnswersNoneForACommandWithoutItems(t *testing.T) {
 func TestListCommandItems_AnswersAnUnknownCommandAndAFailedListWithACode(t *testing.T) {
 	for name, tc := range map[string]struct {
 		command, path string
-		want          v1.CommandErrorCode
+		want          v1.ErrorCode
 	}{
-		"unknown":     {"proofreading.gone", "", v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND},
-		"failed list": {"proofreading.create", "gone.mp3", v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED},
+		"unknown":     {"proofreading.gone", "", v1.ErrorCode_ERROR_CODE_NOT_FOUND},
+		"failed list": {"proofreading.create", "gone.mp3", v1.ErrorCode_ERROR_CODE_INTERNAL},
 	} {
 		list := listItemsOfOne(t, newItemsHandler(&versionItems{}), "md.numen.tools.proofreading", tc.command, tc.path)
 		if list.GetError() != tc.want || list.GetMessage() == "" {
@@ -129,16 +129,16 @@ func TestListCommandItems_AnswersOneListPerCommandInTheOrderOfTheRequest(t *test
 	type answer struct {
 		pluginID, command string
 		items             int
-		error             v1.CommandErrorCode
+		error             v1.ErrorCode
 	}
 	var got []answer
 	for _, one := range res.Msg.GetLists() {
 		got = append(got, answer{one.GetPluginId(), one.GetCommand(), len(one.GetItems()), one.GetError()})
 	}
 	want := []answer{
-		{"md.numen.tools.updater", "updater.check", 0, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED},
-		{"md.numen.tools.proofreading", "proofreading.gone", 0, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND},
-		{"md.numen.tools.proofreading", "proofreading.create", 2, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED},
+		{"md.numen.tools.updater", "updater.check", 0, v1.ErrorCode_ERROR_CODE_UNSPECIFIED},
+		{"md.numen.tools.proofreading", "proofreading.gone", 0, v1.ErrorCode_ERROR_CODE_NOT_FOUND},
+		{"md.numen.tools.proofreading", "proofreading.create", 2, v1.ErrorCode_ERROR_CODE_UNSPECIFIED},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %v, want %v", got, want)
@@ -157,7 +157,7 @@ func TestRunPluginCommand_RunsACommandWithItemsOverTheItemPicked(t *testing.T) {
 	if want := []string{"md.numen.tools.proofreading:proofreading.create talks/a.mp3 org.example.ears/ears"}; !reflect.DeepEqual(items.ran, want) {
 		t.Errorf("ran %v, want %v", items.ran, want)
 	}
-	if res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || res.Msg.GetMessage() != "Proofread" {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || res.Msg.GetMessage() != "Proofread" {
 		t.Errorf("got %v %q", res.Msg.GetError(), res.Msg.GetMessage())
 	}
 }
@@ -173,7 +173,7 @@ func TestRunPluginCommand_PassesTheItemPickedToACommandWithoutVersionItems(t *te
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || len(plugins.ran) != 1 || plugins.ran[0].ItemID != "beta" {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || len(plugins.ran) != 1 || plugins.ran[0].ItemID != "beta" {
 		t.Errorf("got %v, ran %+v", res.Msg.GetError(), plugins.ran)
 	}
 }
@@ -199,7 +199,7 @@ func TestRunPluginCommand_RejectsAnItemNotListedAndARunWithoutAnItem(t *testing.
 		if err != nil {
 			t.Fatal(err)
 		}
-		if res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS || len(items.ran) != 0 {
+		if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INVALID || len(items.ran) != 0 {
 			t.Errorf("%s: got %v, ran %v", name, res.Msg.GetError(), items.ran)
 		}
 	}
@@ -256,9 +256,9 @@ func TestListCommandItems_AnswersTheOtherListsWhereOneCommandFails(t *testing.T)
 	}
 
 	lists := res.Msg.GetLists()
-	if len(lists) != 3 || len(lists[0].GetItems()) != 2 || lists[0].GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED ||
-		lists[1].GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED || lists[1].GetMessage() == "" ||
-		lists[2].GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
+	if len(lists) != 3 || len(lists[0].GetItems()) != 2 || lists[0].GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED ||
+		lists[1].GetError() != v1.ErrorCode_ERROR_CODE_INTERNAL || lists[1].GetMessage() == "" ||
+		lists[2].GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("lists %v, want the failure of the comparison alone", lists)
 	}
 }

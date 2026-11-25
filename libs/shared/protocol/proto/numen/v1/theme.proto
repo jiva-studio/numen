@@ -135,7 +135,8 @@ message WriteAppearanceRequest {
 }
 
 message WriteAppearanceResponse {
-  string error = 1;
+  ErrorCode error = 1;
+  string detail = 2;
 }
 
 message WatchThemesRequest {}

@@ -23,7 +23,7 @@ type fakeArrangeHost struct {
 	unimplementedHost
 	mu           sync.Mutex
 	noteError    v1.ErrorCode
-	vaultsError  v1.VaultsErrorCode
+	vaultsError  v1.ErrorCode
 	vaultsDetail string
 	managedBy    string
 	requests     []string
@@ -112,7 +112,7 @@ func (a *fakeArrangeHost) AddVault(
 	a.record("add " + req.Msg.GetPath() + " " + req.Msg.GetName())
 	a.setManagedBy(req.Msg.GetManagedBy())
 	if a.vaultsError != 0 {
-		return connect.NewResponse(&v1.AddVaultResponse{Error: &a.vaultsError, Detail: a.vaultsDetail}), nil
+		return connect.NewResponse(&v1.AddVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
 	}
 	return connect.NewResponse(&v1.AddVaultResponse{Vault: &v1.Vault{Id: "v3", Name: req.Msg.GetName(), Path: req.Msg.GetPath()}}), nil
 }
@@ -122,7 +122,7 @@ func (a *fakeArrangeHost) RenameVault(
 ) (*connect.Response[v1.RenameVaultResponse], error) {
 	a.record("rename vault " + req.Msg.GetId() + " " + req.Msg.GetName())
 	if a.vaultsError != 0 {
-		return connect.NewResponse(&v1.RenameVaultResponse{Error: &a.vaultsError, Detail: a.vaultsDetail}), nil
+		return connect.NewResponse(&v1.RenameVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
 	}
 	return connect.NewResponse(&v1.RenameVaultResponse{Vault: &v1.Vault{Id: req.Msg.GetId(), Name: req.Msg.GetName(), Path: "/vaults/Lakes"}}), nil
 }
@@ -132,7 +132,7 @@ func (a *fakeArrangeHost) RemoveVault(
 ) (*connect.Response[v1.RemoveVaultResponse], error) {
 	a.record("remove vault " + req.Msg.GetId())
 	if a.vaultsError != 0 {
-		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &a.vaultsError, Detail: a.vaultsDetail}), nil
+		return connect.NewResponse(&v1.RemoveVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
 	}
 	return connect.NewResponse(&v1.RemoveVaultResponse{Path: "/vaults/Lakes"}), nil
 }
@@ -141,7 +141,7 @@ func (a *fakeArrangeHost) OpenVault(
 	_ context.Context, req *connect.Request[v1.OpenVaultRequest],
 ) (*connect.Response[v1.OpenVaultResponse], error) {
 	a.record("open vault " + req.Msg.GetId())
-	return connect.NewResponse(&v1.OpenVaultResponse{Error: &a.vaultsError, Detail: a.vaultsDetail}), nil
+	return connect.NewResponse(&v1.OpenVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
 }
 
 func newFakeArrangeClient(t *testing.T, a *fakeArrangeHost) *host.Client {
@@ -305,15 +305,15 @@ func TestTheClientChangesTheListOfVaults(t *testing.T) {
 }
 
 func TestClientReturnsEachVaultErrorCodeWithTheDetail(t *testing.T) {
-	for code, want := range map[v1.VaultsErrorCode]error{
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: host.ErrVaultNameTaken,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: host.ErrLastVault,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    host.ErrVaultActive,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  host.ErrUnknownVault,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: host.ErrVaultUnreadable,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       host.ErrVaultDuplicate,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   host.ErrVaultOverlaps,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    host.ErrUnsavedChanges,
+	for code, want := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS: host.ErrVaultNameTaken,
+		v1.ErrorCode_ERROR_CODE_LAST_VAULT:     host.ErrLastVault,
+		v1.ErrorCode_ERROR_CODE_VAULT_CURRENT:  host.ErrVaultActive,
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:      host.ErrUnknownVault,
+		v1.ErrorCode_ERROR_CODE_UNREADABLE:     host.ErrVaultUnreadable,
+		v1.ErrorCode_ERROR_CODE_VAULT_COPY:     host.ErrVaultDuplicate,
+		v1.ErrorCode_ERROR_CODE_VAULT_OVERLAPS: host.ErrVaultOverlaps,
+		v1.ErrorCode_ERROR_CODE_UNSAVED:        host.ErrUnsavedChanges,
 	} {
 		client := newFakeArrangeClient(t, &fakeArrangeHost{vaultsError: code, vaultsDetail: "vault v2: refused by the core"})
 		ctx := t.Context()
@@ -343,7 +343,7 @@ type addVaultErrorHost struct {
 func (a *addVaultErrorHost) AddVault(
 	context.Context, *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
-	return connect.NewResponse(&v1.AddVaultResponse{Error: new(v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE), Detail: a.detail}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Error: v1.ErrorCode_ERROR_CODE_UNREADABLE, Detail: a.detail}), nil
 }
 
 func TestTheClientReturnsTheCoreMessageOfARejectedFolder(t *testing.T) {
@@ -372,7 +372,7 @@ type openVaultErrorHost struct {
 func (a *openVaultErrorHost) OpenVault(
 	context.Context, *connect.Request[v1.OpenVaultRequest],
 ) (*connect.Response[v1.OpenVaultResponse], error) {
-	return connect.NewResponse(&v1.OpenVaultResponse{Error: new(v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED), Detail: a.detail}), nil
+	return connect.NewResponse(&v1.OpenVaultResponse{Error: v1.ErrorCode_ERROR_CODE_UNSAVED, Detail: a.detail}), nil
 }
 
 func TestClientReturnsUnsavedChangesWithCoreMessageOfOpen(t *testing.T) {

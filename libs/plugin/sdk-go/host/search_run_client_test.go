@@ -20,7 +20,7 @@ import (
 // runHost answers the search calls with fixed values and records the requests.
 type runHost struct {
 	numenv1connect.UnimplementedHostSearchServiceHandler
-	code    v1.HostSearchErrorCode
+	code    v1.ErrorCode
 	vault   string
 	start   *v1.StartSearchRequest
 	get     *v1.GetSearchRequest
@@ -108,14 +108,17 @@ func TestASearchClientStartsReadsAndRemovesASearch(t *testing.T) {
 }
 
 func TestASearchClientMapsTheErrorsOfSearches(t *testing.T) {
-	for code, want := range map[v1.HostSearchErrorCode]error{
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND:   host.ErrSearchNotFound,
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES:  host.ErrTooManySearches,
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN: host.ErrInvalidPageToken,
+	for code, want := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND: host.ErrSearchNotFound,
+		v1.ErrorCode_ERROR_CODE_INVALID:   host.ErrInvalidPageToken,
 	} {
 		c := dialRuns(t, &runHost{code: code})
 		if _, err := c.GetSearch(t.Context(), "s1", host.SearchRead{}); !errors.Is(err, want) {
 			t.Errorf("%s: %v, want %v", code, err, want)
 		}
+	}
+	c := dialRuns(t, &runHost{code: v1.ErrorCode_ERROR_CODE_LIMIT_EXCEEDED})
+	if _, err := c.StartSearch(t.Context(), host.SearchStart{Query: "a"}); !errors.Is(err, host.ErrTooManySearches) {
+		t.Errorf("limit exceeded: %v, want %v", err, host.ErrTooManySearches)
 	}
 }

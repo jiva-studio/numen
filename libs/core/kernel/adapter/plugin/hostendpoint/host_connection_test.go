@@ -154,7 +154,7 @@ func TestAHostWithNoModelCallsAnswersNoConnection(t *testing.T) {
 
 	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.complete"})
 
-	if err != nil || got.failure.GetError() != v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION {
+	if err != nil || got.failure.GetError() != v1.ErrorCode_ERROR_CODE_NO_CONNECTION {
 		t.Errorf("Call = %+v, %v, want a served NO_CONNECTION", got, err)
 	}
 }
@@ -167,7 +167,7 @@ func TestAllFailedIsAServedFailureThatNamesEachConnection(t *testing.T) {
 
 	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.embed"})
 
-	if err != nil || got.failure.GetError() != v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED {
+	if err != nil || got.failure.GetError() != v1.ErrorCode_ERROR_CODE_ALL_FAILED {
 		t.Fatalf("Call = %+v, %v", got, err)
 	}
 	failures := got.failure.GetFailures()
@@ -187,7 +187,7 @@ func TestAFailureAfterTheFirstFrameKeepsTheFramesAndEndsTheStreamWithTheFailure(
 	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.chat"})
 
 	if err != nil || !slices.Equal(got.frames, []string{"partial"}) || got.isDone ||
-		got.failure.GetError() != v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED {
+		got.failure.GetError() != v1.ErrorCode_ERROR_CODE_ALL_FAILED {
 		t.Errorf("Call = %+v, %v", got, err)
 	}
 }
@@ -198,7 +198,7 @@ func TestAStopIsAServedFailureThatNamesTheConnection(t *testing.T) {
 	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.profile"})
 
 	failures := got.failure.GetFailures()
-	if err != nil || got.failure.GetError() != v1.CallErrorCode_CALL_ERROR_CODE_STOPPED ||
+	if err != nil || got.failure.GetError() != v1.ErrorCode_ERROR_CODE_STOPPED ||
 		len(failures) != 1 || failures[0].GetConnectionName() != "OpenRouter" || failures[0].GetReason() != "invalid request" {
 		t.Errorf("Call = %+v, %v", got, err)
 	}

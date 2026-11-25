@@ -68,10 +68,10 @@ func (h *Handler) GetIdentity(
 		return connect.NewResponse(&v1.GetIdentityResponse{}), nil
 	}
 	if errors.Is(err, identitydomain.ErrChainOutdated) {
-		return connect.NewResponse(&v1.GetIdentityResponse{Error: v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED, Detail: getDetail(err)}), nil
+		return connect.NewResponse(&v1.GetIdentityResponse{Error: v1.ErrorCode_ERROR_CODE_CHAIN_OUTDATED, Detail: getDetail(err)}), nil
 	}
 	if errors.Is(err, identitydomain.ErrKeyStore) {
-		return connect.NewResponse(&v1.GetIdentityResponse{Error: v1.IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED, Detail: keyStoreDetail}), nil
+		return connect.NewResponse(&v1.GetIdentityResponse{Error: v1.ErrorCode_ERROR_CODE_KEY_STORE_FAILED, Detail: keyStoreDetail}), nil
 	}
 	if err != nil {
 		return nil, newInternalError(err)
@@ -228,24 +228,24 @@ func getSheetDetail(err error) string {
 
 type refusal struct {
 	sentinel error
-	code     v1.IdentityErrorCode
+	code     v1.ErrorCode
 }
 
 func getRefusals() []refusal {
 	return []refusal{
-		{identitydomain.ErrInvalidWords, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS},
-		{identitydomain.ErrIdentityExists, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS},
-		{identitydomain.ErrKeyStore, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED},
-		{identitydomain.ErrInvalidSheets, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_SHEETS},
-		{identitydomain.ErrNotEnoughSheets, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS},
-		{identitydomain.ErrOtherAccount, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_OTHER_ACCOUNT},
-		{identitydomain.ErrNoIdentity, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY},
-		{identitydomain.ErrInvalidChainMark, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK},
-		{identitydomain.ErrChainOutdated, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_CHAIN_OUTDATED},
+		{identitydomain.ErrInvalidWords, v1.ErrorCode_ERROR_CODE_INVALID_WORDS},
+		{identitydomain.ErrIdentityExists, v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS},
+		{identitydomain.ErrKeyStore, v1.ErrorCode_ERROR_CODE_KEY_STORE_FAILED},
+		{identitydomain.ErrInvalidSheets, v1.ErrorCode_ERROR_CODE_INVALID_SHEETS},
+		{identitydomain.ErrNotEnoughSheets, v1.ErrorCode_ERROR_CODE_NOT_ENOUGH_SHEETS},
+		{identitydomain.ErrOtherAccount, v1.ErrorCode_ERROR_CODE_OTHER_ACCOUNT},
+		{identitydomain.ErrNoIdentity, v1.ErrorCode_ERROR_CODE_NO_IDENTITY},
+		{identitydomain.ErrInvalidChainMark, v1.ErrorCode_ERROR_CODE_INVALID},
+		{identitydomain.ErrChainOutdated, v1.ErrorCode_ERROR_CODE_CHAIN_OUTDATED},
 	}
 }
 
-func getErrorCode(err error) (v1.IdentityErrorCode, bool) {
+func getErrorCode(err error) (v1.ErrorCode, bool) {
 	for _, refusal := range getRefusals() {
 		if errors.Is(err, refusal.sentinel) {
 			return refusal.code, true

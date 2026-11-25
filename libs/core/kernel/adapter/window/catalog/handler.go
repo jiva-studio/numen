@@ -178,11 +178,11 @@ func newWireIncompatibility(reason manifest.IncompatibleReason) v1.CatalogIncomp
 	return v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_UNSPECIFIED
 }
 
-func newWireErrorCode(err error) v1.CatalogErrorCode {
+func newWireErrorCode(err error) v1.ErrorCode {
 	if errors.Is(err, catalog.ErrNotFound) {
-		return v1.CatalogErrorCode_CATALOG_ERROR_CODE_NOT_FOUND
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND
 	}
-	return v1.CatalogErrorCode_CATALOG_ERROR_CODE_UNSPECIFIED
+	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (h *Handler) getPluginDir(id string) (string, bool) {

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/shared.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // IdentityService manages the account identity of this device. No secret key reaches the window; the
@@ -59,49 +61,6 @@ service IdentityService {
   rpc RevokeDevice(RevokeDeviceRequest) returns (RevokeDeviceResponse);
 }
 
-// IdentityErrorCode is why an identity call was refused. The zero value is a call that
-// succeeded.
-enum IdentityErrorCode {
-  IDENTITY_ERROR_CODE_UNSPECIFIED = 0;
-  // IDENTITY_ERROR_CODE_INVALID_WORDS is a set of words that is not 12 recovery words, or whose
-  // checksum fails.
-  IDENTITY_ERROR_CODE_INVALID_WORDS = 1;
-  // IDENTITY_ERROR_CODE_IDENTITY_EXISTS is a device that already holds an identity.
-  IDENTITY_ERROR_CODE_IDENTITY_EXISTS = 2;
-  // IDENTITY_ERROR_CODE_KEY_STORE_FAILED is a key store that failed to read or keep the identity.
-  IDENTITY_ERROR_CODE_KEY_STORE_FAILED = 3;
-  // IDENTITY_ERROR_CODE_INVALID_SHEETS is a sheet with a wrong or unknown word, sheets of two kits, or
-  // one sheet entered twice.
-  IDENTITY_ERROR_CODE_INVALID_SHEETS = 4;
-  // IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS is fewer than two sheets.
-  IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS = 5;
-  // IDENTITY_ERROR_CODE_OTHER_ACCOUNT is a proof that belongs to another account than this device.
-  IDENTITY_ERROR_CODE_OTHER_ACCOUNT = 6;
-  // IDENTITY_ERROR_CODE_NO_IDENTITY is a device that holds no identity, or a call that needs one on a device with none.
-  IDENTITY_ERROR_CODE_NO_IDENTITY = 7;
-  // IDENTITY_ERROR_CODE_LINK_ACTIVE is a link that already runs on this device.
-  IDENTITY_ERROR_CODE_LINK_ACTIVE = 8;
-  // IDENTITY_ERROR_CODE_NO_LINK is a call that needs a link and finds none.
-  IDENTITY_ERROR_CODE_NO_LINK = 9;
-  // IDENTITY_ERROR_CODE_LINK_TEXT_INVALID is a text that is not the text of a QR code of a link.
-  IDENTITY_ERROR_CODE_LINK_TEXT_INVALID = 10;
-  // IDENTITY_ERROR_CODE_LAST_DEVICE is a revoke that would leave the account with no device.
-  IDENTITY_ERROR_CODE_LAST_DEVICE = 11;
-  // IDENTITY_ERROR_CODE_REVOKE_RACED is a revoke that was dropped because a device was added by the device to revoke.
-  IDENTITY_ERROR_CODE_REVOKE_RACED = 12;
-  // IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE is a revoke of the device it was asked on.
-  IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE = 13;
-  // IDENTITY_ERROR_CODE_DEVICE_REVOKED is a call that the account refuses to a revoked device.
-  IDENTITY_ERROR_CODE_DEVICE_REVOKED = 14;
-  // IDENTITY_ERROR_CODE_UNKNOWN_DEVICE is a device that is not active in the account.
-  IDENTITY_ERROR_CODE_UNKNOWN_DEVICE = 15;
-  // IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK is a chain mark that is not a number, a dash and 12 hex digits.
-  IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK = 16;
-  // IDENTITY_ERROR_CODE_CHAIN_OUTDATED is a restore that the server answered with a chain that does not contain the chain mark of the
-  // kit: older, or another history, or none. The restore is over; nothing was kept.
-  IDENTITY_ERROR_CODE_CHAIN_OUTDATED = 17;
-}
-
 // IdentityInfo is what a person can see of the identity of this device.
 message IdentityInfo {
   // account_fingerprint is the fingerprint of the account, the same on every device with the same words.
@@ -123,7 +82,7 @@ message GetIdentityResponse {
   // identity is unset when this device holds no identity.
   IdentityInfo identity = 1;
   // error is CHAIN_OUTDATED while this device holds no identity because the restore it started was refused.
-  IdentityErrorCode error = 2;
+  ErrorCode error = 2;
   string detail = 3;
 }
 
@@ -139,7 +98,7 @@ message CreateIdentityRequest {
 
 message CreateIdentityResponse {
   IdentityInfo identity = 1;
-  IdentityErrorCode error = 2;
+  ErrorCode error = 2;
   // detail names the first wrong position and never holds a word.
   string detail = 3;
 }
@@ -155,7 +114,7 @@ message StartRestoreRequest {
 }
 
 message StartRestoreResponse {
-  IdentityErrorCode error = 1;
+  ErrorCode error = 1;
   // detail names the first wrong position and never holds a word.
   string detail = 2;
 }
@@ -188,7 +147,7 @@ message SaveRecoveryKitRequest {
 message SaveRecoveryKitResponse {
   // is_saved is false when the person closed the save dialog without choosing a file.
   bool is_saved = 1;
-  IdentityErrorCode error = 2;
+  ErrorCode error = 2;
   // detail names a position and never holds a word.
   string detail = 3;
 }
@@ -202,7 +161,7 @@ message StartRestoreFromKitRequest {
 }
 
 message StartRestoreFromKitResponse {
-  IdentityErrorCode error = 1;
+  ErrorCode error = 1;
   // detail names a position and never holds a word.
   string detail = 2;
 }
@@ -273,7 +232,7 @@ message StartLinkRequest {
 
 message StartLinkResponse {
   LinkInfo link = 1;
-  IdentityErrorCode error = 2;
+  ErrorCode error = 2;
   string detail = 3;
 }
 
@@ -281,7 +240,7 @@ message GetLinkRequest {}
 
 message GetLinkResponse {
   LinkInfo link = 1;
-  IdentityErrorCode error = 2;
+  ErrorCode error = 2;
   string detail = 3;
 }
 
@@ -290,7 +249,7 @@ message DecideLinkRequest {
 }
 
 message DecideLinkResponse {
-  IdentityErrorCode error = 1;
+  ErrorCode error = 1;
   string detail = 2;
 }
 
@@ -299,14 +258,14 @@ message ConfirmJoinRequest {
 }
 
 message ConfirmJoinResponse {
-  IdentityErrorCode error = 1;
+  ErrorCode error = 1;
   string detail = 2;
 }
 
 message CancelLinkRequest {}
 
 message CancelLinkResponse {
-  IdentityErrorCode error = 1;
+  ErrorCode error = 1;
   string detail = 2;
 }
 
@@ -324,7 +283,7 @@ message ListDevicesRequest {}
 
 message ListDevicesResponse {
   repeated DeviceInfo devices = 1;
-  IdentityErrorCode error = 2;
+  ErrorCode error = 2;
   string detail = 3;
 }
 
@@ -334,6 +293,6 @@ message RevokeDeviceRequest {
 }
 
 message RevokeDeviceResponse {
-  IdentityErrorCode error = 1;
+  ErrorCode error = 1;
   string detail = 2;
 }

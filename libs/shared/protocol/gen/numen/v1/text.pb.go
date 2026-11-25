@@ -189,7 +189,7 @@ func (x *CreateTextEditRequest) GetSegments() []*TextSegment {
 type CreateTextEditResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Version       *TextVersion           `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	Error         TextErrorCode          `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -231,18 +231,18 @@ func (x *CreateTextEditResponse) GetVersion() *TextVersion {
 	return nil
 }
 
-func (x *CreateTextEditResponse) GetError() TextErrorCode {
+func (x *CreateTextEditResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 var File_numen_v1_text_proto protoreflect.FileDescriptor
 
 const file_numen_v1_text_proto_rawDesc = "" +
 	"\n" +
-	"\x13numen/v1/text.proto\x12\bnumen.v1\x1a\x17numen/v1/hosttext.proto\x1a\x1anumen/v1/textsegment.proto\")\n" +
+	"\x13numen/v1/text.proto\x12\bnumen.v1\x1a\x17numen/v1/hosttext.proto\x1a\x15numen/v1/shared.proto\x1a\x1anumen/v1/textsegment.proto\")\n" +
 	"\x13ReadLiveTextRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"z\n" +
 	"\x14ReadLiveTextResponse\x12/\n" +
@@ -252,10 +252,10 @@ const file_numen_v1_text_proto_rawDesc = "" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12*\n" +
 	"\x11source_version_id\x18\x03 \x01(\tR\x0fsourceVersionId\x121\n" +
-	"\bsegments\x18\x04 \x03(\v2\x15.numen.v1.TextSegmentR\bsegments\"x\n" +
+	"\bsegments\x18\x04 \x03(\v2\x15.numen.v1.TextSegmentR\bsegments\"t\n" +
 	"\x16CreateTextEditResponse\x12/\n" +
-	"\aversion\x18\x01 \x01(\v2\x15.numen.v1.TextVersionR\aversion\x12-\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error2\xb1\x01\n" +
+	"\aversion\x18\x01 \x01(\v2\x15.numen.v1.TextVersionR\aversion\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error2\xb1\x01\n" +
 	"\vTextService\x12M\n" +
 	"\fReadLiveText\x12\x1d.numen.v1.ReadLiveTextRequest\x1a\x1e.numen.v1.ReadLiveTextResponse\x12S\n" +
 	"\x0eCreateTextEdit\x12\x1f.numen.v1.CreateTextEditRequest\x1a .numen.v1.CreateTextEditResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
@@ -280,14 +280,14 @@ var file_numen_v1_text_proto_goTypes = []any{
 	(*CreateTextEditResponse)(nil), // 3: numen.v1.CreateTextEditResponse
 	(*TextVersion)(nil),            // 4: numen.v1.TextVersion
 	(*TextSegment)(nil),            // 5: numen.v1.TextSegment
-	(TextErrorCode)(0),             // 6: numen.v1.TextErrorCode
+	(ErrorCode)(0),                 // 6: numen.v1.ErrorCode
 }
 var file_numen_v1_text_proto_depIdxs = []int32{
 	4, // 0: numen.v1.ReadLiveTextResponse.version:type_name -> numen.v1.TextVersion
 	5, // 1: numen.v1.ReadLiveTextResponse.segments:type_name -> numen.v1.TextSegment
 	5, // 2: numen.v1.CreateTextEditRequest.segments:type_name -> numen.v1.TextSegment
 	4, // 3: numen.v1.CreateTextEditResponse.version:type_name -> numen.v1.TextVersion
-	6, // 4: numen.v1.CreateTextEditResponse.error:type_name -> numen.v1.TextErrorCode
+	6, // 4: numen.v1.CreateTextEditResponse.error:type_name -> numen.v1.ErrorCode
 	0, // 5: numen.v1.TextService.ReadLiveText:input_type -> numen.v1.ReadLiveTextRequest
 	2, // 6: numen.v1.TextService.CreateTextEdit:input_type -> numen.v1.CreateTextEditRequest
 	1, // 7: numen.v1.TextService.ReadLiveText:output_type -> numen.v1.ReadLiveTextResponse
@@ -305,6 +305,7 @@ func file_numen_v1_text_proto_init() {
 		return
 	}
 	file_numen_v1_hosttext_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_textsegment_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{

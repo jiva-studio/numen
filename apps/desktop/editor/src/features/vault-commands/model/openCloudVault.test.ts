@@ -53,6 +53,12 @@ describe('getting a cloud vault', () => {
 
   it('asks again with the chosen folder and the name after another folder is chosen', async () => {
     const { deps, asked } = setup(['choose', 'use'], ['/music'])
+    deps.remote.suggestPath
+      .mockResolvedValueOnce({ ok: true as const, value: PLACE })
+      .mockResolvedValueOnce({
+        ok: true as const,
+        value: { folder: '/music', path: '/music/Hare Krishna', isTaken: false },
+      })
 
     await openCloudVault(HARE, deps)
 

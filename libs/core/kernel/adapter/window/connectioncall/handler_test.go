@@ -100,11 +100,11 @@ func TestACallStreamsTheFramesThroughTheRowsOfThePluginTheRequestNames(t *testin
 func TestACallTheCoreCouldNotServeEndsWithAFailureFrame(t *testing.T) {
 	for name, want := range map[string]struct {
 		err  error
-		code v1.CallErrorCode
+		code v1.ErrorCode
 	}{
-		"no row":    {connection.ErrNoConnection, v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION},
-		"every row": {&connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "Ollama", Reason: "unavailable"}}}, v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED},
-		"a stop":    {&connection.StoppedError{ConnectionName: "OpenRouter", Reason: "invalid request"}, v1.CallErrorCode_CALL_ERROR_CODE_STOPPED},
+		"no row":    {connection.ErrNoConnection, v1.ErrorCode_ERROR_CODE_NO_CONNECTION},
+		"every row": {&connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "Ollama", Reason: "unavailable"}}}, v1.ErrorCode_ERROR_CODE_ALL_FAILED},
+		"a stop":    {&connection.StoppedError{ConnectionName: "OpenRouter", Reason: "invalid request"}, v1.ErrorCode_ERROR_CODE_STOPPED},
 	} {
 		t.Run(name, func(t *testing.T) {
 			got, err := call(t, newClient(t, &scriptedCalls{err: want.err}), connect.NewRequest(&v1.ConnectionCallServiceCallRequest{Operation: "llm.complete"}))

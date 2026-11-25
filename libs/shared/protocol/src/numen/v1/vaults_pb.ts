@@ -8,15 +8,17 @@
 // the identity that folder carries. What is inside one is vault.proto, which
 // answers about the vault a client is looking at.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/vaults.proto.
  */
 export const file_numen_v1_vaults: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIlcKBVZhdWx0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRISCgppc19taXNzaW5nGAQgASgIEhIKCm1hbmFnZWRfYnkYBSABKAkiEwoRTGlzdFZhdWx0c1JlcXVlc3QiNQoSTGlzdFZhdWx0c1Jlc3BvbnNlEh8KBnZhdWx0cxgBIAMoCzIPLm51bWVuLnYxLlZhdWx0IkEKD0FkZFZhdWx0UmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSEgoKbWFuYWdlZF9ieRgDIAEoCSKKAQoQQWRkVmF1bHRSZXNwb25zZRIjCgV2YXVsdBgBIAEoCzIPLm51bWVuLnYxLlZhdWx0SACIAQESLQoFZXJyb3IYAiABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAYgBARIOCgZkZXRhaWwYAyABKAlCCAoGX3ZhdWx0QggKBl9lcnJvciIuChJSZW5hbWVWYXVsdFJlcXVlc3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCSKNAQoTUmVuYW1lVmF1bHRSZXNwb25zZRIjCgV2YXVsdBgBIAEoCzIPLm51bWVuLnYxLlZhdWx0SACIAQESLQoFZXJyb3IYAiABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAYgBARIOCgZkZXRhaWwYAyABKAlCCAoGX3ZhdWx0QggKBl9lcnJvciI7ChJSZW1vdmVWYXVsdFJlcXVlc3QSCgoCaWQYASABKAkSGQoRaXNfZm9sZGVyX3RyYXNoZWQYAiABKAgibAoTUmVtb3ZlVmF1bHRSZXNwb25zZRItCgVlcnJvchgBIAEoDjIZLm51bWVuLnYxLlZhdWx0c0Vycm9yQ29kZUgAiAEBEg4KBmRldGFpbBgCIAEoCRIMCgRwYXRoGAMgASgJQggKBl9lcnJvciIeChBPcGVuVmF1bHRSZXF1ZXN0EgoKAmlkGAEgASgJIlwKEU9wZW5WYXVsdFJlc3BvbnNlEi0KBWVycm9yGAEgASgOMhkubnVtZW4udjEuVmF1bHRzRXJyb3JDb2RlSACIAQESDgoGZGV0YWlsGAIgASgJQggKBl9lcnJvcirVAgoPVmF1bHRzRXJyb3JDb2RlEiEKHVZBVUxUU19FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIAocVkFVTFRTX0VSUk9SX0NPREVfVU5SRUFEQUJMRRABEhoKFlZBVUxUU19FUlJPUl9DT0RFX0NPUFkQAhIeChpWQVVMVFNfRVJST1JfQ09ERV9PVkVSTEFQUxADEiAKHFZBVUxUU19FUlJPUl9DT0RFX05BTUVfVEFLRU4QBBIgChxWQVVMVFNfRVJST1JfQ09ERV9MQVNUX1ZBVUxUEAUSHQoZVkFVTFRTX0VSUk9SX0NPREVfQ1VSUkVOVBAGEh8KG1ZBVUxUU19FUlJPUl9DT0RFX05PVF9GT1VORBAHEh4KGlZBVUxUU19FUlJPUl9DT0RFX05PX1RSQVNIEAgSHQoZVkFVTFRTX0VSUk9SX0NPREVfVU5TQVZFRBAJMvkCCg1WYXVsdHNTZXJ2aWNlEkcKCkxpc3RWYXVsdHMSGy5udW1lbi52MS5MaXN0VmF1bHRzUmVxdWVzdBocLm51bWVuLnYxLkxpc3RWYXVsdHNSZXNwb25zZRJBCghBZGRWYXVsdBIZLm51bWVuLnYxLkFkZFZhdWx0UmVxdWVzdBoaLm51bWVuLnYxLkFkZFZhdWx0UmVzcG9uc2USSgoLUmVuYW1lVmF1bHQSHC5udW1lbi52MS5SZW5hbWVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW5hbWVWYXVsdFJlc3BvbnNlEkoKC1JlbW92ZVZhdWx0EhwubnVtZW4udjEuUmVtb3ZlVmF1bHRSZXF1ZXN0Gh0ubnVtZW4udjEuUmVtb3ZlVmF1bHRSZXNwb25zZRJECglPcGVuVmF1bHQSGi5udW1lbi52MS5PcGVuVmF1bHRSZXF1ZXN0GhsubnVtZW4udjEuT3BlblZhdWx0UmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIlcKBVZhdWx0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRISCgppc19taXNzaW5nGAQgASgIEhIKCm1hbmFnZWRfYnkYBSABKAkiEwoRTGlzdFZhdWx0c1JlcXVlc3QiNQoSTGlzdFZhdWx0c1Jlc3BvbnNlEh8KBnZhdWx0cxgBIAMoCzIPLm51bWVuLnYxLlZhdWx0IkEKD0FkZFZhdWx0UmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSEgoKbWFuYWdlZF9ieRgDIAEoCSJ1ChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAlCCAoGX3ZhdWx0Ii4KElJlbmFtZVZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJIngKE1JlbmFtZVZhdWx0UmVzcG9uc2USIwoFdmF1bHQYASABKAsyDy5udW1lbi52MS5WYXVsdEgAiAEBEiIKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCUIICgZfdmF1bHQiOwoSUmVtb3ZlVmF1bHRSZXF1ZXN0EgoKAmlkGAEgASgJEhkKEWlzX2ZvbGRlcl90cmFzaGVkGAIgASgIIlcKE1JlbW92ZVZhdWx0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJEgwKBHBhdGgYAyABKAkiHgoQT3BlblZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCSJHChFPcGVuVmF1bHRSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAky+QIKDVZhdWx0c1NlcnZpY2USRwoKTGlzdFZhdWx0cxIbLm51bWVuLnYxLkxpc3RWYXVsdHNSZXF1ZXN0GhwubnVtZW4udjEuTGlzdFZhdWx0c1Jlc3BvbnNlEkEKCEFkZFZhdWx0EhkubnVtZW4udjEuQWRkVmF1bHRSZXF1ZXN0GhoubnVtZW4udjEuQWRkVmF1bHRSZXNwb25zZRJKCgtSZW5hbWVWYXVsdBIcLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVzcG9uc2USSgoLUmVtb3ZlVmF1bHQSHC5udW1lbi52MS5SZW1vdmVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW1vdmVWYXVsdFJlc3BvbnNlEkQKCU9wZW5WYXVsdBIaLm51bWVuLnYxLk9wZW5WYXVsdFJlcXVlc3QaGy5udW1lbi52MS5PcGVuVmF1bHRSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * Vault is one vault the installation holds, as the list has it.
@@ -149,9 +151,9 @@ export type AddVaultResponse = Message<"numen.v1.AddVaultResponse"> & {
   vault?: Vault | undefined;
 
   /**
-   * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error?: VaultsErrorCode | undefined;
+  error: ErrorCode;
 
   /**
    * The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
@@ -203,9 +205,9 @@ export type RenameVaultResponse = Message<"numen.v1.RenameVaultResponse"> & {
   vault?: Vault | undefined;
 
   /**
-   * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error?: VaultsErrorCode | undefined;
+  error: ErrorCode;
 
   /**
    * The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
@@ -255,9 +257,9 @@ export type RemoveVaultResponse = Message<"numen.v1.RemoveVaultResponse"> & {
    * Set when the vault is still on the list, and why. The folder is where it
    * was.
    *
-   * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error?: VaultsErrorCode | undefined;
+  error: ErrorCode;
 
   /**
    * The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
@@ -303,9 +305,9 @@ export const OpenVaultRequestSchema: GenMessage<OpenVaultRequest> = /*@__PURE__*
  */
 export type OpenVaultResponse = Message<"numen.v1.OpenVaultResponse"> & {
   /**
-   * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error?: VaultsErrorCode | undefined;
+  error: ErrorCode;
 
   /**
    * The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
@@ -321,90 +323,6 @@ export type OpenVaultResponse = Message<"numen.v1.OpenVaultResponse"> & {
  */
 export const OpenVaultResponseSchema: GenMessage<OpenVaultResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vaults, 10);
-
-/**
- * VaultsErrorCode is why the list is as it was, or why the window is still
- * showing the vault it was showing.
- *
- * @generated from enum numen.v1.VaultsErrorCode
- */
-export enum VaultsErrorCode {
-  /**
-   * @generated from enum value: VAULTS_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The path is not a folder, or cannot be read.
-   *
-   * @generated from enum value: VAULTS_ERROR_CODE_UNREADABLE = 1;
-   */
-  UNREADABLE = 1,
-
-  /**
-   * The folder carries an identity registered at another path, and that path
-   * still carries it: the two are copies of one vault, and one index cannot
-   * hold both.
-   *
-   * @generated from enum value: VAULTS_ERROR_CODE_COPY = 2;
-   */
-  COPY = 2,
-
-  /**
-   * The folder lies inside a vault that is on the list, or holds one.
-   *
-   * @generated from enum value: VAULTS_ERROR_CODE_OVERLAPS = 3;
-   */
-  OVERLAPS = 3,
-
-  /**
-   * Another vault is called this. It reaches RenameVault; AddVault appends a
-   * number to a taken name.
-   *
-   * @generated from enum value: VAULTS_ERROR_CODE_NAME_TAKEN = 4;
-   */
-  NAME_TAKEN = 4,
-
-  /**
-   * It is the only vault this installation has.
-   *
-   * @generated from enum value: VAULTS_ERROR_CODE_LAST_VAULT = 5;
-   */
-  LAST_VAULT = 5,
-
-  /**
-   * The vault is the one the window shows.
-   *
-   * @generated from enum value: VAULTS_ERROR_CODE_CURRENT = 6;
-   */
-  CURRENT = 6,
-
-  /**
-   * @generated from enum value: VAULTS_ERROR_CODE_NOT_FOUND = 7;
-   */
-  NOT_FOUND = 7,
-
-  /**
-   * This machine has no trash, so the folder stays where
-   * it is and the vault stays on the list.
-   *
-   * @generated from enum value: VAULTS_ERROR_CODE_NO_TRASH = 8;
-   */
-  NO_TRASH = 8,
-
-  /**
-   * A tab has unsaved changes, so the window keeps the vault it shows.
-   *
-   * @generated from enum value: VAULTS_ERROR_CODE_UNSAVED = 9;
-   */
-  UNSAVED = 9,
-}
-
-/**
- * Describes the enum numen.v1.VaultsErrorCode.
- */
-export const VaultsErrorCodeSchema: GenEnum<VaultsErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_vaults, 0);
 
 /**
  * VaultsService answers about the vaults this installation holds, and changes

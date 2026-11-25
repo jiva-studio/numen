@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/shared.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // LicenseService manages the license keys that plugins declare: listing their status, activating a
@@ -36,28 +38,6 @@ enum LicenseStatus {
   // LICENSE_STATUS_UNVERIFIED is a stored key that could not be verified within the offline grace
   // window or after a clock rollback, or whose provider disabled it.
   LICENSE_STATUS_UNVERIFIED = 4;
-}
-
-// LicenseErrorCode is why an activation or deactivation call failed. The zero value is a call
-// that succeeded.
-enum LicenseErrorCode {
-  LICENSE_ERROR_CODE_UNSPECIFIED = 0;
-  // LICENSE_ERROR_CODE_NOT_FOUND is a license id that no plugin declares, or a key that no provider
-  // recognizes.
-  LICENSE_ERROR_CODE_NOT_FOUND = 1;
-  // LICENSE_ERROR_CODE_INVALID_KEY is an empty or malformed license key.
-  LICENSE_ERROR_CODE_INVALID_KEY = 2;
-  // LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED is a key that has used all of its machine slots.
-  LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED = 3;
-  LICENSE_ERROR_CODE_EXPIRED = 4;
-  // LICENSE_ERROR_CODE_DISABLED is a key that the provider has disabled or revoked.
-  LICENSE_ERROR_CODE_DISABLED = 5;
-  LICENSE_ERROR_CODE_PRODUCT_MISMATCH = 6;
-  // LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that could not be reached or returned a
-  // transient error.
-  LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE = 7;
-  // LICENSE_ERROR_CODE_KEY_STORE_FAILED is a key store that failed or is absent on this machine.
-  LICENSE_ERROR_CODE_KEY_STORE_FAILED = 8;
 }
 
 // LicenseContributor is one plugin that declares a license and what it unlocks when the license is
@@ -118,7 +98,7 @@ message ActivateLicenseRequest {
 
 message ActivateLicenseResponse {
   LicenseInfo license = 1;
-  LicenseErrorCode error = 2;
+  ErrorCode error = 2;
   string detail = 3;
 }
 
@@ -128,7 +108,7 @@ message DeactivateLicenseRequest {
 
 message DeactivateLicenseResponse {
   LicenseInfo license = 1;
-  LicenseErrorCode error = 2;
+  ErrorCode error = 2;
   string detail = 3;
 }
 

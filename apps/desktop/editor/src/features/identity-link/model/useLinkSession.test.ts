@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
+import { runInBackground } from '@numen/ui'
 import { createIdentityStore, type LinkRole } from '@/entities/identity'
 import {
   createIdentityClient,
@@ -195,7 +196,10 @@ describe('useLinkSession', () => {
     )
     const { session } = mountSession({ startLink: () => ok(createLinkInfo()), getLink })
     await session.start('show')
-    await vi.advanceTimersByTimeAsync(1000)
+    await vi.advanceTimersByTimeAsync(500)
+    runInBackground(session.answers.decide(true), () => undefined)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(resolvers).toHaveLength(2)
     resolvers[1]?.(createLinkInfo({ phase: 'confirmPeer' }))
     await vi.advanceTimersByTimeAsync(0)
     resolvers[0]?.(createLinkInfo({ phase: 'waitingForChannel' }))

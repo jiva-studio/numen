@@ -6,7 +6,9 @@ import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegen
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { TextVersion } from "./hosttext_pb.js";
 import { file_numen_v1_hosttext } from "./hosttext_pb.js";
-import type { TextErrorCode, TextSegment } from "./textsegment_pb.js";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
+import type { TextSegment } from "./textsegment_pb.js";
 import { file_numen_v1_textsegment } from "./textsegment_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/text.proto.
  */
 export const file_numen_v1_text: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS90ZXh0LnByb3RvEghudW1lbi52MSIjChNSZWFkTGl2ZVRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkiZwoUUmVhZExpdmVUZXh0UmVzcG9uc2USJgoHdmVyc2lvbhgBIAEoCzIVLm51bWVuLnYxLlRleHRWZXJzaW9uEicKCHNlZ21lbnRzGAIgAygLMhUubnVtZW4udjEuVGV4dFNlZ21lbnQifAoVQ3JlYXRlVGV4dEVkaXRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRwYXRoGAIgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAMgASgJEicKCHNlZ21lbnRzGAQgAygLMhUubnVtZW4udjEuVGV4dFNlZ21lbnQiaAoWQ3JlYXRlVGV4dEVkaXRSZXNwb25zZRImCgd2ZXJzaW9uGAEgASgLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SJgoFZXJyb3IYAiABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlMrEBCgtUZXh0U2VydmljZRJNCgxSZWFkTGl2ZVRleHQSHS5udW1lbi52MS5SZWFkTGl2ZVRleHRSZXF1ZXN0Gh4ubnVtZW4udjEuUmVhZExpdmVUZXh0UmVzcG9uc2USUwoOQ3JlYXRlVGV4dEVkaXQSHy5udW1lbi52MS5DcmVhdGVUZXh0RWRpdFJlcXVlc3QaIC5udW1lbi52MS5DcmVhdGVUZXh0RWRpdFJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_hosttext, file_numen_v1_textsegment]);
+  fileDesc("ChNudW1lbi92MS90ZXh0LnByb3RvEghudW1lbi52MSIjChNSZWFkTGl2ZVRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkiZwoUUmVhZExpdmVUZXh0UmVzcG9uc2USJgoHdmVyc2lvbhgBIAEoCzIVLm51bWVuLnYxLlRleHRWZXJzaW9uEicKCHNlZ21lbnRzGAIgAygLMhUubnVtZW4udjEuVGV4dFNlZ21lbnQifAoVQ3JlYXRlVGV4dEVkaXRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRwYXRoGAIgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAMgASgJEicKCHNlZ21lbnRzGAQgAygLMhUubnVtZW4udjEuVGV4dFNlZ21lbnQiZAoWQ3JlYXRlVGV4dEVkaXRSZXNwb25zZRImCgd2ZXJzaW9uGAEgASgLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SIgoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGUysQEKC1RleHRTZXJ2aWNlEk0KDFJlYWRMaXZlVGV4dBIdLm51bWVuLnYxLlJlYWRMaXZlVGV4dFJlcXVlc3QaHi5udW1lbi52MS5SZWFkTGl2ZVRleHRSZXNwb25zZRJTCg5DcmVhdGVUZXh0RWRpdBIfLm51bWVuLnYxLkNyZWF0ZVRleHRFZGl0UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZVRleHRFZGl0UmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_hosttext, file_numen_v1_shared, file_numen_v1_textsegment]);
 
 /**
  * @generated from message numen.v1.ReadLiveTextRequest
@@ -99,9 +101,9 @@ export type CreateTextEditResponse = Message<"numen.v1.CreateTextEditResponse"> 
   version?: TextVersion | undefined;
 
   /**
-   * @generated from field: numen.v1.TextErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: TextErrorCode;
+  error: ErrorCode;
 };
 
 /**

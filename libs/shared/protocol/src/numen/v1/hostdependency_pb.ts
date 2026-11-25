@@ -4,13 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostdependency.proto.
  */
 export const file_numen_v1_hostdependency: GenFile = /*@__PURE__*/
-  fileDesc("Ch1udW1lbi92MS9ob3N0ZGVwZW5kZW5jeS5wcm90bxIIbnVtZW4udjEiNAoVRmV0Y2hNb2RlbEZpbGVSZXF1ZXN0EgsKA3VybBgBIAEoCRIOCgZzaGEyNTYYAiABKAkiNQoWRmV0Y2hNb2RlbEZpbGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBWVycm9yGAIgASgJMmwKFUhvc3REZXBlbmRlbmN5U2VydmljZRJTCg5GZXRjaE1vZGVsRmlsZRIfLm51bWVuLnYxLkZldGNoTW9kZWxGaWxlUmVxdWVzdBogLm51bWVuLnYxLkZldGNoTW9kZWxGaWxlUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("Ch1udW1lbi92MS9ob3N0ZGVwZW5kZW5jeS5wcm90bxIIbnVtZW4udjEiNAoVRmV0Y2hNb2RlbEZpbGVSZXF1ZXN0EgsKA3VybBgBIAEoCRIOCgZzaGEyNTYYAiABKAkiWgoWRmV0Y2hNb2RlbEZpbGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg4KBmRldGFpbBgCIAEoCRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZTJsChVIb3N0RGVwZW5kZW5jeVNlcnZpY2USUwoORmV0Y2hNb2RlbEZpbGUSHy5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlcXVlc3QaIC5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.FetchModelFileRequest
@@ -46,9 +48,16 @@ export type FetchModelFileResponse = Message<"numen.v1.FetchModelFileResponse"> 
   path: string;
 
   /**
-   * @generated from field: string error = 2;
+   * Error text preserved on wire tag 2 for compatibility with protocol v1 plugin binaries.
+   *
+   * @generated from field: string detail = 2;
    */
-  error: string;
+  detail: string;
+
+  /**
+   * @generated from field: numen.v1.ErrorCode error = 3;
+   */
+  error: ErrorCode;
 };
 
 /**

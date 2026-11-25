@@ -2,17 +2,17 @@
 // @generated from file numen/v1/textsegment.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// The segments a text version is made of, and the codes a text call answers with.
+// The segments a text version is made of.
 
-import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/textsegment.proto.
  */
 export const file_numen_v1_textsegment: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS90ZXh0c2VnbWVudC5wcm90bxIIbnVtZW4udjEiPgoLVGV4dFNlZ21lbnQSDAoEdGV4dBgBIAEoCRIPCgdoZWFkaW5nGAIgASgJEhAKCHNlbGVjdG9yGAMgASgJKqkBCg1UZXh0RXJyb3JDb2RlEh8KG1RFWFRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEh0KGVRFWFRfRVJST1JfQ09ERV9OT1RfRk9VTkQQARIcChhURVhUX0VSUk9SX0NPREVfTk9fVkFVTFQQAhIbChdURVhUX0VSUk9SX0NPREVfSU5WQUxJRBADEh0KGVRFWFRfRVJST1JfQ09ERV9OT1RfT1dORVIQBEJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChpudW1lbi92MS90ZXh0c2VnbWVudC5wcm90bxIIbnVtZW4udjEiPgoLVGV4dFNlZ21lbnQSDAoEdGV4dBgBIAEoCRIPCgdoZWFkaW5nGAIgASgJEhAKCHNlbGVjdG9yGAMgASgJQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * TextSegment is one segment of a text. A version file holds one segment per
@@ -48,53 +48,4 @@ export type TextSegment = Message<"numen.v1.TextSegment"> & {
  */
 export const TextSegmentSchema: GenMessage<TextSegment> = /*@__PURE__*/
   messageDesc(file_numen_v1_textsegment, 0);
-
-/**
- * TextErrorCode is the reason a served text call did not succeed. The zero
- * value is a call that succeeded.
- *
- * @generated from enum numen.v1.TextErrorCode
- */
-export enum TextErrorCode {
-  /**
-   * @generated from enum value: TEXT_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * TEXT_ERROR_CODE_NOT_FOUND is a file, a version or a key that does not exist.
-   *
-   * @generated from enum value: TEXT_ERROR_CODE_NOT_FOUND = 1;
-   */
-  NOT_FOUND = 1,
-
-  /**
-   * TEXT_ERROR_CODE_NO_VAULT is a call while the host shows no vault.
-   *
-   * @generated from enum value: TEXT_ERROR_CODE_NO_VAULT = 2;
-   */
-  NO_VAULT = 2,
-
-  /**
-   * TEXT_ERROR_CODE_INVALID is a version the host does not accept: no kind, an
-   * empty key, a file that is missing or is not JSON Lines of segments, or a
-   * source that is no version of the file.
-   *
-   * @generated from enum value: TEXT_ERROR_CODE_INVALID = 3;
-   */
-  INVALID = 3,
-
-  /**
-   * TEXT_ERROR_CODE_NOT_OWNER is a version another plugin made.
-   *
-   * @generated from enum value: TEXT_ERROR_CODE_NOT_OWNER = 4;
-   */
-  NOT_OWNER = 4,
-}
-
-/**
- * Describes the enum numen.v1.TextErrorCode.
- */
-export const TextErrorCodeSchema: GenEnum<TextErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_textsegment, 0);
 

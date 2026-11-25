@@ -3,7 +3,7 @@
  * core answers.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { VAULTS_ERROR_CODE } from '@numen/core-client'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import { createHandledClients } from '@/testing/coreAnswers'
 import { createVaults } from './vaults'
 
@@ -107,13 +107,13 @@ describe('a vault requested for', () => {
 
   it('fails in the words of the error', async () => {
     const vaults = getVaults()
-    requestLog.addVault.mockResolvedValue({ error: VAULTS_ERROR_CODE.NAME_TAKEN })
+    requestLog.addVault.mockResolvedValue({ error: WIRE_ERROR_CODE.ALREADY_EXISTS })
     expect(await vaults.add('/v', 'Name')).toStrictEqual({ ok: false, error: 'nameTaken' })
 
-    requestLog.removeVault.mockResolvedValue({ error: VAULTS_ERROR_CODE.LAST_VAULT })
+    requestLog.removeVault.mockResolvedValue({ error: WIRE_ERROR_CODE.LAST_VAULT })
     expect(await vaults.remove('v1', false)).toStrictEqual({ ok: false, error: 'lastVault' })
 
-    requestLog.openVault.mockResolvedValue({ error: VAULTS_ERROR_CODE.NOT_FOUND })
+    requestLog.openVault.mockResolvedValue({ error: WIRE_ERROR_CODE.NOT_FOUND })
     expect(await vaults.open('gone')).toStrictEqual({ ok: false, error: 'notFound' })
   })
 })

@@ -54,7 +54,7 @@ func TestCommand_RunsWithFileAndArgumentsAndReturnsOutput(t *testing.T) {
 		Command: "greet", Path: "a.md", Arguments: map[string]string{"name": "Ann", "loud": "true"},
 	})
 
-	if res.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || res.GetMessage() != "HELLO Ann" || res.GetOpenedPath() != "a.md" {
+	if res.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || res.GetMessage() != "HELLO Ann" || res.GetOpenedPath() != "a.md" {
 		t.Errorf("the command answered %v", res)
 	}
 }
@@ -62,20 +62,20 @@ func TestCommand_RunsWithFileAndArgumentsAndReturnsOutput(t *testing.T) {
 func TestCommand_FailureReturnsCodeAndMessage(t *testing.T) {
 	cases := map[string]struct {
 		request *v1.RunCommandRequest
-		want    v1.CommandErrorCode
+		want    v1.ErrorCode
 		message string
 	}{
 		"a command not added": {
-			&v1.RunCommandRequest{Command: "shred"}, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND,
+			&v1.RunCommandRequest{Command: "shred"}, v1.ErrorCode_ERROR_CODE_NOT_FOUND,
 			"no command of that id: shred",
 		},
 		"arguments it cannot run with": {
 			&v1.RunCommandRequest{Command: "greet", Arguments: map[string]string{"times": "-1"}},
-			v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS,
+			v1.ErrorCode_ERROR_CODE_INVALID,
 			"the arguments do not fit the command: times cannot be negative",
 		},
 		"a failure": {
-			&v1.RunCommandRequest{Command: "fail"}, v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, "the disk is full",
+			&v1.RunCommandRequest{Command: "fail"}, v1.ErrorCode_ERROR_CODE_INTERNAL, "the disk is full",
 		},
 	}
 	for name, one := range cases {

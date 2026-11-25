@@ -9,7 +9,7 @@ import {
   GenerateRecoveryWordsResponseSchema,
   GetIdentityResponseSchema,
   GetLinkResponseSchema,
-  IdentityErrorCode,
+  ErrorCode,
   LinkMode,
   LinkPhase,
   LinkReason,
@@ -86,10 +86,10 @@ describe('createIdentityClient', () => {
   })
 
   it('reads each served error code as a failure', async () => {
-    const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.INVALID_WORDS, 'invalidWords'],
-      [IdentityErrorCode.IDENTITY_EXISTS, 'identityExists'],
-      [IdentityErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
+    const codes: Array<[ErrorCode, string]> = [
+      [ErrorCode.INVALID_WORDS, 'invalidWords'],
+      [ErrorCode.ALREADY_EXISTS, 'identityExists'],
+      [ErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
@@ -135,10 +135,10 @@ describe('createIdentityClient', () => {
   })
 
   it('reads each served error code of a restore as a failure', async () => {
-    const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.INVALID_WORDS, 'invalidWords'],
-      [IdentityErrorCode.IDENTITY_EXISTS, 'identityExists'],
-      [IdentityErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
+    const codes: Array<[ErrorCode, string]> = [
+      [ErrorCode.INVALID_WORDS, 'invalidWords'],
+      [ErrorCode.ALREADY_EXISTS, 'identityExists'],
+      [ErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
@@ -188,12 +188,12 @@ describe('createIdentityClient recovery kit', () => {
   })
 
   it('reads each served error code of a kit as a failure', async () => {
-    const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.INVALID_WORDS, 'invalidWords'],
-      [IdentityErrorCode.INVALID_SHEETS, 'invalidSheets'],
-      [IdentityErrorCode.NOT_ENOUGH_SHEETS, 'notEnoughSheets'],
-      [IdentityErrorCode.OTHER_ACCOUNT, 'otherAccount'],
-      [IdentityErrorCode.NO_IDENTITY, 'noIdentity'],
+    const codes: Array<[ErrorCode, string]> = [
+      [ErrorCode.INVALID_WORDS, 'invalidWords'],
+      [ErrorCode.INVALID_SHEETS, 'invalidSheets'],
+      [ErrorCode.NOT_ENOUGH_SHEETS, 'notEnoughSheets'],
+      [ErrorCode.OTHER_ACCOUNT, 'otherAccount'],
+      [ErrorCode.NO_IDENTITY, 'noIdentity'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
@@ -226,7 +226,7 @@ describe('createIdentityClient recovery kit', () => {
     const client = createClient({
       startRestoreFromKit: () =>
         create(StartRestoreFromKitResponseSchema, {
-          error: IdentityErrorCode.NOT_ENOUGH_SHEETS,
+          error: ErrorCode.NOT_ENOUGH_SHEETS,
           detail: 'two sheets are needed',
         }),
     })
@@ -292,13 +292,13 @@ describe('createIdentityClient link', () => {
   it('reads the refusal of a call that needs a link', async () => {
     const client = createClient({
       getLink: () =>
-        create(GetLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
+        create(GetLinkResponseSchema, { error: ErrorCode.NO_LINK, detail: 'none' }),
       decideLink: () =>
-        create(DecideLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
+        create(DecideLinkResponseSchema, { error: ErrorCode.NO_LINK, detail: 'none' }),
       confirmJoin: () =>
-        create(ConfirmJoinResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
+        create(ConfirmJoinResponseSchema, { error: ErrorCode.NO_LINK, detail: 'none' }),
       cancelLink: () =>
-        create(CancelLinkResponseSchema, { error: IdentityErrorCode.NO_LINK, detail: 'none' }),
+        create(CancelLinkResponseSchema, { error: ErrorCode.NO_LINK, detail: 'none' }),
     })
     const noLink = { ok: false, error: { error: 'noLink', message: 'none' } }
     expect(await client.link.getLink()).toStrictEqual(noLink)
@@ -345,11 +345,11 @@ describe('createIdentityClient link', () => {
 
   it('sends the fingerprint to revoke and reads each refusal', async () => {
     let sent = ''
-    const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.LAST_DEVICE, 'lastDevice'],
-      [IdentityErrorCode.REVOKE_RACED, 'revokeRaced'],
-      [IdentityErrorCode.NOT_ALLOWED_THIS_DEVICE, 'notAllowedThisDevice'],
-      [IdentityErrorCode.UNKNOWN_DEVICE, 'unknownDevice'],
+    const codes: Array<[ErrorCode, string]> = [
+      [ErrorCode.LAST_DEVICE, 'lastDevice'],
+      [ErrorCode.REVOKE_RACED, 'revokeRaced'],
+      [ErrorCode.NOT_ALLOWED_THIS_DEVICE, 'notAllowedThisDevice'],
+      [ErrorCode.NOT_FOUND, 'unknownDevice'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({

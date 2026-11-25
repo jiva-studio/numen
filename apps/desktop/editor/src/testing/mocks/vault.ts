@@ -3,7 +3,7 @@
  * `mockVaultList`. The answers go through the router transport, so the window runs its real
  * calls against them.
  */
-import { VAULTS_ERROR_CODE } from '@numen/core-client'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { requests } from '../requests'
 import { vaultChanges, mockVaultList, mockVaultState } from '../answers'
@@ -35,7 +35,7 @@ export const vaultAnswers = {
     openVault: (request) => {
       requests.opened.push(request.id)
       requests.tabsWhenOpened.push(requests.openTabs.at(-1)?.tabs.length ?? 0)
-      return mockVaultState.isOpenRefused ? { error: VAULTS_ERROR_CODE.NOT_FOUND } : {}
+      return mockVaultState.isOpenRefused ? { error: WIRE_ERROR_CODE.NOT_FOUND } : {}
     },
   },
 } satisfies CoreAnswers

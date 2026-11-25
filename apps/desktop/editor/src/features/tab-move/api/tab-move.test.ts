@@ -2,6 +2,7 @@
  * Tab moves: the requests that send a tab to another window and the answers they get.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import { createAnsweredClients } from '@/testing/coreAnswers'
 import { createTabMoveApi } from './tab-move'
 
@@ -47,11 +48,11 @@ describe('tab move requests', () => {
   })
 
   it('sends MoveTab and converts the error code of the response', async () => {
-    request.moveTab.mockResolvedValueOnce({ error: 0 })
-    request.moveTab.mockResolvedValueOnce({ error: 1 })
-    request.moveTab.mockResolvedValueOnce({ error: 2 })
-    request.moveTab.mockResolvedValueOnce({ error: 3 })
-    request.moveTab.mockResolvedValueOnce({ error: 4 })
+    request.moveTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.UNSPECIFIED })
+    request.moveTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.NO_WINDOW })
+    request.moveTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.TIMEOUT })
+    request.moveTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.NOT_OWNER })
+    request.moveTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.CANCELED })
 
     expect(await tabMoveCore.moveTab('window-a', 'window-b', ORBITS)).toStrictEqual({
       ok: true,
@@ -81,7 +82,7 @@ describe('tab move requests', () => {
   })
 
   it('sends AcceptTabMove and converts the error code of the response', async () => {
-    request.acceptTabMove.mockResolvedValueOnce({ error: 2 })
+    request.acceptTabMove.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.TIMEOUT })
 
     expect(await tabMoveCore.acceptTabMove('window-b', 'plex:1', 'move-1')).toStrictEqual({
       ok: false,
@@ -95,8 +96,8 @@ describe('tab move requests', () => {
   })
 
   it('sends DetachTab with the tab, its saved state and the rounded position and size', async () => {
-    request.detachTab.mockResolvedValueOnce({ error: 0 })
-    request.detachTab.mockResolvedValueOnce({ error: 2 })
+    request.detachTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.UNSPECIFIED })
+    request.detachTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.TIMEOUT })
 
     expect(
       await tabMoveCore.detachTab(ORBITS, { x: 100.6, y: 200.4, width: 640.5, height: 479.6 }),

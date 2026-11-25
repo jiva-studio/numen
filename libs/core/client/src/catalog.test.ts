@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
-  CatalogErrorCode,
+  ErrorCode,
   FindCatalogEntryByTabKindResponseSchema,
   GetCatalogEntryResponseSchema,
   GetCatalogReadmeResponseSchema,
@@ -87,7 +87,7 @@ describe('createPluginCatalog', () => {
       findCatalogEntryByTabKind: () =>
         Promise.resolve(
           create(FindCatalogEntryByTabKindResponseSchema, {
-            error: CatalogErrorCode.NOT_FOUND,
+            error: ErrorCode.NOT_FOUND,
             entry: notes,
           }),
         ),
@@ -105,7 +105,7 @@ describe('createPluginCatalog', () => {
     const client = createClient({
       getCatalogEntry: () =>
         Promise.resolve(
-          create(GetCatalogEntryResponseSchema, { error: CatalogErrorCode.UNSPECIFIED }),
+          create(GetCatalogEntryResponseSchema, { error: ErrorCode.UNSPECIFIED }),
         ),
     })
 

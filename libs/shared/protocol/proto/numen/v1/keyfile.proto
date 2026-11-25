@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/shared.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // KeyFileService is where this computer keeps the keys of the account when it has no system keychain:
@@ -27,20 +29,6 @@ enum KeyFileMode {
   KEY_FILE_MODE_PASSPHRASE = 3;
 }
 
-// KeyFileErrorCode is why a key file call was refused. The zero value is a call that succeeded.
-enum KeyFileErrorCode {
-  KEY_FILE_ERROR_CODE_UNSPECIFIED = 0;
-  // KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE is a passphrase that does not open the file.
-  KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE = 1;
-  // KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE is a passphrase of no characters, or a choice of a passphrase
-  // that gives none.
-  KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE = 2;
-  // KEY_FILE_ERROR_CODE_SAVE_FAILED is a choice the core could not keep for the next start.
-  KEY_FILE_ERROR_CODE_SAVE_FAILED = 3;
-  // KEY_FILE_ERROR_CODE_INVALID_MODE is a choice of a mode that cannot be chosen.
-  KEY_FILE_ERROR_CODE_INVALID_MODE = 4;
-}
-
 message GetKeyFileStateRequest {}
 
 message GetKeyFileStateResponse {
@@ -63,7 +51,7 @@ message ChooseKeyFileRequest {
 }
 
 message ChooseKeyFileResponse {
-  KeyFileErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message UnlockKeyFileRequest {
@@ -71,5 +59,5 @@ message UnlockKeyFileRequest {
 }
 
 message UnlockKeyFileResponse {
-  KeyFileErrorCode error = 1;
+  ErrorCode error = 1;
 }

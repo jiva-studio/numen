@@ -65,7 +65,12 @@ describe('the commands of the features', () => {
       'app:tab.moveToWindow',
       'app:tab.link',
     ])
-    expect(byGroup('file')).toStrictEqual(['app:file.open#document', 'app:version.delete'])
+    expect(byGroup('file')).toStrictEqual([
+      'app:file.download',
+      'app:file.dropDownload',
+      'app:file.open#document',
+      'app:version.delete',
+    ])
     expect(byGroup('settings')).toStrictEqual(['app:settings.open'])
     expect(byGroup('vault')).toStrictEqual([
       'app:file.open#note',

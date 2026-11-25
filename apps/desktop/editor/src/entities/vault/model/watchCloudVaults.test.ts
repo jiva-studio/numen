@@ -87,12 +87,15 @@ describe('watching the cloud vaults', () => {
   it('does not overlap two refreshes of the list', async () => {
     const { state, ports } = setup()
     let release: (() => void) | undefined
-    const list = vi.fn(
-      () =>
-        new Promise<readonly []>((resolve) => {
-          release = () => resolve([])
-        }),
-    )
+    const list = vi
+      .fn<() => Promise<readonly []>>()
+      .mockImplementationOnce(
+        () =>
+          new Promise<readonly []>((resolve) => {
+            release = () => resolve([])
+          }),
+      )
+      .mockResolvedValue([])
     const cloud = useCloudVaults({ list })
     watchCloudVaults(() => runInBackground(cloud.refresh(), reportFailure), ports)
 

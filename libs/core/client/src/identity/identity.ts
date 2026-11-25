@@ -6,7 +6,7 @@
  */
 import type { Client } from '@connectrpc/connect'
 import {
-  IdentityErrorCode as ProtoIdentityErrorCode,
+  ErrorCode as ProtoErrorCode,
   LinkMode as ProtoLinkMode,
   LinkPhase as ProtoLinkPhase,
   LinkReason as ProtoLinkReason,
@@ -189,25 +189,25 @@ const readInfo = (info: ProtoIdentityInfo): IdentityInfo => ({
   keyEpoch: info.keyEpoch,
 })
 
-const ERROR_CODES: Partial<Record<ProtoIdentityErrorCode, IdentityErrorCode>> = {
-  [ProtoIdentityErrorCode.INVALID_WORDS]: 'invalidWords',
-  [ProtoIdentityErrorCode.IDENTITY_EXISTS]: 'identityExists',
-  [ProtoIdentityErrorCode.KEY_STORE_FAILED]: 'keyStoreFailed',
-  [ProtoIdentityErrorCode.INVALID_SHEETS]: 'invalidSheets',
-  [ProtoIdentityErrorCode.NOT_ENOUGH_SHEETS]: 'notEnoughSheets',
-  [ProtoIdentityErrorCode.OTHER_ACCOUNT]: 'otherAccount',
-  [ProtoIdentityErrorCode.LINK_ACTIVE]: 'linkActive',
-  [ProtoIdentityErrorCode.NO_LINK]: 'noLink',
-  [ProtoIdentityErrorCode.LINK_TEXT_INVALID]: 'linkTextInvalid',
-  [ProtoIdentityErrorCode.LAST_DEVICE]: 'lastDevice',
-  [ProtoIdentityErrorCode.REVOKE_RACED]: 'revokeRaced',
-  [ProtoIdentityErrorCode.NOT_ALLOWED_THIS_DEVICE]: 'notAllowedThisDevice',
-  [ProtoIdentityErrorCode.NO_IDENTITY]: 'noIdentity',
-  [ProtoIdentityErrorCode.DEVICE_REVOKED]: 'deviceRevoked',
-  [ProtoIdentityErrorCode.UNKNOWN_DEVICE]: 'unknownDevice',
+const ERROR_CODES: Partial<Record<ProtoErrorCode, IdentityErrorCode>> = {
+  [ProtoErrorCode.INVALID_WORDS]: 'invalidWords',
+  [ProtoErrorCode.ALREADY_EXISTS]: 'identityExists',
+  [ProtoErrorCode.KEY_STORE_FAILED]: 'keyStoreFailed',
+  [ProtoErrorCode.INVALID_SHEETS]: 'invalidSheets',
+  [ProtoErrorCode.NOT_ENOUGH_SHEETS]: 'notEnoughSheets',
+  [ProtoErrorCode.OTHER_ACCOUNT]: 'otherAccount',
+  [ProtoErrorCode.LINK_ACTIVE]: 'linkActive',
+  [ProtoErrorCode.NO_LINK]: 'noLink',
+  [ProtoErrorCode.LINK_TEXT_INVALID]: 'linkTextInvalid',
+  [ProtoErrorCode.LAST_DEVICE]: 'lastDevice',
+  [ProtoErrorCode.REVOKE_RACED]: 'revokeRaced',
+  [ProtoErrorCode.NOT_ALLOWED_THIS_DEVICE]: 'notAllowedThisDevice',
+  [ProtoErrorCode.NO_IDENTITY]: 'noIdentity',
+  [ProtoErrorCode.DEVICE_REVOKED]: 'deviceRevoked',
+  [ProtoErrorCode.NOT_FOUND]: 'unknownDevice',
 }
 
-const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefined =>
+const readErrorCode = (code: ProtoErrorCode): IdentityErrorCode | undefined =>
   ERROR_CODES[code]
 
 const PHASES: Partial<Record<ProtoLinkPhase, LinkPhase>> = {
@@ -263,7 +263,7 @@ const readDevice = (device: ProtoDeviceInfo): DeviceInfo => ({
 })
 
 interface Refusal {
-  error: ProtoIdentityErrorCode
+  error: ProtoErrorCode
   detail: string
 }
 
@@ -310,7 +310,7 @@ const readLinkAnswer = (
 const createAccountClient = (rpc: AccountRpc): AccountClient => ({
   get: async () => {
     const { identity, error, detail } = await rpc.getIdentity({})
-    if (error === ProtoIdentityErrorCode.KEY_STORE_FAILED) throw new Error(detail)
+    if (error === ProtoErrorCode.KEY_STORE_FAILED) throw new Error(detail)
     return identity === undefined ? undefined : readInfo(identity)
   },
   generateWords: async () => [...(await rpc.generateRecoveryWords({})).words],

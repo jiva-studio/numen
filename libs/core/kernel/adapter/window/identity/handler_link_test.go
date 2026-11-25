@@ -56,7 +56,7 @@ func TestStartLink_AHostThatShowsAnswersALinkThatWaitsForTheCourier(t *testing.T
 	started := startLink(t, h, v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SHOW, "")
 
 	link := started.GetLink()
-	if started.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED || link.GetPhase() != v1.LinkPhase_LINK_PHASE_WAITING_FOR_CHANNEL ||
+	if started.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || link.GetPhase() != v1.LinkPhase_LINK_PHASE_WAITING_FOR_CHANNEL ||
 		link.GetRole() != v1.LinkRole_LINK_ROLE_HOST || link.GetMode() != v1.LinkMode_LINK_MODE_SHOW {
 		t.Fatalf("StartLink() = %v", started)
 	}
@@ -68,7 +68,7 @@ func TestStartLink_AHostThatShowsAnswersALinkThatWaitsForTheCourier(t *testing.T
 func TestStartLink_RefusesAHostWithoutAnIdentity(t *testing.T) {
 	t.Parallel()
 	started := startLink(t, newLinkHandler(), v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SHOW, "")
-	if started.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY || started.GetLink() != nil {
+	if started.GetError() != v1.ErrorCode_ERROR_CODE_NO_IDENTITY || started.GetLink() != nil {
 		t.Errorf("StartLink() = %v, want NO_IDENTITY", started)
 	}
 }
@@ -78,7 +78,7 @@ func TestStartLink_RefusesAJoinerThatHasAnIdentity(t *testing.T) {
 	h := newLinkHandler()
 	createWithNewWords(t, h)
 	started := startLink(t, h, v1.LinkRole_LINK_ROLE_JOINER, v1.LinkMode_LINK_MODE_SHOW, "")
-	if started.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS {
+	if started.GetError() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("StartLink() = %v, want IDENTITY_EXISTS", started)
 	}
 }
@@ -88,7 +88,7 @@ func TestStartLink_RefusesATextThatIsNotALink(t *testing.T) {
 	h := newLinkHandler()
 	createWithNewWords(t, h)
 	started := startLink(t, h, v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SCAN, "https://example.org")
-	if started.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_TEXT_INVALID {
+	if started.GetError() != v1.ErrorCode_ERROR_CODE_LINK_TEXT_INVALID {
 		t.Errorf("StartLink() = %v, want LINK_TEXT_INVALID", started)
 	}
 }
@@ -99,7 +99,7 @@ func TestStartLink_RefusesASecondLinkWhileOneRuns(t *testing.T) {
 	createWithNewWords(t, h)
 	startLink(t, h, v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SHOW, "")
 	started := startLink(t, h, v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SHOW, "")
-	if started.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_ACTIVE {
+	if started.GetError() != v1.ErrorCode_ERROR_CODE_LINK_ACTIVE {
 		t.Errorf("StartLink() = %v, want LINK_ACTIVE", started)
 	}
 }
@@ -109,7 +109,7 @@ func TestGetLink_AnswersNoLinkBeforeOneStartedAndTheLinkAfter(t *testing.T) {
 	h := newLinkHandler()
 	createWithNewWords(t, h)
 	none, err := h.GetLink(t.Context(), connect.NewRequest(&v1.GetLinkRequest{}))
-	if err != nil || none.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK {
+	if err != nil || none.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_LINK {
 		t.Fatalf("GetLink() = %v, %v, want NO_LINK", none, err)
 	}
 	startLink(t, h, v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SHOW, "")
@@ -126,15 +126,15 @@ func TestCancelLink_EndsTheLinkSoThatTheNextOneCanStart(t *testing.T) {
 	startLink(t, h, v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SHOW, "")
 
 	canceled, err := h.CancelLink(t.Context(), connect.NewRequest(&v1.CancelLinkRequest{}))
-	if err != nil || canceled.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
+	if err != nil || canceled.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("CancelLink() = %v, %v", canceled, err)
 	}
 
 	got, err := h.GetLink(t.Context(), connect.NewRequest(&v1.GetLinkRequest{}))
-	if err != nil || got.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK {
+	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_LINK {
 		t.Errorf("GetLink() = %v, %v, want NO_LINK after the cancel", got, err)
 	}
-	if started := startLink(t, h, v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SHOW, ""); started.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
+	if started := startLink(t, h, v1.LinkRole_LINK_ROLE_HOST, v1.LinkMode_LINK_MODE_SHOW, ""); started.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("StartLink() after the cancel = %v", started)
 	}
 }
@@ -142,7 +142,7 @@ func TestCancelLink_EndsTheLinkSoThatTheNextOneCanStart(t *testing.T) {
 func TestCancelLink_AnswersNoLinkWhereNoneRuns(t *testing.T) {
 	t.Parallel()
 	answer, err := newLinkHandler().CancelLink(t.Context(), connect.NewRequest(&v1.CancelLinkRequest{}))
-	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK {
+	if err != nil || answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_LINK {
 		t.Errorf("CancelLink() = %v, %v, want NO_LINK", answer, err)
 	}
 }
@@ -150,7 +150,7 @@ func TestCancelLink_AnswersNoLinkWhereNoneRuns(t *testing.T) {
 func TestDecideLink_AnswersNoLinkWhereNoneRuns(t *testing.T) {
 	t.Parallel()
 	answer, err := newLinkHandler().DecideLink(t.Context(), connect.NewRequest(&v1.DecideLinkRequest{Approve: true}))
-	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK {
+	if err != nil || answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_LINK {
 		t.Errorf("DecideLink() = %v, %v, want NO_LINK", answer, err)
 	}
 }
@@ -158,7 +158,7 @@ func TestDecideLink_AnswersNoLinkWhereNoneRuns(t *testing.T) {
 func TestConfirmJoin_AnswersNoLinkWhereNoneRuns(t *testing.T) {
 	t.Parallel()
 	answer, err := newLinkHandler().ConfirmJoin(t.Context(), connect.NewRequest(&v1.ConfirmJoinRequest{Approve: true}))
-	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK {
+	if err != nil || answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_LINK {
 		t.Errorf("ConfirmJoin() = %v, %v, want NO_LINK", answer, err)
 	}
 }
@@ -183,7 +183,7 @@ func TestListDevices_AnswersThisDeviceWithItsFingerprintAndDate(t *testing.T) {
 func TestListDevices_AnswersNoIdentityWithoutOne(t *testing.T) {
 	t.Parallel()
 	answer, err := newLinkHandler().ListDevices(t.Context(), connect.NewRequest(&v1.ListDevicesRequest{}))
-	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY {
+	if err != nil || answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_IDENTITY {
 		t.Errorf("ListDevices() = %v, %v, want NO_IDENTITY", answer, err)
 	}
 }
@@ -195,7 +195,7 @@ func TestRevokeDevice_RefusesToRevokeTheLastDeviceOfTheAccount(t *testing.T) {
 
 	answer, err := h.RevokeDevice(t.Context(), connect.NewRequest(&v1.RevokeDeviceRequest{Fingerprint: created.GetIdentity().GetDeviceFingerprint()}))
 
-	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LAST_DEVICE {
+	if err != nil || answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_LAST_DEVICE {
 		t.Errorf("RevokeDevice() = %v, %v, want LAST_DEVICE", answer, err)
 	}
 }
@@ -203,7 +203,7 @@ func TestRevokeDevice_RefusesToRevokeTheLastDeviceOfTheAccount(t *testing.T) {
 func TestRevokeDevice_AnswersNoIdentityWithoutOne(t *testing.T) {
 	t.Parallel()
 	answer, err := newLinkHandler().RevokeDevice(t.Context(), connect.NewRequest(&v1.RevokeDeviceRequest{Fingerprint: strings.Repeat("0", 8)}))
-	if err != nil || answer.Msg.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY {
+	if err != nil || answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_IDENTITY {
 		t.Errorf("RevokeDevice() = %v, %v, want NO_IDENTITY", answer, err)
 	}
 }

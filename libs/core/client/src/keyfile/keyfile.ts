@@ -4,7 +4,7 @@
  */
 import type { Client } from '@connectrpc/connect'
 import {
-  KeyFileErrorCode as ProtoKeyFileErrorCode,
+  ErrorCode as ProtoErrorCode,
   KeyFileMode as ProtoKeyFileMode,
   type KeyFileService,
 } from '@numen/protocol'
@@ -56,22 +56,22 @@ const readMode = (mode: ProtoKeyFileMode): KeyFileMode => {
 const writeMode = (mode: 'plaintext' | 'passphrase'): ProtoKeyFileMode =>
   mode === 'plaintext' ? ProtoKeyFileMode.PLAINTEXT : ProtoKeyFileMode.PASSPHRASE
 
-const readErrorCode = (code: ProtoKeyFileErrorCode): KeyFileErrorCode | undefined => {
+const readErrorCode = (code: ProtoErrorCode): KeyFileErrorCode | undefined => {
   switch (code) {
-    case ProtoKeyFileErrorCode.UNSPECIFIED:
+    case ProtoErrorCode.UNSPECIFIED:
       return undefined
-    case ProtoKeyFileErrorCode.WRONG_PASSPHRASE:
+    case ProtoErrorCode.WRONG_PASSPHRASE:
       return 'wrongPassphrase'
-    case ProtoKeyFileErrorCode.EMPTY_PASSPHRASE:
+    case ProtoErrorCode.EMPTY_PASSPHRASE:
       return 'emptyPassphrase'
-    case ProtoKeyFileErrorCode.SAVE_FAILED:
+    case ProtoErrorCode.INTERNAL:
       return 'saveFailed'
-    case ProtoKeyFileErrorCode.INVALID_MODE:
+    case ProtoErrorCode.INVALID:
       return 'invalidMode'
   }
 }
 
-const readAnswer = (answer: { error: ProtoKeyFileErrorCode }): Result<undefined, KeyFileFailure> => {
+const readAnswer = (answer: { error: ProtoErrorCode }): Result<undefined, KeyFileFailure> => {
   const error = readErrorCode(answer.error)
   return error === undefined ? asValue(undefined) : asFailure({ error, message: error })
 }

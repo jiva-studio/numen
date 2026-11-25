@@ -22,7 +22,7 @@ func TestHostWindowActivateTabReturnsTabWithPlaceAndActiveID(t *testing.T) {
 		t.Fatal(err)
 	}
 	tab := got.Msg.GetTab()
-	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED || got.Msg.GetActiveId() != "tab-2" {
+	if got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || got.Msg.GetActiveId() != "tab-2" {
 		t.Errorf("returned %v, want no error and the active id tab-2 the window returned", got.Msg)
 	}
 	if tab.GetId() != "tab-1" || tab.GetKind() != "note" || tab.GetPath() != "notes/Heron.md" || tab.GetTitle() != "Gray Heron" {
@@ -54,7 +54,7 @@ func TestHostWindowActivateTabReturnsNotFoundForUnknownID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND || got.Msg.GetTab() != nil || got.Msg.GetActiveId() != "" {
+	if got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND || got.Msg.GetTab() != nil || got.Msg.GetActiveId() != "" {
 		t.Errorf("returned %v, want not found and no tab", got.Msg)
 	}
 	if activated := window.getActivatedIDs(); len(activated) != 0 {
@@ -83,7 +83,7 @@ func TestHostWindowActivateTabWithoutAWindowReturnsNoWindow(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client, _ := newWindowClient(t, window, "token-a")
 			got := readWindowCode(client.ActivateTab(t.Context(), connect.NewRequest(&v1.ActivateTabRequest{TabId: "tab-1"})))
-			if got != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW.String() {
+			if got != v1.ErrorCode_ERROR_CODE_NO_WINDOW.String() {
 				t.Errorf("ActivateTab returned %s, want no window", got)
 			}
 		})

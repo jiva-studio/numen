@@ -2,7 +2,7 @@
  * What the core answers about the tabs of the window: the saved tabs, the tab links and the
  * moves between windows. The answers go through the router transport.
  */
-import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import type { Tab } from '@/entities/tab'
 import { requests } from '../requests'
@@ -34,7 +34,7 @@ export const tabAnswers = {
     }),
     detachTab: () => {
       if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
-      return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+      return { error: WIRE_ERROR_CODE.UNSPECIFIED }
     },
     watchTabLinks: createPendingStream,
     cancelWatchTabLinks: () => ({}),
@@ -44,8 +44,8 @@ export const tabAnswers = {
       const tab = mockVaultState.detachedTab
       return tab?.id === request.tabId ? { tab: toWire(tab), moveId: 'move-1' } : {}
     },
-    moveTab: () => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }),
-    acceptTabMove: () => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }),
+    moveTab: () => ({ error: WIRE_ERROR_CODE.UNSPECIFIED }),
+    acceptTabMove: () => ({ error: WIRE_ERROR_CODE.UNSPECIFIED }),
     highlightWindow: () => ({}),
   },
 } satisfies CoreAnswers

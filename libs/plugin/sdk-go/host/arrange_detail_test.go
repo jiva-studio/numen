@@ -95,16 +95,16 @@ func TestTheClientKeepsTheDetailOfARemovalEntryInItsError(t *testing.T) {
 	}
 }
 
-func getVaultsErrors() map[v1.VaultsErrorCode]error {
-	return map[v1.VaultsErrorCode]error{
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   host.ErrVaultOverlaps,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: host.ErrVaultNameTaken,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    host.ErrVaultActive,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: host.ErrLastVault,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  host.ErrUnknownVault,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: host.ErrVaultUnreadable,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       host.ErrVaultDuplicate,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    host.ErrUnsavedChanges,
+func getVaultsErrors() map[v1.ErrorCode]error {
+	return map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_VAULT_OVERLAPS: host.ErrVaultOverlaps,
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS: host.ErrVaultNameTaken,
+		v1.ErrorCode_ERROR_CODE_VAULT_CURRENT:  host.ErrVaultActive,
+		v1.ErrorCode_ERROR_CODE_LAST_VAULT:     host.ErrLastVault,
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:      host.ErrUnknownVault,
+		v1.ErrorCode_ERROR_CODE_UNREADABLE:     host.ErrVaultUnreadable,
+		v1.ErrorCode_ERROR_CODE_VAULT_COPY:     host.ErrVaultDuplicate,
+		v1.ErrorCode_ERROR_CODE_UNSAVED:        host.ErrUnsavedChanges,
 	}
 }
 

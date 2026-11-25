@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/identity.proto.
  */
 export const file_numen_v1_identity: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEinAEKDElkZW50aXR5SW5mbxIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRITCgtkZXZpY2VfbmFtZRgDIAEoCRIXCg9kZXZpY2VfYWRkZWRfYXQYBCABKAkSEgoKaXNfcmV2b2tlZBgFIAEoCBIRCglrZXlfZXBvY2gYBiABKA0iFAoSR2V0SWRlbnRpdHlSZXF1ZXN0InsKE0dldElkZW50aXR5UmVzcG9uc2USKAoIaWRlbnRpdHkYASABKAsyFi5udW1lbi52MS5JZGVudGl0eUluZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiHgocR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVxdWVzdCIzCh1HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXNwb25zZRISCgV3b3JkcxgBIAMoCUIDgAEBIisKFUNyZWF0ZUlkZW50aXR5UmVxdWVzdBISCgV3b3JkcxgBIAMoCUIDgAEBIn4KFkNyZWF0ZUlkZW50aXR5UmVzcG9uc2USKAoIaWRlbnRpdHkYASABKAsyFi5udW1lbi52MS5JZGVudGl0eUluZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiVwoTU3RhcnRSZXN0b3JlUmVxdWVzdBISCgV3b3JkcxgBIAMoCUIDgAEBEhIKCmNoYWluX21hcmsYAiABKAkSGAoQY29uZmlybV91bm1hcmtlZBgDIAEoCCJSChRTdGFydFJlc3RvcmVSZXNwb25zZRIqCgVlcnJvchgBIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSIXChVEZWxldGVJZGVudGl0eVJlcXVlc3QiGAoWRGVsZXRlSWRlbnRpdHlSZXNwb25zZSIjCg1SZWNvdmVyeVNoZWV0EhIKBXdvcmRzGAEgAygJQgOAAQEiKAoSUmVjb3ZlcnlXb3Jkc1Byb29mEhIKBXdvcmRzGAEgAygJQgOAAQEiPgoTUmVjb3ZlcnlTaGVldHNQcm9vZhInCgZzaGVldHMYASADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0IoEBChZTYXZlUmVjb3ZlcnlLaXRSZXF1ZXN0Ei0KBXdvcmRzGAEgASgLMhwubnVtZW4udjEuUmVjb3ZlcnlXb3Jkc1Byb29mSAASLwoGc2hlZXRzGAIgASgLMh0ubnVtZW4udjEuUmVjb3ZlcnlTaGVldHNQcm9vZkgAQgcKBXByb29mImcKF1NhdmVSZWNvdmVyeUtpdFJlc3BvbnNlEhAKCGlzX3NhdmVkGAEgASgIEioKBWVycm9yGAIgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJInMKGlN0YXJ0UmVzdG9yZUZyb21LaXRSZXF1ZXN0EicKBnNoZWV0cxgBIAMoCzIXLm51bWVuLnYxLlJlY292ZXJ5U2hlZXQSEgoKY2hhaW5fbWFyaxgCIAEoCRIYChBjb25maXJtX3VubWFya2VkGAMgASgIIlkKG1N0YXJ0UmVzdG9yZUZyb21LaXRSZXNwb25zZRIqCgVlcnJvchgBIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSKkAgoITGlua0luZm8SIgoFcGhhc2UYASABKA4yEy5udW1lbi52MS5MaW5rUGhhc2USIAoEbW9kZRgCIAEoDjISLm51bWVuLnYxLkxpbmtNb2RlEiAKBHJvbGUYAyABKA4yEi5udW1lbi52MS5MaW5rUm9sZRIPCgdxcl90ZXh0GAQgASgJEhEKCXBlZXJfbmFtZRgFIAEoCRIYChBwZWVyX2ZpbmdlcnByaW50GAYgASgJEhsKE2FjY291bnRfZmluZ2VycHJpbnQYByABKAkSJAoGcmVhc29uGAggASgOMhQubnVtZW4udjEuTGlua1JlYXNvbhITCgtkZXZpY2VfbmFtZRgJIAEoCRIaChJkZXZpY2VfZmluZ2VycHJpbnQYCiABKAkibAoQU3RhcnRMaW5rUmVxdWVzdBIgCgRyb2xlGAEgASgOMhIubnVtZW4udjEuTGlua1JvbGUSIAoEbW9kZRgCIAEoDjISLm51bWVuLnYxLkxpbmtNb2RlEhQKDHNjYW5uZWRfdGV4dBgDIAEoCSJxChFTdGFydExpbmtSZXNwb25zZRIgCgRsaW5rGAEgASgLMhIubnVtZW4udjEuTGlua0luZm8SKgoFZXJyb3IYAiABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiEAoOR2V0TGlua1JlcXVlc3QibwoPR2V0TGlua1Jlc3BvbnNlEiAKBGxpbmsYASABKAsyEi5udW1lbi52MS5MaW5rSW5mbxIqCgVlcnJvchgCIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSIkChFEZWNpZGVMaW5rUmVxdWVzdBIPCgdhcHByb3ZlGAEgASgIIlAKEkRlY2lkZUxpbmtSZXNwb25zZRIqCgVlcnJvchgBIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSIlChJDb25maXJtSm9pblJlcXVlc3QSDwoHYXBwcm92ZRgBIAEoCCJRChNDb25maXJtSm9pblJlc3BvbnNlEioKBWVycm9yGAEgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIhMKEUNhbmNlbExpbmtSZXF1ZXN0IlAKEkNhbmNlbExpbmtSZXNwb25zZRIqCgVlcnJvchgBIAEoDjIbLm51bWVuLnYxLklkZW50aXR5RXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSJmCgpEZXZpY2VJbmZvEgwKBG5hbWUYASABKAkSEwoLZmluZ2VycHJpbnQYAiABKAkSEAoIYWRkZWRfYXQYAyABKAkSDwoHaXNfdGhpcxgEIAEoCBISCgppc19yZXZva2VkGAUgASgIIhQKEkxpc3REZXZpY2VzUmVxdWVzdCJ4ChNMaXN0RGV2aWNlc1Jlc3BvbnNlEiUKB2RldmljZXMYASADKAsyFC5udW1lbi52MS5EZXZpY2VJbmZvEioKBWVycm9yGAIgASgOMhsubnVtZW4udjEuSWRlbnRpdHlFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIioKE1Jldm9rZURldmljZVJlcXVlc3QSEwoLZmluZ2VycHJpbnQYASABKAkiUgoUUmV2b2tlRGV2aWNlUmVzcG9uc2USKgoFZXJyb3IYASABKA4yGy5udW1lbi52MS5JZGVudGl0eUVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkq4gUKEUlkZW50aXR5RXJyb3JDb2RlEiMKH0lERU5USVRZX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIlCiFJREVOVElUWV9FUlJPUl9DT0RFX0lOVkFMSURfV09SRFMQARInCiNJREVOVElUWV9FUlJPUl9DT0RFX0lERU5USVRZX0VYSVNUUxACEigKJElERU5USVRZX0VSUk9SX0NPREVfS0VZX1NUT1JFX0ZBSUxFRBADEiYKIklERU5USVRZX0VSUk9SX0NPREVfSU5WQUxJRF9TSEVFVFMQBBIpCiVJREVOVElUWV9FUlJPUl9DT0RFX05PVF9FTk9VR0hfU0hFRVRTEAUSJQohSURFTlRJVFlfRVJST1JfQ09ERV9PVEhFUl9BQ0NPVU5UEAYSIwofSURFTlRJVFlfRVJST1JfQ09ERV9OT19JREVOVElUWRAHEiMKH0lERU5USVRZX0VSUk9SX0NPREVfTElOS19BQ1RJVkUQCBIfChtJREVOVElUWV9FUlJPUl9DT0RFX05PX0xJTksQCRIpCiVJREVOVElUWV9FUlJPUl9DT0RFX0xJTktfVEVYVF9JTlZBTElEEAoSIwofSURFTlRJVFlfRVJST1JfQ09ERV9MQVNUX0RFVklDRRALEiQKIElERU5USVRZX0VSUk9SX0NPREVfUkVWT0tFX1JBQ0VEEAwSLworSURFTlRJVFlfRVJST1JfQ09ERV9OT1RfQUxMT1dFRF9USElTX0RFVklDRRANEiYKIklERU5USVRZX0VSUk9SX0NPREVfREVWSUNFX1JFVk9LRUQQDhImCiJJREVOVElUWV9FUlJPUl9DT0RFX1VOS05PV05fREVWSUNFEA8SKgomSURFTlRJVFlfRVJST1JfQ09ERV9JTlZBTElEX0NIQUlOX01BUksQEBImCiJJREVOVElUWV9FUlJPUl9DT0RFX0NIQUlOX09VVERBVEVEEBEqTwoITGlua1JvbGUSGQoVTElOS19ST0xFX1VOU1BFQ0lGSUVEEAASEgoOTElOS19ST0xFX0hPU1QQARIUChBMSU5LX1JPTEVfSk9JTkVSEAIqTQoITGlua01vZGUSGQoVTElOS19NT0RFX1VOU1BFQ0lGSUVEEAASEgoOTElOS19NT0RFX1NIT1cQARISCg5MSU5LX01PREVfU0NBThACKpUCCglMaW5rUGhhc2USGgoWTElOS19QSEFTRV9VTlNQRUNJRklFRBAAEiIKHkxJTktfUEhBU0VfV0FJVElOR19GT1JfQ0hBTk5FTBABEh8KG0xJTktfUEhBU0VfV0FJVElOR19GT1JfUEVFUhACEhsKF0xJTktfUEhBU0VfQ09ORklSTV9QRUVSEAMSIQodTElOS19QSEFTRV9XQUlUSU5HX0ZPUl9BQ0NFUFQQBBIZChVMSU5LX1BIQVNFX1BVQkxJU0hJTkcQBRIeChpMSU5LX1BIQVNFX0NPTkZJUk1fQUNDT1VOVBAGEhUKEUxJTktfUEhBU0VfTElOS0VEEAcSFQoRTElOS19QSEFTRV9GQUlMRUQQCCrRAQoKTGlua1JlYXNvbhIbChdMSU5LX1JFQVNPTl9VTlNQRUNJRklFRBAAEhgKFExJTktfUkVBU09OX0RFQ0xJTkVEEAESIwofTElOS19SRUFTT05fREVWSUNFX0hBU19JREVOVElUWRACEhsKF0xJTktfUkVBU09OX1NUQUxFX0NIQUlOEAMSGAoUTElOS19SRUFTT05fQ0FOQ0VMRUQQBBIXChNMSU5LX1JFQVNPTl9FWFBJUkVEEAUSFwoTTElOS19SRUFTT05fSU5WQUxJRBAGMvsICg9JZGVudGl0eVNlcnZpY2USSgoLR2V0SWRlbnRpdHkSHC5udW1lbi52MS5HZXRJZGVudGl0eVJlcXVlc3QaHS5udW1lbi52MS5HZXRJZGVudGl0eVJlc3BvbnNlEmgKFUdlbmVyYXRlUmVjb3ZlcnlXb3JkcxImLm51bWVuLnYxLkdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1JlcXVlc3QaJy5udW1lbi52MS5HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXNwb25zZRJTCg5DcmVhdGVJZGVudGl0eRIfLm51bWVuLnYxLkNyZWF0ZUlkZW50aXR5UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUlkZW50aXR5UmVzcG9uc2USTQoMU3RhcnRSZXN0b3JlEh0ubnVtZW4udjEuU3RhcnRSZXN0b3JlUmVxdWVzdBoeLm51bWVuLnYxLlN0YXJ0UmVzdG9yZVJlc3BvbnNlElMKDkRlbGV0ZUlkZW50aXR5Eh8ubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXF1ZXN0GiAubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXNwb25zZRJWCg9TYXZlUmVjb3ZlcnlLaXQSIC5udW1lbi52MS5TYXZlUmVjb3ZlcnlLaXRSZXF1ZXN0GiEubnVtZW4udjEuU2F2ZVJlY292ZXJ5S2l0UmVzcG9uc2USYgoTU3RhcnRSZXN0b3JlRnJvbUtpdBIkLm51bWVuLnYxLlN0YXJ0UmVzdG9yZUZyb21LaXRSZXF1ZXN0GiUubnVtZW4udjEuU3RhcnRSZXN0b3JlRnJvbUtpdFJlc3BvbnNlEkQKCVN0YXJ0TGluaxIaLm51bWVuLnYxLlN0YXJ0TGlua1JlcXVlc3QaGy5udW1lbi52MS5TdGFydExpbmtSZXNwb25zZRI+CgdHZXRMaW5rEhgubnVtZW4udjEuR2V0TGlua1JlcXVlc3QaGS5udW1lbi52MS5HZXRMaW5rUmVzcG9uc2USRwoKRGVjaWRlTGluaxIbLm51bWVuLnYxLkRlY2lkZUxpbmtSZXF1ZXN0GhwubnVtZW4udjEuRGVjaWRlTGlua1Jlc3BvbnNlEkoKC0NvbmZpcm1Kb2luEhwubnVtZW4udjEuQ29uZmlybUpvaW5SZXF1ZXN0Gh0ubnVtZW4udjEuQ29uZmlybUpvaW5SZXNwb25zZRJHCgpDYW5jZWxMaW5rEhsubnVtZW4udjEuQ2FuY2VsTGlua1JlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxMaW5rUmVzcG9uc2USSgoLTGlzdERldmljZXMSHC5udW1lbi52MS5MaXN0RGV2aWNlc1JlcXVlc3QaHS5udW1lbi52MS5MaXN0RGV2aWNlc1Jlc3BvbnNlEk0KDFJldm9rZURldmljZRIdLm51bWVuLnYxLlJldm9rZURldmljZVJlcXVlc3QaHi5udW1lbi52MS5SZXZva2VEZXZpY2VSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChdudW1lbi92MS9pZGVudGl0eS5wcm90bxIIbnVtZW4udjEinAEKDElkZW50aXR5SW5mbxIbChNhY2NvdW50X2ZpbmdlcnByaW50GAEgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgCIAEoCRITCgtkZXZpY2VfbmFtZRgDIAEoCRIXCg9kZXZpY2VfYWRkZWRfYXQYBCABKAkSEgoKaXNfcmV2b2tlZBgFIAEoCBIRCglrZXlfZXBvY2gYBiABKA0iFAoSR2V0SWRlbnRpdHlSZXF1ZXN0InMKE0dldElkZW50aXR5UmVzcG9uc2USKAoIaWRlbnRpdHkYASABKAsyFi5udW1lbi52MS5JZGVudGl0eUluZm8SIgoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIh4KHEdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1JlcXVlc3QiMwodR2VuZXJhdGVSZWNvdmVyeVdvcmRzUmVzcG9uc2USEgoFd29yZHMYASADKAlCA4ABASIrChVDcmVhdGVJZGVudGl0eVJlcXVlc3QSEgoFd29yZHMYASADKAlCA4ABASJ2ChZDcmVhdGVJZGVudGl0eVJlc3BvbnNlEigKCGlkZW50aXR5GAEgASgLMhYubnVtZW4udjEuSWRlbnRpdHlJbmZvEiIKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSJXChNTdGFydFJlc3RvcmVSZXF1ZXN0EhIKBXdvcmRzGAEgAygJQgOAAQESEgoKY2hhaW5fbWFyaxgCIAEoCRIYChBjb25maXJtX3VubWFya2VkGAMgASgIIkoKFFN0YXJ0UmVzdG9yZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCSIXChVEZWxldGVJZGVudGl0eVJlcXVlc3QiGAoWRGVsZXRlSWRlbnRpdHlSZXNwb25zZSIjCg1SZWNvdmVyeVNoZWV0EhIKBXdvcmRzGAEgAygJQgOAAQEiKAoSUmVjb3ZlcnlXb3Jkc1Byb29mEhIKBXdvcmRzGAEgAygJQgOAAQEiPgoTUmVjb3ZlcnlTaGVldHNQcm9vZhInCgZzaGVldHMYASADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0IoEBChZTYXZlUmVjb3ZlcnlLaXRSZXF1ZXN0Ei0KBXdvcmRzGAEgASgLMhwubnVtZW4udjEuUmVjb3ZlcnlXb3Jkc1Byb29mSAASLwoGc2hlZXRzGAIgASgLMh0ubnVtZW4udjEuUmVjb3ZlcnlTaGVldHNQcm9vZkgAQgcKBXByb29mIl8KF1NhdmVSZWNvdmVyeUtpdFJlc3BvbnNlEhAKCGlzX3NhdmVkGAEgASgIEiIKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSJzChpTdGFydFJlc3RvcmVGcm9tS2l0UmVxdWVzdBInCgZzaGVldHMYASADKAsyFy5udW1lbi52MS5SZWNvdmVyeVNoZWV0EhIKCmNoYWluX21hcmsYAiABKAkSGAoQY29uZmlybV91bm1hcmtlZBgDIAEoCCJRChtTdGFydFJlc3RvcmVGcm9tS2l0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIqQCCghMaW5rSW5mbxIiCgVwaGFzZRgBIAEoDjITLm51bWVuLnYxLkxpbmtQaGFzZRIgCgRtb2RlGAIgASgOMhIubnVtZW4udjEuTGlua01vZGUSIAoEcm9sZRgDIAEoDjISLm51bWVuLnYxLkxpbmtSb2xlEg8KB3FyX3RleHQYBCABKAkSEQoJcGVlcl9uYW1lGAUgASgJEhgKEHBlZXJfZmluZ2VycHJpbnQYBiABKAkSGwoTYWNjb3VudF9maW5nZXJwcmludBgHIAEoCRIkCgZyZWFzb24YCCABKA4yFC5udW1lbi52MS5MaW5rUmVhc29uEhMKC2RldmljZV9uYW1lGAkgASgJEhoKEmRldmljZV9maW5nZXJwcmludBgKIAEoCSJsChBTdGFydExpbmtSZXF1ZXN0EiAKBHJvbGUYASABKA4yEi5udW1lbi52MS5MaW5rUm9sZRIgCgRtb2RlGAIgASgOMhIubnVtZW4udjEuTGlua01vZGUSFAoMc2Nhbm5lZF90ZXh0GAMgASgJImkKEVN0YXJ0TGlua1Jlc3BvbnNlEiAKBGxpbmsYASABKAsyEi5udW1lbi52MS5MaW5rSW5mbxIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiEAoOR2V0TGlua1JlcXVlc3QiZwoPR2V0TGlua1Jlc3BvbnNlEiAKBGxpbmsYASABKAsyEi5udW1lbi52MS5MaW5rSW5mbxIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiJAoRRGVjaWRlTGlua1JlcXVlc3QSDwoHYXBwcm92ZRgBIAEoCCJIChJEZWNpZGVMaW5rUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIiUKEkNvbmZpcm1Kb2luUmVxdWVzdBIPCgdhcHByb3ZlGAEgASgIIkkKE0NvbmZpcm1Kb2luUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJIhMKEUNhbmNlbExpbmtSZXF1ZXN0IkgKEkNhbmNlbExpbmtSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkiZgoKRGV2aWNlSW5mbxIMCgRuYW1lGAEgASgJEhMKC2ZpbmdlcnByaW50GAIgASgJEhAKCGFkZGVkX2F0GAMgASgJEg8KB2lzX3RoaXMYBCABKAgSEgoKaXNfcmV2b2tlZBgFIAEoCCIUChJMaXN0RGV2aWNlc1JlcXVlc3QicAoTTGlzdERldmljZXNSZXNwb25zZRIlCgdkZXZpY2VzGAEgAygLMhQubnVtZW4udjEuRGV2aWNlSW5mbxIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiKgoTUmV2b2tlRGV2aWNlUmVxdWVzdBITCgtmaW5nZXJwcmludBgBIAEoCSJKChRSZXZva2VEZXZpY2VSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkqTwoITGlua1JvbGUSGQoVTElOS19ST0xFX1VOU1BFQ0lGSUVEEAASEgoOTElOS19ST0xFX0hPU1QQARIUChBMSU5LX1JPTEVfSk9JTkVSEAIqTQoITGlua01vZGUSGQoVTElOS19NT0RFX1VOU1BFQ0lGSUVEEAASEgoOTElOS19NT0RFX1NIT1cQARISCg5MSU5LX01PREVfU0NBThACKpUCCglMaW5rUGhhc2USGgoWTElOS19QSEFTRV9VTlNQRUNJRklFRBAAEiIKHkxJTktfUEhBU0VfV0FJVElOR19GT1JfQ0hBTk5FTBABEh8KG0xJTktfUEhBU0VfV0FJVElOR19GT1JfUEVFUhACEhsKF0xJTktfUEhBU0VfQ09ORklSTV9QRUVSEAMSIQodTElOS19QSEFTRV9XQUlUSU5HX0ZPUl9BQ0NFUFQQBBIZChVMSU5LX1BIQVNFX1BVQkxJU0hJTkcQBRIeChpMSU5LX1BIQVNFX0NPTkZJUk1fQUNDT1VOVBAGEhUKEUxJTktfUEhBU0VfTElOS0VEEAcSFQoRTElOS19QSEFTRV9GQUlMRUQQCCrRAQoKTGlua1JlYXNvbhIbChdMSU5LX1JFQVNPTl9VTlNQRUNJRklFRBAAEhgKFExJTktfUkVBU09OX0RFQ0xJTkVEEAESIwofTElOS19SRUFTT05fREVWSUNFX0hBU19JREVOVElUWRACEhsKF0xJTktfUkVBU09OX1NUQUxFX0NIQUlOEAMSGAoUTElOS19SRUFTT05fQ0FOQ0VMRUQQBBIXChNMSU5LX1JFQVNPTl9FWFBJUkVEEAUSFwoTTElOS19SRUFTT05fSU5WQUxJRBAGMvsICg9JZGVudGl0eVNlcnZpY2USSgoLR2V0SWRlbnRpdHkSHC5udW1lbi52MS5HZXRJZGVudGl0eVJlcXVlc3QaHS5udW1lbi52MS5HZXRJZGVudGl0eVJlc3BvbnNlEmgKFUdlbmVyYXRlUmVjb3ZlcnlXb3JkcxImLm51bWVuLnYxLkdlbmVyYXRlUmVjb3ZlcnlXb3Jkc1JlcXVlc3QaJy5udW1lbi52MS5HZW5lcmF0ZVJlY292ZXJ5V29yZHNSZXNwb25zZRJTCg5DcmVhdGVJZGVudGl0eRIfLm51bWVuLnYxLkNyZWF0ZUlkZW50aXR5UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUlkZW50aXR5UmVzcG9uc2USTQoMU3RhcnRSZXN0b3JlEh0ubnVtZW4udjEuU3RhcnRSZXN0b3JlUmVxdWVzdBoeLm51bWVuLnYxLlN0YXJ0UmVzdG9yZVJlc3BvbnNlElMKDkRlbGV0ZUlkZW50aXR5Eh8ubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXF1ZXN0GiAubnVtZW4udjEuRGVsZXRlSWRlbnRpdHlSZXNwb25zZRJWCg9TYXZlUmVjb3ZlcnlLaXQSIC5udW1lbi52MS5TYXZlUmVjb3ZlcnlLaXRSZXF1ZXN0GiEubnVtZW4udjEuU2F2ZVJlY292ZXJ5S2l0UmVzcG9uc2USYgoTU3RhcnRSZXN0b3JlRnJvbUtpdBIkLm51bWVuLnYxLlN0YXJ0UmVzdG9yZUZyb21LaXRSZXF1ZXN0GiUubnVtZW4udjEuU3RhcnRSZXN0b3JlRnJvbUtpdFJlc3BvbnNlEkQKCVN0YXJ0TGluaxIaLm51bWVuLnYxLlN0YXJ0TGlua1JlcXVlc3QaGy5udW1lbi52MS5TdGFydExpbmtSZXNwb25zZRI+CgdHZXRMaW5rEhgubnVtZW4udjEuR2V0TGlua1JlcXVlc3QaGS5udW1lbi52MS5HZXRMaW5rUmVzcG9uc2USRwoKRGVjaWRlTGluaxIbLm51bWVuLnYxLkRlY2lkZUxpbmtSZXF1ZXN0GhwubnVtZW4udjEuRGVjaWRlTGlua1Jlc3BvbnNlEkoKC0NvbmZpcm1Kb2luEhwubnVtZW4udjEuQ29uZmlybUpvaW5SZXF1ZXN0Gh0ubnVtZW4udjEuQ29uZmlybUpvaW5SZXNwb25zZRJHCgpDYW5jZWxMaW5rEhsubnVtZW4udjEuQ2FuY2VsTGlua1JlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxMaW5rUmVzcG9uc2USSgoLTGlzdERldmljZXMSHC5udW1lbi52MS5MaXN0RGV2aWNlc1JlcXVlc3QaHS5udW1lbi52MS5MaXN0RGV2aWNlc1Jlc3BvbnNlEk0KDFJldm9rZURldmljZRIdLm51bWVuLnYxLlJldm9rZURldmljZVJlcXVlc3QaHi5udW1lbi52MS5SZXZva2VEZXZpY2VSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * IdentityInfo is what a person can see of the identity of this device.
@@ -93,9 +95,9 @@ export type GetIdentityResponse = Message<"numen.v1.GetIdentityResponse"> & {
   /**
    * error is CHAIN_OUTDATED while this device holds no identity because the restore it started was refused.
    *
-   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 3;
@@ -167,9 +169,9 @@ export type CreateIdentityResponse = Message<"numen.v1.CreateIdentityResponse"> 
   identity?: IdentityInfo | undefined;
 
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * detail names the first wrong position and never holds a word.
@@ -224,9 +226,9 @@ export const StartRestoreRequestSchema: GenMessage<StartRestoreRequest> = /*@__P
  */
 export type StartRestoreResponse = Message<"numen.v1.StartRestoreResponse"> & {
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * detail names the first wrong position and never holds a word.
@@ -365,9 +367,9 @@ export type SaveRecoveryKitResponse = Message<"numen.v1.SaveRecoveryKitResponse"
   isSaved: boolean;
 
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * detail names a position and never holds a word.
@@ -420,9 +422,9 @@ export const StartRestoreFromKitRequestSchema: GenMessage<StartRestoreFromKitReq
  */
 export type StartRestoreFromKitResponse = Message<"numen.v1.StartRestoreFromKitResponse"> & {
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * detail names a position and never holds a word.
@@ -546,9 +548,9 @@ export type StartLinkResponse = Message<"numen.v1.StartLinkResponse"> & {
   link?: LinkInfo | undefined;
 
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 3;
@@ -586,9 +588,9 @@ export type GetLinkResponse = Message<"numen.v1.GetLinkResponse"> & {
   link?: LinkInfo | undefined;
 
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 3;
@@ -625,9 +627,9 @@ export const DecideLinkRequestSchema: GenMessage<DecideLinkRequest> = /*@__PURE_
  */
 export type DecideLinkResponse = Message<"numen.v1.DecideLinkResponse"> & {
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 2;
@@ -664,9 +666,9 @@ export const ConfirmJoinRequestSchema: GenMessage<ConfirmJoinRequest> = /*@__PUR
  */
 export type ConfirmJoinResponse = Message<"numen.v1.ConfirmJoinResponse"> & {
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 2;
@@ -699,9 +701,9 @@ export const CancelLinkRequestSchema: GenMessage<CancelLinkRequest> = /*@__PURE_
  */
 export type CancelLinkResponse = Message<"numen.v1.CancelLinkResponse"> & {
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 2;
@@ -780,9 +782,9 @@ export type ListDevicesResponse = Message<"numen.v1.ListDevicesResponse"> & {
   devices: DeviceInfo[];
 
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 3;
@@ -821,9 +823,9 @@ export const RevokeDeviceRequestSchema: GenMessage<RevokeDeviceRequest> = /*@__P
  */
 export type RevokeDeviceResponse = Message<"numen.v1.RevokeDeviceResponse"> & {
   /**
-   * @generated from field: numen.v1.IdentityErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: IdentityErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 2;
@@ -837,147 +839,6 @@ export type RevokeDeviceResponse = Message<"numen.v1.RevokeDeviceResponse"> & {
  */
 export const RevokeDeviceResponseSchema: GenMessage<RevokeDeviceResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_identity, 33);
-
-/**
- * IdentityErrorCode is why an identity call was refused. The zero value is a call that
- * succeeded.
- *
- * @generated from enum numen.v1.IdentityErrorCode
- */
-export enum IdentityErrorCode {
-  /**
-   * @generated from enum value: IDENTITY_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * IDENTITY_ERROR_CODE_INVALID_WORDS is a set of words that is not 12 recovery words, or whose
-   * checksum fails.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_INVALID_WORDS = 1;
-   */
-  INVALID_WORDS = 1,
-
-  /**
-   * IDENTITY_ERROR_CODE_IDENTITY_EXISTS is a device that already holds an identity.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_IDENTITY_EXISTS = 2;
-   */
-  IDENTITY_EXISTS = 2,
-
-  /**
-   * IDENTITY_ERROR_CODE_KEY_STORE_FAILED is a key store that failed to read or keep the identity.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_KEY_STORE_FAILED = 3;
-   */
-  KEY_STORE_FAILED = 3,
-
-  /**
-   * IDENTITY_ERROR_CODE_INVALID_SHEETS is a sheet with a wrong or unknown word, sheets of two kits, or
-   * one sheet entered twice.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_INVALID_SHEETS = 4;
-   */
-  INVALID_SHEETS = 4,
-
-  /**
-   * IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS is fewer than two sheets.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS = 5;
-   */
-  NOT_ENOUGH_SHEETS = 5,
-
-  /**
-   * IDENTITY_ERROR_CODE_OTHER_ACCOUNT is a proof that belongs to another account than this device.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_OTHER_ACCOUNT = 6;
-   */
-  OTHER_ACCOUNT = 6,
-
-  /**
-   * IDENTITY_ERROR_CODE_NO_IDENTITY is a device that holds no identity, or a call that needs one on a device with none.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_NO_IDENTITY = 7;
-   */
-  NO_IDENTITY = 7,
-
-  /**
-   * IDENTITY_ERROR_CODE_LINK_ACTIVE is a link that already runs on this device.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_LINK_ACTIVE = 8;
-   */
-  LINK_ACTIVE = 8,
-
-  /**
-   * IDENTITY_ERROR_CODE_NO_LINK is a call that needs a link and finds none.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_NO_LINK = 9;
-   */
-  NO_LINK = 9,
-
-  /**
-   * IDENTITY_ERROR_CODE_LINK_TEXT_INVALID is a text that is not the text of a QR code of a link.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_LINK_TEXT_INVALID = 10;
-   */
-  LINK_TEXT_INVALID = 10,
-
-  /**
-   * IDENTITY_ERROR_CODE_LAST_DEVICE is a revoke that would leave the account with no device.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_LAST_DEVICE = 11;
-   */
-  LAST_DEVICE = 11,
-
-  /**
-   * IDENTITY_ERROR_CODE_REVOKE_RACED is a revoke that was dropped because a device was added by the device to revoke.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_REVOKE_RACED = 12;
-   */
-  REVOKE_RACED = 12,
-
-  /**
-   * IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE is a revoke of the device it was asked on.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE = 13;
-   */
-  NOT_ALLOWED_THIS_DEVICE = 13,
-
-  /**
-   * IDENTITY_ERROR_CODE_DEVICE_REVOKED is a call that the account refuses to a revoked device.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_DEVICE_REVOKED = 14;
-   */
-  DEVICE_REVOKED = 14,
-
-  /**
-   * IDENTITY_ERROR_CODE_UNKNOWN_DEVICE is a device that is not active in the account.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_UNKNOWN_DEVICE = 15;
-   */
-  UNKNOWN_DEVICE = 15,
-
-  /**
-   * IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK is a chain mark that is not a number, a dash and 12 hex digits.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_INVALID_CHAIN_MARK = 16;
-   */
-  INVALID_CHAIN_MARK = 16,
-
-  /**
-   * IDENTITY_ERROR_CODE_CHAIN_OUTDATED is a restore that the server answered with a chain that does not contain the chain mark of the
-   * kit: older, or another history, or none. The restore is over; nothing was kept.
-   *
-   * @generated from enum value: IDENTITY_ERROR_CODE_CHAIN_OUTDATED = 17;
-   */
-  CHAIN_OUTDATED = 17,
-}
-
-/**
- * Describes the enum numen.v1.IdentityErrorCode.
- */
-export const IdentityErrorCodeSchema: GenEnum<IdentityErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_identity, 0);
 
 /**
  * @generated from enum numen.v1.LinkRole
@@ -1007,7 +868,7 @@ export enum LinkRole {
  * Describes the enum numen.v1.LinkRole.
  */
 export const LinkRoleSchema: GenEnum<LinkRole> = /*@__PURE__*/
-  enumDesc(file_numen_v1_identity, 1);
+  enumDesc(file_numen_v1_identity, 0);
 
 /**
  * @generated from enum numen.v1.LinkMode
@@ -1037,7 +898,7 @@ export enum LinkMode {
  * Describes the enum numen.v1.LinkMode.
  */
 export const LinkModeSchema: GenEnum<LinkMode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_identity, 2);
+  enumDesc(file_numen_v1_identity, 1);
 
 /**
  * @generated from enum numen.v1.LinkPhase
@@ -1099,7 +960,7 @@ export enum LinkPhase {
  * Describes the enum numen.v1.LinkPhase.
  */
 export const LinkPhaseSchema: GenEnum<LinkPhase> = /*@__PURE__*/
-  enumDesc(file_numen_v1_identity, 3);
+  enumDesc(file_numen_v1_identity, 2);
 
 /**
  * @generated from enum numen.v1.LinkReason
@@ -1145,7 +1006,7 @@ export enum LinkReason {
  * Describes the enum numen.v1.LinkReason.
  */
 export const LinkReasonSchema: GenEnum<LinkReason> = /*@__PURE__*/
-  enumDesc(file_numen_v1_identity, 4);
+  enumDesc(file_numen_v1_identity, 3);
 
 /**
  * IdentityService manages the account identity of this device. No secret key reaches the window; the

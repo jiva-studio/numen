@@ -25,7 +25,8 @@ func (e *dependencyEndpoint) FetchModelFile(
 	file, err := fetch.Execute(ctx, req.Msg.GetUrl(), req.Msg.GetSha256())
 	response := &v1.FetchModelFileResponse{}
 	if err != nil {
-		response.Error = err.Error()
+		response.Error = v1.ErrorCode_ERROR_CODE_INTERNAL
+		response.Detail = err.Error()
 	} else {
 		response.Path = file
 	}

@@ -75,67 +75,6 @@ func (KeyFileMode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_keyfile_proto_rawDescGZIP(), []int{0}
 }
 
-// KeyFileErrorCode is why a key file call was refused. The zero value is a call that succeeded.
-type KeyFileErrorCode int32
-
-const (
-	KeyFileErrorCode_KEY_FILE_ERROR_CODE_UNSPECIFIED KeyFileErrorCode = 0
-	// KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE is a passphrase that does not open the file.
-	KeyFileErrorCode_KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE KeyFileErrorCode = 1
-	// KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE is a passphrase of no characters, or a choice of a passphrase
-	// that gives none.
-	KeyFileErrorCode_KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE KeyFileErrorCode = 2
-	// KEY_FILE_ERROR_CODE_SAVE_FAILED is a choice the core could not keep for the next start.
-	KeyFileErrorCode_KEY_FILE_ERROR_CODE_SAVE_FAILED KeyFileErrorCode = 3
-	// KEY_FILE_ERROR_CODE_INVALID_MODE is a choice of a mode that cannot be chosen.
-	KeyFileErrorCode_KEY_FILE_ERROR_CODE_INVALID_MODE KeyFileErrorCode = 4
-)
-
-// Enum value maps for KeyFileErrorCode.
-var (
-	KeyFileErrorCode_name = map[int32]string{
-		0: "KEY_FILE_ERROR_CODE_UNSPECIFIED",
-		1: "KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE",
-		2: "KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE",
-		3: "KEY_FILE_ERROR_CODE_SAVE_FAILED",
-		4: "KEY_FILE_ERROR_CODE_INVALID_MODE",
-	}
-	KeyFileErrorCode_value = map[string]int32{
-		"KEY_FILE_ERROR_CODE_UNSPECIFIED":      0,
-		"KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE": 1,
-		"KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE": 2,
-		"KEY_FILE_ERROR_CODE_SAVE_FAILED":      3,
-		"KEY_FILE_ERROR_CODE_INVALID_MODE":     4,
-	}
-)
-
-func (x KeyFileErrorCode) Enum() *KeyFileErrorCode {
-	p := new(KeyFileErrorCode)
-	*p = x
-	return p
-}
-
-func (x KeyFileErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (KeyFileErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_keyfile_proto_enumTypes[1].Descriptor()
-}
-
-func (KeyFileErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_keyfile_proto_enumTypes[1]
-}
-
-func (x KeyFileErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use KeyFileErrorCode.Descriptor instead.
-func (KeyFileErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_keyfile_proto_rawDescGZIP(), []int{1}
-}
-
 type GetKeyFileStateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -308,7 +247,7 @@ func (x *ChooseKeyFileRequest) GetPassphrase() string {
 
 type ChooseKeyFileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         KeyFileErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.KeyFileErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -343,11 +282,11 @@ func (*ChooseKeyFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_keyfile_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ChooseKeyFileResponse) GetError() KeyFileErrorCode {
+func (x *ChooseKeyFileResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return KeyFileErrorCode_KEY_FILE_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 type UnlockKeyFileRequest struct {
@@ -396,7 +335,7 @@ func (x *UnlockKeyFileRequest) GetPassphrase() string {
 
 type UnlockKeyFileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         KeyFileErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.KeyFileErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -431,18 +370,18 @@ func (*UnlockKeyFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_keyfile_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *UnlockKeyFileResponse) GetError() KeyFileErrorCode {
+func (x *UnlockKeyFileResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return KeyFileErrorCode_KEY_FILE_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 var File_numen_v1_keyfile_proto protoreflect.FileDescriptor
 
 const file_numen_v1_keyfile_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/keyfile.proto\x12\bnumen.v1\"\x18\n" +
+	"\x16numen/v1/keyfile.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x18\n" +
 	"\x16GetKeyFileStateRequest\"\xc1\x01\n" +
 	"\x17GetKeyFileStateResponse\x12\x1a\n" +
 	"\tis_in_use\x18\x01 \x01(\bR\aisInUse\x12)\n" +
@@ -454,26 +393,20 @@ const file_numen_v1_keyfile_proto_rawDesc = "" +
 	"\x04mode\x18\x01 \x01(\x0e2\x15.numen.v1.KeyFileModeR\x04mode\x12#\n" +
 	"\n" +
 	"passphrase\x18\x02 \x01(\tB\x03\x80\x01\x01R\n" +
-	"passphrase\"I\n" +
-	"\x15ChooseKeyFileResponse\x120\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.KeyFileErrorCodeR\x05error\";\n" +
+	"passphrase\"B\n" +
+	"\x15ChooseKeyFileResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\";\n" +
 	"\x14UnlockKeyFileRequest\x12#\n" +
 	"\n" +
 	"passphrase\x18\x01 \x01(\tB\x03\x80\x01\x01R\n" +
-	"passphrase\"I\n" +
-	"\x15UnlockKeyFileResponse\x120\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.KeyFileErrorCodeR\x05error*\x80\x01\n" +
+	"passphrase\"B\n" +
+	"\x15UnlockKeyFileResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error*\x80\x01\n" +
 	"\vKeyFileMode\x12\x1d\n" +
 	"\x19KEY_FILE_MODE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13KEY_FILE_MODE_UNSET\x10\x01\x12\x1b\n" +
 	"\x17KEY_FILE_MODE_PLAINTEXT\x10\x02\x12\x1c\n" +
-	"\x18KEY_FILE_MODE_PASSPHRASE\x10\x03*\xd6\x01\n" +
-	"\x10KeyFileErrorCode\x12#\n" +
-	"\x1fKEY_FILE_ERROR_CODE_UNSPECIFIED\x10\x00\x12(\n" +
-	"$KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE\x10\x01\x12(\n" +
-	"$KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE\x10\x02\x12#\n" +
-	"\x1fKEY_FILE_ERROR_CODE_SAVE_FAILED\x10\x03\x12$\n" +
-	" KEY_FILE_ERROR_CODE_INVALID_MODE\x10\x042\x8c\x02\n" +
+	"\x18KEY_FILE_MODE_PASSPHRASE\x10\x032\x8c\x02\n" +
 	"\x0eKeyFileService\x12V\n" +
 	"\x0fGetKeyFileState\x12 .numen.v1.GetKeyFileStateRequest\x1a!.numen.v1.GetKeyFileStateResponse\x12P\n" +
 	"\rChooseKeyFile\x12\x1e.numen.v1.ChooseKeyFileRequest\x1a\x1f.numen.v1.ChooseKeyFileResponse\x12P\n" +
@@ -491,29 +424,29 @@ func file_numen_v1_keyfile_proto_rawDescGZIP() []byte {
 	return file_numen_v1_keyfile_proto_rawDescData
 }
 
-var file_numen_v1_keyfile_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_keyfile_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_keyfile_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_numen_v1_keyfile_proto_goTypes = []any{
 	(KeyFileMode)(0),                // 0: numen.v1.KeyFileMode
-	(KeyFileErrorCode)(0),           // 1: numen.v1.KeyFileErrorCode
-	(*GetKeyFileStateRequest)(nil),  // 2: numen.v1.GetKeyFileStateRequest
-	(*GetKeyFileStateResponse)(nil), // 3: numen.v1.GetKeyFileStateResponse
-	(*ChooseKeyFileRequest)(nil),    // 4: numen.v1.ChooseKeyFileRequest
-	(*ChooseKeyFileResponse)(nil),   // 5: numen.v1.ChooseKeyFileResponse
-	(*UnlockKeyFileRequest)(nil),    // 6: numen.v1.UnlockKeyFileRequest
-	(*UnlockKeyFileResponse)(nil),   // 7: numen.v1.UnlockKeyFileResponse
+	(*GetKeyFileStateRequest)(nil),  // 1: numen.v1.GetKeyFileStateRequest
+	(*GetKeyFileStateResponse)(nil), // 2: numen.v1.GetKeyFileStateResponse
+	(*ChooseKeyFileRequest)(nil),    // 3: numen.v1.ChooseKeyFileRequest
+	(*ChooseKeyFileResponse)(nil),   // 4: numen.v1.ChooseKeyFileResponse
+	(*UnlockKeyFileRequest)(nil),    // 5: numen.v1.UnlockKeyFileRequest
+	(*UnlockKeyFileResponse)(nil),   // 6: numen.v1.UnlockKeyFileResponse
+	(ErrorCode)(0),                  // 7: numen.v1.ErrorCode
 }
 var file_numen_v1_keyfile_proto_depIdxs = []int32{
 	0, // 0: numen.v1.GetKeyFileStateResponse.mode:type_name -> numen.v1.KeyFileMode
 	0, // 1: numen.v1.ChooseKeyFileRequest.mode:type_name -> numen.v1.KeyFileMode
-	1, // 2: numen.v1.ChooseKeyFileResponse.error:type_name -> numen.v1.KeyFileErrorCode
-	1, // 3: numen.v1.UnlockKeyFileResponse.error:type_name -> numen.v1.KeyFileErrorCode
-	2, // 4: numen.v1.KeyFileService.GetKeyFileState:input_type -> numen.v1.GetKeyFileStateRequest
-	4, // 5: numen.v1.KeyFileService.ChooseKeyFile:input_type -> numen.v1.ChooseKeyFileRequest
-	6, // 6: numen.v1.KeyFileService.UnlockKeyFile:input_type -> numen.v1.UnlockKeyFileRequest
-	3, // 7: numen.v1.KeyFileService.GetKeyFileState:output_type -> numen.v1.GetKeyFileStateResponse
-	5, // 8: numen.v1.KeyFileService.ChooseKeyFile:output_type -> numen.v1.ChooseKeyFileResponse
-	7, // 9: numen.v1.KeyFileService.UnlockKeyFile:output_type -> numen.v1.UnlockKeyFileResponse
+	7, // 2: numen.v1.ChooseKeyFileResponse.error:type_name -> numen.v1.ErrorCode
+	7, // 3: numen.v1.UnlockKeyFileResponse.error:type_name -> numen.v1.ErrorCode
+	1, // 4: numen.v1.KeyFileService.GetKeyFileState:input_type -> numen.v1.GetKeyFileStateRequest
+	3, // 5: numen.v1.KeyFileService.ChooseKeyFile:input_type -> numen.v1.ChooseKeyFileRequest
+	5, // 6: numen.v1.KeyFileService.UnlockKeyFile:input_type -> numen.v1.UnlockKeyFileRequest
+	2, // 7: numen.v1.KeyFileService.GetKeyFileState:output_type -> numen.v1.GetKeyFileStateResponse
+	4, // 8: numen.v1.KeyFileService.ChooseKeyFile:output_type -> numen.v1.ChooseKeyFileResponse
+	6, // 9: numen.v1.KeyFileService.UnlockKeyFile:output_type -> numen.v1.UnlockKeyFileResponse
 	7, // [7:10] is the sub-list for method output_type
 	4, // [4:7] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -526,12 +459,13 @@ func file_numen_v1_keyfile_proto_init() {
 	if File_numen_v1_keyfile_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_keyfile_proto_rawDesc), len(file_numen_v1_keyfile_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,

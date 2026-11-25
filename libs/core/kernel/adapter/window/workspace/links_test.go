@@ -202,13 +202,13 @@ func TestDetachTabRespondsAfterTheNewWindowAcceptsTheTab(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := accepted.Msg.GetError(); got != v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED {
+	if got := accepted.Msg.GetError(); got != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("AcceptTabMove answered %v", got)
 	}
 
 	select {
 	case response := <-answer:
-		if got := response.Msg.GetError(); got != v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED {
+		if got := response.Msg.GetError(); got != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 			t.Errorf("DetachTab answered %v", got)
 		}
 	case <-time.After(testsupport.Patience):
@@ -419,12 +419,12 @@ func TestMoveTabSendsTheTabToTheTargetAndRespondsAfterAccept(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := accepted.Msg.GetError(); got != v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED {
+	if got := accepted.Msg.GetError(); got != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("AcceptTabMove answered %v", got)
 	}
 	select {
 	case response := <-answer:
-		if got := response.GetError(); got != v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED {
+		if got := response.GetError(); got != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 			t.Errorf("MoveTab answered %v", got)
 		}
 	case <-time.After(testsupport.Patience):
@@ -442,7 +442,7 @@ func TestMoveTabToAWindowWithoutAWatchReturnsWindowClosed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := response.Msg.GetError(); got != v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_WINDOW_CLOSED {
+	if got := response.Msg.GetError(); got != v1.ErrorCode_ERROR_CODE_NO_WINDOW {
 		t.Errorf("MoveTab answered %v, want window closed", got)
 	}
 }
@@ -518,13 +518,17 @@ func TestSnapshotContainsTheWindowReports(t *testing.T) {
 	}
 }
 
-func TestConvertMoveErrorToWireCoversEveryTabMoveErrorCode(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.TabMoveErrorCode]tablink.MoveError{
-		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_WINDOW_CLOSED: tablink.MoveErrorWindowClosed,
-		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_TIMEOUT:       tablink.MoveErrorTimeout,
-		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_NOT_OWNER:     tablink.MoveErrorNotOwner,
-		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_CANCELED:      tablink.MoveErrorCanceled,
-	}, convertMoveErrorToWire)
+func TestConvertMoveErrorToWireCoversEveryErrorCode(t *testing.T) {
+	for want, moveErr := range map[v1.ErrorCode]tablink.MoveError{
+		v1.ErrorCode_ERROR_CODE_NO_WINDOW: tablink.MoveErrorWindowClosed,
+		v1.ErrorCode_ERROR_CODE_TIMEOUT:   tablink.MoveErrorTimeout,
+		v1.ErrorCode_ERROR_CODE_NOT_OWNER: tablink.MoveErrorNotOwner,
+		v1.ErrorCode_ERROR_CODE_CANCELED:  tablink.MoveErrorCanceled,
+	} {
+		if got := convertMoveErrorToWire(moveErr); got != want {
+			t.Errorf("%v produced %v, want %v", moveErr, got, want)
+		}
+	}
 }
 
 func TestWatchTabLinksSendsTheGroupPathInTheSnapshot(t *testing.T) {

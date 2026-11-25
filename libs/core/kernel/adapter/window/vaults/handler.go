@@ -139,7 +139,7 @@ func (s *Handler) AddVault(
 		if !ok {
 			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.AddVaultResponse{Error: &reason}), nil
+		return connect.NewResponse(&v1.AddVaultResponse{Error: reason}), nil
 	}
 	return connect.NewResponse(&v1.AddVaultResponse{Vault: convertVaultToWire(added)}), nil
 }
@@ -156,7 +156,7 @@ func (s *Handler) RenameVault(
 		if !ok {
 			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.RenameVaultResponse{Error: &reason}), nil
+		return connect.NewResponse(&v1.RenameVaultResponse{Error: reason}), nil
 	}
 	return connect.NewResponse(&v1.RenameVaultResponse{Vault: convertVaultToWire(renamed)}), nil
 }
@@ -173,7 +173,7 @@ func (s *Handler) RemoveVault(
 		if !ok {
 			return nil, wire.NewInternalError(err)
 		}
-		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &reason}), nil
+		return connect.NewResponse(&v1.RemoveVaultResponse{Error: reason}), nil
 	}
 	return connect.NewResponse(&v1.RemoveVaultResponse{}), nil
 }
@@ -196,7 +196,7 @@ func (s *Handler) OpenVault(
 	if !ok {
 		return nil, wire.NewInternalError(err)
 	}
-	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
+	return connect.NewResponse(&v1.OpenVaultResponse{Error: reason}), nil
 }
 
 func convertVaultToWire(v vaults.ListedVault) *v1.Vault {
@@ -206,27 +206,27 @@ func convertVaultToWire(v vaults.ListedVault) *v1.Vault {
 	}
 }
 
-func getErrorCode(err error) (v1.VaultsErrorCode, bool) {
+func getErrorCode(err error) (v1.ErrorCode, bool) {
 	switch {
 	case errors.Is(err, vaultdomain.ErrUnreadable):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE, true
+		return v1.ErrorCode_ERROR_CODE_UNREADABLE, true
 	case errors.Is(err, vaultdomain.ErrCopy):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY, true
+		return v1.ErrorCode_ERROR_CODE_VAULT_COPY, true
 	case errors.Is(err, domain.ErrOverlaps):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS, true
+		return v1.ErrorCode_ERROR_CODE_VAULT_OVERLAPS, true
 	case errors.Is(err, vaultdomain.ErrNameTaken):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN, true
+		return v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, true
 	case errors.Is(err, vaultdomain.ErrLastVault):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
+		return v1.ErrorCode_ERROR_CODE_LAST_VAULT, true
 	case errors.Is(err, vaultdomain.ErrShowing):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true
+		return v1.ErrorCode_ERROR_CODE_VAULT_CURRENT, true
 	case errors.Is(err, vaultdomain.ErrUnknown), errors.Is(err, vaultdomain.ErrNoName):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND, true
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, machine.ErrNoTrash):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH, true
+		return v1.ErrorCode_ERROR_CODE_NO_TRASH, true
 	case errors.Is(err, window.ErrAnswerPending):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, true
+		return v1.ErrorCode_ERROR_CODE_UNSAVED, true
 	default:
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED, false
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
 	}
 }

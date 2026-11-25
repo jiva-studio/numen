@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/keyfile"
 	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	keyfileusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/keyfile"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
@@ -87,7 +86,7 @@ func TestChooseKeyFileKeepsAPassphraseChoice(t *testing.T) {
 		Mode: v1.KeyFileMode_KEY_FILE_MODE_PASSPHRASE, Passphrase: "moon river",
 	}))
 
-	if err != nil || got.Msg.GetError() != v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_UNSPECIFIED ||
+	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED ||
 		len(file.passphrases) != 1 || len(remembered) != 1 {
 		t.Fatalf("answer %v, err %v, passphrases %v", got.Msg, err, file.passphrases)
 	}
@@ -98,7 +97,7 @@ func TestChooseKeyFileRefusesAnUnsetMode(t *testing.T) {
 		Mode: v1.KeyFileMode_KEY_FILE_MODE_UNSET,
 	}))
 
-	if err != nil || got.Msg.GetError() != v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_INVALID_MODE {
+	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INVALID {
 		t.Fatalf("answer %v, err %v", got.Msg, err)
 	}
 }
@@ -107,26 +106,28 @@ func TestUnlockKeyFileAnswersAWrongPassphraseAsACode(t *testing.T) {
 	got, err := newHandler(&fakeFile{err: domainkeyfile.ErrWrongPassphrase}, new([]domainkeyfile.Mode)).UnlockKeyFile(
 		t.Context(), connect.NewRequest(&v1.UnlockKeyFileRequest{Passphrase: "wrong"}))
 
-	if err != nil || got.Msg.GetError() != v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE {
+	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_WRONG_PASSPHRASE {
 		t.Fatalf("answer %v, err %v", got.Msg, err)
 	}
 }
 
-func TestKeyFileErrorCodesAreProducedFromFailures(t *testing.T) {
+func TestGetErrorCodeOfKeyFileFailures(t *testing.T) {
 	file := &fakeFile{}
 	handler := newHandler(file, new([]domainkeyfile.Mode))
-	testsupport.CheckProduced(t, map[v1.KeyFileErrorCode]error{
-		v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_UNSPECIFIED:      nil,
-		v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_WRONG_PASSPHRASE: domainkeyfile.ErrWrongPassphrase,
-		v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_EMPTY_PASSPHRASE: domainkeyfile.ErrEmptyPassphrase,
-		v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_SAVE_FAILED:      keyfileusecase.ErrNotSaved,
-		v1.KeyFileErrorCode_KEY_FILE_ERROR_CODE_INVALID_MODE:     keyfileusecase.ErrInvalidMode,
-	}, func(failure error) v1.KeyFileErrorCode {
+	for want, failure := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_UNSPECIFIED:      nil,
+		v1.ErrorCode_ERROR_CODE_WRONG_PASSPHRASE: domainkeyfile.ErrWrongPassphrase,
+		v1.ErrorCode_ERROR_CODE_EMPTY_PASSPHRASE: domainkeyfile.ErrEmptyPassphrase,
+		v1.ErrorCode_ERROR_CODE_INTERNAL:         keyfileusecase.ErrNotSaved,
+		v1.ErrorCode_ERROR_CODE_INVALID:          keyfileusecase.ErrInvalidMode,
+	} {
 		file.err = failure
 		got, err := handler.UnlockKeyFile(t.Context(), connect.NewRequest(&v1.UnlockKeyFileRequest{Passphrase: "x"}))
 		if err != nil {
 			t.Fatal(err)
 		}
-		return got.Msg.GetError()
-	})
+		if got.Msg.GetError() != want {
+			t.Errorf("%v is written as %v, want %v", failure, got.Msg.GetError(), want)
+		}
+	}
 }

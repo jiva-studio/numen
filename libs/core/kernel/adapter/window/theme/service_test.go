@@ -103,8 +103,8 @@ func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 	answer, err := service.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name: themedomain.Default, Mode: v1.Mode_MODE_DARK,
 	}))
-	if err != nil || answer.Msg.GetError() != "" {
-		t.Fatalf("failed: %v %q", err, answer.Msg.GetError())
+	if err != nil || answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("failed: %v %v %q", err, answer.Msg.GetError(), answer.Msg.GetDetail())
 	}
 	want := themedomain.Appearance{ThemeName: themedomain.Default, Mode: themedomain.Dark}
 	if len(settings.saves) != 1 || settings.saves[0] != want {
@@ -129,8 +129,8 @@ func TestAChoiceThatCannotBeAppliedIsRefusedAndReturnsWhy(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if failed := answer.Msg.GetError(); failed == "" || !strings.Contains(failed, selected.name) {
-			t.Errorf("%s, %v failed with %q", selected.name, selected.mode, failed)
+		if answer.Msg.GetError() == v1.ErrorCode_ERROR_CODE_UNSPECIFIED || !strings.Contains(answer.Msg.GetDetail(), selected.name) {
+			t.Errorf("%s, %v failed with %v %q", selected.name, selected.mode, answer.Msg.GetError(), answer.Msg.GetDetail())
 		}
 	}
 	if len(settings.saves) != 0 {
@@ -148,8 +148,8 @@ func TestASettingsFileThatWouldNotTakeTheChoiceReturnsSo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(answer.Msg.GetError(), "read-only") {
-		t.Errorf("failed with %q", answer.Msg.GetError())
+	if answer.Msg.GetError() == v1.ErrorCode_ERROR_CODE_UNSPECIFIED || !strings.Contains(answer.Msg.GetDetail(), "read-only") {
+		t.Errorf("failed with %v %q", answer.Msg.GetError(), answer.Msg.GetDetail())
 	}
 }
 

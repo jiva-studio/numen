@@ -51,36 +51,36 @@ func (e *searchEndpoint) begin(header http.Header, needsVault bool) (searchCall,
 	return call, nil
 }
 
-func (c searchCall) getRefusal(needsVault bool) v1.HostSearchErrorCode {
+func (c searchCall) getRefusal(needsVault bool) v1.ErrorCode {
 	switch {
 	case c.search == nil:
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL
+		return v1.ErrorCode_ERROR_CODE_NO_MODEL
 	case needsVault && !c.hasVault:
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT
+		return v1.ErrorCode_ERROR_CODE_NO_VAULT
 	}
-	return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func answerSearch(ctx context.Context, err error) (v1.HostSearchErrorCode, error) {
+func answerSearch(ctx context.Context, err error) (v1.ErrorCode, error) {
 	if err == nil {
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED, nil
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, nil
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	switch {
 	case errors.Is(err, plugin.ErrNoModel):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL, nil
+		return v1.ErrorCode_ERROR_CODE_NO_MODEL, nil
 	case errors.Is(err, plugin.ErrRecipeMismatch):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH, nil
+		return v1.ErrorCode_ERROR_CODE_RECIPE_MISMATCH, nil
 	case errors.Is(err, plugin.ErrInvalidFloor):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_FLOOR, nil
+		return v1.ErrorCode_ERROR_CODE_INVALID, nil
 	case errors.Is(err, plugin.ErrLimitExceeded):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED, nil
+		return v1.ErrorCode_ERROR_CODE_LIMIT_EXCEEDED, nil
 	case errors.Is(err, plugin.ErrEmbeddingFailed):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED, nil
+		return v1.ErrorCode_ERROR_CODE_UNAVAILABLE, nil
 	case errors.Is(err, plugin.ErrInvalidQuery):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY, nil
+		return v1.ErrorCode_ERROR_CODE_INVALID, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }

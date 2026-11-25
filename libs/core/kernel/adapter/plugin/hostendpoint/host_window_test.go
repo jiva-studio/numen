@@ -131,7 +131,7 @@ func TestHostWindowFocusesANoteAndChecksThePermission(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED || got.Msg.GetPath() != "notes/Heron.md" ||
+	if got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || got.Msg.GetPath() != "notes/Heron.md" ||
 		got.Msg.GetTitle() != "Gray Heron" || got.Msg.GetId() != "01J8HERON0000000000000000" {
 		t.Errorf("returned %v", got.Msg)
 	}
@@ -154,7 +154,7 @@ func TestHostWindowFocusesTheSpansInTheirOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
+	if got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("returned %v", got.Msg)
 	}
 	want := []domain.Place{{Path: "library/Birds.pdf", Ranges: []domain.ByteRange{{Start: 1500, End: 1580}, {Start: 400, End: 1100}}}}
@@ -187,7 +187,7 @@ func TestHostWindowReturnsOpenTabsWithPlacesAndNoState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED || got.Msg.GetActiveId() != "tab-2" {
+	if got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || got.Msg.GetActiveId() != "tab-2" {
 		t.Fatalf("returned %v", got.Msg)
 	}
 	tabs := got.Msg.GetTabs()
@@ -236,7 +236,7 @@ func TestHostWindowWithoutAWindowReturnsNoWindow(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client, _ := newWindowClient(t, window, "token-a")
 			ctx := t.Context()
-			const noWindow = v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW
+			const noWindow = v1.ErrorCode_ERROR_CODE_NO_WINDOW
 
 			if got := readWindowCode(client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{Path: "notes/Heron.md"}))); got != noWindow.String() {
 				t.Errorf("FocusNote returned %s, want no window", got)
@@ -255,7 +255,7 @@ func TestHostWindowReturnsNotFoundForPathNotInVault(t *testing.T) {
 	window := &recordingWindow{err: fmt.Errorf("this vault contains nothing at library/Gone.pdf: %w", fs.ErrNotExist)}
 	client, _ := newWindowClient(t, window, "token-a")
 	ctx := t.Context()
-	const notFound = v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND
+	const notFound = v1.ErrorCode_ERROR_CODE_NOT_FOUND
 
 	if got := readWindowCode(client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{Path: "notes/Gone.md"}))); got != notFound.String() {
 		t.Errorf("FocusNote returned %s, want not found", got)
@@ -293,7 +293,7 @@ func TestHostWindowReportsAnyOtherFailureAsInternal(t *testing.T) {
 
 func readWindowCode[T any, M interface {
 	*T
-	GetError() v1.HostWindowErrorCode
+	GetError() v1.ErrorCode
 }](res *connect.Response[T], err error) string {
 	if err != nil {
 		return err.Error()

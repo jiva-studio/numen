@@ -470,13 +470,13 @@ func TestNoteRefsHaveTheIdentifier(t *testing.T) {
 func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) {
 	for name, c := range map[string]struct {
 		err  error
-		want v1.VaultsErrorCode
+		want v1.ErrorCode
 	}{
-		"name taken":      {err: vaultdomain.ErrNameTaken, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN},
-		"last vault":      {err: vaultdomain.ErrLastVault, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT},
-		"current vault":   {err: vaultdomain.ErrShowing, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT},
-		"no such vault":   {err: vaultdomain.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
-		"unsaved changes": {err: plugin.ErrUnsavedChanges, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED},
+		"name taken":      {err: vaultdomain.ErrNameTaken, want: v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS},
+		"last vault":      {err: vaultdomain.ErrLastVault, want: v1.ErrorCode_ERROR_CODE_LAST_VAULT},
+		"current vault":   {err: vaultdomain.ErrShowing, want: v1.ErrorCode_ERROR_CODE_VAULT_CURRENT},
+		"no such vault":   {err: vaultdomain.ErrUnknown, want: v1.ErrorCode_ERROR_CODE_NOT_FOUND},
+		"unsaved changes": {err: plugin.ErrUnsavedChanges, want: v1.ErrorCode_ERROR_CODE_UNSAVED},
 	} {
 		t.Run(name, func(t *testing.T) {
 			list := newRecordingList()
@@ -491,7 +491,7 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 
 			for call, answer := range map[string]struct {
 				err    error
-				code   v1.VaultsErrorCode
+				code   v1.ErrorCode
 				detail string
 			}{
 				"AddVault":    {err: addErr, code: added.Msg.GetError(), detail: added.Msg.GetDetail()},
@@ -519,7 +519,7 @@ func TestOpenVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("OpenVault of v9 returned %v, want error NOT_FOUND", res.Msg)
 	}
 	if !strings.Contains(res.Msg.GetDetail(), "v9") {
@@ -538,7 +538,7 @@ func TestRemoveVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND || !strings.Contains(res.Msg.GetDetail(), "v9") {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND || !strings.Contains(res.Msg.GetDetail(), "v9") {
 		t.Errorf("RemoveVault of v9 returned %v, want error NOT_FOUND with the core's text naming v9", res.Msg)
 	}
 }
@@ -837,17 +837,17 @@ func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
 func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 	for name, c := range map[string]struct {
 		err     error
-		want    v1.VaultsErrorCode
+		want    v1.ErrorCode
 		message string
 	}{
 		"unreadable folder": {
 			err:     domain.NewDetailError("/vaults/Seas cannot be read as a vault: the folder is not there", vaultdomain.ErrUnreadable),
-			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE,
+			want:    v1.ErrorCode_ERROR_CODE_UNREADABLE,
 			message: "/vaults/Seas cannot be read as a vault: the folder is not there",
 		},
 		"folder inside a vault": {
 			err:     domain.Vaults{{ID: "v1", Name: "Rivers", Path: "/vaults"}}.CheckOverlap("/vaults/Seas"),
-			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS,
+			want:    v1.ErrorCode_ERROR_CODE_VAULT_OVERLAPS,
 			message: "/vaults/Seas is inside the vault Rivers; a vault cannot be inside another vault",
 		},
 	} {
@@ -887,7 +887,7 @@ func TestAddVaultOverlapReturnsOverlapsWithCoreTextAsDetail(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS {
+			if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_VAULT_OVERLAPS {
 				t.Errorf("AddVault of %s returned %v, want error OVERLAPS", root, res.Msg)
 			}
 			if detail := res.Msg.GetDetail(); detail != want {

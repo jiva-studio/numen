@@ -27,90 +27,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// VaultsErrorCode is why the list is as it was, or why the window is still
-// showing the vault it was showing.
-type VaultsErrorCode int32
-
-const (
-	VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED VaultsErrorCode = 0
-	// The path is not a folder, or cannot be read.
-	VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE VaultsErrorCode = 1
-	// The folder carries an identity registered at another path, and that path
-	// still carries it: the two are copies of one vault, and one index cannot
-	// hold both.
-	VaultsErrorCode_VAULTS_ERROR_CODE_COPY VaultsErrorCode = 2
-	// The folder lies inside a vault that is on the list, or holds one.
-	VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS VaultsErrorCode = 3
-	// Another vault is called this. It reaches RenameVault; AddVault appends a
-	// number to a taken name.
-	VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN VaultsErrorCode = 4
-	// It is the only vault this installation has.
-	VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT VaultsErrorCode = 5
-	// The vault is the one the window shows.
-	VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT   VaultsErrorCode = 6
-	VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND VaultsErrorCode = 7
-	// This machine has no trash, so the folder stays where
-	// it is and the vault stays on the list.
-	VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH VaultsErrorCode = 8
-	// A tab has unsaved changes, so the window keeps the vault it shows.
-	VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED VaultsErrorCode = 9
-)
-
-// Enum value maps for VaultsErrorCode.
-var (
-	VaultsErrorCode_name = map[int32]string{
-		0: "VAULTS_ERROR_CODE_UNSPECIFIED",
-		1: "VAULTS_ERROR_CODE_UNREADABLE",
-		2: "VAULTS_ERROR_CODE_COPY",
-		3: "VAULTS_ERROR_CODE_OVERLAPS",
-		4: "VAULTS_ERROR_CODE_NAME_TAKEN",
-		5: "VAULTS_ERROR_CODE_LAST_VAULT",
-		6: "VAULTS_ERROR_CODE_CURRENT",
-		7: "VAULTS_ERROR_CODE_NOT_FOUND",
-		8: "VAULTS_ERROR_CODE_NO_TRASH",
-		9: "VAULTS_ERROR_CODE_UNSAVED",
-	}
-	VaultsErrorCode_value = map[string]int32{
-		"VAULTS_ERROR_CODE_UNSPECIFIED": 0,
-		"VAULTS_ERROR_CODE_UNREADABLE":  1,
-		"VAULTS_ERROR_CODE_COPY":        2,
-		"VAULTS_ERROR_CODE_OVERLAPS":    3,
-		"VAULTS_ERROR_CODE_NAME_TAKEN":  4,
-		"VAULTS_ERROR_CODE_LAST_VAULT":  5,
-		"VAULTS_ERROR_CODE_CURRENT":     6,
-		"VAULTS_ERROR_CODE_NOT_FOUND":   7,
-		"VAULTS_ERROR_CODE_NO_TRASH":    8,
-		"VAULTS_ERROR_CODE_UNSAVED":     9,
-	}
-)
-
-func (x VaultsErrorCode) Enum() *VaultsErrorCode {
-	p := new(VaultsErrorCode)
-	*p = x
-	return p
-}
-
-func (x VaultsErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (VaultsErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_vaults_proto_enumTypes[0].Descriptor()
-}
-
-func (VaultsErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_vaults_proto_enumTypes[0]
-}
-
-func (x VaultsErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use VaultsErrorCode.Descriptor instead.
-func (VaultsErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{0}
-}
-
 // Vault is one vault the installation holds, as the list has it.
 type Vault struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -345,8 +261,8 @@ func (x *AddVaultRequest) GetManagedBy() string {
 type AddVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault that joined the list. Absent when nothing was added.
-	Vault *Vault           `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
-	Error *VaultsErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`
+	Vault *Vault    `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
+	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -390,11 +306,11 @@ func (x *AddVaultResponse) GetVault() *Vault {
 	return nil
 }
 
-func (x *AddVaultResponse) GetError() VaultsErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+func (x *AddVaultResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
 	}
-	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *AddVaultResponse) GetDetail() string {
@@ -460,8 +376,8 @@ type RenameVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault under its new name. Absent when it was not renamed. The name a
 	// vault already has is not a change and answers with the unchanged vault.
-	Vault *Vault           `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
-	Error *VaultsErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`
+	Vault *Vault    `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
+	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -505,11 +421,11 @@ func (x *RenameVaultResponse) GetVault() *Vault {
 	return nil
 }
 
-func (x *RenameVaultResponse) GetError() VaultsErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+func (x *RenameVaultResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
 	}
-	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *RenameVaultResponse) GetDetail() string {
@@ -577,7 +493,7 @@ type RemoveVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the vault is still on the list, and why. The folder is where it
 	// was.
-	Error *VaultsErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
 	Detail string `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	// The folder of the vault, which stays on the disk; set on the host endpoint.
@@ -616,11 +532,11 @@ func (*RemoveVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *RemoveVaultResponse) GetError() VaultsErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+func (x *RemoveVaultResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
 	}
-	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *RemoveVaultResponse) GetDetail() string {
@@ -683,7 +599,7 @@ func (x *OpenVaultRequest) GetId() string {
 
 type OpenVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error *VaultsErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
 	Detail        string `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -720,11 +636,11 @@ func (*OpenVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *OpenVaultResponse) GetError() VaultsErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+func (x *OpenVaultResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
 	}
-	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *OpenVaultResponse) GetDetail() string {
@@ -738,7 +654,7 @@ var File_numen_v1_vaults_proto protoreflect.FileDescriptor
 
 const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/vaults.proto\x12\bnumen.v1\"}\n" +
+	"\x15numen/v1/vaults.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"}\n" +
 	"\x05Vault\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -754,47 +670,32 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
-	"managed_by\x18\x03 \x01(\tR\tmanagedBy\"\xa0\x01\n" +
+	"managed_by\x18\x03 \x01(\tR\tmanagedBy\"\x8b\x01\n" +
 	"\x10AddVaultResponse\x12*\n" +
-	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x124\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x01R\x05error\x88\x01\x01\x12\x16\n" +
+	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detailB\b\n" +
-	"\x06_vaultB\b\n" +
-	"\x06_error\"8\n" +
+	"\x06_vault\"8\n" +
 	"\x12RenameVaultRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xa3\x01\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x8e\x01\n" +
 	"\x13RenameVaultResponse\x12*\n" +
-	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x124\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x01R\x05error\x88\x01\x01\x12\x16\n" +
+	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detailB\b\n" +
-	"\x06_vaultB\b\n" +
-	"\x06_error\"P\n" +
+	"\x06_vault\"P\n" +
 	"\x12RemoveVaultRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12*\n" +
-	"\x11is_folder_trashed\x18\x02 \x01(\bR\x0fisFolderTrashed\"\x81\x01\n" +
-	"\x13RemoveVaultResponse\x124\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\x05error\x88\x01\x01\x12\x16\n" +
+	"\x11is_folder_trashed\x18\x02 \x01(\bR\x0fisFolderTrashed\"l\n" +
+	"\x13RemoveVaultResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x12\x12\n" +
-	"\x04path\x18\x03 \x01(\tR\x04pathB\b\n" +
-	"\x06_error\"\"\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\"\"\n" +
 	"\x10OpenVaultRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"k\n" +
-	"\x11OpenVaultResponse\x124\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\x05error\x88\x01\x01\x12\x16\n" +
-	"\x06detail\x18\x02 \x01(\tR\x06detailB\b\n" +
-	"\x06_error*\xd5\x02\n" +
-	"\x0fVaultsErrorCode\x12!\n" +
-	"\x1dVAULTS_ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
-	"\x1cVAULTS_ERROR_CODE_UNREADABLE\x10\x01\x12\x1a\n" +
-	"\x16VAULTS_ERROR_CODE_COPY\x10\x02\x12\x1e\n" +
-	"\x1aVAULTS_ERROR_CODE_OVERLAPS\x10\x03\x12 \n" +
-	"\x1cVAULTS_ERROR_CODE_NAME_TAKEN\x10\x04\x12 \n" +
-	"\x1cVAULTS_ERROR_CODE_LAST_VAULT\x10\x05\x12\x1d\n" +
-	"\x19VAULTS_ERROR_CODE_CURRENT\x10\x06\x12\x1f\n" +
-	"\x1bVAULTS_ERROR_CODE_NOT_FOUND\x10\a\x12\x1e\n" +
-	"\x1aVAULTS_ERROR_CODE_NO_TRASH\x10\b\x12\x1d\n" +
-	"\x19VAULTS_ERROR_CODE_UNSAVED\x10\t2\xf9\x02\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"V\n" +
+	"\x11OpenVaultResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail2\xf9\x02\n" +
 	"\rVaultsService\x12G\n" +
 	"\n" +
 	"ListVaults\x12\x1b.numen.v1.ListVaultsRequest\x1a\x1c.numen.v1.ListVaultsResponse\x12A\n" +
@@ -815,40 +716,39 @@ func file_numen_v1_vaults_proto_rawDescGZIP() []byte {
 	return file_numen_v1_vaults_proto_rawDescData
 }
 
-var file_numen_v1_vaults_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_vaults_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_vaults_proto_goTypes = []any{
-	(VaultsErrorCode)(0),        // 0: numen.v1.VaultsErrorCode
-	(*Vault)(nil),               // 1: numen.v1.Vault
-	(*ListVaultsRequest)(nil),   // 2: numen.v1.ListVaultsRequest
-	(*ListVaultsResponse)(nil),  // 3: numen.v1.ListVaultsResponse
-	(*AddVaultRequest)(nil),     // 4: numen.v1.AddVaultRequest
-	(*AddVaultResponse)(nil),    // 5: numen.v1.AddVaultResponse
-	(*RenameVaultRequest)(nil),  // 6: numen.v1.RenameVaultRequest
-	(*RenameVaultResponse)(nil), // 7: numen.v1.RenameVaultResponse
-	(*RemoveVaultRequest)(nil),  // 8: numen.v1.RemoveVaultRequest
-	(*RemoveVaultResponse)(nil), // 9: numen.v1.RemoveVaultResponse
-	(*OpenVaultRequest)(nil),    // 10: numen.v1.OpenVaultRequest
-	(*OpenVaultResponse)(nil),   // 11: numen.v1.OpenVaultResponse
+	(*Vault)(nil),               // 0: numen.v1.Vault
+	(*ListVaultsRequest)(nil),   // 1: numen.v1.ListVaultsRequest
+	(*ListVaultsResponse)(nil),  // 2: numen.v1.ListVaultsResponse
+	(*AddVaultRequest)(nil),     // 3: numen.v1.AddVaultRequest
+	(*AddVaultResponse)(nil),    // 4: numen.v1.AddVaultResponse
+	(*RenameVaultRequest)(nil),  // 5: numen.v1.RenameVaultRequest
+	(*RenameVaultResponse)(nil), // 6: numen.v1.RenameVaultResponse
+	(*RemoveVaultRequest)(nil),  // 7: numen.v1.RemoveVaultRequest
+	(*RemoveVaultResponse)(nil), // 8: numen.v1.RemoveVaultResponse
+	(*OpenVaultRequest)(nil),    // 9: numen.v1.OpenVaultRequest
+	(*OpenVaultResponse)(nil),   // 10: numen.v1.OpenVaultResponse
+	(ErrorCode)(0),              // 11: numen.v1.ErrorCode
 }
 var file_numen_v1_vaults_proto_depIdxs = []int32{
-	1,  // 0: numen.v1.ListVaultsResponse.vaults:type_name -> numen.v1.Vault
-	1,  // 1: numen.v1.AddVaultResponse.vault:type_name -> numen.v1.Vault
-	0,  // 2: numen.v1.AddVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
-	1,  // 3: numen.v1.RenameVaultResponse.vault:type_name -> numen.v1.Vault
-	0,  // 4: numen.v1.RenameVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
-	0,  // 5: numen.v1.RemoveVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
-	0,  // 6: numen.v1.OpenVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
-	2,  // 7: numen.v1.VaultsService.ListVaults:input_type -> numen.v1.ListVaultsRequest
-	4,  // 8: numen.v1.VaultsService.AddVault:input_type -> numen.v1.AddVaultRequest
-	6,  // 9: numen.v1.VaultsService.RenameVault:input_type -> numen.v1.RenameVaultRequest
-	8,  // 10: numen.v1.VaultsService.RemoveVault:input_type -> numen.v1.RemoveVaultRequest
-	10, // 11: numen.v1.VaultsService.OpenVault:input_type -> numen.v1.OpenVaultRequest
-	3,  // 12: numen.v1.VaultsService.ListVaults:output_type -> numen.v1.ListVaultsResponse
-	5,  // 13: numen.v1.VaultsService.AddVault:output_type -> numen.v1.AddVaultResponse
-	7,  // 14: numen.v1.VaultsService.RenameVault:output_type -> numen.v1.RenameVaultResponse
-	9,  // 15: numen.v1.VaultsService.RemoveVault:output_type -> numen.v1.RemoveVaultResponse
-	11, // 16: numen.v1.VaultsService.OpenVault:output_type -> numen.v1.OpenVaultResponse
+	0,  // 0: numen.v1.ListVaultsResponse.vaults:type_name -> numen.v1.Vault
+	0,  // 1: numen.v1.AddVaultResponse.vault:type_name -> numen.v1.Vault
+	11, // 2: numen.v1.AddVaultResponse.error:type_name -> numen.v1.ErrorCode
+	0,  // 3: numen.v1.RenameVaultResponse.vault:type_name -> numen.v1.Vault
+	11, // 4: numen.v1.RenameVaultResponse.error:type_name -> numen.v1.ErrorCode
+	11, // 5: numen.v1.RemoveVaultResponse.error:type_name -> numen.v1.ErrorCode
+	11, // 6: numen.v1.OpenVaultResponse.error:type_name -> numen.v1.ErrorCode
+	1,  // 7: numen.v1.VaultsService.ListVaults:input_type -> numen.v1.ListVaultsRequest
+	3,  // 8: numen.v1.VaultsService.AddVault:input_type -> numen.v1.AddVaultRequest
+	5,  // 9: numen.v1.VaultsService.RenameVault:input_type -> numen.v1.RenameVaultRequest
+	7,  // 10: numen.v1.VaultsService.RemoveVault:input_type -> numen.v1.RemoveVaultRequest
+	9,  // 11: numen.v1.VaultsService.OpenVault:input_type -> numen.v1.OpenVaultRequest
+	2,  // 12: numen.v1.VaultsService.ListVaults:output_type -> numen.v1.ListVaultsResponse
+	4,  // 13: numen.v1.VaultsService.AddVault:output_type -> numen.v1.AddVaultResponse
+	6,  // 14: numen.v1.VaultsService.RenameVault:output_type -> numen.v1.RenameVaultResponse
+	8,  // 15: numen.v1.VaultsService.RemoveVault:output_type -> numen.v1.RemoveVaultResponse
+	10, // 16: numen.v1.VaultsService.OpenVault:output_type -> numen.v1.OpenVaultResponse
 	12, // [12:17] is the sub-list for method output_type
 	7,  // [7:12] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
@@ -861,23 +761,21 @@ func file_numen_v1_vaults_proto_init() {
 	if File_numen_v1_vaults_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_vaults_proto_msgTypes[4].OneofWrappers = []any{}
 	file_numen_v1_vaults_proto_msgTypes[6].OneofWrappers = []any{}
-	file_numen_v1_vaults_proto_msgTypes[8].OneofWrappers = []any{}
-	file_numen_v1_vaults_proto_msgTypes[10].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vaults_proto_rawDesc), len(file_numen_v1_vaults_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_vaults_proto_goTypes,
 		DependencyIndexes: file_numen_v1_vaults_proto_depIdxs,
-		EnumInfos:         file_numen_v1_vaults_proto_enumTypes,
 		MessageInfos:      file_numen_v1_vaults_proto_msgTypes,
 	}.Build()
 	File_numen_v1_vaults_proto = out.File

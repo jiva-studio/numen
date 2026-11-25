@@ -5,7 +5,6 @@
 import { createClient, type Client, type Transport } from '@connectrpc/connect'
 import {
   CatalogService,
-  CommandErrorCode,
   CommandService,
   ConnectionCallService,
   ContributionService,
@@ -34,14 +33,11 @@ import {
   SearchService,
   SettingsService,
   TaskKind,
-  TabMoveErrorCode,
-  TextErrorCode,
   TextService,
   TextVersionService,
   ThemeService,
   Unit,
   VaultService,
-  VaultsErrorCode,
   VaultsService,
   WindowService,
   WorkspaceService,
@@ -107,21 +103,14 @@ export const TASK_KIND = TaskKind
 export const TASK_UNIT = Unit
 export type TaskUnitCode = Unit
 
-export const VAULTS_ERROR_CODE = VaultsErrorCode
-export type VaultsErrorCodeValue = VaultsErrorCode
-
-export const COMMAND_ERROR_CODE = CommandErrorCode
-
-export const TEXT_ERROR_CODE = TextErrorCode
-
-export const TAB_MOVE_ERROR_CODE = TabMoveErrorCode
-export type TabMoveErrorCodeValue = TabMoveErrorCode
-
 export const THEME_MODE = Mode
 export type ThemeModeCode = Mode
 
 export const THEME_ORIGIN = Origin
 export type ThemeOriginCode = Origin
+
+export const WIRE_ERROR_CODE = ProtoErrorCode
+export type WireErrorCodeValue = ProtoErrorCode
 
 export const NOTE_ERROR_CODE = ProtoErrorCode
 export type NoteErrorCodeValue = ProtoErrorCode

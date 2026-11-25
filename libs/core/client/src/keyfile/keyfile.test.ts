@@ -3,7 +3,7 @@ import { create } from '@bufbuild/protobuf'
 import {
   ChooseKeyFileResponseSchema,
   GetKeyFileStateResponseSchema,
-  KeyFileErrorCode,
+  ErrorCode,
   KeyFileMode,
   UnlockKeyFileResponseSchema,
 } from '@numen/protocol'
@@ -59,7 +59,7 @@ describe('createKeyFileClient', () => {
       createRpc({
         unlockKeyFile: () =>
           Promise.resolve(
-            create(UnlockKeyFileResponseSchema, { error: KeyFileErrorCode.WRONG_PASSPHRASE }),
+            create(UnlockKeyFileResponseSchema, { error: ErrorCode.WRONG_PASSPHRASE }),
           ),
       }),
     )

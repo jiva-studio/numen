@@ -118,43 +118,43 @@ func (h *Handler) ListDevices(
 	return connect.NewResponse(&v1.ListDevicesResponse{Devices: listed}), nil
 }
 
-func serveLinkCall(err error) (v1.IdentityErrorCode, string, error) {
+func serveLinkCall(err error) (v1.ErrorCode, string, error) {
 	if err == nil {
-		return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED, "", nil
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, "", nil
 	}
 	code, detail, served := getLinkRefusal(err)
 	if !served {
-		return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED, "", connect.NewError(connect.CodeInternal, err)
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, "", connect.NewError(connect.CodeInternal, err)
 	}
 	return code, detail, nil
 }
 
-func getLinkRefusal(err error) (v1.IdentityErrorCode, string, bool) {
+func getLinkRefusal(err error) (v1.ErrorCode, string, bool) {
 	code, served := getErrorCode(err)
 	return code, "", served
 }
 
-func getLinkErrorCode(err error) (v1.IdentityErrorCode, bool) {
+func getLinkErrorCode(err error) (v1.ErrorCode, bool) {
 	refusals := []struct {
 		target error
-		code   v1.IdentityErrorCode
+		code   v1.ErrorCode
 	}{
-		{identitydomain.ErrLinkActive, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_ACTIVE},
-		{identitydomain.ErrNoLink, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK},
-		{identitydomain.ErrLinkText, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_TEXT_INVALID},
-		{identitydomain.ErrLastDevice, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LAST_DEVICE},
-		{identitydomain.ErrRevokeRaced, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_REVOKE_RACED},
-		{identitydomain.ErrOwnDevice, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE},
-		{identitydomain.ErrNoIdentity, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY},
-		{identitydomain.ErrDeviceRevoked, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_DEVICE_REVOKED},
-		{identitydomain.ErrUnknownDevice, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNKNOWN_DEVICE},
+		{identitydomain.ErrLinkActive, v1.ErrorCode_ERROR_CODE_LINK_ACTIVE},
+		{identitydomain.ErrNoLink, v1.ErrorCode_ERROR_CODE_NO_LINK},
+		{identitydomain.ErrLinkText, v1.ErrorCode_ERROR_CODE_LINK_TEXT_INVALID},
+		{identitydomain.ErrLastDevice, v1.ErrorCode_ERROR_CODE_LAST_DEVICE},
+		{identitydomain.ErrRevokeRaced, v1.ErrorCode_ERROR_CODE_REVOKE_RACED},
+		{identitydomain.ErrOwnDevice, v1.ErrorCode_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE},
+		{identitydomain.ErrNoIdentity, v1.ErrorCode_ERROR_CODE_NO_IDENTITY},
+		{identitydomain.ErrDeviceRevoked, v1.ErrorCode_ERROR_CODE_DEVICE_REVOKED},
+		{identitydomain.ErrUnknownDevice, v1.ErrorCode_ERROR_CODE_NOT_FOUND},
 	}
 	for _, refusal := range refusals {
 		if errors.Is(err, refusal.target) {
 			return refusal.code, true
 		}
 	}
-	return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED, false
+	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
 }
 
 func readLinkRole(role v1.LinkRole) identitydomain.LinkRole {

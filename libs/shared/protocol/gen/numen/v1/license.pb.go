@@ -81,83 +81,6 @@ func (LicenseStatus) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_license_proto_rawDescGZIP(), []int{0}
 }
 
-// LicenseErrorCode is why an activation or deactivation call failed. The zero value is a call
-// that succeeded.
-type LicenseErrorCode int32
-
-const (
-	LicenseErrorCode_LICENSE_ERROR_CODE_UNSPECIFIED LicenseErrorCode = 0
-	// LICENSE_ERROR_CODE_NOT_FOUND is a license id that no plugin declares, or a key that no provider
-	// recognizes.
-	LicenseErrorCode_LICENSE_ERROR_CODE_NOT_FOUND LicenseErrorCode = 1
-	// LICENSE_ERROR_CODE_INVALID_KEY is an empty or malformed license key.
-	LicenseErrorCode_LICENSE_ERROR_CODE_INVALID_KEY LicenseErrorCode = 2
-	// LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED is a key that has used all of its machine slots.
-	LicenseErrorCode_LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED LicenseErrorCode = 3
-	LicenseErrorCode_LICENSE_ERROR_CODE_EXPIRED                  LicenseErrorCode = 4
-	// LICENSE_ERROR_CODE_DISABLED is a key that the provider has disabled or revoked.
-	LicenseErrorCode_LICENSE_ERROR_CODE_DISABLED         LicenseErrorCode = 5
-	LicenseErrorCode_LICENSE_ERROR_CODE_PRODUCT_MISMATCH LicenseErrorCode = 6
-	// LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that could not be reached or returned a
-	// transient error.
-	LicenseErrorCode_LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE LicenseErrorCode = 7
-	// LICENSE_ERROR_CODE_KEY_STORE_FAILED is a key store that failed or is absent on this machine.
-	LicenseErrorCode_LICENSE_ERROR_CODE_KEY_STORE_FAILED LicenseErrorCode = 8
-)
-
-// Enum value maps for LicenseErrorCode.
-var (
-	LicenseErrorCode_name = map[int32]string{
-		0: "LICENSE_ERROR_CODE_UNSPECIFIED",
-		1: "LICENSE_ERROR_CODE_NOT_FOUND",
-		2: "LICENSE_ERROR_CODE_INVALID_KEY",
-		3: "LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED",
-		4: "LICENSE_ERROR_CODE_EXPIRED",
-		5: "LICENSE_ERROR_CODE_DISABLED",
-		6: "LICENSE_ERROR_CODE_PRODUCT_MISMATCH",
-		7: "LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE",
-		8: "LICENSE_ERROR_CODE_KEY_STORE_FAILED",
-	}
-	LicenseErrorCode_value = map[string]int32{
-		"LICENSE_ERROR_CODE_UNSPECIFIED":              0,
-		"LICENSE_ERROR_CODE_NOT_FOUND":                1,
-		"LICENSE_ERROR_CODE_INVALID_KEY":              2,
-		"LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED": 3,
-		"LICENSE_ERROR_CODE_EXPIRED":                  4,
-		"LICENSE_ERROR_CODE_DISABLED":                 5,
-		"LICENSE_ERROR_CODE_PRODUCT_MISMATCH":         6,
-		"LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE":     7,
-		"LICENSE_ERROR_CODE_KEY_STORE_FAILED":         8,
-	}
-)
-
-func (x LicenseErrorCode) Enum() *LicenseErrorCode {
-	p := new(LicenseErrorCode)
-	*p = x
-	return p
-}
-
-func (x LicenseErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (LicenseErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_license_proto_enumTypes[1].Descriptor()
-}
-
-func (LicenseErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_license_proto_enumTypes[1]
-}
-
-func (x LicenseErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use LicenseErrorCode.Descriptor instead.
-func (LicenseErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_license_proto_rawDescGZIP(), []int{1}
-}
-
 // LicenseContributor is one plugin that declares a license and what it unlocks when the license is
 // active.
 type LicenseContributor struct {
@@ -577,7 +500,7 @@ func (x *ActivateLicenseRequest) GetKey() string {
 type ActivateLicenseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	License       *LicenseInfo           `protobuf:"bytes,1,opt,name=license,proto3" json:"license,omitempty"`
-	Error         LicenseErrorCode       `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.LicenseErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -620,11 +543,11 @@ func (x *ActivateLicenseResponse) GetLicense() *LicenseInfo {
 	return nil
 }
 
-func (x *ActivateLicenseResponse) GetError() LicenseErrorCode {
+func (x *ActivateLicenseResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return LicenseErrorCode_LICENSE_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ActivateLicenseResponse) GetDetail() string {
@@ -681,7 +604,7 @@ func (x *DeactivateLicenseRequest) GetLicenseId() string {
 type DeactivateLicenseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	License       *LicenseInfo           `protobuf:"bytes,1,opt,name=license,proto3" json:"license,omitempty"`
-	Error         LicenseErrorCode       `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.LicenseErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -724,11 +647,11 @@ func (x *DeactivateLicenseResponse) GetLicense() *LicenseInfo {
 	return nil
 }
 
-func (x *DeactivateLicenseResponse) GetError() LicenseErrorCode {
+func (x *DeactivateLicenseResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return LicenseErrorCode_LICENSE_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *DeactivateLicenseResponse) GetDetail() string {
@@ -822,7 +745,7 @@ var File_numen_v1_license_proto protoreflect.FileDescriptor
 
 const file_numen_v1_license_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/license.proto\x12\bnumen.v1\"t\n" +
+	"\x16numen/v1/license.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"t\n" +
 	"\x12LicenseContributor\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1f\n" +
 	"\vplugin_name\x18\x02 \x01(\tR\n" +
@@ -855,17 +778,17 @@ const file_numen_v1_license_proto_rawDesc = "" +
 	"\x16ActivateLicenseRequest\x12\x1d\n" +
 	"\n" +
 	"license_id\x18\x01 \x01(\tR\tlicenseId\x12\x15\n" +
-	"\x03key\x18\x02 \x01(\tB\x03\x80\x01\x01R\x03key\"\x94\x01\n" +
+	"\x03key\x18\x02 \x01(\tB\x03\x80\x01\x01R\x03key\"\x8d\x01\n" +
 	"\x17ActivateLicenseResponse\x12/\n" +
-	"\alicense\x18\x01 \x01(\v2\x15.numen.v1.LicenseInfoR\alicense\x120\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1a.numen.v1.LicenseErrorCodeR\x05error\x12\x16\n" +
+	"\alicense\x18\x01 \x01(\v2\x15.numen.v1.LicenseInfoR\alicense\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"9\n" +
 	"\x18DeactivateLicenseRequest\x12\x1d\n" +
 	"\n" +
-	"license_id\x18\x01 \x01(\tR\tlicenseId\"\x96\x01\n" +
+	"license_id\x18\x01 \x01(\tR\tlicenseId\"\x8f\x01\n" +
 	"\x19DeactivateLicenseResponse\x12/\n" +
-	"\alicense\x18\x01 \x01(\v2\x15.numen.v1.LicenseInfoR\alicense\x120\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1a.numen.v1.LicenseErrorCodeR\x05error\x12\x16\n" +
+	"\alicense\x18\x01 \x01(\v2\x15.numen.v1.LicenseInfoR\alicense\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x16\n" +
 	"\x14WatchLicensesRequest\"J\n" +
 	"\x15WatchLicensesResponse\x121\n" +
@@ -875,17 +798,7 @@ const file_numen_v1_license_proto_rawDesc = "" +
 	"\x17LICENSE_STATUS_INACTIVE\x10\x01\x12\x19\n" +
 	"\x15LICENSE_STATUS_ACTIVE\x10\x02\x12\x1a\n" +
 	"\x16LICENSE_STATUS_EXPIRED\x10\x03\x12\x1d\n" +
-	"\x19LICENSE_STATUS_UNVERIFIED\x10\x04*\xed\x02\n" +
-	"\x10LicenseErrorCode\x12\"\n" +
-	"\x1eLICENSE_ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
-	"\x1cLICENSE_ERROR_CODE_NOT_FOUND\x10\x01\x12\"\n" +
-	"\x1eLICENSE_ERROR_CODE_INVALID_KEY\x10\x02\x12/\n" +
-	"+LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED\x10\x03\x12\x1e\n" +
-	"\x1aLICENSE_ERROR_CODE_EXPIRED\x10\x04\x12\x1f\n" +
-	"\x1bLICENSE_ERROR_CODE_DISABLED\x10\x05\x12'\n" +
-	"#LICENSE_ERROR_CODE_PRODUCT_MISMATCH\x10\x06\x12+\n" +
-	"'LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE\x10\a\x12'\n" +
-	"#LICENSE_ERROR_CODE_KEY_STORE_FAILED\x10\b2\xe9\x02\n" +
+	"\x19LICENSE_STATUS_UNVERIFIED\x10\x042\xe9\x02\n" +
 	"\x0eLicenseService\x12M\n" +
 	"\fListLicenses\x12\x1d.numen.v1.ListLicensesRequest\x1a\x1e.numen.v1.ListLicensesResponse\x12V\n" +
 	"\x0fActivateLicense\x12 .numen.v1.ActivateLicenseRequest\x1a!.numen.v1.ActivateLicenseResponse\x12\\\n" +
@@ -904,41 +817,41 @@ func file_numen_v1_license_proto_rawDescGZIP() []byte {
 	return file_numen_v1_license_proto_rawDescData
 }
 
-var file_numen_v1_license_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_license_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_license_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_license_proto_goTypes = []any{
 	(LicenseStatus)(0),                // 0: numen.v1.LicenseStatus
-	(LicenseErrorCode)(0),             // 1: numen.v1.LicenseErrorCode
-	(*LicenseContributor)(nil),        // 2: numen.v1.LicenseContributor
-	(*LicenseProviderOption)(nil),     // 3: numen.v1.LicenseProviderOption
-	(*LicenseInfo)(nil),               // 4: numen.v1.LicenseInfo
-	(*ListLicensesRequest)(nil),       // 5: numen.v1.ListLicensesRequest
-	(*ListLicensesResponse)(nil),      // 6: numen.v1.ListLicensesResponse
-	(*ActivateLicenseRequest)(nil),    // 7: numen.v1.ActivateLicenseRequest
-	(*ActivateLicenseResponse)(nil),   // 8: numen.v1.ActivateLicenseResponse
-	(*DeactivateLicenseRequest)(nil),  // 9: numen.v1.DeactivateLicenseRequest
-	(*DeactivateLicenseResponse)(nil), // 10: numen.v1.DeactivateLicenseResponse
-	(*WatchLicensesRequest)(nil),      // 11: numen.v1.WatchLicensesRequest
-	(*WatchLicensesResponse)(nil),     // 12: numen.v1.WatchLicensesResponse
+	(*LicenseContributor)(nil),        // 1: numen.v1.LicenseContributor
+	(*LicenseProviderOption)(nil),     // 2: numen.v1.LicenseProviderOption
+	(*LicenseInfo)(nil),               // 3: numen.v1.LicenseInfo
+	(*ListLicensesRequest)(nil),       // 4: numen.v1.ListLicensesRequest
+	(*ListLicensesResponse)(nil),      // 5: numen.v1.ListLicensesResponse
+	(*ActivateLicenseRequest)(nil),    // 6: numen.v1.ActivateLicenseRequest
+	(*ActivateLicenseResponse)(nil),   // 7: numen.v1.ActivateLicenseResponse
+	(*DeactivateLicenseRequest)(nil),  // 8: numen.v1.DeactivateLicenseRequest
+	(*DeactivateLicenseResponse)(nil), // 9: numen.v1.DeactivateLicenseResponse
+	(*WatchLicensesRequest)(nil),      // 10: numen.v1.WatchLicensesRequest
+	(*WatchLicensesResponse)(nil),     // 11: numen.v1.WatchLicensesResponse
+	(ErrorCode)(0),                    // 12: numen.v1.ErrorCode
 }
 var file_numen_v1_license_proto_depIdxs = []int32{
-	2,  // 0: numen.v1.LicenseInfo.contributors:type_name -> numen.v1.LicenseContributor
-	3,  // 1: numen.v1.LicenseInfo.providers:type_name -> numen.v1.LicenseProviderOption
+	1,  // 0: numen.v1.LicenseInfo.contributors:type_name -> numen.v1.LicenseContributor
+	2,  // 1: numen.v1.LicenseInfo.providers:type_name -> numen.v1.LicenseProviderOption
 	0,  // 2: numen.v1.LicenseInfo.status:type_name -> numen.v1.LicenseStatus
-	4,  // 3: numen.v1.ListLicensesResponse.licenses:type_name -> numen.v1.LicenseInfo
-	4,  // 4: numen.v1.ActivateLicenseResponse.license:type_name -> numen.v1.LicenseInfo
-	1,  // 5: numen.v1.ActivateLicenseResponse.error:type_name -> numen.v1.LicenseErrorCode
-	4,  // 6: numen.v1.DeactivateLicenseResponse.license:type_name -> numen.v1.LicenseInfo
-	1,  // 7: numen.v1.DeactivateLicenseResponse.error:type_name -> numen.v1.LicenseErrorCode
-	4,  // 8: numen.v1.WatchLicensesResponse.licenses:type_name -> numen.v1.LicenseInfo
-	5,  // 9: numen.v1.LicenseService.ListLicenses:input_type -> numen.v1.ListLicensesRequest
-	7,  // 10: numen.v1.LicenseService.ActivateLicense:input_type -> numen.v1.ActivateLicenseRequest
-	9,  // 11: numen.v1.LicenseService.DeactivateLicense:input_type -> numen.v1.DeactivateLicenseRequest
-	11, // 12: numen.v1.LicenseService.WatchLicenses:input_type -> numen.v1.WatchLicensesRequest
-	6,  // 13: numen.v1.LicenseService.ListLicenses:output_type -> numen.v1.ListLicensesResponse
-	8,  // 14: numen.v1.LicenseService.ActivateLicense:output_type -> numen.v1.ActivateLicenseResponse
-	10, // 15: numen.v1.LicenseService.DeactivateLicense:output_type -> numen.v1.DeactivateLicenseResponse
-	12, // 16: numen.v1.LicenseService.WatchLicenses:output_type -> numen.v1.WatchLicensesResponse
+	3,  // 3: numen.v1.ListLicensesResponse.licenses:type_name -> numen.v1.LicenseInfo
+	3,  // 4: numen.v1.ActivateLicenseResponse.license:type_name -> numen.v1.LicenseInfo
+	12, // 5: numen.v1.ActivateLicenseResponse.error:type_name -> numen.v1.ErrorCode
+	3,  // 6: numen.v1.DeactivateLicenseResponse.license:type_name -> numen.v1.LicenseInfo
+	12, // 7: numen.v1.DeactivateLicenseResponse.error:type_name -> numen.v1.ErrorCode
+	3,  // 8: numen.v1.WatchLicensesResponse.licenses:type_name -> numen.v1.LicenseInfo
+	4,  // 9: numen.v1.LicenseService.ListLicenses:input_type -> numen.v1.ListLicensesRequest
+	6,  // 10: numen.v1.LicenseService.ActivateLicense:input_type -> numen.v1.ActivateLicenseRequest
+	8,  // 11: numen.v1.LicenseService.DeactivateLicense:input_type -> numen.v1.DeactivateLicenseRequest
+	10, // 12: numen.v1.LicenseService.WatchLicenses:input_type -> numen.v1.WatchLicensesRequest
+	5,  // 13: numen.v1.LicenseService.ListLicenses:output_type -> numen.v1.ListLicensesResponse
+	7,  // 14: numen.v1.LicenseService.ActivateLicense:output_type -> numen.v1.ActivateLicenseResponse
+	9,  // 15: numen.v1.LicenseService.DeactivateLicense:output_type -> numen.v1.DeactivateLicenseResponse
+	11, // 16: numen.v1.LicenseService.WatchLicenses:output_type -> numen.v1.WatchLicensesResponse
 	13, // [13:17] is the sub-list for method output_type
 	9,  // [9:13] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
@@ -951,12 +864,13 @@ func file_numen_v1_license_proto_init() {
 	if File_numen_v1_license_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_license_proto_rawDesc), len(file_numen_v1_license_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,

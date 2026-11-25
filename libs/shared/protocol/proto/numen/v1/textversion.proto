@@ -3,6 +3,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/plugincommand.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -26,7 +27,7 @@ message ListVersionItemsRequest {
 message ListVersionItemsResponse {
   repeated CommandItem items = 1;
   // Set when the versions could not be listed; the message then says why.
-  CommandErrorCode error = 2;
+  ErrorCode error = 2;
   string message = 3;
 }
 
@@ -38,6 +39,6 @@ message DeleteVersionRequest {
 }
 
 message DeleteVersionResponse {
-  CommandErrorCode error = 1;
+  ErrorCode error = 1;
   string message = 2;
 }

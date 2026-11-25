@@ -2,7 +2,7 @@
  * The texts of a plugin's views, read and edited over TextService.
  */
 import {
-  TEXT_ERROR_CODE,
+  WIRE_ERROR_CODE,
   type TextClient,
   type TextSegmentMessage,
   type TextVersionMessage,
@@ -72,10 +72,10 @@ export const createPluginTexts = (client: TextClient, pluginId: string): VaultTe
       sourceVersionId,
       segments: segments.map(writeSegment),
     })
-    if (answer.version !== undefined && answer.error === TEXT_ERROR_CODE.UNSPECIFIED) {
+    if (answer.version !== undefined && answer.error === WIRE_ERROR_CODE.UNSPECIFIED) {
       return { ok: true, value: readVersion(answer.version) }
     }
-    return answer.error === TEXT_ERROR_CODE.NOT_FOUND
+    return answer.error === WIRE_ERROR_CODE.NOT_FOUND
       ? asFailure({ error: 'notFound', message: `no live version ${sourceVersionId} at ${path}` })
       : asFailure({ error: 'invalid', message: `the segments of the edit of ${path} are not valid` })
   },

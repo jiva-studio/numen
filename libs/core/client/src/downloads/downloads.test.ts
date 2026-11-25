@@ -9,7 +9,7 @@ describe('getDownloadProgress', () => {
     const asked: string[] = []
     const client = createDownloadClient({
       getDownloadProgress: (request) => {
-        asked.push(request.path)
+        asked.push(request.path ?? '')
         return Promise.resolve(
           create(GetDownloadProgressResponseSchema, { isKnown: true, bytesDone: 3n, bytesTotal: 9n }),
         )

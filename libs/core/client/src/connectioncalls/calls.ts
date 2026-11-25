@@ -5,7 +5,7 @@
  */
 import type { Client } from '@connectrpc/connect'
 import {
-  CallErrorCode,
+  ErrorCode,
   type ConnectionCallService,
   FailureReason,
   Priority,
@@ -123,15 +123,15 @@ export interface ConnectionCallClient {
   ): Promise<readonly RowOption[]>
 }
 
-const readErrorCode = (code: CallErrorCode): ConnectionCallErrorCode => {
+const readErrorCode = (code: ErrorCode): ConnectionCallErrorCode => {
   switch (code) {
-    case CallErrorCode.NO_CONNECTION:
+    case ErrorCode.NO_CONNECTION:
       return 'noConnection'
-    case CallErrorCode.ALL_FAILED:
+    case ErrorCode.ALL_FAILED:
       return 'allFailed'
-    case CallErrorCode.STOPPED:
+    case ErrorCode.STOPPED:
       return 'stopped'
-    case CallErrorCode.UNSPECIFIED:
+    default:
       throw new Error('ConnectionCallService ended a call with a failure that holds no error')
   }
 }

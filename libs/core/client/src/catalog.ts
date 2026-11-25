@@ -4,7 +4,7 @@
  */
 import type { Client } from '@connectrpc/connect'
 import {
-  CatalogErrorCode,
+  ErrorCode,
   CatalogIncompatibility,
   type CatalogService,
   CatalogState,
@@ -57,13 +57,13 @@ export interface PluginCatalog {
 }
 
 interface EntryAnswer {
-  readonly error: CatalogErrorCode
+  readonly error: ErrorCode
   readonly entry?: CatalogEntry | undefined
   readonly sourceErrors: CatalogSourceError[]
 }
 
 const readMatch = (answer: EntryAnswer): Result<CatalogMatch, CatalogFailure> => {
-  if (answer.error === CatalogErrorCode.NOT_FOUND || answer.entry === undefined) {
+  if (answer.error === ErrorCode.NOT_FOUND || answer.entry === undefined) {
     return asFailure({
       error: 'notFound',
       message: 'not found',

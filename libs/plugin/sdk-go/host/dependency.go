@@ -26,8 +26,11 @@ func (c *DependencyClient) FetchModelFile(ctx context.Context, address, digest s
 	if err != nil {
 		return "", err
 	}
-	if message := res.Msg.GetError(); message != "" {
-		return "", errors.New(message)
+	if code := res.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		if detail := res.Msg.GetDetail(); detail != "" {
+			return "", errors.New(detail)
+		}
+		return "", fail(code)
 	}
 	return res.Msg.GetPath(), nil
 }

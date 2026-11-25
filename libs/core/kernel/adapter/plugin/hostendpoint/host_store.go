@@ -16,7 +16,7 @@ import (
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
-const noStoreVault = v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT
+const noStoreVault = v1.ErrorCode_ERROR_CODE_NO_VAULT
 
 // storeEndpoint answers HostStoreService: each plugin's own folder in the store of a vault.
 type storeEndpoint struct {
@@ -34,7 +34,7 @@ func (e *storeEndpoint) begin(header http.Header) (*vault.Access, string, error)
 	return vault, pluginID, err
 }
 
-func (e *storeEndpoint) openReader(ctx context.Context, header http.Header) (vault.StoreReader, v1.HostStoreErrorCode, error) {
+func (e *storeEndpoint) openReader(ctx context.Context, header http.Header) (vault.StoreReader, v1.ErrorCode, error) {
 	vault, pluginID, err := e.begin(header)
 	if err != nil {
 		return nil, 0, err
@@ -50,7 +50,7 @@ func (e *storeEndpoint) openReader(ctx context.Context, header http.Header) (vau
 	return store, 0, nil
 }
 
-func (e *storeEndpoint) openWriter(ctx context.Context, header http.Header) (vault.StoreWriter, v1.HostStoreErrorCode, error) {
+func (e *storeEndpoint) openWriter(ctx context.Context, header http.Header) (vault.StoreWriter, v1.ErrorCode, error) {
 	vault, pluginID, err := e.begin(header)
 	if err != nil {
 		return nil, 0, err
@@ -66,9 +66,9 @@ func (e *storeEndpoint) openWriter(ctx context.Context, header http.Header) (vau
 	return store, 0, nil
 }
 
-func answerStore(ctx context.Context, err error) (v1.HostStoreErrorCode, error) {
+func answerStore(ctx context.Context, err error) (v1.ErrorCode, error) {
 	if err == nil {
-		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED, nil
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, nil
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
@@ -77,11 +77,11 @@ func answerStore(ctx context.Context, err error) (v1.HostStoreErrorCode, error) 
 	case errors.Is(err, plugin.ErrNoVault):
 		return noStoreVault, nil
 	case errors.Is(err, vaultdomain.ErrLockedByAnother):
-		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER, nil
+		return v1.ErrorCode_ERROR_CODE_LOCKED, nil
 	case errors.Is(err, vaultdomain.ErrOutside):
-		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT, nil
+		return v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT, nil
 	case errors.Is(err, fs.ErrNotExist):
-		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND, nil
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }

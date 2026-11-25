@@ -2,15 +2,17 @@
 // @generated from file numen/v1/hoststore.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hoststore.proto.
  */
 export const file_numen_v1_hoststore: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0c3RvcmUucHJvdG8SCG51bWVuLnYxIiQKFFJlYWRTdG9yZUZpbGVSZXF1ZXN0EgwKBG5hbWUYASABKAkiVQoVUmVhZFN0b3JlRmlsZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFN0b3JlRXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwiNwoWQXBwZW5kU3RvcmVGaWxlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwiRgoXQXBwZW5kU3RvcmVGaWxlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0U3RvcmVFcnJvckNvZGUiFwoVTGlzdFN0b3JlRmlsZXNSZXF1ZXN0IisKDUhvc3RTdG9yZUZpbGUSDAoEbmFtZRgBIAEoCRIMCgRzaXplGAIgASgDIm0KFkxpc3RTdG9yZUZpbGVzUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0U3RvcmVFcnJvckNvZGUSJgoFZmlsZXMYAiADKAsyFy5udW1lbi52MS5Ib3N0U3RvcmVGaWxlIjYKFVdyaXRlU3RvcmVGaWxlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwiRQoWV3JpdGVTdG9yZUZpbGVSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RTdG9yZUVycm9yQ29kZSImChZEZWxldGVTdG9yZUZpbGVSZXF1ZXN0EgwKBG5hbWUYASABKAkiRgoXRGVsZXRlU3RvcmVGaWxlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0U3RvcmVFcnJvckNvZGUiMgoWUmVuYW1lU3RvcmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIkYKF1JlbmFtZVN0b3JlRmlsZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFN0b3JlRXJyb3JDb2RlKtoBChJIb3N0U3RvcmVFcnJvckNvZGUSJQohSE9TVF9TVE9SRV9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeSE9TVF9TVE9SRV9FUlJPUl9DT0RFX05PX1ZBVUxUEAESIwofSE9TVF9TVE9SRV9FUlJPUl9DT0RFX05PVF9GT1VORBACEicKI0hPU1RfU1RPUkVfRVJST1JfQ09ERV9PVVRTSURFX1ZBVUxUEAMSKwonSE9TVF9TVE9SRV9FUlJPUl9DT0RFX0xPQ0tFRF9CWV9BTk9USEVSEAQylgQKEEhvc3RTdG9yZVNlcnZpY2USUAoNUmVhZFN0b3JlRmlsZRIeLm51bWVuLnYxLlJlYWRTdG9yZUZpbGVSZXF1ZXN0Gh8ubnVtZW4udjEuUmVhZFN0b3JlRmlsZVJlc3BvbnNlElYKD0FwcGVuZFN0b3JlRmlsZRIgLm51bWVuLnYxLkFwcGVuZFN0b3JlRmlsZVJlcXVlc3QaIS5udW1lbi52MS5BcHBlbmRTdG9yZUZpbGVSZXNwb25zZRJTCg5MaXN0U3RvcmVGaWxlcxIfLm51bWVuLnYxLkxpc3RTdG9yZUZpbGVzUmVxdWVzdBogLm51bWVuLnYxLkxpc3RTdG9yZUZpbGVzUmVzcG9uc2USUwoOV3JpdGVTdG9yZUZpbGUSHy5udW1lbi52MS5Xcml0ZVN0b3JlRmlsZVJlcXVlc3QaIC5udW1lbi52MS5Xcml0ZVN0b3JlRmlsZVJlc3BvbnNlElYKD0RlbGV0ZVN0b3JlRmlsZRIgLm51bWVuLnYxLkRlbGV0ZVN0b3JlRmlsZVJlcXVlc3QaIS5udW1lbi52MS5EZWxldGVTdG9yZUZpbGVSZXNwb25zZRJWCg9SZW5hbWVTdG9yZUZpbGUSIC5udW1lbi52MS5SZW5hbWVTdG9yZUZpbGVSZXF1ZXN0GiEubnVtZW4udjEuUmVuYW1lU3RvcmVGaWxlUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChhudW1lbi92MS9ob3N0c3RvcmUucHJvdG8SCG51bWVuLnYxIiQKFFJlYWRTdG9yZUZpbGVSZXF1ZXN0EgwKBG5hbWUYASABKAkiTAoVUmVhZFN0b3JlRmlsZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwiNwoWQXBwZW5kU3RvcmVGaWxlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwiPQoXQXBwZW5kU3RvcmVGaWxlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiFwoVTGlzdFN0b3JlRmlsZXNSZXF1ZXN0IisKDUhvc3RTdG9yZUZpbGUSDAoEbmFtZRgBIAEoCRIMCgRzaXplGAIgASgDImQKFkxpc3RTdG9yZUZpbGVzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSJgoFZmlsZXMYAiADKAsyFy5udW1lbi52MS5Ib3N0U3RvcmVGaWxlIjYKFVdyaXRlU3RvcmVGaWxlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwiPAoWV3JpdGVTdG9yZUZpbGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZSImChZEZWxldGVTdG9yZUZpbGVSZXF1ZXN0EgwKBG5hbWUYASABKAkiPQoXRGVsZXRlU3RvcmVGaWxlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiMgoWUmVuYW1lU3RvcmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIj0KF1JlbmFtZVN0b3JlRmlsZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlMpYEChBIb3N0U3RvcmVTZXJ2aWNlElAKDVJlYWRTdG9yZUZpbGUSHi5udW1lbi52MS5SZWFkU3RvcmVGaWxlUmVxdWVzdBofLm51bWVuLnYxLlJlYWRTdG9yZUZpbGVSZXNwb25zZRJWCg9BcHBlbmRTdG9yZUZpbGUSIC5udW1lbi52MS5BcHBlbmRTdG9yZUZpbGVSZXF1ZXN0GiEubnVtZW4udjEuQXBwZW5kU3RvcmVGaWxlUmVzcG9uc2USUwoOTGlzdFN0b3JlRmlsZXMSHy5udW1lbi52MS5MaXN0U3RvcmVGaWxlc1JlcXVlc3QaIC5udW1lbi52MS5MaXN0U3RvcmVGaWxlc1Jlc3BvbnNlElMKDldyaXRlU3RvcmVGaWxlEh8ubnVtZW4udjEuV3JpdGVTdG9yZUZpbGVSZXF1ZXN0GiAubnVtZW4udjEuV3JpdGVTdG9yZUZpbGVSZXNwb25zZRJWCg9EZWxldGVTdG9yZUZpbGUSIC5udW1lbi52MS5EZWxldGVTdG9yZUZpbGVSZXF1ZXN0GiEubnVtZW4udjEuRGVsZXRlU3RvcmVGaWxlUmVzcG9uc2USVgoPUmVuYW1lU3RvcmVGaWxlEiAubnVtZW4udjEuUmVuYW1lU3RvcmVGaWxlUmVxdWVzdBohLm51bWVuLnYxLlJlbmFtZVN0b3JlRmlsZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ReadStoreFileRequest
@@ -34,9 +36,9 @@ export const ReadStoreFileRequestSchema: GenMessage<ReadStoreFileRequest> = /*@_
  */
 export type ReadStoreFileResponse = Message<"numen.v1.ReadStoreFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostStoreErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostStoreErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: bytes content = 2;
@@ -78,9 +80,9 @@ export const AppendStoreFileRequestSchema: GenMessage<AppendStoreFileRequest> = 
  */
 export type AppendStoreFileResponse = Message<"numen.v1.AppendStoreFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostStoreErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostStoreErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -133,9 +135,9 @@ export const HostStoreFileSchema: GenMessage<HostStoreFile> = /*@__PURE__*/
  */
 export type ListStoreFilesResponse = Message<"numen.v1.ListStoreFilesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostStoreErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostStoreErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.HostStoreFile files = 2;
@@ -177,9 +179,9 @@ export const WriteStoreFileRequestSchema: GenMessage<WriteStoreFileRequest> = /*
  */
 export type WriteStoreFileResponse = Message<"numen.v1.WriteStoreFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostStoreErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostStoreErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -211,9 +213,9 @@ export const DeleteStoreFileRequestSchema: GenMessage<DeleteStoreFileRequest> = 
  */
 export type DeleteStoreFileResponse = Message<"numen.v1.DeleteStoreFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostStoreErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostStoreErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -250,9 +252,9 @@ export const RenameStoreFileRequestSchema: GenMessage<RenameStoreFileRequest> = 
  */
 export type RenameStoreFileResponse = Message<"numen.v1.RenameStoreFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostStoreErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostStoreErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -261,50 +263,6 @@ export type RenameStoreFileResponse = Message<"numen.v1.RenameStoreFileResponse"
  */
 export const RenameStoreFileResponseSchema: GenMessage<RenameStoreFileResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hoststore, 12);
-
-/**
- * HostStoreErrorCode is why a store call failed. Zero means success.
- *
- * @generated from enum numen.v1.HostStoreErrorCode
- */
-export enum HostStoreErrorCode {
-  /**
-   * @generated from enum value: HOST_STORE_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The host is showing no vault.
-   *
-   * @generated from enum value: HOST_STORE_ERROR_CODE_NO_VAULT = 1;
-   */
-  NO_VAULT = 1,
-
-  /**
-   * @generated from enum value: HOST_STORE_ERROR_CODE_NOT_FOUND = 2;
-   */
-  NOT_FOUND = 2,
-
-  /**
-   * The name is not a file of the plugin's folder.
-   *
-   * @generated from enum value: HOST_STORE_ERROR_CODE_OUTSIDE_VAULT = 3;
-   */
-  OUTSIDE_VAULT = 3,
-
-  /**
-   * Another program holds the file.
-   *
-   * @generated from enum value: HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER = 4;
-   */
-  LOCKED_BY_ANOTHER = 4,
-}
-
-/**
- * Describes the enum numen.v1.HostStoreErrorCode.
- */
-export const HostStoreErrorCodeSchema: GenEnum<HostStoreErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_hoststore, 0);
 
 /**
  * HostStoreService is the calling plugin's own folder in a vault's store,
