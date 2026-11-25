@@ -86,6 +86,16 @@ func newSearchClient(t *testing.T, fakeCallers *callers, token string) numenv1co
 	return numenv1connect.NewHostSearchServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 }
 
+func newTextSearchClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.SearchServiceClient {
+	t.Helper()
+	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewSearchServiceHandler(&searchTextEndpoint{searchEndpoint: searchEndpoint{endpoint: endpoint}}))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	return numenv1connect.NewSearchServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
+}
+
 func newSearchCallers(search any) *callers {
 	fakeCallers := newCallers()
 	fakeCallers.vault = vaultOf(newMemoryVault(nil))

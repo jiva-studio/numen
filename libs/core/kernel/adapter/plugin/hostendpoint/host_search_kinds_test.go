@@ -11,9 +11,9 @@ import (
 
 func TestSearchTextOfUnknownKindReturnsInvalidArgument(t *testing.T) {
 	search := &recordingSearch{}
-	client := newSearchClient(t, newSearchCallers(search), "token-a")
+	client := newTextSearchClient(t, newSearchCallers(search), "token-a")
 
-	_, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{
+	_, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "heron", Kinds: []string{"note", "book"},
 	}))
 
@@ -32,10 +32,10 @@ func TestSearchTextOfUnknownKindReturnsInvalidArgument(t *testing.T) {
 
 func TestSearchTextPassesTheLimitToTheSearchUnchanged(t *testing.T) {
 	search := &recordingSearch{}
-	client := newSearchClient(t, newSearchCallers(search), "token-a")
+	client := newTextSearchClient(t, newSearchCallers(search), "token-a")
 
 	for _, limit := range []int32{500, 0} {
-		if _, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{
+		if _, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 			Query: "heron", Limit: limit,
 		})); err != nil {
 			t.Fatal(err)

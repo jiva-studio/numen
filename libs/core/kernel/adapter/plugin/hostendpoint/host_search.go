@@ -26,6 +26,14 @@ type searchEndpoint struct {
 
 var _ numenv1connect.HostSearchServiceHandler = (*searchEndpoint)(nil)
 
+// searchTextEndpoint answers SearchService.SearchText for the plugins that call the host.
+type searchTextEndpoint struct {
+	numenv1connect.UnimplementedSearchServiceHandler
+	searchEndpoint
+}
+
+var _ numenv1connect.SearchServiceHandler = (*searchTextEndpoint)(nil)
+
 // searchCall is an authorized search call: the search index and the vault it works. Search is nil
 // where the host has no search index.
 type searchCall struct {
@@ -213,15 +221,15 @@ func (e *searchEndpoint) GetBestSimilarity(
 	return connect.NewResponse(&v1.GetBestSimilarityResponse{Similarity: best}), nil
 }
 
-func (e *searchEndpoint) SearchText(
-	ctx context.Context, req *connect.Request[v1.HostSearchServiceSearchTextRequest],
-) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
+func (e *searchTextEndpoint) SearchText(
+	ctx context.Context, req *connect.Request[v1.SearchTextRequest],
+) (*connect.Response[v1.SearchTextResponse], error) {
 	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
 	if err != nil {
 		return nil, err
 	}
 	if code := call.getRefusal(true); code != 0 {
-		return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{Error: code}), nil
+		return connect.NewResponse(&v1.SearchTextResponse{Error: code}), nil
 	}
 	query, err := readSearchResultQuery(req.Msg)
 	if err != nil {
@@ -230,13 +238,13 @@ func (e *searchEndpoint) SearchText(
 	found, err := call.search.SearchText(ctx, call.vault, query)
 	code, err := answerSearch(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{Error: code}), err
+		return connect.NewResponse(&v1.SearchTextResponse{Error: code}), err
 	}
 	results, err := writeSearchResults(found)
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{Results: results}), nil
+	return connect.NewResponse(&v1.SearchTextResponse{Results: results}), nil
 }
 
 func readKinds(names []string) ([]domain.SourceKind, error) {
@@ -348,7 +356,7 @@ func writeFloorSource(source plugin.FloorSource) v1.SearchFloorSource {
 	return v1.SearchFloorSource_SEARCH_FLOOR_SOURCE_UNSPECIFIED
 }
 
-func readSearchResultQuery(msg *v1.HostSearchServiceSearchTextRequest) (plugin.SearchResultQuery, error) {
+func readSearchResultQuery(msg *v1.SearchTextRequest) (plugin.SearchResultQuery, error) {
 	kinds, err := readKinds(msg.GetKinds())
 	if err != nil {
 		return plugin.SearchResultQuery{}, err
