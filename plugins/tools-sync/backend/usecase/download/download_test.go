@@ -2,13 +2,16 @@ package download_test
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
@@ -365,8 +368,24 @@ func TestDownloadFile_DiscardDeletesTheStagedFileAndItsState(t *testing.T) {
 	}
 }
 
+type recordedEntries struct {
+	ports.DownloadEntries
+	positions []uint64
+}
+
+func (r *recordedEntries) WriteDownloads(ctx context.Context, id domain.VaultID, entries []transfer.DownloadEntry) error {
+	for _, entry := range entries {
+		r.positions = append(r.positions, entry.NextChunk)
+	}
+	return r.DownloadEntries.WriteDownloads(ctx, id, entries)
+}
+
 func TestDownloadFile_KeepsThePositionOfEveryWholeChunkItTook(t *testing.T) {
 	w := newWorld(t)
+	wired := w.p.B.WireDeps()
+	recorded := &recordedEntries{DownloadEntries: wired.DownloadEntries}
+	wired.DownloadEntries = recorded
+	w.use = syncwire.NewDownloads(wired)
 	stored, meta, _ := w.publishBig(t, "Videos/Trip.bin", 3)
 	w.p.Server.StopAfterDownloadBytes(t, 5<<20+1000)
 
@@ -374,8 +393,9 @@ func TestDownloadFile_KeepsThePositionOfEveryWholeChunkItTook(t *testing.T) {
 		t.Fatal("the break was not seen")
 	}
 
-	kept := w.readEntries(t)
-	if len(kept) != 1 || kept[0].NextChunk < 5 {
-		t.Fatalf("entries after the break = %+v, want the position of at least 5 whole chunks", kept)
+	for chunk := uint64(1); chunk <= 5; chunk++ {
+		if !slices.Contains(recorded.positions, chunk) {
+			t.Errorf("positions written = %v, want the position after chunk %d among them", recorded.positions, chunk)
+		}
 	}
 }
