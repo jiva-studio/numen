@@ -9,6 +9,11 @@ export const FRAMES_PER_SECOND = 8
 /** Causes that mean the asked kind of camera is missing while another camera may still open. */
 const MISSING_CAMERA_CAUSES = new Set(['OverconstrainedError', 'NotFoundError'])
 
+/** Releases the camera: every track of the stream stops. */
+export const stopStream = (stream: MediaStream): void => {
+  stream.getTracks().forEach((track) => track.stop())
+}
+
 /** Opens the camera that faces away from the person, or any camera when the machine has no such one. */
 export const openMachineCamera: ScannerCamera = async () => {
   try {

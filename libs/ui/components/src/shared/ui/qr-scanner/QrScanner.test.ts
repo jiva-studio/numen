@@ -97,6 +97,58 @@ describe('a QR scanner', () => {
     expect(stop).toHaveBeenCalledOnce()
   })
 
+  it('stops a camera that opens after the ten seconds are over', async () => {
+    vi.useFakeTimers()
+    try {
+      const { stream, stop } = makeStream()
+      let open: (opened: MediaStream) => void = () => undefined
+      const scanner = mount(QrScanner, {
+        props: { camera: () => new Promise<MediaStream>((resolve) => (open = resolve)) },
+      })
+      await vi.advanceTimersByTimeAsync(10_500)
+      expect(scanner.emitted('unavailable')).toHaveLength(1)
+      open(stream)
+      await flushPromises()
+      expect(stop).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('stops a camera that opens after the scanner unmounted', async () => {
+    const { stream, stop } = makeStream()
+    let open: (opened: MediaStream) => void = () => undefined
+    const scanner = mount(QrScanner, {
+      props: { camera: () => new Promise<MediaStream>((resolve) => (open = resolve)) },
+    })
+    scanner.unmount()
+    open(stream)
+    await flushPromises()
+    expect(stop).toHaveBeenCalledOnce()
+  })
+
+  it('stops the camera and arms no timer when it unmounts while the video starts', async () => {
+    vi.useFakeTimers()
+    try {
+      const { stream, stop } = makeStream()
+      let play: () => void = () => undefined
+      vi.spyOn(HTMLMediaElement.prototype, 'play').mockReturnValue(
+        new Promise<void>((resolve) => (play = resolve)),
+      )
+      const scanner = mount(QrScanner, { props: { camera: () => Promise.resolve(stream) } })
+      await flushPromises()
+      const before = vi.getTimerCount()
+      scanner.unmount()
+      play()
+      await flushPromises()
+      expect(stop).toHaveBeenCalledOnce()
+      expect(vi.getTimerCount()).toBe(before)
+    } finally {
+      vi.useRealTimers()
+      vi.restoreAllMocks()
+    }
+  })
+
   it('draws a video that plays on its own, muted and inline', () => {
     const scanner = mount(QrScanner, {
       props: { camera: () => new Promise<MediaStream>(() => undefined) },

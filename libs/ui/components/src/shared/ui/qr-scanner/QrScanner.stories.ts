@@ -56,7 +56,7 @@ export const Scanning: Story = {
 
 const LINK_TEXT =
   'numen://link?v=1&c=AAAAAAAAAAAAAAAAAAAAAA&k=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB&s=CCCCCCCCCCCCCCCCCCCCCC'
-const CELL = 8
+const CELL = 6
 const QUIET = 4
 const REFRESH_MS = 100
 const FRAME_RATE = 8
