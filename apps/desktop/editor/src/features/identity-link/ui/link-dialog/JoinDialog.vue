@@ -36,6 +36,11 @@ const draft = { text: ref('') }
 const isPasting = computed(() => scan.phase.value === 'paste')
 const actions = useLinkActions(session, 'joiner', draft)
 const { view } = actions
+const extra = computed(() =>
+  view.value === 'scan' && scan.phase.value === 'camera' && session.problem.value !== ''
+    ? { label: words.linkTryAgain, isDisabled: session.isBusy.value }
+    : undefined,
+)
 const hasInput = computed(() => view.value === 'scan' && draft.text.value !== '')
 watch(
   () => session.link.value?.phase,
@@ -45,6 +50,11 @@ watch(
 )
 
 /* -------------------------------- Handlers -------------------------------- */
+function onScanAgain(): void {
+  session.problem.value = ''
+  scan.restart()
+}
+
 function getHint(): string {
   if (view.value !== 'scan') return ''
   return isPasting.value ? words.linkJoinPasteHint : words.linkJoinHint
@@ -66,6 +76,7 @@ function getHint(): string {
       v-model="draft.text.value"
       :problem="session.problem.value"
       :phase="scan.phase.value"
+      :attempt="scan.attempt.value"
       v-bind="camera === undefined ? {} : { camera }"
       @scanned="actions.scan"
       @unavailable="scan.setUnavailable"
@@ -83,6 +94,8 @@ function getHint(): string {
         :is-busy="session.isBusy.value"
         :has-input="hasInput"
         :is-pasting="isPasting"
+        v-bind="extra === undefined ? {} : { extra }"
+        @extra="onScanAgain"
         @close="emit('close')"
         @decline="actions.decline"
       />

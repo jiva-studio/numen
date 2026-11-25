@@ -14,9 +14,13 @@ function findCameraInTime(findCamera: () => Promise<boolean>): Promise<boolean> 
   })
 }
 
-/** Whether the scan form reads the camera, or, without a working camera, the field to paste the link into. */
+/**
+ * Whether the scan form reads the camera, or, without a working camera, the field to paste the link into.
+ * A restart opens the camera again: the scanner stops after the first code it reads.
+ */
 export function useLinkScan(findCamera: () => Promise<boolean>) {
   const phase = ref<'checking' | 'camera' | 'paste'>('checking')
+  const attempt = ref(0)
 
   async function detect(): Promise<void> {
     if (await findCameraInTime(findCamera)) {
@@ -26,11 +30,15 @@ export function useLinkScan(findCamera: () => Promise<boolean>) {
     phase.value = 'paste'
   }
 
+  function restart(): void {
+    attempt.value += 1
+  }
+
   function setUnavailable(): void {
     phase.value = 'paste'
   }
 
   onMounted(detect)
 
-  return { phase, setUnavailable }
+  return { phase, attempt, restart, setUnavailable }
 }

@@ -88,9 +88,7 @@ export const CameraReady: Story = {
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(
-      await canvas.findByText('Point the camera at the code on your other device.'),
-    ).toBeVisible()
+    await expect(await canvas.findByText('Scan the code shown on your other device.')).toBeVisible()
     await expect(canvas.queryByRole('textbox')).toBeNull()
     await expect(canvas.queryByRole('button', { name: /paste/i })).toBeNull()
     await waitFor(() => expect(args.calls.start).toHaveBeenCalledWith('joiner', 'scan', QR_TEXT), {

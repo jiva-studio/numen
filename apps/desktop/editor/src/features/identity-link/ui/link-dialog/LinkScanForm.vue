@@ -13,6 +13,7 @@ defineProps<{
   modelValue: string
   problem: string
   phase: 'checking' | 'camera' | 'paste'
+  attempt: number
   camera?: ScannerCamera
 }>()
 
@@ -30,6 +31,7 @@ const emit = defineEmits<{
     </div>
     <QrScanner
       v-else-if="phase === 'camera'"
+      :key="attempt"
       v-bind="camera === undefined ? {} : { camera }"
       @scanned="emit('scanned', $event)"
       @unavailable="emit('unavailable', $event)"
@@ -51,7 +53,7 @@ const emit = defineEmits<{
 .link-scan {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--numen-inset);
 }
 
 .link-scan__checking {
