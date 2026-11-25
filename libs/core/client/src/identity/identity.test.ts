@@ -121,17 +121,20 @@ describe('createIdentityClient', () => {
     expect(calls).toBe(1)
   })
 
-  it('sends the words to start a restore and reads that it started', async () => {
+  it('sends the words and the confirmation of the person to start a restore and reads that it started', async () => {
     let sent: readonly string[] = []
+    let isConfirmed = false
     const client = createClient({
       startRestore: (request) => {
         sent = [...request.words]
+        isConfirmed = request.confirmUnmarked
         return create(StartRestoreResponseSchema, {})
       },
     })
-    const answer = await client.account.startRestore(WORDS)
+    const answer = await client.account.startRestore(WORDS, true)
     expect(answer).toStrictEqual({ ok: true, value: undefined })
     expect(sent).toStrictEqual(WORDS)
+    expect(isConfirmed).toBe(true)
   })
 
   it('reads each served error code of a restore as a failure', async () => {
@@ -144,7 +147,7 @@ describe('createIdentityClient', () => {
       const client = createClient({
         startRestore: () => create(StartRestoreResponseSchema, { error: code, detail: 'refused' }),
       })
-      expect(await client.account.startRestore(WORDS)).toStrictEqual({
+      expect(await client.account.startRestore(WORDS, true)).toStrictEqual({
         ok: false,
         error: { error: expected, message: 'refused' },
       })
@@ -209,17 +212,20 @@ describe('createIdentityClient recovery kit', () => {
 
   it('sends the sheets to start a restore and reads that it started', async () => {
     let sent: readonly string[][] = []
+    let isConfirmed = false
     const client = createClient({
       startRestoreFromKit: (request) => {
         sent = request.sheets.map((sheet) => [...sheet.words])
+        isConfirmed = request.confirmUnmarked
         return create(StartRestoreFromKitResponseSchema, {})
       },
     })
-    expect(await client.account.startRestoreFromKit([SHEET_TWO, SHEET_THREE])).toStrictEqual({
+    expect(await client.account.startRestoreFromKit([SHEET_TWO, SHEET_THREE], true)).toStrictEqual({
       ok: true,
       value: undefined,
     })
     expect(sent).toStrictEqual([SHEET_TWO, SHEET_THREE])
+    expect(isConfirmed).toBe(true)
   })
 
   it('reads a refused restore from sheets as a failure with the detail', async () => {
@@ -230,7 +236,7 @@ describe('createIdentityClient recovery kit', () => {
           detail: 'two sheets are needed',
         }),
     })
-    expect(await client.account.startRestoreFromKit([SHEET_ONE])).toStrictEqual({
+    expect(await client.account.startRestoreFromKit([SHEET_ONE], true)).toStrictEqual({
       ok: false,
       error: { error: 'notEnoughSheets', message: 'two sheets are needed' },
     })

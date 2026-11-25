@@ -388,3 +388,111 @@ func TestAdopt_KeepsTheFirstSightingAcrossARestartOfThePlugin(t *testing.T) {
 		t.Errorf("health items = %+v, want none: the new use case read the first sighting that the old one stored", items)
 	}
 }
+
+// rolledBackServer answers the chain of the account with a fork that the recovery key signed, the way a server holds it after a
+// restore from the words went around a revoke.
+type rolledBackServer struct {
+	ports.Chain
+
+	forked []byte
+}
+
+func (s rolledBackServer) GetAccountChain(context.Context) ([]byte, error) { return s.forked, nil }
+
+// newForkedByWords returns a device that holds a chain with a revoke that another device signed, and the dependencies over a server
+// whose chain replaces that revoke with a device the recovery key added.
+func newForkedByWords(t *testing.T) (observer *synctest.Computer, deps chaincourier.Deps, clock *synctest.Clock) {
+	t.Helper()
+	clock = synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	words := synctest.NewWords(t)
+	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
+	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)
+	observer = synctest.NewSecondComputer(t, server, clock, "Tablet", words)
+	if _, err := chaincourier.NewAdopt(first.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	before, err := identity.ParseChain(observer.Fake.Public().Chain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Fake.RevokeDeviceAt(second.Fake.Public().DeviceSignKey, clock.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(first.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the revoke published", published, err)
+	}
+	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := identity.NewDeviceKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	forked, err := before.AppendDevice(parseWords(t, words), restored.Public(), "Restored", clock.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	deps = observer.ChainDeps()
+	deps.Chain = rolledBackServer{Chain: deps.Chain, forked: forked.Bytes()}
+	return observer, deps, clock
+}
+
+func TestAdopt_RaisesANoticeWhenTheRecoveryWordsReplacedWhatADeviceDid(t *testing.T) {
+	t.Parallel()
+	observer, deps, _ := newForkedByWords(t)
+
+	adopted, err := chaincourier.NewAdopt(deps).Execute(t.Context())
+
+	if err != nil || !adopted {
+		t.Fatalf("adopted = %v, error = %v, want the fork adopted", adopted, err)
+	}
+	items := observer.Health.List()
+	if len(items) != 1 || !strings.Contains(items[0].Text, "recovery words") || !strings.Contains(items[0].Text, "undone") {
+		t.Errorf("health items = %+v, want the notice that the recovery words undid changes of the devices", items)
+	}
+}
+
+func TestAdopt_KeepsTheNoticeOfAForkUntilTheCoolingOffEndsFromTheFirstSighting(t *testing.T) {
+	t.Parallel()
+	observer, deps, clock := newForkedByWords(t)
+	adopt := chaincourier.NewAdopt(deps)
+	if _, err := adopt.Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	clock.Advance(identity.CoolingOff - time.Hour)
+	if _, err := adopt.Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if items := observer.Health.List(); len(items) != 1 {
+		t.Errorf("health items = %+v inside the cooling-off, want the notice to stay", items)
+	}
+
+	clock.Advance(2 * time.Hour)
+	if _, err := adopt.Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if items := observer.Health.List(); len(items) != 0 {
+		t.Errorf("health items = %+v after the cooling-off, want none", items)
+	}
+}
+
+func TestAdopt_RaisesNoForkNoticeWhenTheWordsOnlyAddedADevice(t *testing.T) {
+	t.Parallel()
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	words := synctest.NewWords(t)
+	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
+	synctest.NewRestoredComputer(t, server, clock, "Laptop", words)
+
+	if _, err := chaincourier.NewAdopt(first.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, item := range first.Health.List() {
+		if strings.Contains(item.Text, "recovery words") && strings.Contains(item.Text, "undone") {
+			t.Errorf("health item = %+v, want no fork notice for a restore on a second computer", item)
+		}
+	}
+}
