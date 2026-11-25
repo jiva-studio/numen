@@ -29,12 +29,12 @@ export interface Vault {
   readonly lastSyncedAt: string
   readonly conflictCount: number
   readonly pausedDeletions?: PausedDeletions | null
-  readonly syncing?: boolean
-  readonly syncedBytes?: number
-  readonly totalBytes?: number
-  readonly pendingFiles?: number
-  readonly onDemandFiles?: number
-  readonly onDemandBytes?: number
+  readonly syncing: boolean
+  readonly syncedBytes: number
+  readonly totalBytes: number
+  readonly pendingFiles: number
+  readonly onDemandFiles: number
+  readonly onDemandBytes: number
   readonly remoteId: string
 }
 

@@ -45,7 +45,7 @@ export function createSyncState(
       rows.value = connected.map((vault) =>
         getRow(vault, getCurrentDate(), status.isReachable, []),
       )
-      const isSyncing = status.isReachable && connected.some((vault) => vault.syncing === true)
+      const isSyncing = status.isReachable && connected.some((vault) => vault.syncing)
       percent.value = isSyncing ? getSyncPercent(connected) : null
       if (!status.isReachable) phase.value = 'waiting'
       else phase.value = isSyncing ? 'syncing' : 'synced'

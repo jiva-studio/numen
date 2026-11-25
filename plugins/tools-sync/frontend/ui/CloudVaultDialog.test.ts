@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import type { RemoteVault, Vault } from '../api/vaults'
 import CloudVaultDialog from './CloudVaultDialog.vue'
+import { NO_TRANSFER } from './testing/vaultFixture'
 
 const cloud: RemoteVault[] = [
   { remoteId: 'aa11', name: 'Work', isConnected: true, sizeBytes: 1 },
@@ -16,6 +17,7 @@ const device = (id: string): Vault => ({
   lastSyncedAt: '',
   conflictCount: 0,
   remoteId: '',
+  ...NO_TRANSFER,
 })
 
 const getButton = (): HTMLButtonElement => {

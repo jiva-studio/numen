@@ -266,7 +266,7 @@ func TestFetchFile_RefusesAHeadWithABadSignature(t *testing.T) {
 	}
 }
 
-func TestFetchFile_SecondTapStillGetsTheFileWhenTheFirstTapIsCancelled(t *testing.T) {
+func TestFetchFile_SecondTapStillGetsTheFileWhenTheFirstTapIsCanceled(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	want := w.WriteGuide(t, guidePath)
 	before := w.Server.CountBlobGets()

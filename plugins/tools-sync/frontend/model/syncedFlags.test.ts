@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { VaultsClient } from '../api/vaults'
 import { createSyncedFlags } from './syncedFlags'
+import { NO_TRANSFER } from '../ui/testing/vaultFixture'
 
 type Listed = Awaited<ReturnType<VaultsClient['listVaults']>>['vaults'][number]
 
@@ -12,6 +13,7 @@ const vault = (id: string, state: Listed['state']): Listed => ({
   lastSyncedAt: '',
   remoteId: `remote-${id}`,
   conflictCount: 0,
+  ...NO_TRANSFER,
 })
 
 const setup = (listVaults: VaultsClient['listVaults']) => {

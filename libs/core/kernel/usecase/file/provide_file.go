@@ -3,6 +3,7 @@ package file
 import (
 	"context"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -13,15 +14,7 @@ type FileProvider interface {
 	// DropDownload takes the bytes of the file at path off the device and lists the file as absent again.
 	DropDownload(ctx context.Context, v domain.Vault, path string) error
 	// GetFetchProgress says how far the download of the file at path has come.
-	GetFetchProgress(ctx context.Context, v domain.Vault, path string) (DownloadProgress, error)
-}
-
-// DownloadProgress is how far a download has come. Without a running download it is not known and the
-// sizes are zero.
-type DownloadProgress struct {
-	IsKnown    bool
-	BytesDone  int64
-	BytesTotal int64
+	GetFetchProgress(ctx context.Context, v domain.Vault, path string) (vaultdomain.DownloadProgress, error)
 }
 
 // FetchFile brings the bytes of an absent file onto the device by the file provider.
@@ -54,6 +47,6 @@ func NewGetDownloadProgress(provider FileProvider) *GetDownloadProgress {
 }
 
 // Execute returns the progress of the download of the file at path, or the failure of the provider.
-func (u *GetDownloadProgress) Execute(ctx context.Context, v domain.Vault, path string) (DownloadProgress, error) {
+func (u *GetDownloadProgress) Execute(ctx context.Context, v domain.Vault, path string) (vaultdomain.DownloadProgress, error) {
 	return u.provider.GetFetchProgress(ctx, v, path)
 }

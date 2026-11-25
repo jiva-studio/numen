@@ -12,6 +12,7 @@ import (
 
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
@@ -20,10 +21,10 @@ import (
 type provider struct {
 	calls    []string
 	err      error
-	progress file.DownloadProgress
+	progress vaultdomain.DownloadProgress
 }
 
-func (p *provider) GetFetchProgress(_ context.Context, v domain.Vault, path string) (file.DownloadProgress, error) {
+func (p *provider) GetFetchProgress(_ context.Context, v domain.Vault, path string) (vaultdomain.DownloadProgress, error) {
 	p.calls = append(p.calls, "progress "+string(v.ID)+" "+path)
 	return p.progress, p.err
 }
@@ -106,10 +107,10 @@ func TestADownloadInAWindowWithoutAVaultFails(t *testing.T) {
 
 func TestFetchFile_ProviderConnectionBreaksOrTimesOut_AnswersWithTheSentenceOfTheInterruption(t *testing.T) {
 	for name, cause := range map[string]error{
-		"lost":      connect.NewError(connect.CodeUnknown, errors.New("EOF")),
-		"cancelled": connect.NewError(connect.CodeCanceled, errors.New("context canceled")),
-		"too long":  connect.NewError(connect.CodeDeadlineExceeded, errors.New("deadline")),
-		"plain":     context.Canceled,
+		"lost":     connect.NewError(connect.CodeUnknown, errors.New("EOF")),
+		"canceled": connect.NewError(connect.CodeCanceled, errors.New("context canceled")),
+		"too long": connect.NewError(connect.CodeDeadlineExceeded, errors.New("deadline")),
+		"plain":    context.Canceled,
 	} {
 		handler := newDownloadsHandler(window{vault: domain.Vault{ID: "v-1"}}, &provider{err: cause})
 
@@ -123,7 +124,7 @@ func TestFetchFile_ProviderConnectionBreaksOrTimesOut_AnswersWithTheSentenceOfTh
 }
 
 func TestGetDownloadProgress_RunningDownload_AnswersWithTheBytesOfTheProviderForTheShownVault(t *testing.T) {
-	p := &provider{progress: file.DownloadProgress{IsKnown: true, BytesDone: 5, BytesTotal: 9}}
+	p := &provider{progress: vaultdomain.DownloadProgress{IsKnown: true, BytesDone: 5, BytesTotal: 9}}
 	handler := newDownloadsHandler(window{vault: domain.Vault{ID: "v-1"}}, p)
 
 	answer, err := handler.GetDownloadProgress(t.Context(), connect.NewRequest(&v1.GetDownloadProgressRequest{Path: "Books/Guide.pdf"}))

@@ -10,26 +10,20 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
-	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
-	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
 	windowidentity "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/identity"
 	windowkeyfile "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/keyfile"
-	windowlicense "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/license"
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
 	windowremotevault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/remotevault"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
-	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vaults"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -44,11 +38,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	keyfileusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/keyfile"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
@@ -143,10 +137,6 @@ func mountFile(w *windowRoutes, vaultDeps vaultParts, db *vaultIndex, kinds tabK
 	w.Installation.Mount(editor.NewRoute(path, served))
 }
 
-func mountWindowState(w *windowRoutes) {
-	w.Installation.Mount(editor.NewRoute(windowstate.NewRoute(w.page.Window, w.page.Gate.CountQuestions())))
-}
-
 func mountWorkspace(w *windowRoutes, db *vaultIndex) {
 	links := workspace.NewLinks()
 	store := index.NewOpenTabs(db.DB)
@@ -205,13 +195,6 @@ func mountPlugin(w *windowRoutes, install pluginInstall, exec *PluginExecution, 
 	w.Installation.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
 
-func mountHealth(w *windowRoutes, exec *PluginExecution) {
-	handler := windowhealth.NewHandler(
-		exec.Health, pluginhealth.NewReport(exec.Health, exec.Runtime.Resolver), pluginhealth.NewClear(exec.Health),
-	)
-	w.Installation.Mount(editor.NewRoute(windowhealth.NewRoute(handler, w.page.Gate.CountQuestions())))
-}
-
 func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer timeSource) *logsusecase.Record {
 	return logsusecase.NewRecord(entries, logfiles.NewBesideIndex(indexPath), getLevel, timer)
 }
@@ -253,11 +236,6 @@ func newPluginVaultList(
 	)
 }
 
-func mountVault(w *windowRoutes) {
-	handler := windowvault.NewHandler(w.session, w.session.Notices)
-	w.Installation.Mount(editor.NewRoute(windowvault.NewRoute(handler, w.page.Gate.CountQuestions())))
-}
-
 func getReadVault(searchDeps vaultIndexPlan, vaultDeps vaultParts, db *vaultIndex) indexing.ReadWholeVaultOpener {
 	return func(
 		ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
@@ -280,6 +258,18 @@ func (s windowStartup) newIndexWorker(
 		Quiet:        indexing.QuietPeriod,
 		CreateTimer:  vaultDeps.Clock.StartTimer,
 	})
+}
+
+func newIndexSession(worker *indexing.Worker) func(domain.Vault) windowsession.IndexSession {
+	return func(v domain.Vault) windowsession.IndexSession {
+		session := worker.NewSession(v)
+		return windowsession.IndexSession{
+			Run: func(ctx context.Context, rebuild bool, read windowsession.ReadNotes) {
+				session.Run(ctx, rebuild, indexing.ReadNotes(read))
+			},
+			ReportVersionsChanged: session.ReportVersionsChanged,
+		}
+	}
 }
 
 func getTextVersions(versions *textVersions) windowsession.TextVersions {
@@ -325,20 +315,10 @@ func startVault(vaultDeps vaultParts, db *vaultIndex, current *indexing.CurrentR
 	}
 }
 
-func mountConnection(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts) {
-	handler := windowconnection.NewService(openConnectionUseCases(install, exec, settingsDeps, vaultDeps))
-	w.Installation.Mount(editor.NewRoute(windowconnection.NewRoute(handler, w.page.Gate.CountQuestions())))
-}
-
 func mountConnectionCall(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts) {
 	calls := getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 	handler := connectioncall.NewService(calls, openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(vaultDeps.Clock))
 	w.Installation.Mount(editor.NewRoute(connectioncall.NewRoute(handler, w.page.Gate.CountQuestions())))
-}
-
-func mountLicense(w *windowRoutes, install pluginInstall, settingsDeps settingsParts, vaultDeps vaultParts) {
-	handler := windowlicense.NewService(openLicenseUseCases(install, settingsDeps, vaultDeps))
-	w.Installation.Mount(editor.NewRoute(windowlicense.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
 
 func getConnectionResolve(install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts) connectionport.ResolveConnection {
@@ -365,11 +345,6 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsParts, vaultDeps v
 	return events.Start
 }
 
-func mountTheme(w *windowRoutes, themes *theme.Service) {
-	path, served := theme.NewRoute(themes, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served))
-}
-
 func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultParts, res *Resources, dialog editor.PathDialog) {
 	handler := windowidentity.NewService(openIdentityUseCases(install, vaultDeps, res, dialog))
 	w.Installation.Mount(editor.NewRoute(windowidentity.NewRoute(handler, w.page.Gate.CountQuestions())))
@@ -377,7 +352,13 @@ func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultParts,
 
 func mountKeyFile(w *windowRoutes, res *Resources) {
 	if res != nil && res.KeyFile != nil {
-		w.Installation.Mount(editor.NewRoute(windowkeyfile.NewFileRoute(res.KeyFile, w.page.Gate.CountQuestions())))
+		file := res.KeyFile
+		handler := windowkeyfile.NewHandler(windowkeyfile.UseCases{
+			GetState: keyfileusecase.NewGetState(file),
+			Choose:   keyfileusecase.NewChoose(file, settingsadapter.WriteKeyFileMode),
+			Unlock:   keyfileusecase.NewUnlock(file),
+		})
+		w.Installation.Mount(editor.NewRoute(windowkeyfile.NewRoute(handler, w.page.Gate.CountQuestions())))
 	}
 }
 

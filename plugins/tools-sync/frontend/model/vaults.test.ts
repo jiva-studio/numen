@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Vault, VaultsClient } from '../api/vaults'
 import { getSyncPercent, useVaults } from './vaults'
 import { ReportedError } from '@numen/plugin-sdk'
+import { NO_TRANSFER } from '../ui/testing/vaultFixture'
 
 const NOW = new Date('2026-11-23T12:00:00Z')
 
@@ -13,6 +14,7 @@ const createVault = (patch: Partial<Vault> = {}): Vault => ({
   lastSyncedAt: '',
   conflictCount: 0,
   remoteId: '',
+  ...NO_TRANSFER,
   ...patch,
 })
 

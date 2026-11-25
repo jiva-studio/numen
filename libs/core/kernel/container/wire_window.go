@@ -10,7 +10,13 @@ import (
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
+	windowlicense "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/license"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
+	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -23,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	vaultusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -67,7 +74,8 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	pluginServices := servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing)
 	pluginDir := func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) }
 	opened, launch := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps, editor.WithThemes(themes), editor.WithPlugins(pluginServices, pluginDir))
-	mountTheme(opened, themes)
+	path, served := theme.NewRoute(themes, opened.page.Gate.CountQuestions())
+	opened.Installation.Mount(editor.NewRoute(path, served))
 	search := newTextSearch(searchDeps, c.machine.ResolvedCompute.Workers)
 	session := windowSearch{index: db, source: launch.source, kinds: plugins.kinds.list}
 	status := editor.SearchTasks{Tasks: opened.page.Window}
@@ -187,7 +195,7 @@ func buildWindow(
 
 	diag := windowsession.NewDiagnostics(opening.Out, page.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
-		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: indexer.NewWindowSession,
+		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, indexer, getTextVersions(vaultDeps.TextVersions), diag),
 		Passes:   startVault(vaultDeps, db, current), Triggers: plugins.triggers, StartFeed: plugins.startFeed,
 		Report: editor.ReportVault(vaultDeps.RecordLog),
@@ -206,9 +214,10 @@ func buildWindow(
 	}, session.tools.importFiles, openFile, pages...)
 
 	window := &windowRoutes{Installation: inst, session: state, page: page}
-	mountVault(window)
+	handler := windowvault.NewHandler(window.session, window.session.Notices)
+	window.Installation.Mount(editor.NewRoute(windowvault.NewRoute(handler, window.page.Gate.CountQuestions())))
 	mountWorkspace(window, db)
-	mountWindowState(window)
+	window.Installation.Mount(editor.NewRoute(windowstate.NewRoute(window.page.Window, window.page.Gate.CountQuestions())))
 	mountFile(window, vaultDeps, db, plugins.kinds, &notes.Place, plugins.files)
 	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
 	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open, editor.GetFrameDialog(opening.Frame))
@@ -244,12 +253,17 @@ func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution
 	mountSettings(w, settingsDeps, dialog)
 	mountMedia(w, vaultDeps)
 	mountCommand(w, install, exec, settingsDeps, vaultDeps)
-	mountConnection(w, install, exec, settingsDeps, vaultDeps)
+	connectionHandler := windowconnection.NewService(openConnectionUseCases(install, exec, settingsDeps, vaultDeps))
+	w.Installation.Mount(editor.NewRoute(windowconnection.NewRoute(connectionHandler, w.page.Gate.CountQuestions())))
 	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps)
-	mountLicense(w, install, settingsDeps, vaultDeps)
+	licenseHandler := windowlicense.NewService(openLicenseUseCases(install, settingsDeps, vaultDeps))
+	w.Installation.Mount(editor.NewRoute(windowlicense.NewRoute(licenseHandler, w.page.Gate.CountQuestions())))
 	mountText(w, vaultDeps)
 	mountPlugin(w, install, exec, settingsDeps, vaultDeps)
-	mountHealth(w, exec)
+	healthHandler := windowhealth.NewHandler(
+		exec.Health, pluginhealth.NewReport(exec.Health, exec.Runtime.Resolver), pluginhealth.NewClear(exec.Health),
+	)
+	w.Installation.Mount(editor.NewRoute(windowhealth.NewRoute(healthHandler, w.page.Gate.CountQuestions())))
 	mountCatalog(w, install, exec, settingsDeps)
 }
 

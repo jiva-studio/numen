@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 // CapabilityResolver finds the enabled plugin that provides a capability.
@@ -49,14 +49,14 @@ func (p *Provider) DropDownload(ctx context.Context, v domain.Vault, path string
 }
 
 // GetFetchProgress asks the plugin how far the download of the file at path has come.
-func (p *Provider) GetFetchProgress(ctx context.Context, v domain.Vault, path string) (file.DownloadProgress, error) {
-	var progress file.DownloadProgress
+func (p *Provider) GetFetchProgress(ctx context.Context, v domain.Vault, path string) (vaultdomain.DownloadProgress, error) {
+	var progress vaultdomain.DownloadProgress
 	err := call(ctx, p, "get fetch progress", func(client numenv1connect.FileProviderServiceClient) error {
 		answer, err := client.GetFetchProgress(ctx, connect.NewRequest(&v1.GetFetchProgressRequest{Path: path}))
 		if err != nil {
 			return err
 		}
-		progress = file.DownloadProgress{IsKnown: answer.Msg.GetIsKnown(), BytesDone: answer.Msg.GetBytesDone(), BytesTotal: answer.Msg.GetBytesTotal()}
+		progress = vaultdomain.DownloadProgress{IsKnown: answer.Msg.GetIsKnown(), BytesDone: answer.Msg.GetBytesDone(), BytesTotal: answer.Msg.GetBytesTotal()}
 		return nil
 	})
 	return progress, err

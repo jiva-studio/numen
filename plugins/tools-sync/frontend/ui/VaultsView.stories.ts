@@ -3,6 +3,7 @@ import { expect, within } from 'storybook/test'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
 import { decorateWithFrame } from './testing/storyFrame'
 import VaultsView from './VaultsView.vue'
+import { NO_TRANSFER } from './testing/vaultFixture'
 import '../styles.css'
 
 const NOW = new Date('2026-11-23T12:00:00Z')
@@ -15,6 +16,7 @@ const work: Vault = {
   lastSyncedAt: '2026-11-23T11:55:00Z',
   conflictCount: 0,
   remoteId: 'aa11',
+  ...NO_TRANSFER,
 }
 
 const home: Vault = {
@@ -33,6 +35,7 @@ const plain: Vault = {
   lastSyncedAt: '',
   conflictCount: 0,
   remoteId: '',
+  ...NO_TRANSFER,
 }
 
 const cloud: RemoteVault[] = [

@@ -86,22 +86,22 @@ const getCloudFacts = (cloud: readonly RemoteVault[], remoteId: string): readonl
 }
 
 const getOnDemandFacts = (vault: Vault): readonly string[] => {
-  const count = vault.onDemandFiles ?? 0
+  const count = vault.onDemandFiles
   if (count <= 0) return []
-  return [words.filesOnDemand(count), words.sizeInCloud(formatCloudSize(vault.totalBytes ?? 0))]
+  return [words.filesOnDemand(count), words.sizeInCloud(formatCloudSize(vault.totalBytes))]
 }
 
 const getDownloadTotal = (vault: Vault): number =>
-  Math.max((vault.totalBytes ?? 0) - (vault.onDemandBytes ?? 0), 0)
+  Math.max(vault.totalBytes - vault.onDemandBytes, 0)
 
 const getProgress = (synced: number, total: number): number =>
   total > 0 ? Math.min(Math.max(synced / total, 0), 1) : 0
 
 /** The share of bytes done over the vaults that sync now, in whole percents. */
 export function getSyncPercent(vaults: readonly Vault[]): number {
-  const active = vaults.filter((vault) => vault.syncing === true)
+  const active = vaults.filter((vault) => vault.syncing)
   const total = active.reduce((sum, vault) => sum + getDownloadTotal(vault), 0)
-  const synced = active.reduce((sum, vault) => sum + (vault.syncedBytes ?? 0), 0)
+  const synced = active.reduce((sum, vault) => sum + vault.syncedBytes, 0)
   return Math.round(getProgress(synced, total) * 100)
 }
 
@@ -157,8 +157,8 @@ export const getRow = (
     const qualifier = synced
     return { ...base, status, tone: 'warning', kind: 'syncing', qualifier, canResolve: false }
   }
-  if (vault.syncing === true) {
-    const synced = vault.syncedBytes ?? 0
+  if (vault.syncing) {
+    const synced = vault.syncedBytes
     const total = getDownloadTotal(vault)
     const qualifier = words.syncProgress(formatCloudSize(synced), formatCloudSize(total))
     const progress = total > 0 ? getProgress(synced, total) : null

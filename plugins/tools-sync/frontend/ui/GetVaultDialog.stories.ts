@@ -3,6 +3,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
 import GetVaultDialog from './GetVaultDialog.vue'
 import { decorateWithFrame } from './testing/storyFrame'
+import { NO_TRANSFER } from './testing/vaultFixture'
 import '../styles.css'
 
 const vault = (id: string, state: Vault['state']): Vault => ({
@@ -13,6 +14,7 @@ const vault = (id: string, state: Vault['state']): Vault => ({
   lastSyncedAt: '',
   conflictCount: 0,
   remoteId: '',
+  ...NO_TRANSFER,
 })
 
 const cloud: RemoteVault[] = [

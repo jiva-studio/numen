@@ -30,27 +30,27 @@ type File struct {
 
 // appObject is the object of the owner app as the file lays it out.
 type appObject struct {
-	Appearance  Appearance  `json:"appearance"`
-	Titles      Titles      `json:"naming"`
-	Editor      Editor      `json:"editor"`
-	Performance Performance `json:"performance"`
-	Search      *Search     `json:"search"`
-	Logging     *LoggingSettings    `json:"logging"`
-	Keys        *Keys       `json:"keys"`
-	Vaults      *Vaults     `json:"vaults"`
+	Appearance  Appearance       `json:"appearance"`
+	Titles      Titles           `json:"naming"`
+	Editor      Editor           `json:"editor"`
+	Performance Performance      `json:"performance"`
+	Search      *Search          `json:"search"`
+	Logging     *LoggingSettings `json:"logging"`
+	Keys        *Keys            `json:"keys"`
+	Vaults      *Vaults          `json:"vaults"`
 }
 
 // appSections are the sections of the owner app that a read fills in place, so that a section the
 // file leaves out keeps the value it had.
 type appSections struct {
-	Appearance  *Appearance  `json:"appearance"`
-	Titles      *Titles      `json:"naming"`
-	Editor      *Editor      `json:"editor"`
-	Performance *Performance `json:"performance"`
-	Search      *Search      `json:"search"`
-	Logging     *LoggingSettings     `json:"logging"`
-	Keys        *Keys        `json:"keys"`
-	Vaults      *Vaults      `json:"vaults"`
+	Appearance  *Appearance      `json:"appearance"`
+	Titles      *Titles          `json:"naming"`
+	Editor      *Editor          `json:"editor"`
+	Performance *Performance     `json:"performance"`
+	Search      *Search          `json:"search"`
+	Logging     *LoggingSettings `json:"logging"`
+	Keys        *Keys            `json:"keys"`
+	Vaults      *Vaults          `json:"vaults"`
 }
 
 const keyVersion = "v"
@@ -85,7 +85,10 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Header.Version},
-		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &LoggingSettings{f.Texts[keyLogLevel]}, &Keys{f.Texts[keyCredentialsFile]}, &Vaults{f.Texts[keyVaultsFolder]}}},
+		{settings.AppOwner, appObject{
+			f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search,
+			&LoggingSettings{f.Texts[keyLogLevel]}, &Keys{f.Texts[keyCredentialsFile]}, &Vaults{f.Texts[keyVaultsFolder]},
+		}},
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {

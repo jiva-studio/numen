@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Vault, VaultsClient } from '../api/vaults'
 import { createSyncState } from '../model/sync'
 import SyncIndicator from './SyncIndicator.vue'
+import { NO_TRANSFER } from './testing/vaultFixture'
 
 const createVault = (patch: Partial<Vault> = {}): Vault => ({
   id: 'Test',
@@ -12,6 +13,7 @@ const createVault = (patch: Partial<Vault> = {}): Vault => ({
   lastSyncedAt: '',
   conflictCount: 0,
   remoteId: '',
+  ...NO_TRANSFER,
   ...patch,
 })
 

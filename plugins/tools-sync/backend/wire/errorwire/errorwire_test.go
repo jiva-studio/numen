@@ -140,7 +140,7 @@ func TestDescribe_LogsTheSameFailureOfAnOperationOnce(t *testing.T) {
 	}
 }
 
-func TestGetCodeAndGetText_AnswerAStoppedOrCancelledTransferWithAPlainSentence(t *testing.T) {
+func TestGetCodeAndGetText_AnswerAStoppedOrCanceledTransferWithAPlainSentence(t *testing.T) {
 	for name, one := range map[string]struct {
 		err      error
 		wantText string

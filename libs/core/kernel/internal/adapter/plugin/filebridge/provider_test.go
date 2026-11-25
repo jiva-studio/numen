@@ -19,11 +19,11 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/filebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 // storage is a plugin serving FileProviderService: it records the calls and answers them with err.
@@ -165,7 +165,7 @@ func TestGetFetchProgress_PluginAnswers_ReturnsTheBytesOfThePlugin(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (file.DownloadProgress{IsKnown: true, BytesDone: 3 << 20, BytesTotal: 10 << 20}); got != want {
+	if want := (vaultdomain.DownloadProgress{IsKnown: true, BytesDone: 3 << 20, BytesTotal: 10 << 20}); got != want {
 		t.Errorf("the progress is %+v, want %+v", got, want)
 	}
 	if calls := plugin.getCalls(); len(calls) != 1 || calls[0] != "progress Books/Guide.pdf" {
