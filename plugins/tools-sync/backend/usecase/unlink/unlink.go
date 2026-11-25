@@ -35,6 +35,11 @@ func NewStopSyncing(deps Deps) *StopSyncing { return &StopSyncing{deps: deps} }
 // so does the synced vault on the server, unless isDeleting is set: then the cloud copy is deleted first, and the vault
 // stays linked when that fails.
 func (u *StopSyncing) Execute(ctx context.Context, id domain.VaultID, isDeleting bool) error {
+	unlock, err := u.deps.Locker.LockVault(ctx, id)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	link, err := u.deps.Links.ReadLink(ctx, id)
 	if errors.Is(err, vaultlink.ErrNotConnected) {
 		return domainshare.ErrNotConnected
