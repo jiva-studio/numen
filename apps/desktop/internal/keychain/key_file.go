@@ -89,7 +89,7 @@ func (k *KeyFile) UsePassphrase(ctx context.Context, passphrase string) error {
 		k.passphrase.Set(passphrase)
 		k.store.UsePassphraseFile(k.passphrase)
 	}
-	if k.store.getFileMode() != FileModeUnset {
+	if k.store.getFileMode() != FileModeUnset || k.store.isFilePlaintext() {
 		return k.store.ChangeFileMode(ctx, use)
 	}
 	use()

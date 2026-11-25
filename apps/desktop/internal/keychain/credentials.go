@@ -40,6 +40,9 @@ func (s *Store) readEntries(ctx context.Context) (map[string]string, error) {
 	if err := json.Unmarshal(raw, &entries); err != nil {
 		return nil, fmt.Errorf("read the credentials file: it is not one JSON object of texts: %s", describeJSONSyntax(err))
 	}
+	if len(entries) > 0 && s.getFileMode() == FileModePassphrase {
+		return nil, ErrPlaintextCredentials
+	}
 	return entries, nil
 }
 
@@ -138,4 +141,9 @@ func (s *Store) encodeEntries(ctx context.Context, entries map[string]string, mo
 		return nil, err
 	}
 	return encryptEntries(entries, passphrase, s.getKDFParams())
+}
+
+func (s *Store) isFilePlaintext() bool {
+	raw, err := os.ReadFile(s.getCredentialsFile())
+	return err == nil && !isEncryptedFile(raw)
 }

@@ -9,6 +9,12 @@ var ErrWrongPassphrase = errors.New("the passphrase does not open the key file")
 // ErrEmptyPassphrase is a passphrase of no characters.
 var ErrEmptyPassphrase = errors.New("the passphrase is empty")
 
+// MinPassphraseLength is the fewest characters a new passphrase of the key file has.
+const MinPassphraseLength = 10
+
+// ErrShortPassphrase is a new passphrase of fewer than MinPassphraseLength characters.
+var ErrShortPassphrase = errors.New("the passphrase is too short")
+
 // Mode is how the key file keeps the keys.
 type Mode string
 

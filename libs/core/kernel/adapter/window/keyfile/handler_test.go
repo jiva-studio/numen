@@ -131,3 +131,16 @@ func TestGetErrorCodeOfKeyFileFailures(t *testing.T) {
 		}
 	}
 }
+
+func TestGetErrorCodeOfAShortPassphraseIsInvalid(t *testing.T) {
+	file := &fakeFile{}
+	handler := newHandler(file, new([]domainkeyfile.Mode))
+
+	got, err := handler.ChooseKeyFile(t.Context(), connect.NewRequest(&v1.ChooseKeyFileRequest{
+		Mode: v1.KeyFileMode_KEY_FILE_MODE_PASSPHRASE, Passphrase: "short",
+	}))
+
+	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INVALID {
+		t.Errorf("answer %v, err %v, want the invalid code", got.Msg, err)
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -171,31 +172,6 @@ func TestThePassphraseIsAskedOnceForManyOperations(t *testing.T) {
 	}
 }
 
-func TestAPlaintextFileIsEncryptedByTheNextWriteInPassphraseMode(t *testing.T) {
-	useNoKeychain(t)
-	dir := t.TempDir()
-	plain := newTestStore(dir)
-	if err := plain.SetKey(t.Context(), entryName, seedValue); err != nil {
-		t.Fatal(err)
-	}
-	store := newPassphraseStore(dir, &fakeSource{passphrase: passphraseOne})
-
-	if err := store.SetKey(t.Context(), otherEntry, valueOne); err != nil {
-		t.Fatal(err)
-	}
-
-	raw, err := os.ReadFile(credentialsPath(dir))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(raw), seedValue) {
-		t.Error("the old plaintext entry is still in the file")
-	}
-	if got, err := store.GetKey(t.Context(), entryName); err != nil || got != seedValue {
-		t.Errorf("GetKey = %q, %v, want the old entry", got, err)
-	}
-}
-
 func TestAnEncryptedFileIsNotReadBeforeAPassphraseIsChosen(t *testing.T) {
 	useNoKeychain(t)
 	dir := t.TempDir()
@@ -334,4 +310,101 @@ func readCredentialsBytes(t *testing.T, dir string) []byte {
 		t.Fatal(err)
 	}
 	return raw
+}
+
+func TestAPlaintextFileIsRefusedInPassphraseMode(t *testing.T) {
+	useNoKeychain(t)
+	dir := t.TempDir()
+	if err := newTestStore(dir).SetKey(t.Context(), entryName, seedValue); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(credentialsPath(dir))
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := newPassphraseStore(dir, &fakeSource{passphrase: passphraseOne})
+
+	_, readErr := store.GetKey(t.Context(), entryName)
+	writeErr := store.SetKey(t.Context(), otherEntry, valueOne)
+	deleteErr := store.DeleteKey(t.Context(), entryName)
+
+	for name, got := range map[string]error{"read": readErr, "write": writeErr, "delete": deleteErr} {
+		if !errors.Is(got, ErrPlaintextCredentials) {
+			t.Errorf("%s = %v, want ErrPlaintextCredentials", name, got)
+		}
+	}
+	after, err := os.ReadFile(credentialsPath(dir))
+	if err != nil || string(after) != string(before) {
+		t.Errorf("the file changed after refused calls: %v", err)
+	}
+}
+
+func TestAnEmptyPlaintextFileIsNoEntriesInPassphraseMode(t *testing.T) {
+	useNoKeychain(t)
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Dir(credentialsPath(dir)), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(credentialsPath(dir), []byte("{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	store := newPassphraseStore(dir, &fakeSource{passphrase: passphraseOne})
+
+	if err := store.SetKey(t.Context(), entryName, seedValue); err != nil {
+		t.Fatalf("SetKey = %v, want the empty file taken", err)
+	}
+	if got, err := store.GetKey(t.Context(), entryName); err != nil || got != seedValue {
+		t.Errorf("GetKey = %q, %v", got, err)
+	}
+}
+
+func TestKeyFileEncryptsAPlaintextFileWhenThePassphraseIsChosenFirst(t *testing.T) {
+	useNoKeychain(t)
+	dir := t.TempDir()
+	if err := newTestStore(dir).SetKey(t.Context(), entryName, seedValue); err != nil {
+		t.Fatal(err)
+	}
+	file, store := newKeyFile(dir)
+
+	if err := file.UsePassphrase(t.Context(), passphraseOne); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, err := os.ReadFile(credentialsPath(dir))
+	if err != nil || !isEncryptedFile(raw) || strings.Contains(string(raw), seedValue) {
+		t.Fatalf("encrypted %v, error %v, want the old plaintext entries encrypted", isEncryptedFile(raw), err)
+	}
+	if got, err := store.GetKey(t.Context(), entryName); err != nil || got != seedValue {
+		t.Errorf("GetKey = %q, %v, want the old entry", got, err)
+	}
+}
+
+func TestAHeaderAskingForMoreThanTheCapIsNotOpened(t *testing.T) {
+	salt := make([]byte, saltSize)
+	for name, params := range map[string]kdfParams{
+		"a gibibyte of memory":      {memoryKiB: 1 << 20, time: 3, threads: 1},
+		"more memory than the cap":  {memoryKiB: maxKDFMemoryKiB + 1, time: 3, threads: 1},
+		"more passes than the cap":  {memoryKiB: 64 * 1024, time: maxKDFTime + 1, threads: 1},
+		"more threads than the cap": {memoryKiB: 64 * 1024, time: 3, threads: maxKDFThreads + 1},
+	} {
+		t.Run(name, func(t *testing.T) {
+			raw := append(writeHeader(params, salt), make([]byte, 64)...)
+
+			_, err := decryptEntries(raw, passphraseOne)
+
+			if !errors.Is(err, errBadEncryptedFile) {
+				t.Errorf("decryptEntries = %v, want a refusal before any key derivation", err)
+			}
+		})
+	}
+}
+
+func TestAHeaderWithTheDefaultCostIsRead(t *testing.T) {
+	header := writeHeader(getDefaultKDFParams(), make([]byte, saltSize))
+
+	params, _, err := readHeader(header)
+
+	if err != nil || params != getDefaultKDFParams() {
+		t.Errorf("readHeader = %+v, %v, want the default cost", params, err)
+	}
 }

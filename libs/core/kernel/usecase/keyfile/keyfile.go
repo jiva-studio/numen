@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"unicode/utf8"
 
 	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
 )
@@ -55,7 +56,7 @@ func NewChoose(file File, remember func(mode domainkeyfile.Mode) error) *Choose 
 }
 
 // Execute applies the mode and then remembers it. It returns ErrInvalidMode for any mode but plaintext
-// and passphrase, domainkeyfile.ErrEmptyPassphrase for a passphrase mode without one, and ErrNotSaved when
+// and passphrase, domainkeyfile.ErrEmptyPassphrase for a passphrase mode without one, domainkeyfile.ErrShortPassphrase for one of fewer than domainkeyfile.MinPassphraseLength characters, and ErrNotSaved when
 // the choice stays in force for this run only.
 func (u *Choose) Execute(ctx context.Context, mode domainkeyfile.Mode, passphrase string) error {
 	switch mode {
@@ -66,6 +67,9 @@ func (u *Choose) Execute(ctx context.Context, mode domainkeyfile.Mode, passphras
 	case domainkeyfile.Passphrase:
 		if passphrase == "" {
 			return domainkeyfile.ErrEmptyPassphrase
+		}
+		if utf8.RuneCountInString(passphrase) < domainkeyfile.MinPassphraseLength {
+			return domainkeyfile.ErrShortPassphrase
 		}
 		if err := u.file.UsePassphrase(ctx, passphrase); err != nil {
 			return err

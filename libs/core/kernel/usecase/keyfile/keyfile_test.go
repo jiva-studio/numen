@@ -77,6 +77,7 @@ func TestChooseRefusesWithoutChangingAnything(t *testing.T) {
 		want       error
 	}{
 		"empty passphrase": {domainkeyfile.Passphrase, "", domainkeyfile.ErrEmptyPassphrase},
+		"short passphrase": {domainkeyfile.Passphrase, "nine char", domainkeyfile.ErrShortPassphrase},
 		"unset":            {domainkeyfile.Unset, "", keyfile.ErrInvalidMode},
 		"unknown":          {domainkeyfile.Mode("other"), "", keyfile.ErrInvalidMode},
 	}

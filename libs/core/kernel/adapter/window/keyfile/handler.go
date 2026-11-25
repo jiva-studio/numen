@@ -85,6 +85,8 @@ func getErrorCode(err error) (v1.ErrorCode, error) {
 		return v1.ErrorCode_ERROR_CODE_WRONG_PASSPHRASE, nil
 	case errors.Is(err, domainkeyfile.ErrEmptyPassphrase):
 		return v1.ErrorCode_ERROR_CODE_EMPTY_PASSPHRASE, nil
+	case errors.Is(err, domainkeyfile.ErrShortPassphrase):
+		return v1.ErrorCode_ERROR_CODE_INVALID, nil
 	case errors.Is(err, keyfile.ErrNotSaved):
 		return v1.ErrorCode_ERROR_CODE_INTERNAL, nil
 	case errors.Is(err, keyfile.ErrInvalidMode):
