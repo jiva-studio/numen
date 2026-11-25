@@ -92,11 +92,14 @@ func VerifyAnnouncement(cert Cert, epoch *syncv1.RestoreEpoch) error {
 	return nil
 }
 
-// Serials keeps the highest certificate serial this client has accepted; it lives as long as the installation.
+// Serials keeps the highest certificate serial and the latest time an announcement was issued this client has accepted; it lives as long as the installation.
 type Serials interface {
 	// ReadSerial returns the highest accepted serial, or 0 when none was kept.
 	ReadSerial(ctx context.Context) (uint64, error)
 	WriteSerial(ctx context.Context, serial uint64) error
+	// ReadIssuedAt returns the latest issued_at of an accepted restore announcement, or 0 when none was kept.
+	ReadIssuedAt(ctx context.Context) (int64, error)
+	WriteIssuedAt(ctx context.Context, issuedAt int64) error
 }
 
 // CheckSerial refuses a certificate whose serial is lower than the highest kept one, and keeps a higher one.
@@ -113,6 +116,25 @@ func CheckSerial(ctx context.Context, serials Serials, cert Cert) error {
 	}
 	if err := serials.WriteSerial(ctx, cert.Serial); err != nil {
 		return fmt.Errorf("keep the highest certificate serial: %w", err)
+	}
+	return nil
+}
+
+// CheckIssuedAt refuses an announcement issued before the latest accepted one, which a server replays to make a
+// device run a recovery again, and keeps a later time.
+func CheckIssuedAt(ctx context.Context, serials Serials, epoch *syncv1.RestoreEpoch) error {
+	latest, err := serials.ReadIssuedAt(ctx)
+	if err != nil {
+		return fmt.Errorf("read the latest announcement time: %w", err)
+	}
+	if epoch.GetIssuedAt() < latest {
+		return fmt.Errorf("%w: the announcement was issued at %d, before %d seen before", ErrUntrusted, epoch.GetIssuedAt(), latest)
+	}
+	if epoch.GetIssuedAt() == latest {
+		return nil
+	}
+	if err := serials.WriteIssuedAt(ctx, epoch.GetIssuedAt()); err != nil {
+		return fmt.Errorf("keep the latest announcement time: %w", err)
 	}
 	return nil
 }
