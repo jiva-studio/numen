@@ -100,6 +100,7 @@ func hashFile(ctx context.Context, reader vaultport.VaultReader, path string) (_
 // FillFile places the bytes of a store file at an absent path once their SHA-256 equals the hash of
 // the entry.
 type FillFile struct {
+	readers vaultport.VaultReaders
 	absent  vaultport.AbsentFiles
 	writers vaultport.FolderWriters
 	store   StoreFiles
@@ -107,13 +108,13 @@ type FillFile struct {
 }
 
 func NewFillFile(
-	absent vaultport.AbsentFiles, writers vaultport.FolderWriters, store StoreFiles, index edit.IndexUpdater,
+	readers vaultport.VaultReaders, absent vaultport.AbsentFiles, writers vaultport.FolderWriters, store StoreFiles, index edit.IndexUpdater,
 ) *FillFile {
-	return &FillFile{absent: absent, writers: writers, store: store, index: index}
+	return &FillFile{readers: readers, absent: absent, writers: writers, store: store, index: index}
 }
 
 // Execute checks the bytes of the store file, writes them to the vault path in one atomic step, and
-// removes the entry. A file of other bytes returns plugin.ErrHashMismatch and places nothing; a path
+// removes the entry. A path that already holds the bytes of the entry is not written again and its entry is removed. A file of other bytes returns plugin.ErrHashMismatch and places nothing; a path
 // that is not listed returns edit.ErrNotExist.
 func (u *FillFile) Execute(ctx context.Context, v domain.Vault, path, storeName string) error {
 	entry, isListed, err := u.absent.GetAbsentFile(ctx, v, path)
@@ -126,13 +127,33 @@ func (u *FillFile) Execute(ctx context.Context, v domain.Vault, path, storeName 
 	if err := u.check(ctx, storeName, entry); err != nil {
 		return err
 	}
-	if err := u.place(ctx, v, path, storeName); err != nil {
+	isPlaced, err := u.hasPlaced(ctx, v, entry)
+	if err != nil {
 		return err
+	}
+	if !isPlaced {
+		if err := u.place(ctx, v, path, storeName); err != nil {
+			return err
+		}
 	}
 	if err := u.absent.RemoveAbsentFiles(ctx, v, []string{path}); err != nil {
 		return err
 	}
 	return edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
+}
+
+// hasPlaced reports whether the bytes of the entry are already at its path, which is what a fill leaves when the
+// registry failed to delete the entry after the placement.
+func (u *FillFile) hasPlaced(ctx context.Context, v domain.Vault, entry vault.AbsentFile) (bool, error) {
+	reader, err := u.readers.Open(v)
+	if err != nil {
+		return false, err
+	}
+	isHeld, err := checkHeld(ctx, reader, entry)
+	if errors.Is(err, vault.ErrFilePresent) {
+		return false, nil
+	}
+	return isHeld, err
 }
 
 func (u *FillFile) check(ctx context.Context, storeName string, entry vault.AbsentFile) (err error) {
@@ -177,8 +198,9 @@ func NewEvictFile(readers vaultport.VaultReaders, absent vaultport.AbsentFiles, 
 
 // Execute lists the file at path for the provider and deletes its bytes. The listing comes first, so a
 // crash between the two leaves a listed file with bytes and loses nothing. A file of another hash
-// returns vault.ErrChanged and is kept. The entry carries the size and time of the file, so the index
-// sees no change.
+// returns vault.ErrChanged and is kept. So does a file saved while its hash was made: the bytes go only if
+// the size and time of the file are still those the hash was made over, and the listing is taken back
+// otherwise. The entry carries the size and time of the file, so the index sees no change.
 func (u *EvictFile) Execute(ctx context.Context, v domain.Vault, path, expectedHash, provider string) error {
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -206,7 +228,13 @@ func (u *EvictFile) Execute(ctx context.Context, v domain.Vault, path, expectedH
 	if err != nil {
 		return err
 	}
-	return mover.Remove(ctx, path)
+	if err := mover.RemoveUnchanged(ctx, path, stat); err != nil {
+		if errors.Is(err, vault.ErrChanged) {
+			err = errors.Join(err, u.absent.RemoveAbsentFiles(ctx, v, []string{path}))
+		}
+		return err
+	}
+	return nil
 }
 
 // ListAbsentFiles lists the files the vault shows and does not hold.
@@ -246,7 +274,7 @@ func NewAbsent(
 		List:  NewListAbsentFiles(registry),
 		Evict: NewEvictFile(readers, registry, writers),
 		NewFill: func(store StoreFiles) *FillFile {
-			return NewFillFile(registry, writers, store, index)
+			return NewFillFile(readers, registry, writers, store, index)
 		},
 	}
 }

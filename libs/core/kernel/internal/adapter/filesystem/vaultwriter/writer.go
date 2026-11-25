@@ -215,6 +215,37 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) (err error) {
 	return nil
 }
 
+// RemoveUnchanged deletes the file at path when its size and modification time are the ones of was, and
+// returns vault.ErrChanged and keeps the file when they are not. The comparison and the deletion happen under
+// the write lock, so a save through the writer cannot come between them.
+func (w *VaultWriter) RemoveUnchanged(ctx context.Context, path string, was domain.FileStat) (err error) {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	target, err := w.resolvePath(path)
+	if err != nil {
+		return err
+	}
+	root, name, err := w.openRoot(target)
+	if err != nil {
+		return err
+	}
+	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
+	info, err := root.Lstat(name)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if info.IsDir() || info.Size() != was.Size || !info.ModTime().Equal(was.ModTime) {
+		return fmt.Errorf("remove %s: %w", path, vault.ErrChanged)
+	}
+	return root.Remove(name)
+}
+
 func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 	target, err := w.getContainedPath(path)
 	if err != nil {

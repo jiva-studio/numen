@@ -29,6 +29,9 @@ type FileMover interface {
 	// case or normalization is the same file.
 	CheckMoveTarget(ctx context.Context, from, to string) error
 	Remove(ctx context.Context, path string) error
+	// RemoveUnchanged deletes the file at path only when its size and modification time are those of was, under the
+	// write lock of the vault, and returns vault.ErrChanged and keeps the file when they are not.
+	RemoveUnchanged(ctx context.Context, path string, was domain.FileStat) error
 }
 
 // TrashEmptier deletes what a vault keeps in its trash.

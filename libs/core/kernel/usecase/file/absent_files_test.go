@@ -205,7 +205,7 @@ func TestEvictThenFillRestoresTheFile(t *testing.T) {
 
 func (p phone) newFill() *file.FillFile {
 	noIndex := func(context.Context, domain.Vault, []string) error { return nil }
-	return file.NewFillFile(p.absent, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{}, noIndex)
+	return file.NewFillFile(p.readers, p.absent, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{}, noIndex)
 }
 
 func (p phone) newEvict() *file.EvictFile {
