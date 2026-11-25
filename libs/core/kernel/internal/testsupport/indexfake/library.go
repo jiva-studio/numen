@@ -52,10 +52,9 @@ type Library struct {
 
 // File is one file of a Library.
 type File struct {
-	Kind  domain.SourceKind
-	Raw   []byte
-	MTime int64
-	// IsAbsent lists the file with its size and no bytes.
+	Kind     domain.SourceKind
+	Raw      []byte
+	MTime    int64
 	IsAbsent bool
 	Size     int64
 }

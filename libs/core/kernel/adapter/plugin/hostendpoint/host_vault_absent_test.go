@@ -197,12 +197,12 @@ func TestAFileIsEvictedOnlyWhileItHasTheHashNamed(t *testing.T) {
 	}
 }
 
-func TestAHostWithoutAbsentFilesAnswersUnimplemented(t *testing.T) {
+func TestAHostWithoutAbsentFilesListsNone(t *testing.T) {
 	_, client := newDiskVaults(t, nil)
 
-	_, err := client.ListAbsentFiles(t.Context(), connect.NewRequest(&v1.ListAbsentFilesRequest{}))
+	listed, err := client.ListAbsentFiles(t.Context(), connect.NewRequest(&v1.ListAbsentFilesRequest{}))
 
-	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("got %v, want unimplemented", err)
+	if err != nil || len(listed.Msg.GetFiles()) != 0 {
+		t.Errorf("got %v (%v), want an empty list", listed.Msg, err)
 	}
 }

@@ -30,7 +30,7 @@ const (
 
 func (s *setup) move(t *testing.T, moves ...transfer.Move) []transfer.Outcome {
 	t.Helper()
-	outcomes, err := commit.NewCommitMoves(s.c.CommitDeps()).Execute(t.Context(), commit.MoveInput{Vault: s.vault, Moves: moves})
+	outcomes, err := commit.NewCommitMoves(s.c.CommitDeps()).Execute(t.Context(), ports.MoveInput{Vault: s.vault, Moves: moves})
 	if err != nil {
 		t.Fatal(err)
 	}

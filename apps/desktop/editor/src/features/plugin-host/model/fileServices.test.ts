@@ -34,7 +34,10 @@ const api = createAnsweredApi({
 })
 
 const setup = () => {
-  const downloads = createDownloads(async () => undefined, readUnknownProgress)
+  const downloads = createDownloads({
+    fetchFile: async () => undefined,
+    getDownloadProgress: readUnknownProgress,
+  })
   const createUntitledNote = vi.fn()
   const runCommand = vi.fn(() => Promise.resolve())
   const files = createVaultFiles({
@@ -135,7 +138,10 @@ describe('the files kept on demand', () => {
   const folder = { path: 'dir', name: 'dir', isFolder: true, isNote: false, type: 'note' }
   const createFiles = (
     entries: object[],
-    downloads = createDownloads(async () => undefined, readUnknownProgress),
+    downloads = createDownloads({
+      fetchFile: async () => undefined,
+      getDownloadProgress: readUnknownProgress,
+    }),
   ) => ({
     downloads,
     files: createVaultFiles({
@@ -164,10 +170,10 @@ describe('the files kept on demand', () => {
 
   it('list a download that is running as downloading, and tell the plugin when one starts or ends', async () => {
     let finish: () => void = () => undefined
-    const downloads = createDownloads(
-      () => new Promise<void>((done) => (finish = done)),
-      readUnknownProgress,
-    )
+    const downloads = createDownloads({
+      fetchFile: () => new Promise<void>((done) => (finish = done)),
+      getDownloadProgress: readUnknownProgress,
+    })
     const { files } = createFiles([absent], downloads)
     const told: (readonly string[])[] = []
     files.watchDownloads?.((paths) => told.push(paths))
@@ -185,8 +191,10 @@ describe('the files kept on demand', () => {
     let finish: () => void = () => undefined
     let tick: () => void = () => undefined
     const downloads = createDownloads(
-      () => new Promise<void>((done) => (finish = done)),
-      async () => asValue({ isKnown: true, bytesDone: 12, bytesTotal: 48 }),
+      {
+        fetchFile: () => new Promise<void>((done) => (finish = done)),
+        getDownloadProgress: async () => asValue({ isKnown: true, bytesDone: 12, bytesTotal: 48 }),
+      },
       { every: (task) => ((tick = task), () => undefined) },
     )
     const { files } = createFiles([absent], downloads)

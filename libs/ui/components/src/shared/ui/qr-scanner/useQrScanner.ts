@@ -56,6 +56,16 @@ export interface QrScannerEvents {
   (e: 'unavailable', reason: string): void
 }
 
+function readPixels(view: HTMLVideoElement): ImageData | null {
+  const canvas = doc.createElement('canvas')
+  canvas.width = view.videoWidth
+  canvas.height = view.videoHeight
+  const drawing = canvas.getContext('2d', { willReadFrequently: true })
+  if (drawing === null) return null
+  drawing.drawImage(view, 0, 0)
+  return drawing.getImageData(0, 0, canvas.width, canvas.height)
+}
+
 /**
  * The camera of one scanner and the frames read from it: what it is waiting for and the problem it shows.
  * The stream stops after the first scan; in the continuous mode it stops only
@@ -71,6 +81,7 @@ export function useQrScanner(
   let stream: MediaStream | undefined
   let timer: ReturnType<typeof setInterval> | undefined
   let isDisposed = false
+  const isGone = (): boolean => isDisposed
   let cancelOpening: (() => void) | undefined
   let rejected = ''
   let lastText = ''
@@ -79,13 +90,8 @@ export function useQrScanner(
   function readFrame(): void {
     const view = video.value
     if (view === null || view.videoWidth === 0) return
-    const canvas = doc.createElement('canvas')
-    canvas.width = view.videoWidth
-    canvas.height = view.videoHeight
-    const drawing = canvas.getContext('2d', { willReadFrequently: true })
-    if (drawing === null) return
-    drawing.drawImage(view, 0, 0)
-    const pixels = drawing.getImageData(0, 0, canvas.width, canvas.height)
+    const pixels = readPixels(view)
+    if (pixels === null) return
     const found = decodeFrame(pixels)
     if (found === null) return
     if (!source.isAccepted(found)) {
@@ -107,10 +113,6 @@ export function useQrScanner(
     }
     stop()
     emit('scanned', found)
-  }
-
-  function isGone(): boolean {
-    return isDisposed
   }
 
   function stop(): void {

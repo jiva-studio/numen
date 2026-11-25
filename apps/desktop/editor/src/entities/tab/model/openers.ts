@@ -43,7 +43,6 @@ export interface FileOpenerDeps {
   isFileAbsent?(path: string): Promise<boolean>
   /** Brings the bytes of an absent file onto this device; rejects with the reason to show. */
   fetchFile?(path: string): Promise<void>
-  /** The tabs that stand for files while they download. */
   downloadTabs?: DownloadTabs
 }
 
@@ -65,10 +64,6 @@ const fetchFileKind = async (vault: FileOpenerDeps, path: string): Promise<FileK
   return (await vault.readFileKinds([path])).get(path) ?? null
 }
 
-/**
- * Brings an absent file onto this device while a tab stands for it; false where the file is not to
- * be opened: a download of it already runs, it failed, or its tab was closed.
- */
 const downloadFile = async (
   vault: FileOpenerDeps,
   path: string,
@@ -88,7 +83,6 @@ const downloadFile = async (
   return false
 }
 
-/** Opens a downloaded file, then removes the tab that stood for it; a failure to open it is shown in that tab. */
 const openDownloadedFile = async (
   vault: FileOpenerDeps,
   path: string,

@@ -30,11 +30,9 @@ export interface Entry {
   readonly type: NoteType
   readonly tabKind?: string
   readonly modifiedAt?: number
-  /** The bytes are not on this device; `provider` is the plugin that can bring them. */
   readonly isAbsent?: boolean
   readonly provider?: string
   readonly isDownloading?: boolean
-  /** The share of the file brought, from 0 to 1; absent where the size is not known. */
   readonly downloadProgress?: number
 }
 

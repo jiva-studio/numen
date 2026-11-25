@@ -19,21 +19,9 @@ export const createFileApi = (files: WindowClients['files']) => ({
     return asValue({ trashed: answer.trashPath, dangling: answer.danglingNotes })
   },
 
-  /** Brings the bytes of an absent file onto this device; a failure is the call's own, to be shown with `formatError`. */
-  fetchFile: async (path: string): Promise<void> => {
-    await files.fetchFile({ path })
-  },
-
   /** Takes the bytes of a downloaded file off this device; the file is listed as absent again. */
   dropDownload: async (path: string): Promise<void> => {
     await files.dropDownload({ path })
-  },
-
-  /** Whether the file is listed and its bytes are not on this device. */
-  isFileAbsent: async (path: string): Promise<boolean> => {
-    const slash = path.lastIndexOf('/')
-    const listed = await files.listFiles({ path: path.slice(0, Math.max(slash, 0)) })
-    return listed.entries.some((one) => one.path === path && one.isAbsent)
   },
 
   /** Deletes everything the vault's trash holds for good; how many paths could not be deleted. */

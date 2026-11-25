@@ -81,7 +81,6 @@ func (u *DeleteCloudVault) listLinkedVaults(ctx context.Context, remoteID string
 	return linked, nil
 }
 
-// lockLinked takes the lock of each linked vault but held, in the order of their ids so two callers do not wait on each other.
 func (u *DeleteCloudVault) lockLinked(ctx context.Context, linked []domain.VaultID, held domain.VaultID) (func(), error) {
 	var unlocks []func()
 	unlockAll := func() {

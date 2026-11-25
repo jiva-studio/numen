@@ -25,7 +25,6 @@ func DefaultTexts() Texts {
 	}
 }
 
-// GetNewVaultsFolder returns the setting Folder for new vaults of the file, or "" when it is not text.
 func GetNewVaultsFolder(file File) string {
 	value, _ := file.GetValue(settingsdomain.AppOwner, "vaults", "folder")
 	text, isText := value.(string)

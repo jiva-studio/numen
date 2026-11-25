@@ -9,10 +9,8 @@ import { getRingView, RING_LENGTH } from './ringView'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
-    /** From 0 to 1; undefined where the progress is not known. */
     value?: number | undefined
     size?: 'small' | 'large'
-    /** The name of what progresses; without it the ring is decorative. */
     label?: string
   }>(),
   { size: 'small' },
@@ -56,7 +54,7 @@ const hasText = computed(() => props.size === 'large' && view.value.isKnown)
   --ring-small: 1rem;
   --ring-large: 4rem;
   --ring-size: var(--ring-small);
-  --ring-thickness: 3px;
+  --ring-thickness: 3;
 
   position: relative;
   display: inline-grid;

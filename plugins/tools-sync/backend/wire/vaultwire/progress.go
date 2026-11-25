@@ -73,8 +73,6 @@ func (v *VaultList) setProgress(ctx context.Context, id domain.VaultID, one *api
 	return nil
 }
 
-// setCloudTotals raises the total of each syncing vault to its size in the cloud. The call to the server is made only
-// when a vault syncs, and a server that does not answer leaves the totals as the local files give them.
 func (v *VaultList) setCloudTotals(ctx context.Context, listed []api.Vault) {
 	if v.deps.Cloud == nil {
 		return

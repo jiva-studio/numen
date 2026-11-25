@@ -408,8 +408,7 @@ describe('createWorkspaceService, createVaultAccess and createWindowService', ()
         writeNote: async () => undefined,
         write: async () => 'next',
       },
-      getTarget: () => ({}) as never,
-      runInvocation: async () => undefined,
+      invoking: { getTarget: () => ({}) as never, runCommand: async () => undefined },
     })
     expect(await access.notes.createUntitledNote()).toBe('New.md')
 

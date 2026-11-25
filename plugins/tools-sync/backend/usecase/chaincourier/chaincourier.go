@@ -147,8 +147,6 @@ func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) er
 	return nil
 }
 
-// listNotices returns the entries of other devices younger than the cooling-off: a revoke this device did not sign, and an
-// addition that this device neither signed nor received.
 func listNotices(chain identity.Chain, own []byte, now time.Time) []string {
 	var found []string
 	for _, revocation := range chain.ListDeviceRevocations() {

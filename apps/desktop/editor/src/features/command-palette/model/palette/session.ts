@@ -64,7 +64,11 @@ function createNamesSearch(deps: PaletteSearchDeps) {
       },
       run: async (trimmed, mine) => {
         try {
-          const names = await deps.core.searchNames(trimmed, GROUP_RESULT_LIMIT, deps.namesRequest.start())
+          const names = await deps.core.searchNames(
+            trimmed,
+            GROUP_RESULT_LIMIT,
+            deps.namesRequest.start(),
+          )
           if (!mine.isCurrent) return
           deps.found.value = names
         } catch {

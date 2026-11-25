@@ -34,11 +34,11 @@ func NewBackend(deps syncvault.Deps) *Backend {
 	headsDeps := heads.Deps{Catalog: deps.Catalog, Chain: deps.Chain, Revisions: deps.Revisions, Crypto: deps.Crypto, Identity: deps.Identity}
 	return &Backend{
 		life: nil, Downloads: nil, Invites: nil,
-		Vaults:       vaultwire.New(deps, heads.New(headsDeps)),
-		Shares:       sharewire.New(deps),
-		ReceivedShares:     sharewire.NewReceivedShares(deps),
-		Subscription: subscriptionwire.New(deps),
-		Account:      accountwire.New(),
+		Vaults:         vaultwire.New(deps, heads.New(headsDeps)),
+		Shares:         sharewire.New(deps),
+		ReceivedShares: sharewire.NewReceivedShares(deps),
+		Subscription:   subscriptionwire.New(deps),
+		Account:        accountwire.New(),
 	}
 }
 

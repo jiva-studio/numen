@@ -142,7 +142,6 @@ func (u *ReadInvitation) Execute(ctx context.Context, text string) (Preview, err
 	}, nil
 }
 
-// AcceptedShare is the vault a share was received into.
 type AcceptedShare struct {
 	VaultID domain.VaultID
 	Name    string

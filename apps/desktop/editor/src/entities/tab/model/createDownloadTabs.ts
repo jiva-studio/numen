@@ -13,9 +13,7 @@ export interface DownloadState {
   readonly view: ComputedRef<{
     readonly title: string
     readonly failure: string
-    /** The share brought, from 0 to 1; undefined where the size is not known. */
     readonly progress: number | undefined
-    /** The bytes brought of the whole, such as "12 of 41 MB"; empty where the size is not known. */
     readonly size: string
   }>
   readonly retry: () => void
@@ -23,13 +21,9 @@ export interface DownloadState {
 
 /** The tabs that stand for files while their bytes are brought onto this device. */
 export interface DownloadTabs {
-  /** Opens or focuses the tab of the file; false where a download of the file already runs. */
   start: (path: string, title: string) => Promise<boolean>
-  /** Shows the failure of the download in the tab of the file. */
   fail: (path: string, error: unknown) => void
-  /** Whether the tab of the file is open. */
   isOpen: (path: string) => boolean
-  /** Ends the download of the file and closes its tab. */
   finish: (path: string) => void
 }
 

@@ -74,8 +74,7 @@ export interface VaultAccessDeps {
   readonly search: VaultNotesDeps['search']
   readonly making: VaultNotesDeps['making']
   readonly pluginNotes: VaultNotesDeps['pluginNotes']
-  readonly getTarget: VaultFilesDeps['getTarget']
-  readonly runInvocation: VaultFilesDeps['runCommand']
+  readonly invoking: Pick<VaultFilesDeps, 'getTarget' | 'runCommand'>
 }
 
 /** The notes, the links and the files of the vault. */
@@ -95,8 +94,7 @@ export function createVaultAccess(
       listFiles: deps.files.listFiles,
       downloads: deps.downloads,
       making: deps.making,
-      getTarget: deps.getTarget,
-      runCommand: deps.runInvocation,
+      ...deps.invoking,
     }),
   }
 }

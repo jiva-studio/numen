@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 )
 
 const (
@@ -171,7 +170,7 @@ func (p *pass) sendMoves(ctx context.Context, vault transfer.Vault, records []tr
 	if len(moves) == 0 {
 		return records, false, nil
 	}
-	outcomes, err := p.use.steps.Move.Execute(ctx, commit.MoveInput{Vault: vault, Moves: moves, Shares: p.shares})
+	outcomes, err := p.use.steps.Move.Execute(ctx, ports.MoveInput{Vault: vault, Moves: moves, Shares: p.shares})
 	if err != nil {
 		return records, false, err
 	}

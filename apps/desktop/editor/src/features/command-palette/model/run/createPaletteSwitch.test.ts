@@ -103,7 +103,7 @@ describe('the two palettes of the window', () => {
       },
       searchRequests,
       searchOptions: {},
-      getVaultList,
+      vaultLists: { listVaults: getVaultList },
     })
 
     expect(resetWhenClosed).toHaveBeenCalledWith(windowPalette.commands.palette.open)

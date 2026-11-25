@@ -4,7 +4,10 @@ import { createTextSaver } from './createTextSaver'
 
 const createDialog = (answer: { isSaved: boolean; path: string }) => {
   const saveTextFile = vi.fn(() => Promise.resolve(answer))
-  return { saveTextFile, folderDialog: { saveTextFile } as unknown as WindowClients['folderDialog'] }
+  return {
+    saveTextFile,
+    folderDialog: { saveTextFile } as unknown as WindowClients['folderDialog'],
+  }
 }
 
 describe('createTextSaver', () => {

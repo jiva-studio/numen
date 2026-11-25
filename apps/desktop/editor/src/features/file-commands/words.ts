@@ -10,8 +10,7 @@ export const FILE_WORDS = {
   untitledFolder: 'New folder',
   errors: WORDS.errors,
   alreadyExists: WORDS.alreadyExists,
-  /** The rows of a file kept on demand: bring its bytes, take them off again. */
-  download: 'Download',
-  dropDownload: 'Remove download',
+  download: WORDS.downloadFile,
+  dropDownload: WORDS.dropDownload,
   unanswered: WORDS.unanswered,
 }

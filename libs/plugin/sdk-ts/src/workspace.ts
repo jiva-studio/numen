@@ -244,13 +244,9 @@ export interface VaultEntry {
   readonly type: NoteType
   readonly tabKind?: string
   readonly modifiedAt?: number
-  // Whether the file is listed and its bytes are not on this device; the provider is the id of the
-  // plugin that can bring them.
   readonly isAbsent?: boolean
   readonly provider?: string
-  // Whether the window is bringing the bytes of the file now.
   readonly isDownloading?: boolean
-  // The share of the file brought, from 0 to 1; absent where the size is not known.
   readonly downloadProgress?: number
 }
 

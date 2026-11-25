@@ -941,9 +941,7 @@ describe('a command that asks for a vault', () => {
     commands.palette.startCommand('app:vault.open', front())
     await settle()
 
-    expect(commands.view.groups.value[0]?.items[0]?.detail).toBe(
-      `${words.readOnly} · /vaults/Food`,
-    )
+    expect(commands.view.groups.value[0]?.items[0]?.detail).toBe(`${words.readOnly} · /vaults/Food`)
   })
 
   /** The folder may be on an unmounted volume, and the vault stays listed. */

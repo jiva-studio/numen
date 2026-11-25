@@ -400,6 +400,13 @@ type CommitInput struct {
 	Shares  []share.Root
 }
 
+// MoveInput is the moves to commit to a vault, with the shares of the vault, whose folders seal the metadata of the files moved into or inside them.
+type MoveInput struct {
+	Vault  transfer.Vault
+	Moves  []transfer.Move
+	Shares []share.Root
+}
+
 // PullInput is the vault, the check of the author of a revision and the shares of the vault, whose revisions open with
 // the keys of the share.
 type PullInput struct {

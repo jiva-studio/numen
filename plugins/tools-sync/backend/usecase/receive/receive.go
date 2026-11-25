@@ -77,11 +77,12 @@ type ReceivedShare struct {
 	ConflictCount    int
 }
 
-// ListReceivedShares lists the shares this computer received.
 type ListReceivedShares struct{ base }
 
 // NewListReceivedShares returns the use case over the dependencies.
-func NewListReceivedShares(deps Deps) *ListReceivedShares { return &ListReceivedShares{base: base{deps: deps}} }
+func NewListReceivedShares(deps Deps) *ListReceivedShares {
+	return &ListReceivedShares{base: base{deps: deps}}
+}
 
 // Execute returns the received shares in the order of the vault list.
 func (u *ListReceivedShares) Execute(ctx context.Context) ([]ReceivedShare, error) {

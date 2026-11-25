@@ -19,7 +19,6 @@ type RemoteVaultProvider interface {
 // ListRemoteVaults lists the vaults the remote vault provider offers.
 type ListRemoteVaults struct{ provider RemoteVaultProvider }
 
-// NewListRemoteVaults creates the listing over the provider.
 func NewListRemoteVaults(provider RemoteVaultProvider) *ListRemoteVaults {
 	return &ListRemoteVaults{provider: provider}
 }

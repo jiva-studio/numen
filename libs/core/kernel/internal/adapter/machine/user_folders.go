@@ -5,10 +5,8 @@ import (
 	"os"
 )
 
-// UserFolders are the folders of the person on this machine.
 type UserFolders struct{}
 
-// GetHomeFolder returns the home folder of the person.
 func (UserFolders) GetHomeFolder() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {

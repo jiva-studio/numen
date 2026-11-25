@@ -206,10 +206,12 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
-    getVaultList: createVaultListReader({
-      vaults: api.vault.vaults,
-      getShownVault: api.window.shownVault.getShownVault,
-    }),
+    vaultLists: {
+      listVaults: createVaultListReader({
+        vaults: api.vault.vaults,
+        getShownVault: api.window.shownVault.getShownVault,
+      }),
+    },
     searchCore: api.vault.search,
   })
   watchCommandLists(

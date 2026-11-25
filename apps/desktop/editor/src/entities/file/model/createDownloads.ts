@@ -1,5 +1,4 @@
 import { reactive } from 'vue'
-import type { DownloadProgress as DownloadAnswer } from '@numen/core-client'
 import type { Result } from '@numen/result'
 
 /** The bytes of a download brought so far, of a size the core knows. */
@@ -8,12 +7,14 @@ export interface DownloadBytes {
   readonly bytesTotal: number
 }
 
+interface DownloadAnswer extends DownloadBytes {
+  readonly isKnown: boolean
+}
+
 /** The downloads of files the window runs: which paths are downloading, and the handlers it calls when that changes. */
 export interface DownloadRegistry {
-  /** Brings the bytes of the file; a download of the path already running is joined, not started twice. */
   fetch: (path: string) => Promise<void>
   isRunning(path: string): boolean
-  /** The progress of a running download whose size is known; reactive, and undefined where it is not known. */
   getProgress: (path: string) => DownloadBytes | undefined
   /** Calls the handler with the path of each download that starts, ends or moves on; returns what stops it. */
   watch(handler: (path: string) => void): () => void
@@ -24,7 +25,7 @@ export interface DownloadPorts {
   readonly every: (task: () => void, ms: number) => () => void
 }
 
-export const PROGRESS_INTERVAL_MS = 500
+const PROGRESS_INTERVAL_MS = 500
 
 const browserDownloadPorts: DownloadPorts = {
   every: (task, ms) => {
@@ -33,9 +34,14 @@ const browserDownloadPorts: DownloadPorts = {
   },
 }
 
+/** What the downloads call on the core: bring a file onto the device, and ask how far that has come. */
+export interface DownloadCalls {
+  readonly fetchFile: (path: string) => Promise<void>
+  readonly getDownloadProgress: (path: string) => Promise<Result<DownloadAnswer>>
+}
+
 export function createDownloads(
-  fetchFile: (path: string) => Promise<void>,
-  readProgress: (path: string) => Promise<Result<DownloadAnswer>>,
+  { fetchFile, getDownloadProgress: readProgress }: DownloadCalls,
   ports: DownloadPorts = browserDownloadPorts,
 ): DownloadRegistry {
   const running = new Map<string, Promise<void>>()

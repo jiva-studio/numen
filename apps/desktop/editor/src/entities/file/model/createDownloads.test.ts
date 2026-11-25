@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { DownloadProgress } from '@numen/core-client'
 import { asValue, type Result } from '@numen/result'
-import { createDownloads, PROGRESS_INTERVAL_MS } from './createDownloads'
+import { createDownloads } from './createDownloads'
 
 type Answer = Result<DownloadProgress>
 type Reader = (path: string) => Promise<Answer>
@@ -27,7 +27,7 @@ const createTimers = () => {
     tasks,
     ports: {
       every: (task: () => void, ms: number) => {
-        expect(ms).toBe(PROGRESS_INTERVAL_MS)
+        expect(ms).toBe(500)
         tasks.add(task)
         return () => tasks.delete(task)
       },
@@ -45,7 +45,10 @@ const create = (readProgress: Reader = readNoProgress) => {
   return {
     core,
     timers,
-    downloads: createDownloads(core.fetchFile, readProgress, timers.ports),
+    downloads: createDownloads(
+      { fetchFile: core.fetchFile, getDownloadProgress: readProgress },
+      timers.ports,
+    ),
   }
 }
 

@@ -18,7 +18,6 @@ export interface VaultFilesDeps {
   readonly runCommand: (id: string, target: CommandTarget, name: string) => Promise<void>
 }
 
-/** A file here carries the provider of the vault, which is what lets a person take its download off again. */
 const markEntry = (
   one: Entry,
   provider: string,

@@ -64,8 +64,7 @@ export function createPluginAccess(deps: PluginAccessDeps) {
     search: deps.api.search,
     making: deps.making,
     pluginNotes: deps.pluginNotes,
-    getTarget: deps.getTarget,
-    runInvocation: deps.hostPort.runInvocation,
+    invoking: { getTarget: deps.getTarget, runCommand: deps.hostPort.runInvocation },
   })
 }
 

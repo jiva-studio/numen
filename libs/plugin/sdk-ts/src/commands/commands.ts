@@ -20,8 +20,6 @@ export interface CommandTarget {
   readonly others: readonly string[]
   readonly tab: string
   readonly noteType?: string
-  // Set over a row of the file tree: the bytes of the file are not on this device, and the plugin that
-  // keeps the files of the vault on demand.
   readonly isAbsent?: boolean
   readonly provider?: string
   readonly properties?: Readonly<Record<string, JsonValue>>

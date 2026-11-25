@@ -41,8 +41,7 @@ export interface WindowPaletteDeps {
   readonly plugin: PluginPaletteParts
   readonly searchRequests: ReturnType<typeof createSearchRequests>
   readonly searchOptions: Pick<SearchOptions, 'menu'>
-  readonly getVaultList: CommandsDeps['listVaults']
-  readonly cloudVaults?: CommandsDeps['cloudVaults']
+  readonly vaultLists: Pick<CommandsDeps, 'listVaults' | 'cloudVaults'>
 }
 
 export function createWindowPalette(deps: WindowPaletteDeps) {
@@ -53,8 +52,7 @@ export function createWindowPalette(deps: WindowPaletteDeps) {
   const commands = createCommandPalette({
     core: {
       ...searchCore,
-      listVaults: deps.getVaultList,
-      ...(deps.cloudVaults ? { cloudVaults: deps.cloudVaults } : {}),
+      ...deps.vaultLists,
     },
     words,
     getTarget: getTarget,

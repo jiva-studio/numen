@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 )
 
 // ErrNotConnected means the vault has no synced vault to sync with.
@@ -101,7 +100,7 @@ type Detector interface {
 }
 
 type MoveCommitter interface {
-	Execute(ctx context.Context, in commit.MoveInput) ([]transfer.Outcome, error)
+	Execute(ctx context.Context, in ports.MoveInput) ([]transfer.Outcome, error)
 }
 
 type RemovalCommitter interface {

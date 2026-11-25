@@ -99,7 +99,6 @@ export function createTabsPart(deps: TabsPartDeps) {
   }
 }
 
-/** The files the tabs open: a file not on this device opens in a tab that shows its download. */
 function createFileTabs(
   deps: TabsPartDeps,
   windowTabs: WindowTabs,

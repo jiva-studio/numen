@@ -96,7 +96,8 @@ export function createPromptSession(): PromptSession {
     return {
       step: step.value,
       typed: typed.value,
-      placeholder: current.kind === 'selectOption' ? PALETTE_WORDS.typeItems : current.options.title,
+      placeholder:
+        current.kind === 'selectOption' ? PALETTE_WORDS.typeItems : current.options.title,
       heading: current.options.title,
       groups: current.kind === 'promptText' ? [] : [getOptionGroup(current.options)],
       enterText,

@@ -7,16 +7,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
-
-// MoveInput is the moves to commit to a vault, with the shares of the vault, whose folders seal the metadata of the files moved into or inside them.
-type MoveInput struct {
-	Vault  transfer.Vault
-	Moves  []transfer.Move
-	Shares []share.Root
-}
 
 // CommitMoves commits files that have another path as revisions that change only their metadata: they name the
 // blob of the head, so nothing is read or uploaded.
@@ -27,7 +20,7 @@ func NewCommitMoves(deps Deps) *CommitMoves { return &CommitMoves{deps: deps} }
 
 // Execute commits the moves in batches of note.MovedBatchFiles, each batch in one call, and returns one outcome for
 // each move, in order.
-func (u *CommitMoves) Execute(ctx context.Context, in MoveInput) ([]transfer.Outcome, error) {
+func (u *CommitMoves) Execute(ctx context.Context, in ports.MoveInput) ([]transfer.Outcome, error) {
 	author, err := u.deps.Identity.GetPublicIdentity(ctx)
 	if err != nil {
 		return nil, err
@@ -57,7 +50,7 @@ func (u *CommitMoves) Execute(ctx context.Context, in MoveInput) ([]transfer.Out
 	return outcomes, nil
 }
 
-func (u *CommitMoves) build(ctx context.Context, in MoveInput, author []byte, move transfer.Move) (*syncv1.Revision, error) {
+func (u *CommitMoves) build(ctx context.Context, in ports.MoveInput, author []byte, move transfer.Move) (*syncv1.Revision, error) {
 	vault := in.Vault
 	record := move.Record
 	key, err := u.deps.Crypto.OpenData(ctx, note.GetRecordKeyContext(vault.ID, record.FileID), record.SealedKey)

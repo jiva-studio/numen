@@ -161,6 +161,6 @@
 /* The size of a vault in the cloud, at the end of its row. */
 .title-bar__vault-size {
   flex: none;
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
   color: var(--numen-hushed);
 }

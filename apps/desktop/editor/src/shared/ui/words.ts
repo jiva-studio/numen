@@ -41,6 +41,8 @@ export const WORDS = {
   unavailable: 'Unavailable: the plugin is disabled or stopped.',
   newNote: 'Create note',
   newFolder: 'Create folder',
+  downloadFile: 'Download',
+  dropDownload: 'Remove download',
   /** The note that points at a web address. */
   close: 'Close tab',
   settings: 'Settings',

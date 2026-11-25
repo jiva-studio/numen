@@ -8,7 +8,6 @@ import type { Row, RowStatus } from '@numen/ui'
 import type { ListingRow } from '../types'
 import { WORDS as words } from '../words'
 
-/** What marks a file at the end of its row: a turning ring while it comes, a cloud while it is not here. */
 function getStatus(entry: ListingRow['entry']): RowStatus | null {
   if (entry.isDownloading) {
     const { downloadProgress } = entry

@@ -68,7 +68,7 @@ func New(deps syncvault.Deps, heads ports.Heads) *Vaults {
 	}
 	deleting := catalog.NewDeleteCloudVault(catalogDeps, share.NewCloseShares(sharewire.NewShareDeps(deps)))
 	return &Vaults{
-		VaultList:     &VaultList{deps: deps, pending: nil, resolve: nil, moving: transfers{downloads: nil, uploads: nil}},
+		VaultList:   &VaultList{deps: deps, pending: nil, resolve: nil, moving: transfers{downloads: nil, uploads: nil}},
 		Connections: &Connections{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads},
 		Removals: &Removals{
 			stop:   unlink.NewStopSync(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: deleting, Locker: deps.Locker}),

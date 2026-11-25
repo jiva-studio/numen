@@ -12,10 +12,7 @@ function isAtPath(windowTab: OpenTab, path: string): boolean {
   return target?.file === path || target?.path === path
 }
 
-function isTabAtPath(
-  windowTab: ReturnType<TabsOfWindow['tabs']['getTab']>,
-  path: string,
-): boolean {
+function isTabAtPath(windowTab: ReturnType<TabsOfWindow['tabs']['getTab']>, path: string): boolean {
   if (!windowTab) return false
   // A tool such as the plex follows the note in front; the tab that holds the file is another.
   return !windowTab.kind.display?.isTool && isAtPath(windowTab, path)
