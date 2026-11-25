@@ -123,20 +123,20 @@ func testAPassAfterACancelEmbedsAllButTheCanceledNote(t *testing.T, openReading 
 	if calls := model.getHeldCalls(); calls != 0 {
 		t.Errorf("the canceled note was sent to the model %d times", calls)
 	}
-	target, embedded, err := p.worker.vectorCounts(t.Context(), p.v)
+	progress, err := p.worker.vectorCounts(t.Context(), p.v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if target-embedded != heldChunks {
-		t.Errorf("%d of %d chunks lack a vector, want the %d of the canceled note", target-embedded, target, heldChunks)
+	if progress.TotalCount-progress.EmbeddedCount != heldChunks {
+		t.Errorf("%d of %d chunks lack a vector, want the %d of the canceled note", progress.TotalCount-progress.EmbeddedCount, progress.TotalCount, heldChunks)
 	}
 
 	p.worker.ClearSkips([]string{"Held.md"})
 	p.embed(t.Context())
-	if target, embedded, err = p.worker.vectorCounts(t.Context(), p.v); err != nil {
+	if progress, err = p.worker.vectorCounts(t.Context(), p.v); err != nil {
 		t.Fatal(err)
 	}
-	if embedded != target {
-		t.Errorf("after the cancel was cleared %d of %d chunks carry a vector", embedded, target)
+	if progress.EmbeddedCount != progress.TotalCount {
+		t.Errorf("after the cancel was cleared %d of %d chunks carry a vector", progress.EmbeddedCount, progress.TotalCount)
 	}
 }

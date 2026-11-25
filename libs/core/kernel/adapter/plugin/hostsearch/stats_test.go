@@ -43,7 +43,7 @@ func TestStatsCachesCountsForOneSecondAndSizesForHalfAMinute(t *testing.T) {
 	ctx := t.Context()
 
 	for range 3 {
-		if _, _, err := stats.Get(ctx, "01VAULT", "r"); err != nil {
+		if _, err := stats.Get(ctx, "01VAULT", "r"); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -53,16 +53,16 @@ func TestStatsCachesCountsForOneSecondAndSizesForHalfAMinute(t *testing.T) {
 
 	source.counts = index.Counts{Chunks: 4}
 	now.Advance(1500 * time.Millisecond)
-	counts, _, err := stats.Get(ctx, "01VAULT", "r")
-	if err != nil || counts.Chunks != 4 || source.countsReads != 2 || source.sizesReads != 1 {
-		t.Errorf("after 1.5 s: counts %+v (%v), read %d and %d times", counts, err, source.countsReads, source.sizesReads)
+	snapshot, err := stats.Get(ctx, "01VAULT", "r")
+	if err != nil || snapshot.Counts.Chunks != 4 || source.countsReads != 2 || source.sizesReads != 1 {
+		t.Errorf("after 1.5 s: counts %+v (%v), read %d and %d times", snapshot.Counts, err, source.countsReads, source.sizesReads)
 	}
 
 	source.sizes = index.Sizes{Database: 200}
 	now.Advance(30 * time.Second)
-	_, sizes, err := stats.Get(ctx, "01VAULT", "r")
-	if err != nil || sizes.Database != 200 || source.sizesReads != 2 {
-		t.Errorf("after 31.5 s: sizes %+v (%v), read %d times", sizes, err, source.sizesReads)
+	snapshot, err = stats.Get(ctx, "01VAULT", "r")
+	if err != nil || snapshot.Sizes.Database != 200 || source.sizesReads != 2 {
+		t.Errorf("after 31.5 s: sizes %+v (%v), read %d times", snapshot.Sizes, err, source.sizesReads)
 	}
 }
 
@@ -70,7 +70,7 @@ func TestStatsCachesCountsPerVaultAndRecipe(t *testing.T) {
 	source := &stubStats{}
 	stats := search.NewStats(source, testsupport.NewClockAt(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
 	for _, key := range [][2]string{{"a", "r"}, {"b", "r"}, {"a", "other"}} {
-		if _, _, err := stats.Get(t.Context(), domain.VaultID(key[0]), key[1]); err != nil {
+		if _, err := stats.Get(t.Context(), domain.VaultID(key[0]), key[1]); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -82,18 +82,18 @@ func TestStatsCachesCountsPerVaultAndRecipe(t *testing.T) {
 func TestStatsDoesNotCacheFailedRead(t *testing.T) {
 	source := &stubStats{err: errors.New("index closed")}
 	stats := search.NewStats(source, testsupport.NewClockAt(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
-	if _, _, err := stats.Get(t.Context(), "v", "r"); !errors.Is(err, source.err) {
+	if _, err := stats.Get(t.Context(), "v", "r"); !errors.Is(err, source.err) {
 		t.Fatalf("got %v", err)
 	}
 	source.err = nil
-	if _, _, err := stats.Get(t.Context(), "v", "r"); err != nil {
+	if _, err := stats.Get(t.Context(), "v", "r"); err != nil {
 		t.Errorf("a read after the failure got %v", err)
 	}
 
 	source = &stubStats{}
 	failing := &failingSizes{stubStats: source}
 	stats = search.NewStats(failing, testsupport.NewClockAt(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
-	if _, _, err := stats.Get(t.Context(), "v", "r"); err == nil {
+	if _, err := stats.Get(t.Context(), "v", "r"); err == nil {
 		t.Error("sizes that cannot be read gave no error")
 	}
 }

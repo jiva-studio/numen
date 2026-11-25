@@ -70,8 +70,12 @@ func newPass(
 	worker := NewWorker(Config{
 		Reading: made.ReadWholeVault,
 		Source:  source,
-		VectorCounts: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
-			return db.Progress.GetProgress(ctx, v.ID, recipe)
+		VectorCounts: func(ctx context.Context, v domain.Vault) (EmbeddingProgress, error) {
+			total, embedded, err := db.Progress.GetProgress(ctx, v.ID, recipe)
+			if err != nil {
+				return EmbeddingProgress{}, err
+			}
+			return EmbeddingProgress{TotalCount: total, EmbeddedCount: embedded}, nil
 		},
 		Events:      events,
 		Quiet:       time.Hour,
@@ -237,7 +241,7 @@ func testBooksThatCouldNotBeReadStayInTheList(t *testing.T, openReading openFunc
 		t.Fatal(err)
 	}
 
-	newPass(made, db, events, nil, "", v).indexTexts(t.Context(), false)
+	newPass(made, db, events, nil, "", v).indexTexts(t.Context())
 
 	pos := findTask(t, events, work.IndexingTexts)
 	if pos == nil {

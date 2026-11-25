@@ -34,13 +34,14 @@ type Page struct {
 // Execute returns searchrun.ErrNotFound for a search that is unknown, expired, removed or of another plugin,
 // and searchrun.ErrInvalidPageToken for a token not of this search.
 func (u *GetSearch) Execute(ctx context.Context, r Read) (Page, error) {
-	record, stopped, err := u.kept.Find(r.Owner, r.ID)
+	handle, err := u.kept.Find(r.Owner, r.ID)
 	if err != nil {
 		return Page{}, err
 	}
 	u.kept.Touch(r.ID)
+	record := handle.Record
 	if r.Wait > 0 && record.IsRunning {
-		if record, err = u.wait(ctx, r, stopped); err != nil {
+		if record, err = u.wait(ctx, r, handle.StopChannel); err != nil {
 			return Page{}, err
 		}
 	}

@@ -14,7 +14,7 @@ type DeleteSearch struct {
 
 // Execute returns searchrun.ErrNotFound for a search that is unknown, expired, removed or of another plugin.
 func (u *DeleteSearch) Execute(_ context.Context, owner string, id searchrun.ID) error {
-	if _, _, err := u.kept.Find(owner, id); err != nil {
+	if _, err := u.kept.Find(owner, id); err != nil {
 		return err
 	}
 	remaining := 0
