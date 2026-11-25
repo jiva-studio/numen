@@ -209,21 +209,26 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 		return err
 	}
 	defer closeAndJoin(&err, root)
-	switch _, err := root.Lstat(name); {
-	case err == nil:
-		return fmt.Errorf("bring %s: %w", path, vault.ErrAlreadyExists)
-	case !errors.Is(err, fs.ErrNotExist):
+	if err := checkImportTarget(root, name, path); err != nil {
 		return err
 	}
 	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
-	return streamReplace(ctx, root, name, content)
+	_, err = atomicfile.ReplaceUnder(ctx, root, name, content, newFileMode, func(rename func() error) error {
+		w.lock.write.Lock()
+		defer w.lock.write.Unlock()
+		if err := checkImportTarget(root, name, path); err != nil {
+			return err
+		}
+		return rename()
+	})
+	return err
 }
 
 // Replace streams content over the file at path, whole or not at all, and keeps the permissions of the file. A path
 // with no file returns fs.ErrNotExist.
-func (w *VaultWriter) Replace(ctx context.Context, path string, content io.Reader) (err error) {
+func (w *VaultWriter) Replace(ctx context.Context, path string, content io.Reader, baseline domain.FileStat) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -243,8 +248,32 @@ func (w *VaultWriter) Replace(ctx context.Context, path string, content io.Reade
 	if info.IsDir() {
 		return fmt.Errorf("replace %s: it is a directory", path)
 	}
-	_, err = atomicfile.Replace(ctx, root, name, content, info.Mode().Perm())
+	_, err = atomicfile.ReplaceUnder(ctx, root, name, content, info.Mode().Perm(), func(rename func() error) error {
+		w.lock.write.Lock()
+		defer w.lock.write.Unlock()
+		if err := checkReplaceBaseline(root, name, path, baseline); err != nil {
+			return err
+		}
+		return rename()
+	})
 	return err
+}
+
+func checkReplaceBaseline(root *os.Root, name, path string, baseline domain.FileStat) error {
+	if baseline.IsZero() {
+		return nil
+	}
+	stale, err := isStale(root, name, baseline)
+	if errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("replace %s: %w", path, edit.ErrStale)
+	}
+	if err != nil {
+		return err
+	}
+	if stale {
+		return fmt.Errorf("replace %s: %w", path, edit.ErrStale)
+	}
+	return nil
 }
 
 func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) error {
@@ -330,4 +359,15 @@ func (w VaultWriters) GetVersion(v domain.Vault) uint64 {
 		return 0
 	}
 	return w.Locks.getLock(v.Path).version.Load()
+}
+
+func checkImportTarget(root *os.Root, name, path string) error {
+	_, err := root.Lstat(name)
+	switch {
+	case err == nil:
+		return fmt.Errorf("bring %s: %w", path, vault.ErrAlreadyExists)
+	case !errors.Is(err, fs.ErrNotExist):
+		return err
+	}
+	return nil
 }

@@ -165,3 +165,19 @@ func ignoreSyncError(err error) error {
 	}
 	return err
 }
+
+// ReplaceUnder is Replace with the rename handed to commit, which runs it, or does not, as one step with a check of
+// the target: the content is written to the temporary file first, and commit decides whether the rename happens. An
+// error of commit, or of the rename it runs, leaves the target as it was and removes the temporary file.
+func ReplaceUnder(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode, commit func(rename func() error) error) (Stat, error) {
+	return replace(
+		root,
+		target,
+		from,
+		mode,
+		func(from, to string) error {
+			return commit(func() error { return Rename(ctx, root, from, to) })
+		},
+		(*os.File).Sync,
+	)
+}

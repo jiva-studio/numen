@@ -49,7 +49,7 @@ func (u *PlaceStaged) Execute(ctx context.Context, v domain.Vault, in PlaceInput
 		return domain.FileStat{}, err
 	}
 	if in.Baseline != nil {
-		err = folders.Replace(ctx, in.Path, in.Staged)
+		err = folders.Replace(ctx, in.Path, in.Staged, *in.Baseline)
 	} else {
 		err = folders.Import(ctx, in.Path, in.Staged)
 	}

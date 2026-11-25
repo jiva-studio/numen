@@ -17,8 +17,9 @@ type NoteWriter interface {
 type FolderWriter interface {
 	MakeFolder(ctx context.Context, path string) error
 	Import(ctx context.Context, path string, content io.Reader) error
-	// Replace streams content over the file at path, whole or not at all.
-	Replace(ctx context.Context, path string, content io.Reader) error
+	// Replace streams content over the file at path, whole or not at all. A baseline that is not the zero stat must have the
+	// hash of the file at the rename, or the file is left as it is and edit.ErrStale is returned.
+	Replace(ctx context.Context, path string, content io.Reader, baseline domain.FileStat) error
 }
 
 type FileMover interface {
