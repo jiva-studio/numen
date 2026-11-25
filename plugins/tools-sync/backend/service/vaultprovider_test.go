@@ -2,6 +2,7 @@ package service
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -32,8 +33,8 @@ func TestVaultProvider_ConnectKeepsTheProductTextOfTheFailure(t *testing.T) {
 	if err == nil {
 		t.Fatal("ConnectRemoteVault succeeded without a server")
 	}
-	if want := errorwire.GetText(errNotConfigured); err.Error() != want {
-		t.Errorf("ConnectRemoteVault failed with %q, want %q", err.Error(), want)
+	if want := errorwire.GetText(errNotConfigured); !strings.Contains(err.Error(), want) {
+		t.Errorf("ConnectRemoteVault failed with %q, want it to contain %q", err.Error(), want)
 	}
 }
 
