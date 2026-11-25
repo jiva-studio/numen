@@ -28,6 +28,7 @@ const (
 	textWentBack       = "The sync server went back to an earlier state"
 	textEpochUntrusted = "The restore announcement of the sync server is not signed by a known root key and was ignored"
 	textDiverged       = "The sync server holds another history than this computer"
+	textEpochMismatch  = "The sync server reported a restore that its signed announcement does not confirm, so nothing was changed"
 	textOtherIdentity  = "This vault was synced with another identity, so it is synced again with the current one."
 )
 

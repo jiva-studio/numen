@@ -345,3 +345,41 @@ func TestRecoverVault_SkipsRevisionWithBadSignature(t *testing.T) {
 		t.Errorf("note = %q (there: %v), want tea from the honest server", text, isThere)
 	}
 }
+
+func TestRecoverVault_RefusesAnEpochIdThatTheSignedAnnouncementDoesNotName(t *testing.T) {
+	t.Parallel()
+	p := newFirst(t)
+	p.a.Connect(t, source)
+	if _, err := p.server.Fake.AnnounceRestoreEpoch(); err != nil {
+		t.Fatal(err)
+	}
+	claimed := p.a.RestoreDeps()
+	claimed.Revisions = synctest.EpochClaim{Revisions: claimed.Revisions, ID: bytes.Repeat([]byte{0xAB}, 16)}
+
+	err := usecase.NewRecoverVault(claimed).Execute(t.Context(), source)
+
+	if !errors.Is(err, usecase.ErrEpochUntrusted) {
+		t.Errorf("Execute = %v, want ErrEpochUntrusted", err)
+	}
+	if got := p.a.Link(t, source).RestoreEpochID; len(got) != 0 {
+		t.Errorf("epoch id of the link = %x, want none stored from an unsigned claim", got)
+	}
+}
+
+func TestRecoverVault_StoresTheEpochIdOfTheSignedAnnouncement(t *testing.T) {
+	t.Parallel()
+	p := newFirst(t)
+	p.a.Connect(t, source)
+	announced, err := p.server.Fake.AnnounceRestoreEpoch()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := usecase.NewRecoverVault(p.a.RestoreDeps()).Execute(t.Context(), source); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := p.a.Link(t, source).RestoreEpochID; !bytes.Equal(got, announced) {
+		t.Errorf("epoch id of the link = %x, want %x of the announcement", got, announced)
+	}
+}

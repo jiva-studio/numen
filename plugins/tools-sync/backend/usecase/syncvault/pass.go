@@ -33,6 +33,7 @@ type pass struct {
 	clashes      []string
 	unverified   int
 	verdict      restore.Verdict
+	epochID      []byte
 	isSent       bool
 	isStaleEpoch bool
 }
@@ -77,6 +78,7 @@ func (p *pass) pull(ctx context.Context) error {
 	p.resolved += len(result.Resolved)
 	p.unverified = result.Unverified
 	p.verdict = result.Verdict
+	p.epochID = result.EpochID
 	return nil
 }
 

@@ -1,6 +1,7 @@
 package syncvault
 
 import (
+	"bytes"
 	"context"
 	"errors"
 
@@ -18,9 +19,19 @@ func (p *pass) pullOrRecover(ctx context.Context) (bool, error) {
 	case p.verdict == restore.WentBack:
 		return false, p.use.reports.raise(ctx, getKey(keyWentBack, p.id), textWentBack)
 	case p.verdict == restore.Changed:
+		return p.recoverIfAnnounced(ctx)
+	}
+	return true, p.use.reports.clearRestore(ctx, p.id)
+}
+
+// recoverIfAnnounced runs the recovery only when the signed announcement of the server names the epoch id the changes carry:
+// the id in the changes is not signed, so a server could claim a restore that never happened.
+func (p *pass) recoverIfAnnounced(ctx context.Context) (bool, error) {
+	epoch, _, err := p.use.deps.Restore.Epochs.GetRestoreEpoch(ctx)
+	if err != nil || (epoch != nil && bytes.Equal(epoch.GetId(), p.epochID)) {
 		return p.recover(ctx)
 	}
-	return true, p.use.reports.health.Clear(ctx, getKey(keyWentBack, p.id))
+	return false, p.use.reports.raise(ctx, getKey(keyEpochUntrusted, p.id), textEpochMismatch)
 }
 
 func (p *pass) recover(ctx context.Context) (bool, error) {

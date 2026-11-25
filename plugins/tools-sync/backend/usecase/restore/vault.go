@@ -64,6 +64,9 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if err != nil {
 		return err
 	}
+	if err := u.checkEpoch(ctx, found.epochID); err != nil {
+		return err
+	}
 	if err := u.markMissingBlobs(ctx, remote, found, records); err != nil {
 		return err
 	}
@@ -294,4 +297,20 @@ func (r *recovery) getRecord(fileID []byte) transfer.FileRecord {
 		return r.records[at]
 	}
 	return transfer.NewEmptyRecord()
+}
+
+// checkEpoch requires that the epoch id the changes carry is the one of the signed announcement, so the link never
+// stores an id nobody signed.
+func (u *RecoverVault) checkEpoch(ctx context.Context, claimed []byte) error {
+	if len(claimed) == 0 {
+		return nil
+	}
+	epoch, _, err := u.deps.Epochs.GetRestoreEpoch(ctx)
+	if err != nil {
+		return err
+	}
+	if epoch == nil || !bytes.Equal(epoch.GetId(), claimed) {
+		return fmt.Errorf("%w: the epoch id of the changes is not the one of the announcement", ErrEpochUntrusted)
+	}
+	return nil
 }
