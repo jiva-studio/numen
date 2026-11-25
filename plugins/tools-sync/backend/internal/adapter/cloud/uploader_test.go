@@ -40,7 +40,7 @@ func TestUploader_AnotherUploadGetsItsPartURLWhileTheRequestOfOneIsOpen(t *testi
 		<-release
 	})
 	go func() {
-		if err := uploader.PutPart(t.Context(), first, 1, []byte("part")); err != nil {
+		if err := uploader.PutPart(t.Context(), first, 1, make([]byte, first.PartSize)); err != nil {
 			t.Error(err)
 		}
 	}()
@@ -50,7 +50,7 @@ func TestUploader_AnotherUploadGetsItsPartURLWhileTheRequestOfOneIsOpen(t *testi
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		if err := uploader.PutPart(t.Context(), second, 1, []byte("part")); err != nil {
+		if err := uploader.PutPart(t.Context(), second, 1, make([]byte, second.PartSize)); err != nil {
 			t.Error(err)
 		}
 	}()
@@ -65,7 +65,7 @@ func TestUploader_AnotherUploadGetsItsPartURLWhileTheRequestOfOneIsOpen(t *testi
 func TestUploader_AsksForPartURLsAgainAfterTheUploadIsAborted(t *testing.T) {
 	c, server, uploader, vault := newMultipartWorld(t)
 	up := startMultipart(t, c, uploader, vault)
-	if err := uploader.PutPart(t.Context(), up, 1, []byte("part")); err != nil {
+	if err := uploader.PutPart(t.Context(), up, 1, make([]byte, up.PartSize)); err != nil {
 		t.Fatal(err)
 	}
 	asked := server.Fake.CountCalls(syncv1connect.BlobServiceGetPartUrlsProcedure)
@@ -73,8 +73,8 @@ func TestUploader_AsksForPartURLsAgainAfterTheUploadIsAborted(t *testing.T) {
 	if err := uploader.Abort(t.Context(), up); err != nil {
 		t.Fatal(err)
 	}
-	if err := uploader.PutPart(t.Context(), up, 1, []byte("part")); err != nil {
-		t.Fatal(err)
+	if err := uploader.PutPart(t.Context(), up, 1, make([]byte, up.PartSize)); err == nil {
+		t.Fatal("a part of an aborted upload was stored")
 	}
 
 	if got := server.Fake.CountCalls(syncv1connect.BlobServiceGetPartUrlsProcedure) - asked; got != 1 {
