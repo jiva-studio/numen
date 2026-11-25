@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/dropdownload"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"

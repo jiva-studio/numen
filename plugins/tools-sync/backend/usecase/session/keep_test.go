@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"

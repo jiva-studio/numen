@@ -18,8 +18,8 @@ import { getDeviceFingerprint } from './link.js'
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
 import type { Scenario } from './scenario.js'
 
-const PLUGIN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../plugins/tools-sync')
-const BINARY = path.join(PLUGIN, 'bin', 'fakesync')
+const SYNCSERVER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tools/syncserver')
+const BINARY = path.join(SYNCSERVER, 'bin', 'fakesync')
 const SYNC_PLUGIN = 'md.numen.tools.sync'
 /** The server lets a session live this long, so the plugin signs in again 2 seconds after it signed in. */
 const SESSION_SECONDS = 62

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"

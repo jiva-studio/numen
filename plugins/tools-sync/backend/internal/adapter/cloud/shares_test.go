@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func TestCloud_SignsInAgainOnceForEachCallOfTheShareService(t *testing.T) {

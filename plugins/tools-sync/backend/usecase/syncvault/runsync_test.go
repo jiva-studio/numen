@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"

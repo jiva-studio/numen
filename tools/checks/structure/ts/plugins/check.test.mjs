@@ -498,14 +498,14 @@ test('a use case imports the pure shared libraries but not the clients of the sy
       `${shared}/syncprotocol/gen/numen/sync/v1`,
       `${shared}/syncprotocol/client`,
       `${shared}/syncprotocol/gen/numen/sync/v1/syncv1connect`,
-      `${shared}/syncprotocol/fakeserver`,
+      `github.com/jiva-studio/numen/tools/syncserver/fakeserver`,
       `${shared}/onnx`,
       `${own}/ports`,
     ]),
     [
       `use case usecase/cards imports ${shared}/syncprotocol/client`,
       `use case usecase/cards imports ${shared}/syncprotocol/gen/numen/sync/v1/syncv1connect`,
-      `use case usecase/cards imports ${shared}/syncprotocol/fakeserver`,
+      `use case usecase/cards imports github.com/jiva-studio/numen/tools/syncserver/fakeserver`,
       `use case usecase/cards imports ${shared}/onnx`,
     ],
   )

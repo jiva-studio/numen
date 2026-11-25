@@ -564,7 +564,7 @@ app_desktop_acceptance: lib_workbench_build app_desktop_editor_build app_desktop
 	cd $(DESKTOP) && go build -tags numen_debug -ldflags "-X 'github.com/jiva-studio/numen/apps/desktop/internal/version.version=1.0.0 (build 1000, commit acceptance)'" -o numen-debug ./cmd/numen
 	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
 	cd plugins/connections-llm && go build -o bin/fakeopenai ./backend/cmd/fakeopenai
-	cd plugins/tools-sync && go build -o bin/fakesync ./backend/cmd/fakesync
+	cd tools/syncserver && go build -o bin/fakesync ./cmd/fakesync
 	cd $(TESTS)/acceptance/desktop && npm run acceptance:test
 
 .PHONY: app_desktop_acceptance_lint

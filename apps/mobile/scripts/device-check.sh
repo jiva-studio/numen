@@ -6,7 +6,7 @@
 # fails the run with its name.
 #
 # Needs: ANDROID_SDK_ROOT, JAVA_HOME, adb and emulator on PATH, the AVD numen-arm64, node with playwright,
-# and a fakesync binary (plugins/tools-sync/backend/cmd/fakesync) for the sync server.
+# and a fakesync binary (tools/syncserver/cmd/fakesync) for the sync server.
 set -euo pipefail
 
 AVD="${AVD:-numen-arm64}"

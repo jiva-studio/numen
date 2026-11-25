@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 // Server is the fake sync server of the protocol library on a loopback port, behind a switch that makes it

@@ -10,7 +10,7 @@
     "libs/shared/licensing": [],
     "libs/shared/onnx": [],
     "libs/shared/rerank": [],
-    "libs/shared/syncprotocol": ["libs/shared/identity"],
+    "libs/shared/syncprotocol": [],
     "libs/shared/tokenizer": []
   },
   "packages": {

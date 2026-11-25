@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
