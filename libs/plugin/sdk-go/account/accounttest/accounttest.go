@@ -107,6 +107,22 @@ func (f *Fake) StartRestore(words []string) {
 	f.pending = restore
 }
 
+// StartRestoreAsCore is StartRestore for a host that completes the restore as the core does: the recovery key revokes every other
+// device of the chain and starts a new epoch of keys for this device alone.
+func (f *Fake) StartRestoreAsCore(words []string) {
+	f.t.Helper()
+	restore := newPendingRestore(f.t, words)
+	restore.revokeOthers = true
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.record = nil
+	f.pending = restore
+}
+
+// GetAccountKeys returns the account keys the host holds now, with the history of the earlier epochs. A test keeps them to check what a
+// device that was revoked later could still open.
+func (f *Fake) GetAccountKeys() (identity.AccountKeys, error) { return f.readAccountKeys() }
+
 // Fail makes every call fail with err, which is not account.ErrNoIdentity. A nil err ends the failure.
 func (f *Fake) Fail(err error) {
 	f.mu.Lock()

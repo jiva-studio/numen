@@ -8,6 +8,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"maps"
+	"slices"
 
 	"golang.org/x/crypto/chacha20poly1305"
 )
@@ -57,11 +59,24 @@ func SealToAccountBox(random io.Reader, box [32]byte, pluginID string, context, 
 	return aead.Seal(enc, nonce, plain, nil), nil
 }
 
+// OpenSealedBox opens a box sealed to the account box key of any epoch the keys hold: the latest one, then each earlier one.
 func (a AccountKeys) OpenSealedBox(pluginID string, context, sealed []byte) ([]byte, error) {
 	if len(sealed) < hpkeEncSize+chacha20poly1305.Overhead {
 		return nil, ErrUnwrap
 	}
-	private, err := ecdh.X25519().NewPrivateKey(a.box[:])
+	if plain, err := openSealedBoxWith(a.box, pluginID, context, sealed); err == nil {
+		return plain, nil
+	}
+	for _, epoch := range slices.Backward(slices.Sorted(maps.Keys(a.earlierBox))) {
+		if plain, err := openSealedBoxWith(a.earlierBox[epoch], pluginID, context, sealed); err == nil {
+			return plain, nil
+		}
+	}
+	return nil, ErrUnwrap
+}
+
+func openSealedBoxWith(box [32]byte, pluginID string, context, sealed []byte) ([]byte, error) {
+	private, err := ecdh.X25519().NewPrivateKey(box[:])
 	if err != nil {
 		return nil, ErrUnwrap
 	}

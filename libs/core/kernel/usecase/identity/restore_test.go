@@ -1,4 +1,11 @@
-package identity_test
+	openedBySecond, err := second.open.Execute(t.Context(), syncPlugin, []byte(sealContext), sealedByFirst)
+	if err != nil || string(openedBySecond) != "catalog of the first" {
+		t.Errorf("the second device opened %q with error %v, want the text of the first", openedBySecond, err)
+	}
+	if openedByFirst, err := first.open.Execute(t.Context(), syncPlugin, []byte(sealContext), sealedBySecond); err == nil {
+		t.Errorf("the revoked first device opened %q of the second", openedByFirst)
+	}if !chain.IsExtensionOf(firstChain) || len(devices) != 1 || !bytes.Equal(devices[0].Public.Sign, pending.DeviceSignKey) {
+		t.Errorf("devices = %d, want the chain of the first device extended by the pending device, which is the only active one", len(devices))package identity_test
 
 import (
 	"bytes"
@@ -285,7 +292,7 @@ func TestCompleteRestore_JoinsTheAccountOfAnotherDeviceAndKeepsItsKeys(t *testin
 	}
 }
 
-func TestCompleteRestore_BothDevicesHaveTheSameKeysAfterTheFirstAppliesTheChain(t *testing.T) {
+func TestCompleteRestore_TheRestoredDeviceOpensWhatTheRevokedDeviceSealedAndNotTheOtherWayRound(t *testing.T) {
 	t.Parallel()
 	first := newRestoreKit(t, "Desktop")
 	if _, err := first.create.Execute(t.Context(), getLegalWords()); err != nil {

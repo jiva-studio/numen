@@ -20,8 +20,9 @@ const maxSealPlain = 32 << 10
 var errDataSize = errors.New("the data to seal has at most 32 KiB")
 
 type pendingRestore struct {
-	recovery identity.RecoveryKey
-	device   identity.DeviceKey
+	recovery     identity.RecoveryKey
+	device       identity.DeviceKey
+	revokeOthers bool
 }
 
 func newPendingRestore(t *testing.T, words []string) *pendingRestore {
@@ -170,7 +171,31 @@ func joinRestore(restore *pendingRestore, chainBytes []byte, now time.Time) (fak
 	if err != nil {
 		return fakeIdentity{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
+	if restore.revokeOthers {
+		return revokeOthersOf(restore, chain, keys, now)
+	}
 	return appendDevice(restore, chain, keys, now)
+}
+
+// revokeOthersOf is the restore of the core: the device joins, and the recovery key revokes every other device and starts a new epoch of keys.
+func revokeOthersOf(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (fakeIdentity, error) {
+	history, err := chain.OpenKeyHistory(keys)
+	if err != nil {
+		return fakeIdentity{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
+	}
+	joined, err := chain.AppendDevice(restore.recovery, restore.device.Public(), "Test device", now)
+	if err != nil {
+		return fakeIdentity{}, connect.NewError(connect.CodeInternal, err)
+	}
+	rotated, fresh, err := joined.RevokeOthers(restore.recovery, history, restore.device.SignerKey(), rand.Reader, now)
+	if err != nil {
+		return fakeIdentity{}, connect.NewError(connect.CodeInternal, err)
+	}
+	wrapped, ok := rotated.GetWrappedFor(restore.device.SignerKey())
+	if !ok {
+		return fakeIdentity{}, connect.NewError(connect.CodeInternal, errors.New("the rotation holds no keys for the device"))
+	}
+	return fakeIdentity{Record: identity.Record{Device: restore.device, Wrapped: wrapped}, Chain: rotated, root: restore.recovery, keys: fresh}, nil
 }
 
 func appendDevice(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (fakeIdentity, error) {

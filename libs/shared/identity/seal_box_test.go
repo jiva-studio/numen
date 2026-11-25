@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
@@ -183,4 +184,54 @@ func TestSealToAccountBox_RefusesAShortRandomReader(t *testing.T) {
 	if err == nil {
 		t.Error("a reader of 31 bytes sealed a box")
 	}
+}
+
+func TestOpenSealedBox_OpensABoxSealedToAnEarlierEpoch(t *testing.T) {
+	t.Parallel()
+	m := newTeam(t)
+	sealedAtEpoch0 := sealToBox(t, m.account.keys, sealPluginID, []byte(boxContext), []byte("epoch 0 share key"))
+	revoked, current, err := revokeForSeal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sealedAtEpoch1 := sealToBox(t, current, sealPluginID, []byte(boxContext), []byte("epoch 1 share key"))
+	wrapped, ok := revoked.GetWrappedFor(m.first.Public().Sign)
+	if !ok {
+		t.Fatal("the remaining device has no keys of the new epoch")
+	}
+	unwrapped, err := m.first.UnwrapAccountKeys(wrapped)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reloaded, err := revoked.OpenKeyHistory(unwrapped)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for name, keys := range map[string]identity.AccountKeys{"the device that revoked": current, "a device that reloaded the chain": reloaded} {
+		for want, sealed := range map[string][]byte{"epoch 0 share key": sealedAtEpoch0, "epoch 1 share key": sealedAtEpoch1} {
+			got, err := keys.OpenSealedBox(sealPluginID, []byte(boxContext), sealed)
+			if err != nil || string(got) != want {
+				t.Errorf("%s opened %q with error %v, want %q", name, got, err, want)
+			}
+		}
+	}
+}
+
+func TestOpenSealedBox_RefusesABoxOfAnUnrelatedAccountAfterARevoke(t *testing.T) {
+	t.Parallel()
+	m := newTeam(t)
+	_, current, err := revokeForSeal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	foreign := sealToBox(t, newAccount(t), sealPluginID, []byte(boxContext), []byte("x"))
+
+	if _, err := current.OpenSealedBox(sealPluginID, []byte(boxContext), foreign); !errors.Is(err, identity.ErrUnwrap) {
+		t.Errorf("error = %v, want ErrUnwrap", err)
+	}
+}
+
+func revokeForSeal(m team) (identity.Chain, identity.AccountKeys, error) {
+	return m.chain.RevokeDevice(m.first, m.firstKeys, m.second.Public().Sign, rand.Reader, epoch().Add(time.Hour))
 }

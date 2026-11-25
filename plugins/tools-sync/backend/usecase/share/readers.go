@@ -92,6 +92,40 @@ func (u *AddReader) prepareAdd(root domainshare.Root, chain identity.Chain, in A
 	}, nil
 }
 
+// RefreshReader gives a share the current chain of a reader whose account changed its keys.
+type RefreshReader struct{ base }
+
+// NewRefreshReader returns the use case over the dependencies.
+func NewRefreshReader(deps Deps) *RefreshReader { return &RefreshReader{base: base{deps: deps}} }
+
+// Execute replaces the chain the share holds of the reader whose account the code names with the chain of the code, and starts the next
+// epoch sealed to the account box key of each reader as the share holds it now, so a device that the reader revoked, or that was not
+// among the devices of the restore, cannot open the new key. The code must hold a chain that extends the one the share holds, or
+// replaces it at a fork (ErrStaleReaderCode otherwise), of a reader the folder has (ErrUnknownReader).
+func (u *RefreshReader) Execute(ctx context.Context, id domain.VaultID, folder, code string) error {
+	chain, err := domainshare.ParseReaderCode(code)
+	if err != nil {
+		return err
+	}
+	at := ref{vault: id, folder: folder, missing: domainshare.ErrNotShared}
+	_, err = u.change(ctx, at, func(root domainshare.Root) (draft, error) {
+		reader, isFound := root.FindReaderByFingerprint(chain.Root().Fingerprint().String())
+		if !isFound {
+			return draft{}, domainshare.ErrUnknownReader
+		}
+		kept, err := identity.ParseChain(reader.Chain)
+		if err != nil {
+			return draft{}, err
+		}
+		if !(chain.Len() > kept.Len() && chain.IsExtensionOf(kept)) && !chain.IsPreferredOver(kept) {
+			return draft{}, domainshare.ErrStaleReaderCode
+		}
+		reader.Chain = chain.Bytes()
+		return u.newRotation(root, nil, domainshare.SetReader(root.Readers, reader))
+	})
+	return err
+}
+
 type RemoveReader struct{ base }
 
 // NewRemoveReader returns the use case over the dependencies.

@@ -106,11 +106,12 @@ func (d DeviceKey) signEntry(message []byte) []byte { return signWith(d.signSeed
 
 // AccountKeys are random and the same on every device of the account.
 type AccountKeys struct {
-	box       [32]byte
-	kek       [32]byte
-	boxPublic [32]byte
-	epoch     uint32
-	earlier   map[uint32][32]byte
+	box        [32]byte
+	kek        [32]byte
+	boxPublic  [32]byte
+	epoch      uint32
+	earlier    map[uint32][32]byte
+	earlierBox map[uint32][32]byte
 }
 
 func NewAccountKeys(random io.Reader) (AccountKeys, error) {
