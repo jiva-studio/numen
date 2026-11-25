@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { DownloadProgress } from '@numen/core-client'
 import { asValue, type Result } from '@numen/result'
-import { createDownloads, PROGRESS_INTERVAL_MS, type DownloadProgress } from './createDownloads'
+import { createDownloads, PROGRESS_INTERVAL_MS } from './createDownloads'
 
 type Answer = Result<DownloadProgress>
 type Reader = (path: string) => Promise<Answer>
