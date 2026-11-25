@@ -76,12 +76,12 @@ func getStorePagePolicy(t *testing.T, plugins PluginServices) string {
 	return resp.Header.Get("Content-Security-Policy")
 }
 
-func TestTheWindowPermitsTheCameraOfItsOwnPagesAndNoMicrophone(t *testing.T) {
+func TestTheWindowPermitsTheCameraAndTheMicrophoneOfItsOwnPages(t *testing.T) {
 	services := newBareServices()
 
 	response := getResponse(t, services.NewHandler(http.NotFoundHandler()), "/").Header().Get("Permissions-Policy")
 
-	if response != "camera=(self), microphone=()" {
+	if response != "camera=(self), microphone=(self)" {
 		t.Errorf("the permissions policy reads %q", response)
 	}
 }

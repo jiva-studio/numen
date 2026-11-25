@@ -8,13 +8,13 @@ import (
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 )
 
-func TestTheMainWindowAllowsTheCameraAndDeniesTheMicrophone(t *testing.T) {
+func TestTheMainWindowAllowsTheCameraAndTheMicrophone(t *testing.T) {
 	opened, _ := windowOn(t)
 
 	got := getMainWindowOptions(opened).Permissions
 
-	if got[application.PermissionCamera] != application.PermissionAllow || got[application.PermissionMicrophone] != application.PermissionDeny {
-		t.Errorf("permissions = %v, want the camera allowed and the microphone denied", got)
+	if got[application.PermissionCamera] != application.PermissionAllow || got[application.PermissionMicrophone] != application.PermissionAllow {
+		t.Errorf("permissions = %v, want the camera and the microphone allowed", got)
 	}
 }
 

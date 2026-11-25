@@ -51,3 +51,6 @@ func GetPictureOnlyPolicy() string {
 
 // PermissionsPolicy lets the page of a window use the camera and no frame use it, and gives no page the microphone.
 const PermissionsPolicy = "camera=(self), microphone=()"
+
+// EditorPermissionsPolicy lets the page of the editor window use the camera and the microphone, and no frame use either.
+const EditorPermissionsPolicy = "camera=(self), microphone=(self)"

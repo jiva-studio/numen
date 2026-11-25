@@ -99,7 +99,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 	played := s.window.Media.playing.Load().getPlayOrigins()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
-		w.Header().Set("Permissions-Policy", csp.PermissionsPolicy)
+		w.Header().Set("Permissions-Policy", csp.EditorPermissionsPolicy)
 		// A window being taken away answers nothing.
 		if s.window.Gate.IsClosed() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)

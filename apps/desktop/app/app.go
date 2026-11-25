@@ -236,15 +236,15 @@ func getMainWindowOptions(opened *editor.Installation) application.WebviewWindow
 		Height:         860,
 		URL:            "/",
 		EnableFileDrop: true,
-		Permissions:    getMediaPermissions(application.PermissionAllow),
+		Permissions:    getMediaPermissions(application.PermissionAllow, application.PermissionAllow),
 	})
 }
 
-// getMediaPermissions denies the microphone and gives the camera the answer: the window that scans a QR code allows it.
-func getMediaPermissions(camera application.Permission) map[application.PermissionType]application.Permission {
+// getMediaPermissions gives the camera and the microphone their answers: the main window allows both, to scan a QR code and to record audio.
+func getMediaPermissions(camera, microphone application.Permission) map[application.PermissionType]application.Permission {
 	return map[application.PermissionType]application.Permission{
 		application.PermissionCamera:     camera,
-		application.PermissionMicrophone: application.PermissionDeny,
+		application.PermissionMicrophone: microphone,
 	}
 }
 
@@ -275,7 +275,7 @@ func getSecondaryWindowOptions(opened *editor.Installation, tab windowdomain.Det
 		Height:         secondaryWindowHeight,
 		URL:            getSecondaryWindowURL(tab),
 		EnableFileDrop: true,
-		Permissions:    getMediaPermissions(application.PermissionDeny),
+		Permissions:    getMediaPermissions(application.PermissionDeny, application.PermissionDeny),
 	})
 	if tab.Width > 0 && tab.Height > 0 {
 		opts.Width = tab.Width
