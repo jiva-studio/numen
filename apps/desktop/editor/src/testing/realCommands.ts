@@ -22,6 +22,7 @@ import {
 } from '@numen/plugin-loader'
 import {
   createCommandDeps,
+  createPickerSession,
   createSearchRequests,
   createWindowPalette,
   runSupport,
@@ -47,7 +48,7 @@ import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/feature
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/ui/words'
 import { createNoteWriter } from '@/entities/note'
-import { createVaultListReader } from '@/entities/vault'
+import { createVaultListReader, useCloudVaults } from '@/entities/vault'
 import { createAppCommands } from './appCommands'
 import { createAnsweredApi } from './coreAnswers'
 
@@ -318,6 +319,11 @@ export function createRealWindow(parts: RealWindowParts) {
       vaults: {
         vaults: api.vault.vaults,
         clearTrash: api.vault.file.emptyTrash,
+        cloud: {
+          known: useCloudVaults(api.vault.remoteVaults),
+          remote: api.vault.remoteVaults,
+          ask: createPickerSession(),
+        },
         tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
         setVaultName: () => undefined,
         reload: () => undefined,

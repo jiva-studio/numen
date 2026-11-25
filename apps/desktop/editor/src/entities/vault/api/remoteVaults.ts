@@ -42,14 +42,17 @@ export const createRemoteVaults = (client: WindowClients['remoteVaults']): Remot
     }
   },
   suggestPath: (name, folder) =>
-    guard(async () => {
+    guard<VaultPlace>(async () => {
       const answer = await client.suggestVaultPath(name, folder)
       if (!answer.ok) return asFailed(answer)
-      const { folder, path, isTaken } = answer.value
-      return { ok: true, value: { folder, path, isTaken } }
+      const place = answer.value
+      return {
+        ok: true,
+        value: { folder: place.folder, path: place.path, isTaken: place.isTaken },
+      }
     }),
   open: (remoteId, path) =>
-    guard(async () => {
+    guard<string>(async () => {
       const answer = await client.openRemoteVault(remoteId, path)
       if (!answer.ok) return asFailed(answer)
       return { ok: true, value: answer.value }

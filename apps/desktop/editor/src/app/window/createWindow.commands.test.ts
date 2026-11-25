@@ -315,6 +315,7 @@ describe('the parts of the window wired together', () => {
       windowSettings: base.windowSettings,
       getTarget: base.getTarget,
       appCommands: base.appCommands,
+      picker: base.picker,
     })
     const flushDisp = plugins.pluginHost.contextHost.vault
       .getBuffers()
