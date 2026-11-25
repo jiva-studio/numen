@@ -59,7 +59,7 @@ func openTwoVaults(t *testing.T) *showing {
 
 type openTestWindow func(
 	container.Config, *container.PluginExecution, *container.PluginPreferences, *container.PluginEndpoints,
-	*container.Resources, context.Context, container.WindowOpening,
+	*container.Resources, context.Context, container.WindowRequest,
 ) (*editor.Installation, error)
 
 func openTwoVaultsWith(t *testing.T, open openTestWindow) *showing {
@@ -74,7 +74,7 @@ func openTwoVaultsWith(t *testing.T, open openTestWindow) *showing {
 	first := newListedVault(t, cfg, "one", map[string]string{entropy: noteNamed("Entropy")})
 	second := newListedVault(t, cfg, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
 
-	installation, err := open(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowOpening{Named: "one", Out: os.Stderr})
+	installation, err := open(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowRequest{Named: "one", Out: os.Stderr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -738,7 +738,7 @@ func openInstallation(t *testing.T) (*editor.Installation, *index.DB) {
 	}
 
 	index := openWindowIndex(t, cfg)
-	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowOpening{Named: "one", Out: io.Discard})
+	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowRequest{Named: "one", Out: io.Discard})
 	if err != nil {
 		t.Fatal(err)
 	}

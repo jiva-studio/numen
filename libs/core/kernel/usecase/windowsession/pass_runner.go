@@ -21,7 +21,7 @@ type PassRunner struct {
 	diag       *Diagnostics
 	closing    <-chan struct{}
 	newSession func(domain.Vault) IndexSession
-	reporter   ChangeReporting
+	reporter   ChangeSink
 	passes     VaultPasses
 	triggers   TriggerSource
 	startFeed  func(ctx context.Context, v domain.Vault) func()
@@ -35,7 +35,7 @@ type PassRunnerConfig struct {
 	Diag       *Diagnostics
 	Closing    <-chan struct{}
 	NewSession func(domain.Vault) IndexSession
-	Reporter   ChangeReporting
+	Reporter   ChangeSink
 	Passes     VaultPasses
 	Triggers   TriggerSource
 	StartFeed  func(ctx context.Context, v domain.Vault) func()
@@ -84,7 +84,7 @@ func (r *PassRunner) build(ctx context.Context, v domain.Vault, rebuild bool, in
 
 func (r *PassRunner) startIndexing(
 	ctx context.Context, v domain.Vault, rebuild bool, indexed IndexSession,
-) (Started, func()) {
+) (StartedPasses, func()) {
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.
 	r.diag.tasks.AddTask(work.Task{ID: work.WalkingNotes, Title: "Indexing the vault"})
@@ -147,9 +147,9 @@ func (r *PassRunner) reportFailure(err error) {
 	r.failures.SetError(err.Error())
 }
 
-// ChangeReporting tells the window, the index and the text versions what the passes behind a vault
+// ChangeSink tells the window, the index and the text versions what the passes behind a vault
 // found changed. ChangeReporter is its implementation.
-type ChangeReporting interface {
+type ChangeSink interface {
 	listenVersions(indexed IndexSession)
 	checkTexts(ctx context.Context, v domain.Vault, paths []string)
 	newChangeReporter(triggers *triggerPasses, checkTexts func(paths []string)) func(paths, assets []string, reload bool)

@@ -199,7 +199,7 @@ func openInstallation(
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	opened, err := cfg.OpenEditor(services.Execution, services.Preferences, services.Endpoints, services.Resources, ctx, container.WindowOpening{Named: vault, Out: os.Stdout, Frame: frame})
+	opened, err := cfg.OpenEditor(services.Execution, services.Preferences, services.Endpoints, services.Resources, ctx, container.WindowRequest{Named: vault, Out: os.Stdout, Frame: frame})
 	if err != nil {
 		return shownInstallation{}, err
 	}

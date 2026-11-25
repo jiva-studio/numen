@@ -30,7 +30,7 @@ var (
 // listenedPlugins is what the listeners read of the set of plugins.
 type listenedPlugins interface {
 	getView() (setView, func())
-	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
+	getKnownPlugin(pluginID string) (manifest.DiscoveredPlugin, bool)
 	getName(pluginID string) string
 	listIDs() []string
 }
@@ -75,12 +75,12 @@ type listenerBinding struct {
 	proxy *portproxy.Proxy
 }
 
-func (l *Listeners) getBindablePlugin(pluginID string) (manifest.Discovered, map[string]any, bool) {
+func (l *Listeners) getBindablePlugin(pluginID string) (manifest.DiscoveredPlugin, map[string]any, bool) {
 	v, release := l.set.getView()
 	defer release()
 	p, ok := v.get(pluginID)
 	if !ok || l.mode.IsClosed() || l.mode.IsSafeMode() || !v.isEnabled(pluginID) {
-		return manifest.Discovered{}, nil, false
+		return manifest.DiscoveredPlugin{}, nil, false
 	}
 	return p, v.getSettings(pluginID), true
 }

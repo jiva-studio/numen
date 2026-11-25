@@ -19,7 +19,7 @@ import (
 
 // Host lists the tools of the host and calls them.
 type Host interface {
-	ListTools(ctx context.Context) (tools.Listing, error)
+	ListTools(ctx context.Context) (tools.ToolList, error)
 	InvokeTool(ctx context.Context, call tools.Call) (*tools.CallResponse, error)
 }
 
@@ -104,7 +104,7 @@ func (a *Aggregator) SyncTools(ctx context.Context) error {
 	return nil
 }
 
-func readDeclarations(listing tools.Listing) (map[string]*sdk.Tool, []string) {
+func readDeclarations(listing tools.ToolList) (map[string]*sdk.Tool, []string) {
 	declared := make(map[string]*sdk.Tool)
 	var sentences []string
 	for _, wireTool := range listing.Tools {

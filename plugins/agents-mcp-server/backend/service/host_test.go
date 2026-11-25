@@ -24,9 +24,9 @@ type standInHost struct {
 	calls   []tools.Call
 }
 
-func (h *standInHost) ListTools(_ context.Context, header http.Header) (tools.Listing, error) {
+func (h *standInHost) ListTools(_ context.Context, header http.Header) (tools.ToolList, error) {
 	h.record(header, nil)
-	return tools.Listing{Tools: []*tools.ToolInfo{{
+	return tools.ToolList{Tools: []*tools.ToolInfo{{
 		Name: "note_read", Title: "Read a note", Effect: tools.ReadOnly,
 		InputSchema: []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
 	}}}, nil

@@ -47,7 +47,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 			t.Errorf("close pipe: %v", err)
 		}
 	})
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, silent, nil
 	})
 
@@ -65,7 +65,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 }
 
 func failLaunchingCounting(launches *int) supervision.Launcher {
-	return func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	return func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		*launches++
 		return nil, nil, errors.New("exec format error")
 	}
@@ -109,7 +109,7 @@ func TestAFailedStartIsListedOnceAndShownWithItsReason(t *testing.T) {
 
 func TestACanceledCallerDoesNotRecordAFailedStart(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("canceled")
 	})
 	ctx, cancel := context.WithCancel(t.Context())

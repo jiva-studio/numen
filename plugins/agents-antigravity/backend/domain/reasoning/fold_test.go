@@ -23,8 +23,8 @@ func TestTheTitleIsSplitIntoNameAndLevel(t *testing.T) {
 	}
 }
 
-func listing() []Listed {
-	return []Listed{
+func listing() []ListedModel {
+	return []ListedModel{
 		{"flash-high", "Flash 3 (High)"},
 		{"flash-medium", "Flash 3 (Medium)"},
 		{"flash-low", "Flash 3 (Low)"},
@@ -58,19 +58,19 @@ func TestModelsListedOncePerLevelFoldIntoOneFamily(t *testing.T) {
 }
 
 func TestTheFamilyNameFallsBackToTheFirstListedName(t *testing.T) {
-	got := GroupFamilies([]Listed{{"alpha", "M (Low)"}, {"beta", "M (High)"}})
+	got := GroupFamilies([]ListedModel{{"alpha", "M (Low)"}, {"beta", "M (High)"}})
 	if got[0].Name != "alpha" || got[0].GetVariant("high") != "beta" {
 		t.Errorf("got %+v", got[0])
 	}
-	mismatched := GroupFamilies([]Listed{{"alpha-low", "M (Low)"}, {"beta-high", "M (High)"}})
+	mismatched := GroupFamilies([]ListedModel{{"alpha-low", "M (Low)"}, {"beta-high", "M (High)"}})
 	if mismatched[0].Name != "alpha-low" {
 		t.Errorf("mismatched prefix family name = %q, want alpha-low", mismatched[0].Name)
 	}
-	emptyPrefix := GroupFamilies([]Listed{{"-low", "M (Low)"}, {"-high", "M (High)"}})
+	emptyPrefix := GroupFamilies([]ListedModel{{"-low", "M (Low)"}, {"-high", "M (High)"}})
 	if emptyPrefix[0].Name != "-low" {
 		t.Errorf("empty prefix family name = %q, want -low", emptyPrefix[0].Name)
 	}
-	unleveled := GroupFamilies([]Listed{{"a", "Plain"}, {"b", "Plain"}})
+	unleveled := GroupFamilies([]ListedModel{{"a", "Plain"}, {"b", "Plain"}})
 	if len(unleveled) != 2 || unleveled[0].Name != "a" || unleveled[1].Name != "b" {
 		t.Errorf("unleveled models folded into %+v, want two separate families", unleveled)
 	}
@@ -126,7 +126,7 @@ func TestLevelHelpers(t *testing.T) {
 }
 
 func TestResolveModel_FamilyWithoutLevelUsesDefaultLevel(t *testing.T) {
-	families := GroupFamilies([]Listed{
+	families := GroupFamilies([]ListedModel{
 		{"gemini-3.8-flash-high", "Gemini 3.8 Flash (High)"},
 		{"gemini-3.8-flash-medium", "Gemini 3.8 Flash (Medium)"},
 		{"gemini-3.8-flash-low", "Gemini 3.8 Flash (Low)"},

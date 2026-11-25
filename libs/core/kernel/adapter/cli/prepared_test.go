@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func preparing(s search.Search) search.VaultPreparing {
+func preparing(s search.Search) search.VaultPreparer {
 	return func(context.Context, domain.Vault) (search.Search, error) { return s, nil }
 }
 
-func preparingRead(r indexing.ReadWholeVault) indexing.VaultPreparing {
+func preparingRead(r indexing.ReadWholeVault) indexing.VaultPreparer {
 	return func(context.Context, domain.Vault) (indexing.ReadWholeVault, error) { return r, nil }
 }

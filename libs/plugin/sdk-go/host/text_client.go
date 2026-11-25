@@ -90,15 +90,15 @@ func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (domain.Tex
 	return readTextVersion(res.Msg.GetVersion()), nil
 }
 
-func (c *TextClient) ListVersions(ctx context.Context, path string) (TextListing, error) {
+func (c *TextClient) ListVersions(ctx context.Context, path string) (TextVersionList, error) {
 	res, err := c.rpc.ListTextVersions(ctx, newTextRequest(c, &v1.ListTextVersionsRequest{Path: path}))
 	if err != nil {
-		return TextListing{}, readError(err)
+		return TextVersionList{}, readError(err)
 	}
 	if err := failText(res.Msg.GetError()); err != nil {
-		return TextListing{}, err
+		return TextVersionList{}, err
 	}
-	listing := TextListing{Live: domain.TextVersionID(res.Msg.GetLiveVersionId())}
+	listing := TextVersionList{Live: domain.TextVersionID(res.Msg.GetLiveVersionId())}
 	for _, one := range res.Msg.GetVersions() {
 		listing.Versions = append(listing.Versions, readTextVersion(one))
 	}

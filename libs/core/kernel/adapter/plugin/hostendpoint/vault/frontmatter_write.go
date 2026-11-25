@@ -62,7 +62,7 @@ func readFrontmatterWrites(notes []*v1.NoteFrontmatterWrite) ([]plugin.Frontmatt
 	return writes, nil
 }
 
-func writeFrontmatterResults(ctx context.Context, written []plugin.FrontmatterWritten) ([]*v1.NoteFrontmatterWritten, v1.ErrorCode, error) {
+func writeFrontmatterResults(ctx context.Context, written []plugin.FrontmatterResult) ([]*v1.NoteFrontmatterWritten, v1.ErrorCode, error) {
 	results := make([]*v1.NoteFrontmatterWritten, len(written))
 	// The results already hold the cancellation of ctx: the notes not written are ErrNotAttempted.
 	resultCtx := context.WithoutCancel(ctx)

@@ -181,7 +181,7 @@ func (w readingParts) OpenVaultWith(
 	scan := indexing.NewScan(walkCountingReaders, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
 	w.setNoteCut(&scan)
 	scan.Walks = db.Walks()
-	buffered := &indexnote.Buffered{NoteRepository: db.Stores.Notes}
+	buffered := &indexnote.BufferedNoteRepository{NoteRepository: db.Stores.Notes}
 	return indexing.ConfigureVaultOpener(watcher, scan, buffered, w.makeRefresh(db, buffered))
 }
 

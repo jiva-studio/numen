@@ -33,7 +33,7 @@ type Locations struct {
 // the background work of the run reported as failed, one line each, and the failure to close.
 type Session struct {
 	openVaults        func() (Vaults, error)
-	openIndexed       func(ctx context.Context, options IndexOptions) (Indexed, error)
+	openIndexed       func(ctx context.Context, options IndexOptions) (IndexRun, error)
 	getPluginCommands func() PluginCommands
 	close             func() (failures []string, err error)
 }
@@ -41,7 +41,7 @@ type Session struct {
 // NewSession takes no nil function: the methods of Session call them without a check.
 func NewSession(
 	openVaults func() (Vaults, error),
-	openIndexed func(ctx context.Context, options IndexOptions) (Indexed, error),
+	openIndexed func(ctx context.Context, options IndexOptions) (IndexRun, error),
 	getPluginCommands func() PluginCommands,
 	closeRun func() (failures []string, err error),
 ) Session {
@@ -50,7 +50,7 @@ func NewSession(
 
 func (s Session) OpenVaults() (Vaults, error) { return s.openVaults() }
 
-func (s Session) OpenIndexed(ctx context.Context, options IndexOptions) (Indexed, error) {
+func (s Session) OpenIndexed(ctx context.Context, options IndexOptions) (IndexRun, error) {
 	return s.openIndexed(ctx, options)
 }
 
@@ -65,8 +65,8 @@ type IndexOptions struct {
 	ErrorHandler window.ErrorHandler
 }
 
-// Indexed is what the commands that read or change the index work through, over the one index a run opened.
-type Indexed struct {
+// IndexRun is what the commands that read or change the index work through, over the one index a run opened.
+type IndexRun struct {
 	Changes          VaultChanges
 	Scan             Scan
 	Search           Search

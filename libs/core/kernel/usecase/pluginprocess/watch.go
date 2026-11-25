@@ -52,7 +52,7 @@ func NewWatchProcesses(
 	processes Processes, health HealthItems, plugins pluginport.PluginManifests, resolve connectionport.ResolveConnection, clock machineport.Clock,
 ) *WatchProcesses {
 	if resolve == nil {
-		resolve = func(string) (connection.Resolved, error) { return connection.Resolved{}, errNoConnections }
+		resolve = func(string) (connection.Resolution, error) { return connection.Resolution{}, errNoConnections }
 	}
 	return &WatchProcesses{processes: processes, health: health, plugins: plugins, resolve: resolve, clock: clock, Interval: time.Second}
 }

@@ -10,18 +10,18 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// SearchPreparing creates the use case over the index of one vault.
-type SearchPreparing = func(ctx context.Context, v domain.Vault) (*FindSearchResults, error)
+// SearchPreparer creates the use case over the index of one vault.
+type SearchPreparer = func(ctx context.Context, v domain.Vault) (*FindSearchResults, error)
 
 // FindSearchResultsByName runs a query within the vault a person names.
 type FindSearchResultsByName struct {
 	lookup  vaultport.VaultLookup
-	prepare SearchPreparing
+	prepare SearchPreparer
 }
 
 // NewFindSearchResultsByName creates the use case that resolves the vault with find and runs the query
 // with the use case prepare returns.
-func NewFindSearchResultsByName(lookup vaultport.VaultLookup, prepare SearchPreparing) FindSearchResultsByName {
+func NewFindSearchResultsByName(lookup vaultport.VaultLookup, prepare SearchPreparer) FindSearchResultsByName {
 	return FindSearchResultsByName{lookup: lookup, prepare: prepare}
 }
 

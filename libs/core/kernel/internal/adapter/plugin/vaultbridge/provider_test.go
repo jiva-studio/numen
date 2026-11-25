@@ -86,7 +86,7 @@ func startHost(t *testing.T, manifestText string, handle func(*http.ServeMux)) *
 		}
 	})
 	process := wiretest.StartSleepProcess(t)
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return process.Process, wiretest.GetReadyOutput(port), nil
 	})
 	return host

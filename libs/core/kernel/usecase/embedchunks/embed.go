@@ -98,7 +98,7 @@ func (u Embed) run(
 	if err != nil {
 		return res, err
 	}
-	source := extracted{files: reader}
+	source := extractor{files: reader}
 	if source.texts, err = u.texts.Open(v); err != nil {
 		return res, err
 	}

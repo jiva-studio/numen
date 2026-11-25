@@ -67,7 +67,11 @@ func (f Files) Read(ctx context.Context, path string) ([]byte, domain.FileStat, 
 	if err != nil {
 		return nil, domain.FileStat{}, err
 	}
-	return f.ReadFile.Execute(ctx, v, path)
+	res, err := f.ReadFile.Execute(ctx, v, path)
+	if err != nil {
+		return nil, domain.FileStat{}, err
+	}
+	return res.Content, res.Stat, nil
 }
 
 // ReadRange reads the range through the read of usecase/file, with the file stat taken before the

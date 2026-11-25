@@ -183,7 +183,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	// checkout, a restore, a sync client unpacking an archive — so the number of
 	// paths handed here is not small because they were named individually.
 	var res RefreshResult
-	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
+	group := grouper{write: func(ctx context.Context, notes []domain.Note) error {
 		return u.notes.Save(ctx, v.ID, u.Cut.Execute(notes))
 	}}
 
@@ -221,7 +221,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 type refreshRun struct {
 	v        domain.Vault
 	reader   vaultport.VaultReader
-	group    *grouping
+	group    *grouper
 	recorded map[string]*ledgerEntry
 	res      *RefreshResult
 }
@@ -374,12 +374,12 @@ func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v 
 // UpdateIndex brings the notes a write touched up to date in the index, through
 // the Refresh of the vault the caller has running.
 type UpdateIndex struct {
-	refresh func() Refreshing
+	refresh func() Refresher
 }
 
 // NewUpdateIndex creates an UpdateIndex that asks getRefresh for the refresh to
 // use at each call.
-func NewUpdateIndex(getRefresh func() Refreshing) UpdateIndex {
+func NewUpdateIndex(getRefresh func() Refresher) UpdateIndex {
 	return UpdateIndex{refresh: getRefresh}
 }
 

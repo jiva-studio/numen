@@ -33,7 +33,7 @@ var (
 
 // Listings reads the models an agent reports.
 type Listings interface {
-	GetListing(ctx context.Context, agent agents.Agent) acp.Listing
+	GetListing(ctx context.Context, agent agents.Agent) acp.SessionModels
 }
 
 // LookPath finds a program on the machine. A nil LookPath finds none.
@@ -167,10 +167,10 @@ func (c *Completion) ListReasoningLevels(ctx context.Context, call connection.Ca
 	return levels, nil
 }
 
-func (c *Completion) readListing(ctx context.Context, call connection.Call) (acp.Listing, error) {
+func (c *Completion) readListing(ctx context.Context, call connection.Call) (acp.SessionModels, error) {
 	agent, err := c.getCallAgent(call)
 	if err != nil {
-		return acp.Listing{}, err
+		return acp.SessionModels{}, err
 	}
 	return c.deps.Listings.GetListing(ctx, agent), nil
 }

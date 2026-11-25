@@ -21,7 +21,7 @@ import (
 // plugin that cannot be configured.
 type ConnectionRowsSource struct {
 	Connections connectionport.Repository
-	Detected    connectionport.Detected
+	Detected    connectionport.DetectedConnections
 	ListPlugins func() []plugin.Info
 	Declared    settingsdomain.Declarations
 	ReadStored  func() (File, error)

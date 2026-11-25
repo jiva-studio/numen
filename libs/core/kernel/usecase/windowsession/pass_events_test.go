@@ -20,8 +20,8 @@ func TestUnwatchedVaultReportsFailureAndLifecycle(t *testing.T) {
 			return IndexSession{Run: func(context.Context, bool, ReadNotes) {}}
 		},
 		Reporter: NewChangeReporter(&changeLog{}, nil, nil, diag),
-		Passes: VaultPassesFunc(func(context.Context, domain.Vault, bool, Reporters) Started {
-			return Started{Unwatched: problem, Run: func(context.Context) {}}
+		Passes: VaultPassesFunc(func(context.Context, domain.Vault, bool, Reporters) StartedPasses {
+			return StartedPasses{Unwatched: problem, Run: func(context.Context) {}}
 		}),
 		Report: func(_ domain.Vault, event string, err error) {
 			if event == "Vault watch unavailable" && !errors.Is(err, problem) {

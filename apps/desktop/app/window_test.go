@@ -32,7 +32,7 @@ func openWindowAt(t *testing.T, cfg container.Config, root string) *editor.Insta
 		t.Fatal(err)
 	}
 
-	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, t.Context(), container.WindowOpening{Named: "one", Out: io.Discard})
+	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, t.Context(), container.WindowRequest{Named: "one", Out: io.Discard})
 	if err != nil {
 		t.Fatal(err)
 	}

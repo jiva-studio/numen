@@ -38,7 +38,7 @@ type Answerer struct {
 	models  ports.Models
 	tools   ports.Tools
 	history *history
-	running *running
+	running *runningTasks
 }
 
 var _ acp.Runner = (*Answerer)(nil)
@@ -50,7 +50,7 @@ func New(parts Parts) (*Answerer, error) {
 	}
 	return &Answerer{
 		store: parts.Store, chat: parts.Chat, models: parts.Models, tools: parts.Tools,
-		history: newHistory(parts.Clock), running: &running{mu: sync.Mutex{}, cancels: map[*context.CancelFunc]bool{}, isClosed: false},
+		history: newHistory(parts.Clock), running: &runningTasks{mu: sync.Mutex{}, cancels: map[*context.CancelFunc]bool{}, isClosed: false},
 	}, nil
 }
 
@@ -213,14 +213,14 @@ func (a *Answerer) Close() error {
 	return nil
 }
 
-// running holds the cancel of every task that has not ended.
-type running struct {
+// runningTasks holds the cancel of every task that has not ended.
+type runningTasks struct {
 	mu       sync.Mutex
 	cancels  map[*context.CancelFunc]bool
 	isClosed bool
 }
 
-func (r *running) add(cancel *context.CancelFunc) bool {
+func (r *runningTasks) add(cancel *context.CancelFunc) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.isClosed {
@@ -230,13 +230,13 @@ func (r *running) add(cancel *context.CancelFunc) bool {
 	return true
 }
 
-func (r *running) remove(cancel *context.CancelFunc) {
+func (r *runningTasks) remove(cancel *context.CancelFunc) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.cancels, cancel)
 }
 
-func (r *running) close() {
+func (r *runningTasks) close() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.isClosed = true

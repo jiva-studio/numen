@@ -30,7 +30,7 @@ func getStartTime() time.Time { return time.Date(2026, 11, 13, 9, 0, 0, 0, time.
 func startInProcess(t *testing.T, sups *Supervisors, ids ...string) {
 	t.Helper()
 	for _, id := range ids {
-		sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: id}})
+		sup := sups.Register(manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: id}})
 		sup.SetActivating(plugindomain.Holder{})
 		endpoint := transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: id}
 		if err := sups.AttachInProcess(id, sup, endpoint, getUseLease(), getStartTime()); err != nil {
@@ -41,7 +41,7 @@ func startInProcess(t *testing.T, sups *Supervisors, ids ...string) {
 
 func TestListProcessesReturnsTheRunningPluginsWithTheIdleStopTime(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
-	sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: dormantID}})
+	sups.Register(manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: dormantID}})
 	startInProcess(t, sups, mapsID, atlasID)
 	sups.Release(mapsID, mapsID, getUseLease(), getStartTime().Add(time.Minute))
 
@@ -89,7 +89,7 @@ func TestSignalsTheWatchHasNotReceivedAreMergedIntoOne(t *testing.T) {
 
 func TestTheIdleStopTimeFollowsTheIdleLimitOfTheManifest(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
-	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID, Backend: manifest.Backend{Entrypoint: "bin/atlas", IdleStopSeconds: 600}}})
+	sup := sups.Register(manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: atlasID, Backend: manifest.Backend{Entrypoint: "bin/atlas", IdleStopSeconds: 600}}})
 	sup.SetActivating(plugindomain.Holder{})
 	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, getUseLease(), getStartTime()); err != nil {
 		t.Fatal(err)
@@ -120,7 +120,7 @@ func TestAReleasedPluginIsDueToStopAtItsLastUse(t *testing.T) {
 
 func TestAPluginOnlyAskedAQuestionIsDueToStopAtItsStart(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
-	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID}})
+	sup := sups.Register(manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: atlasID}})
 	sup.SetActivating(plugindomain.Holder{})
 	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, getQuestionLease(), getStartTime()); err != nil {
 		t.Fatal(err)
@@ -156,7 +156,7 @@ func TestListProcessesReturnsTheStarterAndTheHoldersOfEachPlugin(t *testing.T) {
 	starter := lifecycle.Lease{Kind: lifecycle.UseLease, Holder: plugindomain.Holder{Who: plugindomain.WhoIndexing, Why: "embed notes"}}
 	asker := lifecycle.Lease{Kind: lifecycle.UseLease, Holder: plugindomain.Holder{PluginID: mapsID, Why: "call tool"}}
 	sups := NewSupervisors(func(error) {}, func(string) {})
-	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID}})
+	sup := sups.Register(manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: atlasID}})
 	if claim := sups.Begin(atlasID, sup, starter, getStartTime()); !claim.Started {
 		t.Fatalf("the dormant plugin was not started: %+v", claim)
 	}

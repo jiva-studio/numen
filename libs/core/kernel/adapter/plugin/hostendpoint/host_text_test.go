@@ -45,10 +45,10 @@ func (m *memoryTexts) PutVersion(_ context.Context, v domain.Vault, pluginID str
 	return version, nil
 }
 
-func (m *memoryTexts) ListVersions(_ context.Context, v domain.Vault, path string) (plugin.TextListing, error) {
+func (m *memoryTexts) ListVersions(_ context.Context, v domain.Vault, path string) (plugin.TextVersionList, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	var listing plugin.TextListing
+	var listing plugin.TextVersionList
 	for _, one := range m.versions[v.ID] {
 		if one.Path == path {
 			listing.Versions = append(listing.Versions, one)

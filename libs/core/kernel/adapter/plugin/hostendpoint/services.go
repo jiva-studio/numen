@@ -186,7 +186,7 @@ type TextVersions interface {
 	// PutVersion records a version of the plugin, or replaces the one it has under the key.
 	PutVersion(ctx context.Context, v domain.Vault, pluginID string, params plugin.TextPut) (domain.TextVersion, error)
 	// ListVersions is the versions of a file and which of them is live.
-	ListVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextListing, error)
+	ListVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextVersionList, error)
 	// ReadText is one page of any version's segments, read from its file.
 	ReadText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, cursor string) (plugin.TextPage, error)
 	// ReadTextRange returns the segments of a version that cover length bytes of its whole text from

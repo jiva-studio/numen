@@ -23,8 +23,8 @@ type HostEndpoint interface {
 	ClearPlugin(pluginID string)
 }
 
-// Closing reports whether the host is shut down.
-type Closing interface {
+// ShutdownState reports whether the host is shut down.
+type ShutdownState interface {
 	IsClosed() bool
 }
 
@@ -62,7 +62,7 @@ type Dependencies interface {
 // through and the provisioner of the dependencies they declare. Both are read from the functions
 // the services are made with, at each use.
 type Services struct {
-	closing         Closing
+	closing         ShutdownState
 	getEndpoint     func() HostEndpoint
 	getDependencies func() Dependencies
 
@@ -74,7 +74,7 @@ type Services struct {
 // NewServices returns services that read the endpoint and the provisioner of the dependencies from the
 // given functions; a nil result means there is none. They open no endpoint once closing reports the host shut down.
 func NewServices(
-	closing Closing, getEndpoint func() HostEndpoint, getDependencies func() Dependencies,
+	closing ShutdownState, getEndpoint func() HostEndpoint, getDependencies func() Dependencies,
 ) *Services {
 	return &Services{closing: closing, getEndpoint: getEndpoint, getDependencies: getDependencies, downloading: map[string]manifest.DependencyRequirement{}}
 }

@@ -10,11 +10,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 )
 
-func resolveOrchardKeeper(connectionID string) (connection.Resolved, error) {
+func resolveOrchardKeeper(connectionID string) (connection.Resolution, error) {
 	if connectionID != "conn-keeper" {
-		return connection.Resolved{}, errors.New("no such connection")
+		return connection.Resolution{}, errors.New("no such connection")
 	}
-	return connection.Resolved{ID: connectionID, Name: "Orchard keeper"}, nil
+	return connection.Resolution{ID: connectionID, Name: "Orchard keeper"}, nil
 }
 
 func TestTheHoldersOfAProcessAreNamedByTheirPluginOrConnection(t *testing.T) {

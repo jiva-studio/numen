@@ -39,7 +39,7 @@ type tabKinds struct {
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
-func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening) (*editor.Installation, error) {
+func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowRequest) (*editor.Installation, error) {
 	db, err := c.openIndex(res, ctx)
 	if err != nil {
 		return nil, err
@@ -90,8 +90,8 @@ func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup 
 	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, running.Runtime.Listing, GetClock(res), startup.db)
 }
 
-// WindowOpening names the vault to show, the output and the optional editor frame.
-type WindowOpening struct {
+// WindowRequest names the vault to show, the output and the optional editor frame.
+type WindowRequest struct {
 	Named string
 	Out   io.Writer
 	Frame editor.Frame
@@ -120,7 +120,7 @@ type windowLaunch struct {
 }
 type windowStartup struct {
 	isEditor bool
-	opening  WindowOpening
+	opening  WindowRequest
 	ports    registry.Ports
 	db       *vaultIndex
 }
@@ -138,7 +138,7 @@ type windowPlugins struct {
 	newVaultsFolder vaultusecase.NewVaultsFolder
 }
 
-func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex, source sourcebridge.Binding) windowPlugins {
+func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts, db *vaultIndex, source sourcebridge.Binding) windowPlugins {
 	tasks := run.NewTasks()
 	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
 	reportDependencies(exec.Watch.dependencyReporter, tasks, vaultDeps.RecordLog)
@@ -156,7 +156,7 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 }
 
 func buildWindow(
-	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps vaultIndexPlan, vaultDeps vaultWiring, pages ...editor.Option,
+	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps vaultIndexPlan, vaultDeps vaultParts, pages ...editor.Option,
 ) (*windowRoutes, windowLaunch) {
 	db, opening, ports := s.db, s.opening, s.ports
 	tasks := plugins.tasks
@@ -177,7 +177,7 @@ func buildWindow(
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	current := &indexing.CurrentRefresh{CreateFallback: func() indexing.Refreshing {
+	current := &indexing.CurrentRefresh{CreateFallback: func() indexing.Refresher {
 		v := vaultDeps
 		v.CutNotes = cutNotes(searchDeps.ChunkPolicy)
 		return createRefresh(v, db, db.Notes())
@@ -222,7 +222,7 @@ func buildWindow(
 	}
 }
 
-func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session, views noteViews, current *indexing.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
+func newWindowNotes(vaultDeps vaultParts, db *vaultIndex, state *editor.Session, views noteViews, current *indexing.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
 	update := indexing.NewUpdateIndex(current.Get).Execute
 	moves := note.NewTellMoveInShownVault(state.GetShownVault, createWindowView(state.Notices))
 	views.Moves = moves
@@ -231,7 +231,7 @@ func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session
 	return notes, getNoteChanges(pluginNotes)
 }
 
-func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex) tabKinds {
+func newTabKinds(exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts, db *vaultIndex) tabKinds {
 	files := file.NewGetFileKinds(vaultDeps.Readers, db.NoteQueries())
 	choice := plugin.NewTabKindChoice(
 		exec.Runtime.Manifests.ListTabKinds, exec.Watch.ContentTypeTable.GetContentType, getWhenConfig(settingsDeps, exec.Runtime.Listing).GetWhenConfig,
@@ -239,7 +239,7 @@ func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps v
 	return tabKinds{files: files, choice: choice, list: indexnote.NewTabKinds(db.NoteQueries(), choice)}
 }
 
-func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, dialog editor.PathDialog) {
+func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts, dialog editor.PathDialog) {
 	mountPluginData(w, vaultDeps)
 	mountSettings(w, settingsDeps, dialog)
 	mountMedia(w, vaultDeps)

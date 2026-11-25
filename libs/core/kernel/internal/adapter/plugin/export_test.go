@@ -28,14 +28,14 @@ var (
 )
 
 // SetPlugin stores p in the set of the registry as it is, without the checks of a scan.
-func SetPlugin(r *Registry, id string, p manifest.Discovered) {
+func SetPlugin(r *Registry, id string, p manifest.DiscoveredPlugin) {
 	r.set.mu.Lock()
 	defer r.set.mu.Unlock()
 	r.set.plugins[id] = p
 }
 
 // GetRawPlugin returns the plugin of the set whether or not it is enabled.
-func GetRawPlugin(r *Registry, id string) manifest.Discovered {
+func GetRawPlugin(r *Registry, id string) manifest.DiscoveredPlugin {
 	p, _ := r.set.getKnownPlugin(id)
 	return p
 }
@@ -54,7 +54,9 @@ func GetName(r *Registry, id string) string { return r.set.getName(id) }
 func GetRequirementIDs(r *Registry, id string) []string { return r.set.getRequirementIDs(id) }
 
 // GetLaunch returns how the set launches p.
-func GetLaunch(r *Registry, p manifest.Discovered) supervision.Launch { return r.set.getLaunch(p) }
+func GetLaunch(r *Registry, p manifest.DiscoveredPlugin) supervision.Launch {
+	return r.set.getLaunch(p)
+}
 
 func GetSupervisors(r *Registry) *supervision.Supervisors { return r.sups }
 
@@ -72,7 +74,7 @@ func ReleaseScan(d *Discovery) { d.scan.releaseScan() }
 func GetStopper(t *Teardown) *supervision.Stopper { return t.stopper }
 
 // RunActivation starts the process of p under sup.
-func RunActivation(ctx context.Context, a *Activation, p manifest.Discovered, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
+func RunActivation(ctx context.Context, a *Activation, p manifest.DiscoveredPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	return a.runActivation(ctx, p, sup, lifecycle.Lease{Kind: lifecycle.UseLease})
 }
 

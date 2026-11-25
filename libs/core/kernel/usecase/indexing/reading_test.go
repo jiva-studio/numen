@@ -9,7 +9,7 @@ import (
 
 // reading reads a vault into the index of its own that a test holds.
 type reading struct {
-	ReadWholeVault OpenReading
+	ReadWholeVault ReadWholeVaultOpener
 	readers        vaultport.VaultReaders
 	newVault       func(tb testing.TB, notes map[string]string) domain.Vault
 }
@@ -20,7 +20,7 @@ func (r reading) GetVaultReaders() vaultport.VaultReaders { return r.readers }
 type openFunc func(t *testing.T) (reading, *WorkerIndex)
 
 // ReadingProvider opens, in a folder of the test, an index and what reads a vault into it.
-type ReadingProvider func(t *testing.T) (OpenReading, vaultport.VaultReaders, *WorkerIndex)
+type ReadingProvider func(t *testing.T) (ReadWholeVaultOpener, vaultport.VaultReaders, *WorkerIndex)
 
 // RunWorkerTests runs the tests of the worker that read vaults into an index. The composition root
 // imports this package, so a test of the external package gives it the provider and the function that writes a vault.

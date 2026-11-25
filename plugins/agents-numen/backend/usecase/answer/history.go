@@ -15,8 +15,8 @@ const (
 	idleLimit = 30 * time.Minute
 )
 
-// kept is the transcript of one conversation and when its last turn ended.
-type kept struct {
+// keptTranscript is the transcript of one conversation and when its last turn ended.
+type keptTranscript struct {
 	messages []conversation.Message
 	usedAt   time.Time
 }
@@ -25,11 +25,11 @@ type kept struct {
 type history struct {
 	mu            sync.Mutex
 	clock         ports.Clock
-	conversations map[string]*kept
+	conversations map[string]*keptTranscript
 }
 
 func newHistory(clock ports.Clock) *history {
-	return &history{mu: sync.Mutex{}, clock: clock, conversations: map[string]*kept{}}
+	return &history{mu: sync.Mutex{}, clock: clock, conversations: map[string]*keptTranscript{}}
 }
 
 func (h *history) get(id string) []conversation.Message {
@@ -59,7 +59,7 @@ func (h *history) append(id string, transcript []conversation.Message) {
 		if len(h.conversations) >= maxConversations {
 			h.forgetOldest()
 		}
-		one = &kept{messages: nil, usedAt: now}
+		one = &keptTranscript{messages: nil, usedAt: now}
 		h.conversations[id] = one
 	}
 	one.messages = append(one.messages, transcript...)

@@ -75,15 +75,15 @@ func pickValues(frontmatter map[string]any, keys []string) (map[string]any, erro
 
 // WriteFrontmatter sets, replaces and removes top-level keys of the notes, as the host does: a list of
 // text is written as a list, a nil value removes the key, a stale note fails alone with host.ErrStale.
-func (v *Vault) WriteFrontmatter(ctx context.Context, writes []host.FrontmatterWrite) ([]host.FrontmatterWritten, error) {
+func (v *Vault) WriteFrontmatter(ctx context.Context, writes []host.FrontmatterWrite) ([]host.FrontmatterResult, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	out := make([]host.FrontmatterWritten, len(writes))
+	out := make([]host.FrontmatterResult, len(writes))
 	for i, one := range writes {
 		stat, err := v.editLinks(ctx, one.Path, one.Baseline, func(doc *notesmarkdown.Document) error {
 			return setKeys(doc, one.Values)
 		})
-		out[i] = host.FrontmatterWritten{Stat: stat, Err: err}
+		out[i] = host.FrontmatterResult{Stat: stat, Err: err}
 	}
 	return out, nil
 }

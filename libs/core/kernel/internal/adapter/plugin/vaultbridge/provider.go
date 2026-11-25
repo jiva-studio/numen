@@ -17,7 +17,7 @@ import (
 
 // CapabilityResolver finds the enabled plugin that provides a capability.
 type CapabilityResolver interface {
-	ResolveCapability(capability string) (manifest.Discovered, error)
+	ResolveCapability(capability string) (manifest.DiscoveredPlugin, error)
 }
 
 // Provider calls the VaultProviderService of the enabled plugin with the capability vault.provider, which

@@ -22,8 +22,8 @@ type listingFile struct {
 	Listing json.RawMessage `json:"listing"`
 }
 
-// listing is the answer one version of a plugin gave to ListTools.
-type listing struct {
+// toolList is the answer one version of a plugin gave to ListTools.
+type toolList struct {
 	version string
 	tools   *v1.ListToolsResponse
 }
@@ -34,11 +34,11 @@ type listings struct {
 	files       ListingFiles
 	getRevision func() string
 	mu          sync.Mutex
-	byPlugin    map[string]listing
+	byPlugin    map[string]toolList
 }
 
 func newListings(files ListingFiles, getRevision func() string) *listings {
-	return &listings{files: files, getRevision: getRevision, byPlugin: map[string]listing{}}
+	return &listings{files: files, getRevision: getRevision, byPlugin: map[string]toolList{}}
 }
 
 func (l *listings) getKey(version string) string {
@@ -64,7 +64,7 @@ func (l *listings) put(pluginID, version string, tools *v1.ListToolsResponse) {
 	version = l.getKey(version)
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.byPlugin[pluginID] = listing{version: version, tools: tools}
+	l.byPlugin[pluginID] = toolList{version: version, tools: tools}
 	encoded, err := protojson.Marshal(tools)
 	if err != nil {
 		return
@@ -76,20 +76,20 @@ func (l *listings) put(pluginID, version string, tools *v1.ListToolsResponse) {
 	l.files.WriteToolListing(pluginID, content)
 }
 
-func (l *listings) read(pluginID string) (listing, bool) {
+func (l *listings) read(pluginID string) (toolList, bool) {
 	content, isKept := l.files.ReadToolListing(pluginID)
 	if !isKept {
-		return listing{}, false
+		return toolList{}, false
 	}
 	var file listingFile
 	if err := json.Unmarshal(content, &file); err != nil {
-		return listing{}, false
+		return toolList{}, false
 	}
 	tools := &v1.ListToolsResponse{}
 	if err := protojson.Unmarshal(file.Listing, tools); err != nil {
-		return listing{}, false
+		return toolList{}, false
 	}
-	return listing{version: file.Version, tools: tools}, true
+	return toolList{version: file.Version, tools: tools}, true
 }
 
 // ListKeptTools returns the tools the plugin last listed, read from the files and not from the plugin,

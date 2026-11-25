@@ -11,7 +11,7 @@ import (
 // notes it wrote through the slice's backing array, so the GC can
 // reclaim them before the next group fills those slots.
 func TestFlushClearsTheBackingArray(t *testing.T) {
-	g := &grouping{write: func(context.Context, []domain.Note) error { return nil }}
+	g := &grouper{write: func(context.Context, []domain.Note) error { return nil }}
 	note := domain.Note{
 		Title:       "kept",
 		Frontmatter: map[string]any{"k": "v"},
@@ -30,9 +30,9 @@ func TestFlushClearsTheBackingArray(t *testing.T) {
 	}
 }
 
-func newRecordingGroup() (*grouping, *[]int) {
+func newRecordingGroup() (*grouper, *[]int) {
 	var writes []int
-	return &grouping{write: func(_ context.Context, notes []domain.Note) error {
+	return &grouper{write: func(_ context.Context, notes []domain.Note) error {
 		writes = append(writes, len(notes))
 		return nil
 	}}, &writes

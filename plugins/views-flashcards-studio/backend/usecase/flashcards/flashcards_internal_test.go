@@ -475,7 +475,7 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 		allowances:        map[string]*allowance{"P.md": {}},
 	}
 	var out review.CardsDue
-	dueMap, newMap := rows.countDueAndNew(bDue, asking{dueCards: []ReviewCard{c1, c2}}, &out)
+	dueMap, newMap := rows.countDueAndNew(bDue, cardSelection{dueCards: []ReviewCard{c1, c2}}, &out)
 	if rows.get("decks/B.md").Due != 1 || rows.get("decks/A.md").Due != 1 {
 		t.Fatalf("expected per-deck Due incremented, got %+v, %+v", rows["decks/A.md"], rows["decks/B.md"])
 	}
@@ -1261,7 +1261,7 @@ func TestReviewCardInternalsAndCache(t *testing.T) {
 	if got := getEntry(&list.Element{Value: "not-cached"}); got.key != (deckKey{}) || got.deck.Size != 0 {
 		t.Fatalf("expected zero cached from non-cached element, got %+v", got)
 	}
-	if got := getEntry(&list.Element{Value: (*cached)(nil)}); got.key != (deckKey{}) || got.deck.Size != 0 {
+	if got := getEntry(&list.Element{Value: (*cacheEntry)(nil)}); got.key != (deckKey{}) || got.deck.Size != 0 {
 		t.Fatalf("expected zero cached from nil *cached element, got %+v", got)
 	}
 
@@ -1588,7 +1588,7 @@ func TestUseCasesSchedulesAndSessionInternals(t *testing.T) {
 		t.Fatalf("expected nil from getIntervals when policy.By == nil, got %v", got)
 	}
 	queued := queueCards(
-		asking{newCards: []ReviewCard{c1}},
+		cardSelection{newCards: []ReviewCard{c1}},
 		map[review.CardID]review.Schedule{},
 		review.ScheduleBy(review.NewFSRS()),
 		review.NewDueByDay(dayLoc),

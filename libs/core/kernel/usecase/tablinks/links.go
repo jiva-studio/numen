@@ -2,7 +2,7 @@ package tablinks
 
 // Links groups tabs and carries the path of a group to its tabs.
 type Links struct {
-	state shared
+	state stateHolder
 }
 
 // Link puts two known tabs in one group. If a tab is already in a group, the

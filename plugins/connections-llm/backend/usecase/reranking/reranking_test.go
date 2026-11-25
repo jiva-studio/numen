@@ -44,7 +44,7 @@ func (g *gateway) ListModels(context.Context, connection.Call, time.Duration, []
 	return nil, nil
 }
 
-func newSubject(t *testing.T, g *gateway) *reranking.Reranking {
+func newSubject(t *testing.T, g *gateway) *reranking.Reranker {
 	t.Helper()
 	subject, err := reranking.New(g, &limits.Limits{})
 	if err != nil {

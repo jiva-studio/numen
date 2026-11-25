@@ -22,8 +22,8 @@ func NewWriteSettings(
 	return &WriteSettings{check: check, file: file, refresh: refresh}
 }
 
-// Applied is every setting after a write, with the version of that state.
-type Applied struct {
+// WriteResult is every setting after a write, with the version of that state.
+type WriteResult struct {
 	Written string
 	Version uint64
 }
@@ -38,17 +38,17 @@ func (u *WriteSettings) Execute(entries []settingsdomain.Setting) error {
 // The answer is the state this write left and its version, whatever other writes follow it.
 // A write that was persisted and whose answer cannot be made returns an error that wraps
 // settingsdomain.ErrWrittenNotAnswered, and the plugins are notified.
-func (u *WriteSettings) Write(entries []settingsdomain.Setting) (Applied, error) {
+func (u *WriteSettings) Write(entries []settingsdomain.Setting) (WriteResult, error) {
 	if err := u.check.Execute(entries); err != nil {
-		return Applied{}, err
+		return WriteResult{}, err
 	}
 	content, version, err := u.file.WriteJSON(entries)
 	if err != nil && !errors.Is(err, settingsdomain.ErrWrittenNotAnswered) {
-		return Applied{}, err
+		return WriteResult{}, err
 	}
 	u.refresh.Refresh()
 	if err != nil {
-		return Applied{}, err
+		return WriteResult{}, err
 	}
-	return Applied{Written: content, Version: version}, nil
+	return WriteResult{Written: content, Version: version}, nil
 }

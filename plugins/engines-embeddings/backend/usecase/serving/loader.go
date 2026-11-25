@@ -24,12 +24,12 @@ type modelLoader[S any] struct {
 	lock     sync.Locker
 	ports    loaderPorts[S]
 	embedder ports.Embedder
-	opening  *opening
+	opening  *modelLoad
 }
 
-// opening is one load of the model, which runs on its own goroutine so that a download holds no lock
+// modelLoad is one load of the model, which runs on its own goroutine so that a download holds no lock
 // a call of the host takes.
-type opening struct {
+type modelLoad struct {
 	ready  chan struct{}
 	cancel context.CancelFunc
 	emb    ports.Embedder
@@ -76,10 +76,10 @@ func (l *modelLoader[S]) wait(ctx context.Context, start func() S) (ports.Embedd
 	}
 }
 
-func (l *modelLoader[S]) begin(caller context.Context, start S) *opening {
+func (l *modelLoader[S]) begin(caller context.Context, start S) *modelLoad {
 	// The load outlives the call that started it, and ends with the settings or the plugin.
 	ctx, cancel := context.WithCancel(context.WithoutCancel(caller))
-	op := &opening{ready: make(chan struct{}), cancel: cancel, emb: nil, err: nil}
+	op := &modelLoad{ready: make(chan struct{}), cancel: cancel, emb: nil, err: nil}
 	l.opening = op
 	go func() {
 		defer cancel()
@@ -89,7 +89,7 @@ func (l *modelLoader[S]) begin(caller context.Context, start S) *opening {
 	return op
 }
 
-func (l *modelLoader[S]) finish(op *opening, emb ports.Embedder, err error) {
+func (l *modelLoader[S]) finish(op *modelLoad, emb ports.Embedder, err error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	defer close(op.ready)

@@ -155,7 +155,7 @@ func unembeddedAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := whole.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
+	if _, err := whole.Execute(t.Context(), v, indexing.ReadCallbacks{}); err != nil {
 		t.Fatal(err)
 	}
 	if unembeddedTo(t, db, v, first) != 0 {
@@ -198,7 +198,7 @@ func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := whole.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
+	if _, err := whole.Execute(t.Context(), v, indexing.ReadCallbacks{}); err != nil {
 		t.Fatal(err)
 	}
 	return db, v

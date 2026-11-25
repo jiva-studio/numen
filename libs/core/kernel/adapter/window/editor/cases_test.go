@@ -9,7 +9,7 @@ import (
 )
 
 func openRegisteredWindow(cfg testInstallation, ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
-	return cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, ctx, container.WindowOpening{Named: named, Out: out})
+	return cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, ctx, container.WindowRequest{Named: named, Out: out})
 }
 
 type testInstallation struct {

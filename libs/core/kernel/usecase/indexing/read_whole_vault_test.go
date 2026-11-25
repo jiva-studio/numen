@@ -28,7 +28,7 @@ func TestAVaultIsMadeSearchableByThreePasses(t *testing.T) {
 	v, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	db := openIndex(t)
 
-	made, err := newWholeVaultRead(readers, db).Execute(t.Context(), v, indexing.Reporting{})
+	made, err := newWholeVaultRead(readers, db).Execute(t.Context(), v, indexing.ReadCallbacks{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	embed := embedchunks.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
 	making := indexing.NewReadWholeVault(notes, books, embed.EmbedWithProgress)
 
-	if _, err := making.Execute(t.Context(), v, indexing.Reporting{
+	if _, err := making.Execute(t.Context(), v, indexing.ReadCallbacks{
 		NotifyNotesProgress:   func(vaultreading.ScanResult) { order = append(order, "notes") },
 		NotifyTextsProgress:   func(vaultreading.IndexResult) { order = append(order, "books") },
 		NotifyVectorsProgress: func(vaultreading.EmbedResult) { order = append(order, "vectors") },
@@ -103,7 +103,7 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	embed := embedchunks.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{})
 	making := indexing.NewReadWholeVault(notes, books, embed.EmbedWithProgress)
 
-	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
+	_, err := making.Execute(t.Context(), v, indexing.ReadCallbacks{})
 	if err == nil || !strings.Contains(err.Error(), "not here") {
 		t.Fatalf("got %v", err)
 	}
@@ -130,7 +130,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	embed := embedchunks.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
 	making := indexing.NewReadWholeVault(notes, books, embed.EmbedWithProgress)
 
-	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
+	_, err := making.Execute(t.Context(), v, indexing.ReadCallbacks{})
 	if err == nil {
 		t.Fatal("a vault whose books and vectors both failed came back clean")
 	}
@@ -164,7 +164,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	embed := embedchunks.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
 	making := indexing.NewReadWholeVault(notes, books, embed.EmbedWithProgress)
 
-	_, err := making.Execute(limitCtx, v, indexing.Reporting{})
+	_, err := making.Execute(limitCtx, v, indexing.ReadCallbacks{})
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("got %v", err)
 	}

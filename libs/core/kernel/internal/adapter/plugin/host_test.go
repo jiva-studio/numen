@@ -55,7 +55,7 @@ func newDiscoveredHostAt(t *testing.T, clock machineport.Clock, root string) *pl
 }
 
 func launchProcess(cmd *exec.Cmd, fallback int) supervision.Launcher {
-	return func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	return func(_ context.Context, _ manifest.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		if port == 0 {
 			port = fallback
 		}
@@ -64,7 +64,7 @@ func launchProcess(cmd *exec.Cmd, fallback int) supervision.Launcher {
 }
 
 func launchProcessAt(cmd *exec.Cmd, port int) supervision.Launcher {
-	return func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+	return func(context.Context, manifest.DiscoveredPlugin, int, string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	}
 }
@@ -294,7 +294,7 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 		t.Fatalf("create pipe failed: %v", err)
 	}
 
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, pr, nil
 	})
 
@@ -352,7 +352,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	allowHandshake := make(chan struct{})
 	var once sync.Once
 
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		launchCount.Add(1)
 		once.Do(func() {
 			close(launchStarted)
@@ -427,7 +427,7 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	slowStarted := make(chan struct{})
 	slowAllowHandshake := make(chan struct{})
 
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, p manifest.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "plugin.slow" {
 			close(slowStarted)
 			<-slowAllowHandshake
@@ -499,7 +499,7 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 	var once sync.Once
 	failErr := errors.New("simulated launch failure")
 
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		once.Do(func() {
 			close(launchStarted)
 		})
@@ -555,7 +555,7 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	launchStarted := make(chan struct{})
 	allowHandshake := make(chan struct{})
 
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		close(launchStarted)
 		<-allowHandshake
 		actualPort := port
@@ -815,7 +815,7 @@ func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Proces
 	t.Helper()
 	pingPort := wiretest.ServeHostPing(t)
 	var mu sync.Mutex
-	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	return func(ctx context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
@@ -1065,7 +1065,7 @@ func newHostOfProviders(t *testing.T) *pluginhost.Host {
 		}
 	})
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
-		setPlugin(host.Management, id, manifest.Discovered{Manifest: manifest.Manifest{
+		setPlugin(host.Management, id, manifest.DiscoveredPlugin{Manifest: manifest.Manifest{
 			ID:           id,
 			Capabilities: []string{bridge.CapabilitySearchSource},
 		}})

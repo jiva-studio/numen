@@ -36,8 +36,8 @@ type Summary struct {
 	UnreadableCount    int
 }
 
-// Listing is the tasks a filter accepts, limited to a count. Total is the count before the limit.
-type Listing struct {
+// TaskList is the tasks a filter accepts, limited to a count. Total is the count before the limit.
+type TaskList struct {
 	Tasks    []todo.Task
 	Total    int
 	Revision uint64
@@ -180,7 +180,7 @@ func (i *Index) StoreNote(path string, content []byte, stat domain.FileStat) {
 }
 
 // List returns the tasks that the filter accepts at today.
-func (i *Index) List(today string, f filter.Filter, limit int) Listing {
+func (i *Index) List(today string, f filter.Filter, limit int) TaskList {
 	i.mu.Lock()
 	var all []todo.Task
 	for _, one := range i.entries {
@@ -193,17 +193,17 @@ func (i *Index) List(today string, f filter.Filter, limit int) Listing {
 	if limit > 0 && total > limit {
 		accepted = accepted[:limit]
 	}
-	return Listing{Tasks: accepted, Total: total, Revision: revision}
+	return TaskList{Tasks: accepted, Total: total, Revision: revision}
 }
 
-// PathListing is the paths of the notes that hold a task a filter accepts, sorted.
-type PathListing struct {
+// PathList is the paths of the notes that hold a task a filter accepts, sorted.
+type PathList struct {
 	Paths   []string
 	IsReady bool
 }
 
 // ListPaths returns the paths of the notes with at least one task the filter accepts at today.
-func (i *Index) ListPaths(today string, f filter.Filter) PathListing {
+func (i *Index) ListPaths(today string, f filter.Filter) PathList {
 	i.mu.Lock()
 	isReady := i.isReady
 	copies := make(map[string][]todo.Task, len(i.entries))
@@ -211,7 +211,7 @@ func (i *Index) ListPaths(today string, f filter.Filter) PathListing {
 		copies[path] = one.tasks
 	}
 	i.mu.Unlock()
-	listing := PathListing{Paths: []string{}, IsReady: isReady}
+	listing := PathList{Paths: []string{}, IsReady: isReady}
 	for path, tasks := range copies {
 		if filter.IsMatch(tasks, f, today) {
 			listing.Paths = append(listing.Paths, path)
@@ -223,7 +223,7 @@ func (i *Index) ListPaths(today string, f filter.Filter) PathListing {
 
 // MatchPaths returns the asked paths of the notes with at least one task the filter accepts at
 // today, in the order they were asked.
-func (i *Index) MatchPaths(today string, f filter.Filter, asked []string) PathListing {
+func (i *Index) MatchPaths(today string, f filter.Filter, asked []string) PathList {
 	i.mu.Lock()
 	isReady := i.isReady
 	copies := make([][]todo.Task, len(asked))
@@ -231,7 +231,7 @@ func (i *Index) MatchPaths(today string, f filter.Filter, asked []string) PathLi
 		copies[n] = i.entries[path].tasks
 	}
 	i.mu.Unlock()
-	listing := PathListing{Paths: []string{}, IsReady: isReady}
+	listing := PathList{Paths: []string{}, IsReady: isReady}
 	for n, path := range asked {
 		if filter.IsMatch(copies[n], f, today) {
 			listing.Paths = append(listing.Paths, path)

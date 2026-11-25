@@ -20,22 +20,22 @@ import (
 
 const probeText = "width probe"
 
-// Embedding carries out the embed and profile operations.
-type Embedding struct {
+// Embedder carries out the embed and profile operations.
+type Embedder struct {
 	gateway ports.Gateway
 	limits  *limits.Limits
 }
 
 // New returns an Embedding that asks gateway and takes the time of a request from limits.
-func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Embedding, error) {
+func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Embedder, error) {
 	if gateway == nil || requestLimits == nil {
 		return nil, errors.New("embedding: a gateway and limits are required")
 	}
-	return &Embedding{gateway: gateway, limits: requestLimits}, nil
+	return &Embedder{gateway: gateway, limits: requestLimits}, nil
 }
 
 // Embed asks the service for one vector for each text.
-func (e *Embedding) Embed(ctx context.Context, call connection.Call, request *llm.EmbedRequest) (*llm.EmbedResult, error) {
+func (e *Embedder) Embed(ctx context.Context, call connection.Call, request *llm.EmbedRequest) (*llm.EmbedResult, error) {
 	vectors, err := e.embedTexts(ctx, call, request.GetTexts())
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (e *Embedding) Embed(ctx context.Context, call connection.Call, request *ll
 	return result, nil
 }
 
-func (e *Embedding) embedTexts(ctx context.Context, call connection.Call, texts []string) ([][]float32, error) {
+func (e *Embedder) embedTexts(ctx context.Context, call connection.Call, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, ctx.Err()
 	}
@@ -63,7 +63,7 @@ func (e *Embedding) embedTexts(ctx context.Context, call connection.Call, texts 
 
 // GetProfile returns the profile of the embedding model of the row: the table gives it with no request
 // for a model it holds, and the width of any other model is measured by embedding one short text.
-func (e *Embedding) GetProfile(ctx context.Context, call connection.Call) (*llm.Profile, error) {
+func (e *Embedder) GetProfile(ctx context.Context, call connection.Call) (*llm.Profile, error) {
 	if !servicetype.IsKnown(call.Type) {
 		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}

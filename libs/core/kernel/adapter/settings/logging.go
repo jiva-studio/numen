@@ -2,7 +2,7 @@ package settings
 
 import "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 
-type Logging struct {
+type LoggingSettings struct {
 	Level string `json:"level"`
 }
 

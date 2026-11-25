@@ -49,7 +49,7 @@ func newRequiringHost(t *testing.T) requiringHost {
 		},
 	}, map[string]int{requiringPlugin: servePlugin(t, nil)})
 	launcher := &keptLauncher{t: t, port: servePlugin(t, nil)}
-	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p catalogmanifest.Discovered, port int, token string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p catalogmanifest.DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error) {
 		return launcher.launch(ctx, p, port, token)
 	})
 	policy := lifecycle.DefaultActivationPolicy()

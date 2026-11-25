@@ -25,7 +25,7 @@ import (
 // kept as one name, so the rename does not leave a title different from the filename.
 type Rename struct {
 	readers   vaultport.VaultReaders
-	writers   MoveWriting
+	writers   MoveWriter
 	index     edit.IndexUpdater
 	now       machineport.Clock
 	sync      naming.SyncSetting

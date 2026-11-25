@@ -45,8 +45,8 @@ func (c Config) openIndex(res *Resources, ctx context.Context) (*vaultIndex, err
 	return db, err
 }
 
-// vaultWiring holds the filesystem ports and indexing callbacks of an installation.
-type vaultWiring struct {
+// vaultParts holds the filesystem ports and indexing callbacks of an installation.
+type vaultParts struct {
 	IndexPath    string
 	RegistryPath string
 	Options      vaultconfig.Options
@@ -62,9 +62,9 @@ type vaultWiring struct {
 	AbsentFiles  vaultport.AbsentFiles
 }
 
-func openVaultAccess(paths Paths, timer timeSource, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultWiring {
+func openVaultAccess(paths Paths, timer timeSource, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultParts {
 	options := vaultconfig.Options{ServiceDir: paths.ServiceDir}
-	return vaultWiring{
+	return vaultParts{
 		IndexPath:    paths.IndexPath,
 		RegistryPath: paths.RegistryPath,
 		Options:      options,
@@ -99,13 +99,13 @@ func createVaultIdentity(options vaultconfig.Options) vaultport.VaultIdentity {
 
 func createTrash(clock machineport.Clock) vault.Trash { return trash.New(clock) }
 
-func createVaultUseCases(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex) vaultUseCases {
+func createVaultUseCases(c vaultParts, registry vaultregistry.Ports, db *vaultIndex) vaultUseCases {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
 	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
 	identity := createVaultIdentity(c.Options)
 	erase := vault.NewErase(identity, createTrash(c.Clock), unregister)
 	return vaultUseCases{
-		Change: vaultChanging{
+		Change: vaultListUseCases{
 			Add:        newAddVault(identity, c.Clock, registry),
 			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
 			Remove:     vault.NewRemove(registry.Lookup, unregister, erase),

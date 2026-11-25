@@ -187,11 +187,11 @@ func (t *Texts) RemoveVersion(_ context.Context, path, key string) error {
 	return nil
 }
 
-func (t *Texts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
+func (t *Texts) ListVersions(ctx context.Context, path string) (host.TextVersionList, error) {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	var listing host.TextListing
+	var listing host.TextVersionList
 	for _, v := range w.versions {
 		if v.Path == path {
 			listing.Versions = append(listing.Versions, v)

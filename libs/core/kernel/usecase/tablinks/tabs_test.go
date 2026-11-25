@@ -787,7 +787,7 @@ func (e *testEvents) Subscribe() (<-chan Event, func()) {
 	}
 }
 
-func getLockedState(host shared) *state {
+func getLockedState(host stateHolder) *state {
 	s, release := host.hold()
 	release()
 	return s

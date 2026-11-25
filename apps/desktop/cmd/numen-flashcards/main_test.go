@@ -51,7 +51,7 @@ func openShell(t *testing.T, install testInstallation) *shell.API {
 	t.Helper()
 
 	services := install.services
-	opening := container.ShellOpening{
+	opening := container.ShellRequest{
 		Target: platform.TargetFlashcards,
 		Log:    container.ShellLog{Out: io.Discard, Label: "flashcards", Notify: func(string) {}},
 	}

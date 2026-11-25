@@ -40,7 +40,7 @@ func (u *ReadAppearance) Execute() (themedomain.Appearance, error) {
 	}, nil
 }
 
-func getAppearanceValue[T any](stored settingsdomain.Stored, key string) T {
+func getAppearanceValue[T any](stored settingsdomain.StoredSettings, key string) T {
 	value, _ := stored.GetValue(getAppearancePath(key)...)
 	typed, isTyped := value.(T)
 	if !isTyped {

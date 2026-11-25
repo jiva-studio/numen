@@ -46,7 +46,7 @@ func newRegistryWithInstructions(t *testing.T) *Registry {
 	return registry
 }
 
-func getToolInstructions(listing Listing) map[string][]string {
+func getToolInstructions(listing ToolList) map[string][]string {
 	byTool := map[string][]string{}
 	for _, one := range listing.Tools {
 		byTool[one.GetName()] = one.Instructions

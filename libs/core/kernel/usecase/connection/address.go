@@ -6,10 +6,27 @@ import (
 	"strings"
 )
 
-// CheckAddress accepts an http or https address with a host and no credentials. Over http a key goes
-// only to a loopback address. Link-local, unspecified and cloud metadata addresses are refused. A private network is accepted. A host name other than localhost is not
-// resolved here, so the provider checks the address it resolves to.
-func CheckAddress(address string, hasKey bool) error {
+type addressAuth int
+
+const (
+	addressWithoutKey addressAuth = iota
+	addressWithKey
+)
+
+// CheckAddress accepts an http or https address with a host and no credentials. Link-local, unspecified
+// and cloud metadata addresses are refused. A private network is accepted. A host name other than
+// localhost is not resolved here, so the provider checks the address it resolves to.
+func CheckAddress(address string) error {
+	return checkAddressURL(address, addressWithoutKey)
+}
+
+// CheckAddressWithKey applies CheckAddress and additionally refuses plain http on non-loopback hosts,
+// so a key goes over http only to this computer.
+func CheckAddressWithKey(address string) error {
+	return checkAddressURL(address, addressWithKey)
+}
+
+func checkAddressURL(address string, auth addressAuth) error {
 	parsed, err := url.Parse(address)
 	if err != nil {
 		return newInvalidError("the address is not a URL")
@@ -28,7 +45,7 @@ func CheckAddress(address string, hasKey bool) error {
 	switch {
 	case class == hostForbidden:
 		return newInvalidError("the address names a host that is not allowed: %s", host)
-	case parsed.Scheme == "http" && hasKey && class != hostLoopback:
+	case parsed.Scheme == "http" && auth == addressWithKey && class != hostLoopback:
 		return newInvalidError("a key is sent over http only to this computer; use https")
 	}
 	return nil

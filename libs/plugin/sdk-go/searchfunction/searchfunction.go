@@ -78,11 +78,11 @@ func (a Arguments) GetBool(name string) (bool, bool) {
 	return value.BoolValue, true
 }
 
-// Matched are the paths among those asked about for which the function holds. Warning is a text the query
+// MatchResult are the paths among those asked about for which the function holds. Warning is a text the query
 // shows with its results, such as an answer that may be out of date.
 //
 //numen:api
-type Matched struct {
+type MatchResult struct {
 	Paths   []string
 	Warning string
 }
@@ -101,7 +101,7 @@ type Found struct {
 //
 //numen:api
 type Function struct {
-	Match func(ctx context.Context, call Call, paths []string) (Matched, error)
+	Match func(ctx context.Context, call Call, paths []string) (MatchResult, error)
 	Find  func(ctx context.Context, call Call, limit int) (Found, error)
 }
 

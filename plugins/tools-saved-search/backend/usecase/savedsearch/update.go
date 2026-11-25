@@ -28,12 +28,12 @@ var (
 
 // Update writes the query of the input into a saved search note, scans it, and runs it at once. A query
 // the core reports problems of returns them in the output and changes nothing.
-func (u *UseCase) Update(ctx context.Context, vault domain.VaultID, in UpdateInput) (Saved, error) {
+func (u *UseCase) Update(ctx context.Context, vault domain.VaultID, in UpdateInput) (SavedSearch, error) {
 	if in.Query == nil {
 		if err := u.checkSearch(ctx, vault, in.Path); err != nil {
-			return Saved{}, err
+			return SavedSearch{}, err
 		}
-		return Saved{}, errNoQuery
+		return SavedSearch{}, errNoQuery
 	}
 	problems, err := u.write(ctx, vault, in.Path, *in.Query)
 	if err != nil || len(problems) > 0 {

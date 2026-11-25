@@ -18,8 +18,8 @@ func hasLevel(levels []Level, name string) bool {
 	return slices.ContainsFunc(levels, func(one Level) bool { return one.Name == name })
 }
 
-// Listing is what an agent reports for a session: its models and the one it answers with.
-type Listing struct {
+// SessionModels is what an agent reports for a session: its models and the one it answers with.
+type SessionModels struct {
 	Models  []Model `json:"models"`
 	Current string  `json:"current"`
 	Levels  []Level `json:"levels,omitempty"`

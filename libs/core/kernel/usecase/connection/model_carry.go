@@ -41,15 +41,15 @@ type openError struct{ err error }
 
 func (e *openError) Error() string { return e.err.Error() }
 
-// asking is what one call of a plugin asks for.
-type asking struct {
+// callRequest is what one call of a plugin asks for.
+type callRequest struct {
 	callerPluginID string
 	operation      string
 	priority       modelcall.Priority
 	preferred      *modelcall.PreferredRow
 }
 
-func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error) {
+func carry(ctx context.Context, c *Calls, ask callRequest, do attempt) ([]byte, error) {
 	var none []byte
 	rows, err := c.rows(ask.callerPluginID, ask.operation)
 	if err != nil {
@@ -107,7 +107,7 @@ func putPreferredFirst(rows []connection.Row, preferred *modelcall.PreferredRow)
 type callServices interface {
 	acquire(ctx context.Context, connectionID string, capacity int, priority modelcall.Priority) (func(), error)
 	providers() connectionport.ProviderSource
-	readConnectionSecrets(ctx context.Context, resolved connection.Resolved) (map[string]string, error)
+	readConnectionSecrets(ctx context.Context, resolved connection.Resolution) (map[string]string, error)
 }
 
 func (c *Calls) acquire(ctx context.Context, connectionID string, capacity int, priority modelcall.Priority) (func(), error) {
@@ -118,7 +118,7 @@ func (c *Calls) providers() connectionport.ProviderSource {
 	return c.source
 }
 
-func (c *Calls) readConnectionSecrets(ctx context.Context, resolved connection.Resolved) (map[string]string, error) {
+func (c *Calls) readConnectionSecrets(ctx context.Context, resolved connection.Resolution) (map[string]string, error) {
 	return c.readSecrets(ctx, resolved)
 }
 
@@ -126,14 +126,14 @@ func (c *Calls) readConnectionSecrets(ctx context.Context, resolved connection.R
 // operation to carry out.
 type rowCall struct {
 	calls    callServices
-	resolved connection.Resolved
+	resolved connection.Resolution
 	row      connection.Row
 	do       attempt
 	priority modelcall.Priority
 	secrets  map[string]string
 }
 
-func tryRow(ctx context.Context, c *Calls, row connection.Row, ask asking, do attempt) rowOutcome {
+func tryRow(ctx context.Context, c *Calls, row connection.Row, ask callRequest, do attempt) rowOutcome {
 	outcome, isStale := tryResolvedRow(ctx, c, row, ask, do)
 	if isStale {
 		outcome, _ = tryResolvedRow(ctx, c, row, ask, do)
@@ -141,7 +141,7 @@ func tryRow(ctx context.Context, c *Calls, row connection.Row, ask asking, do at
 	return outcome
 }
 
-func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask asking, do attempt) (rowOutcome, bool) {
+func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask callRequest, do attempt) (rowOutcome, bool) {
 	resolved, skip, err := c.checkRow(row, ask.operation)
 	if err != nil {
 		return rowOutcome{err: err}, false
@@ -177,7 +177,7 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 	}
 }
 
-func (c *Calls) checkRow(row connection.Row, operation string) (connection.Resolved, *connection.Failure, error) {
+func (c *Calls) checkRow(row connection.Row, operation string) (connection.Resolution, *connection.Failure, error) {
 	resolved, err := c.resolve(row.ConnectionID)
 	switch {
 	case errors.Is(err, connection.ErrNotFound):
@@ -211,7 +211,7 @@ type verdict struct {
 	isStale    bool
 }
 
-func readVerdict(resolved connection.Resolved, err error) verdict {
+func readVerdict(resolved connection.Resolution, err error) verdict {
 	var unavailable *openError
 	var stopError *connection.StopError
 	var tryNext *connection.TryNextError

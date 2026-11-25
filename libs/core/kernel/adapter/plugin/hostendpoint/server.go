@@ -12,7 +12,7 @@ type Server struct {
 	accounts AccountCalls
 
 	mu       sync.Mutex
-	endpoint serving
+	endpoint endpoint
 }
 
 // NewServer creates a server that serves callers and accounts on address once Open finds a service set.
@@ -81,8 +81,8 @@ func (s *Server) ClearPlugin(pluginID string) {
 	}
 }
 
-// serving is an endpoint that answers the calls of plugins.
-type serving interface {
+// endpoint is an endpoint that answers the calls of plugins.
+type endpoint interface {
 	GetPort() int
 	Close(ctx context.Context) error
 	ClearPluginTasks(pluginID string)

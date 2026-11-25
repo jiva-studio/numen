@@ -35,7 +35,7 @@ type appObject struct {
 	Editor      Editor      `json:"editor"`
 	Performance Performance `json:"performance"`
 	Search      *Search     `json:"search"`
-	Logging     *Logging    `json:"logging"`
+	Logging     *LoggingSettings    `json:"logging"`
 	Keys        *Keys       `json:"keys"`
 	Vaults      *Vaults     `json:"vaults"`
 }
@@ -48,7 +48,7 @@ type appSections struct {
 	Editor      *Editor      `json:"editor"`
 	Performance *Performance `json:"performance"`
 	Search      *Search      `json:"search"`
-	Logging     *Logging     `json:"logging"`
+	Logging     *LoggingSettings     `json:"logging"`
 	Keys        *Keys        `json:"keys"`
 	Vaults      *Vaults      `json:"vaults"`
 }
@@ -85,7 +85,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Header.Version},
-		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &Logging{f.Texts[keyLogLevel]}, &Keys{f.Texts[keyCredentialsFile]}, &Vaults{f.Texts[keyVaultsFolder]}}},
+		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &LoggingSettings{f.Texts[keyLogLevel]}, &Keys{f.Texts[keyCredentialsFile]}, &Vaults{f.Texts[keyVaultsFolder]}}},
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {
@@ -179,7 +179,7 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	logging, keys, vaults := Logging{f.Texts[keyLogLevel]}, Keys{f.Texts[keyCredentialsFile]}, Vaults{f.Texts[keyVaultsFolder]}
+	logging, keys, vaults := LoggingSettings{f.Texts[keyLogLevel]}, Keys{f.Texts[keyCredentialsFile]}, Vaults{f.Texts[keyVaultsFolder]}
 	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search, &logging, &keys, &vaults}
 	err = json.Unmarshal(content, &sections)
 	f.Texts = Texts{keyLogLevel: logging.Level, keyCredentialsFile: keys.CredentialsFile, keyVaultsFolder: vaults.Folder}

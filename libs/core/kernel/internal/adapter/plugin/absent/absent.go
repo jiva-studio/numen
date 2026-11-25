@@ -39,17 +39,17 @@ func (r Runtime) RetryPlugin(_ context.Context, pluginID string) (*plugindomain.
 }
 
 // ResolveCapability reports that no plugin answers for the capability.
-func (r Runtime) ResolveCapability(capability string) (manifest.Discovered, error) {
-	return manifest.Discovered{}, r.createUnavailableError(capability, "")
+func (r Runtime) ResolveCapability(capability string) (manifest.DiscoveredPlugin, error) {
+	return manifest.DiscoveredPlugin{}, r.createUnavailableError(capability, "")
 }
 
 // ResolveService finds no plugin.
-func (Runtime) ResolveService(string) (manifest.Discovered, bool) {
-	return manifest.Discovered{}, false
+func (Runtime) ResolveService(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{}, false
 }
 
-func (Runtime) GetPlugin(string) (manifest.Discovered, bool) {
-	return manifest.Discovered{}, false
+func (Runtime) GetPlugin(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{}, false
 }
 
 // ResolveNoteProfile finds no plugin that defines the type.
@@ -138,20 +138,22 @@ func (Processes) ListProcesses() []plugindomain.Process { return nil }
 // WatchProcesses never signals: nothing runs to change.
 func (Processes) WatchProcesses(context.Context) <-chan struct{} { return nil }
 
-// Listing lists the plugins of a plugin host that runs nothing: none are installed and none are enabled.
-type Listing struct{}
+// PluginLister lists the plugins of a plugin host that runs nothing: none are installed and none are enabled.
+type PluginLister struct{}
 
-func (Listing) ListPlugins() []manifest.Discovered { return nil }
+func (PluginLister) ListPlugins() []manifest.DiscoveredPlugin { return nil }
 
-func (Listing) GetPlugin(string) (manifest.Discovered, bool) { return manifest.Discovered{}, false }
+func (PluginLister) GetPlugin(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{}, false
+}
 
-func (Listing) GetPluginInfos() []plugindomain.Info { return nil }
+func (PluginLister) GetPluginInfos() []plugindomain.Info { return nil }
 
 // IsPluginEnabled reports that no plugin is enabled.
-func (Listing) IsPluginEnabled(string) bool { return false }
+func (PluginLister) IsPluginEnabled(string) bool { return false }
 
 // IsEnabled reports that no plugin is enabled.
-func (Listing) IsEnabled(string) bool { return false }
+func (PluginLister) IsEnabled(string) bool { return false }
 
 // KeepAll has no plugin to keep.
 func (Settings) KeepAll(context.Context) {}

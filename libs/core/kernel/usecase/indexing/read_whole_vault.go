@@ -30,14 +30,14 @@ type EmbedVectors func(
 	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
 ) (vaultreading.EmbedResult, error)
 
-// VaultPreparing prepares a ReadWholeVault for a vault once it has been found.
-type VaultPreparing = func(ctx context.Context, v domain.Vault) (ReadWholeVault, error)
+// VaultPreparer prepares a ReadWholeVault for a vault once it has been found.
+type VaultPreparer = func(ctx context.Context, v domain.Vault) (ReadWholeVault, error)
 
 // ReadWholeVault makes a vault answer: its notes are read, the text versions of
 // its other files are cut, and what was cut is given its vectors.
 type ReadWholeVault struct {
 	lookup  vaultport.VaultLookup
-	prepare VaultPreparing
+	prepare VaultPreparer
 	notes   NoteScanner
 	texts   TextIndexer
 	vectors EmbedVectors
@@ -45,9 +45,9 @@ type ReadWholeVault struct {
 	Unembedded error
 }
 
-// Reporting is what one read reports to its caller, and the sources it leaves out. A nil function
+// ReadCallbacks is what one read reports to its caller, and the sources it leaves out. A nil function
 // reports nothing and leaves out nothing. OnVaultFound receives the vault and the reason it is not embedded.
-type Reporting struct {
+type ReadCallbacks struct {
 	NotifyVaultFound      func(domain.Vault, error)
 	NotifyNotesProgress   func(vaultreading.ScanResult)
 	NotifyTextsProgress   func(vaultreading.IndexResult)
@@ -63,7 +63,7 @@ func NewReadWholeVault(notes NoteScanner, texts TextIndexer, vectors EmbedVector
 }
 
 // NewReadWholeVaultByName creates a ReadWholeVault that resolves the vault and prepares the pass over it.
-func NewReadWholeVaultByName(lookup vaultport.VaultLookup, prepare VaultPreparing) ReadWholeVault {
+func NewReadWholeVaultByName(lookup vaultport.VaultLookup, prepare VaultPreparer) ReadWholeVault {
 	base := ReadWholeVault{lookup: lookup}
 	if prepare == nil {
 		prepare = func(context.Context, domain.Vault) (ReadWholeVault, error) { return base, nil }
@@ -73,7 +73,7 @@ func NewReadWholeVaultByName(lookup vaultport.VaultLookup, prepare VaultPreparin
 }
 
 func (u ReadWholeVault) ExecuteByName(
-	ctx context.Context, nameOrPath string, reporting Reporting,
+	ctx context.Context, nameOrPath string, reporting ReadCallbacks,
 ) (domain.Vault, ReadWholeVaultResult, error) {
 	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
@@ -102,7 +102,7 @@ type ReadWholeVaultResult struct {
 }
 
 // Execute reads the whole vault, in the order the three passes stand in.
-func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault, reporting Reporting) (ReadWholeVaultResult, error) {
+func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault, reporting ReadCallbacks) (ReadWholeVaultResult, error) {
 	var out ReadWholeVaultResult
 
 	notes, err := u.notes.ScanWithProgress(ctx, v, reporting.NotifyNotesProgress)
@@ -125,7 +125,7 @@ func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault, reporting R
 }
 
 // IndexTexts cuts the live text version of every file of the vault that has one.
-func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault, reporting Reporting) (vaultreading.IndexResult, error) {
+func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault, reporting ReadCallbacks) (vaultreading.IndexResult, error) {
 	res, err := u.texts.IndexWithProgress(ctx, v, reporting.NotifyTextsProgress, reporting.IsTextSkipped)
 	if err != nil {
 		return res, fmt.Errorf("indexing the file texts of %s: %w", v.Name, err)
@@ -134,7 +134,7 @@ func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault, reportin
 }
 
 // MakeVectors embeds every chunk that lacks a vector.
-func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault, reporting Reporting) (vaultreading.EmbedResult, error) {
+func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault, reporting ReadCallbacks) (vaultreading.EmbedResult, error) {
 	res, err := u.vectors(ctx, v, reporting.NotifyVectorsProgress, reporting.IsVectorSkipped)
 	if err != nil {
 		return res, fmt.Errorf("embedding %s: %w", v.Name, err)

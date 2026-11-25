@@ -34,8 +34,8 @@ type TextPut struct {
 	File           string
 }
 
-// TextListing is the versions of a file and the one the host shows, which is empty where none is live.
-type TextListing struct {
+// TextVersionList is the versions of a file and the one the host shows, which is empty where none is live.
+type TextVersionList struct {
 	Versions []domain.TextVersion
 	Live     domain.TextVersionID
 }
@@ -63,7 +63,7 @@ type TextVersions interface {
 	// under the key, and reindexes the file.
 	PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error)
 	// ListVersions is the versions of a file and which of them is live.
-	ListVersions(ctx context.Context, path string) (TextListing, error)
+	ListVersions(ctx context.Context, path string) (TextVersionList, error)
 }
 
 // TextReader reads the segments of the text versions of the vault.

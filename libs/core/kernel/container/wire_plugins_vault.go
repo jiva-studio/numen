@@ -44,7 +44,7 @@ func getNoteChanges(notes noteUseCases) hostvault.NoteChanges {
 	}
 }
 
-func installPluginVault(install pluginInstall, vaultDeps vaultWiring,
+func installPluginVault(install pluginInstall, vaultDeps vaultParts,
 	registry vaultregistry.Ports, db *vaultIndex, current func() (domain.Vault, bool), hooks pluginVaultHooks,
 ) error {
 	opened, err := openPluginVault(install, vaultDeps, registry, db, current, completeHooks(vaultDeps, db, hooks))
@@ -55,7 +55,7 @@ func installPluginVault(install pluginInstall, vaultDeps vaultWiring,
 	return nil
 }
 
-func openPluginVault(install pluginInstall, vaultDeps vaultWiring,
+func openPluginVault(install pluginInstall, vaultDeps vaultParts,
 	registry vaultregistry.Ports, db *vaultIndex, current func() (domain.Vault, bool), hooks pluginVaultHooks,
 ) (*pluginvault.Access, error) {
 	cache, err := appstate.OpenPluginCachesIn(install.PluginCachePath)
@@ -129,7 +129,7 @@ func newArranger(
 	return arranger
 }
 
-func completeHooks(v vaultWiring, db *vaultIndex, hooks pluginVaultHooks) pluginVaultHooks {
+func completeHooks(v vaultParts, db *vaultIndex, hooks pluginVaultHooks) pluginVaultHooks {
 	if hooks.IndexState == nil {
 		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
 	}
@@ -139,7 +139,7 @@ func completeHooks(v vaultWiring, db *vaultIndex, hooks pluginVaultHooks) plugin
 	return hooks
 }
 
-func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *textversion.VersionItems {
+func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts) *textversion.VersionItems {
 	if vaultDeps.TextVersions == nil {
 		return nil
 	}
@@ -148,7 +148,7 @@ func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps
 	return textversion.NewVersionItems(vaultDeps.TextVersions.Texts, vaultDeps.TextVersions.Versions, run, running.Watch.ContentTypeTable)
 }
 
-func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *windowsession.Triggers {
+func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts) *windowsession.Triggers {
 	if vaultDeps.TextVersions == nil {
 		return nil
 	}
@@ -160,7 +160,7 @@ func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps set
 	})
 }
 
-func getWhenConfig(settingsDeps settingsWiring, plugins pluginmanifest.PluginLister) pluginport.WhenConfig {
+func getWhenConfig(settingsDeps settingsParts, plugins pluginmanifest.PluginLister) pluginport.WhenConfig {
 	return settingsadapter.WhenConfig{
 		ListAppSettings: func() []plugindomain.Setting { return listAppSettings(settingsDeps) },
 		ListPlugins:     plugins.GetPluginInfos,

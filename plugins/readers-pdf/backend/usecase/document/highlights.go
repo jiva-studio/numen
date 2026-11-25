@@ -20,7 +20,7 @@ const mostSpans = 64
 
 // LiveTexts reads the live text version of a file.
 type LiveTexts interface {
-	ListVersions(ctx context.Context, path string) (host.TextListing, error)
+	ListVersions(ctx context.Context, path string) (host.TextVersionList, error)
 	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error)
 }
 

@@ -24,8 +24,8 @@ type Vaults interface {
 
 // Tasks lists the notes that hold a task a filter accepts.
 type Tasks interface {
-	ListPaths(today string, f filter.Filter) index.PathListing
-	MatchPaths(today string, f filter.Filter, asked []string) index.PathListing
+	ListPaths(today string, f filter.Filter) index.PathList
+	MatchPaths(today string, f filter.Filter, asked []string) index.PathList
 }
 
 // buildFilter returns the filter a call stands for, at today.
@@ -135,7 +135,7 @@ func newInvalidError(format string, args ...any) error {
 }
 
 func newFunction(build buildFilter, vaults Vaults, clock ports.Clock) searchfunction.Function {
-	list := func(ctx context.Context, call searchfunction.Call, query func(tasks Tasks, today string, f filter.Filter) index.PathListing) ([]string, string, error) {
+	list := func(ctx context.Context, call searchfunction.Call, query func(tasks Tasks, today string, f filter.Filter) index.PathList) ([]string, string, error) {
 		tasks, err := vaults.GetTasks(ctx, call.VaultID)
 		if err != nil {
 			return nil, "", err
@@ -152,17 +152,17 @@ func newFunction(build buildFilter, vaults Vaults, clock ports.Clock) searchfunc
 		return listing.Paths, "", nil
 	}
 	return searchfunction.Function{
-		Match: func(ctx context.Context, call searchfunction.Call, asked []string) (searchfunction.Matched, error) {
-			paths, warning, err := list(ctx, call, func(tasks Tasks, today string, f filter.Filter) index.PathListing {
+		Match: func(ctx context.Context, call searchfunction.Call, asked []string) (searchfunction.MatchResult, error) {
+			paths, warning, err := list(ctx, call, func(tasks Tasks, today string, f filter.Filter) index.PathList {
 				return tasks.MatchPaths(today, f, asked)
 			})
 			if err != nil {
-				return searchfunction.Matched{}, err
+				return searchfunction.MatchResult{}, err
 			}
-			return searchfunction.Matched{Paths: paths, Warning: warning}, nil
+			return searchfunction.MatchResult{Paths: paths, Warning: warning}, nil
 		},
 		Find: func(ctx context.Context, call searchfunction.Call, limit int) (searchfunction.Found, error) {
-			paths, warning, err := list(ctx, call, func(tasks Tasks, today string, f filter.Filter) index.PathListing {
+			paths, warning, err := list(ctx, call, func(tasks Tasks, today string, f filter.Filter) index.PathList {
 				return tasks.ListPaths(today, f)
 			})
 			if err != nil {

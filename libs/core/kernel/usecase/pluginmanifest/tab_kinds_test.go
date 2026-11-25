@@ -13,7 +13,7 @@ func TestListTabKinds_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 	deck := manifest.TabKind{Kind: "deck", Title: "Deck", Icon: "", When: "target.noteType == 'deck'", Rank: domain.RankDefault, IsNoteEditor: false}
 	note := manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate, IsNoteEditor: false}
 	host := &manifestHost{
-		plugins: []manifest.Discovered{
+		plugins: []manifest.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.cards", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.off", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.editor", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{note}}}},
@@ -55,7 +55,7 @@ func TestListTabKinds_ExcludesAPluginWithATabKindOfAnEarlierPlugin(t *testing.T)
 	deck := manifest.TabKind{Kind: "deck", Title: "Deck", Icon: "", When: "", Rank: domain.RankDefault, IsNoteEditor: false}
 	other := manifest.TabKind{Kind: "other", Title: "Other", Icon: "", When: "", Rank: domain.RankDefault, IsNoteEditor: false}
 	host := &manifestHost{
-		plugins: []manifest.Discovered{
+		plugins: []manifest.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.cards", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.copy", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{other, deck}}}},
 		},
@@ -71,7 +71,7 @@ func TestListTabKinds_ExcludesAPluginWithATabKindOfAnEarlierPlugin(t *testing.T)
 func TestListTabKinds_ExcludesAPluginWhoseReaderDuplicatesATabKind(t *testing.T) {
 	kind := manifest.TabKind{Kind: "reader:pdf", Title: "PDF", Icon: "", When: "", Rank: domain.RankDefault, IsNoteEditor: false}
 	host := &manifestHost{
-		plugins: []manifest.Discovered{
+		plugins: []manifest.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.pdf", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{kind}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.fake", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{
 				TabKinds: []manifest.TabKind{{Kind: "fake", Title: "Fake", Icon: "", When: "", Rank: domain.RankDefault}},

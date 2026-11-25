@@ -13,12 +13,12 @@ import (
 )
 
 type answering struct {
-	listing  tools.Listing
+	listing  tools.ToolList
 	response *tools.CallResponse
 	called   tools.Call
 }
 
-func (a *answering) ListTools(context.Context, http.Header) (tools.Listing, error) {
+func (a *answering) ListTools(context.Context, http.Header) (tools.ToolList, error) {
 	return a.listing, nil
 }
 
@@ -44,7 +44,7 @@ func TestAToolListedByTheHostReachesTheClientWhole(t *testing.T) {
 		Instructions: []string{"Greet each guest by name with greet.", "Call greet once per guest."},
 		Requires:     []string{"vault:manage", "index:read"},
 	}
-	listing, err := serve(t, &answering{listing: tools.Listing{Tools: []*tools.ToolInfo{want}}}).ListTools(t.Context())
+	listing, err := serve(t, &answering{listing: tools.ToolList{Tools: []*tools.ToolInfo{want}}}).ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

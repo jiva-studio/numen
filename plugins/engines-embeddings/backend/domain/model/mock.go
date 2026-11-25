@@ -26,6 +26,6 @@ func GetMockModel() ModelInfo {
 		FloorHint:      0,
 		MinChunkLength: 0,
 		ChunkTokens:    0,
-		Handling:       Handling{QueryPrefix: MockQueryPrefix, DocumentPrefix: MockDocumentPrefix, File: "", Normalize: true, ExtraInputs: nil, Tokenizer: ""},
+		Handling:       InputFormat{QueryPrefix: MockQueryPrefix, DocumentPrefix: MockDocumentPrefix, File: "", Normalize: true, ExtraInputs: nil, Tokenizer: ""},
 	}
 }

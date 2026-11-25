@@ -37,9 +37,9 @@ type Result struct {
 	Version     domain.TextVersion
 }
 
-// Proofreading puts the lines of a text version right with the model and reports the corrected text
+// Proofreader puts the lines of a text version right with the model and reports the corrected text
 // as a version made from the one it read.
-type Proofreading struct {
+type Proofreader struct {
 	host      Host
 	kinds     map[domain.TextKind]bool
 	ask       AskModel
@@ -48,13 +48,13 @@ type Proofreading struct {
 
 // New returns a proofreading of the kinds given, which asks ask and reads its sizes from getConfig on
 // every run.
-func New(h Host, kinds map[domain.TextKind]bool, ask AskModel, getConfig func() settings.Config) *Proofreading {
-	return &Proofreading{host: h, kinds: kinds, ask: ask, getConfig: getConfig}
+func New(h Host, kinds map[domain.TextKind]bool, ask AskModel, getConfig func() settings.Config) *Proofreader {
+	return &Proofreader{host: h, kinds: kinds, ask: ask, getConfig: getConfig}
 }
 
 // Proofread reads the version, puts its lines right and puts the version made from it. A failure
 // is shown as a task until the file is proofread again.
-func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, error) {
+func (p *Proofreader) Proofread(ctx context.Context, req Request) (Result, error) {
 	task := host.Task{
 		ID: "proofread:" + req.Path, Title: "Proofreading " + path.Base(req.Path), Detail: req.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
@@ -73,7 +73,7 @@ func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, erro
 	return res, err
 }
 
-func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Task) (result Result, err error) {
+func (p *Proofreader) proofread(ctx context.Context, req Request, task *host.Task) (result Result, err error) {
 	store, texts := p.host.Store(req.Vault), p.host.GetTexts(req.Vault)
 	source, err := p.findSource(ctx, texts, req.Path, req.Source)
 	if err != nil {
@@ -115,7 +115,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	return Result{Lines: len(lines), Corrected: len(corrections), Uncorrected: uncorrected, Version: version}, nil
 }
 
-func (p *Proofreading) findSource(ctx context.Context, texts Texts, filePath string, id domain.TextVersionID) (domain.TextVersion, error) {
+func (p *Proofreader) findSource(ctx context.Context, texts Texts, filePath string, id domain.TextVersionID) (domain.TextVersion, error) {
 	listing, err := texts.ListVersions(ctx, filePath)
 	if err != nil {
 		return domain.TextVersion{}, err
@@ -154,7 +154,7 @@ func ReadParts(ctx context.Context, texts Texts, version domain.TextVersion) ([]
 	}
 }
 
-func (p *Proofreading) correct(
+func (p *Proofreader) correct(
 	ctx context.Context, parts []domain.TextSegment, lines []numbered.Line, task *host.Task,
 ) ([]numbered.Line, int, error) {
 	if numbered.IsTimed(parts) {
@@ -163,7 +163,7 @@ func (p *Proofreading) correct(
 	return p.correctScan(ctx, numbered.ReadPages(parts, lines), task)
 }
 
-func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line, task *host.Task) ([]numbered.Line, int, error) {
+func (p *Proofreader) correctSpeech(ctx context.Context, lines []numbered.Line, task *host.Task) ([]numbered.Line, int, error) {
 	cfg := p.getConfig()
 	var out []numbered.Line
 	uncorrected := 0
@@ -191,7 +191,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line,
 	}
 }
 
-func (p *Proofreading) correctScan(ctx context.Context, pages []numbered.Batch, task *host.Task) ([]numbered.Line, int, error) {
+func (p *Proofreader) correctScan(ctx context.Context, pages []numbered.Batch, task *host.Task) ([]numbered.Line, int, error) {
 	cfg := p.getConfig()
 	var out []numbered.Line
 	uncorrected := 0

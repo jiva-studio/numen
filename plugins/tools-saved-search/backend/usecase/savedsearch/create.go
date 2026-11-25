@@ -37,10 +37,10 @@ type CreateInput struct {
 	Query  string
 }
 
-// Saved is what a write of a saved search note produced: the note, the address of the note, the results of
+// SavedSearch is what a write of a saved search note produced: the note, the address of the note, the results of
 // its first run and their order, the time of the run, zero when there was none, and the warnings of the
 // run. Errors are the problems of a query that is not valid; nothing is written when there are any.
-type Saved struct {
+type SavedSearch struct {
 	Path        string
 	URI         string
 	ResultCount int
@@ -85,7 +85,7 @@ func New(dependencies Dependencies) *UseCase {
 // Create writes a new saved search note named after its title, in the folder of the input or of the
 // setting, scans it, and runs it at once; a note with no query is written and not run. A query the core reports problems of returns them in the output
 // and writes nothing.
-func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in CreateInput) (Saved, error) {
+func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in CreateInput) (SavedSearch, error) {
 	settings := u.getSettings()
 	hasQuery := strings.TrimSpace(in.Query) != ""
 	if problems, err := u.checkQuery(ctx, vault, in.Query); err != nil || len(problems) > 0 {
@@ -93,11 +93,11 @@ func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in CreateInp
 	}
 	title := strings.TrimSpace(in.Title)
 	if title == "" {
-		return Saved{}, errEmptyTitle
+		return SavedSearch{}, errEmptyTitle
 	}
 	name, exact, err := domain.CreateFilename(title)
 	if err != nil {
-		return Saved{}, err
+		return SavedSearch{}, err
 	}
 	folder := in.Folder
 	if strings.TrimSpace(folder) == "" {
@@ -106,25 +106,25 @@ func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in CreateInp
 	notePath := path.Join(strings.Trim(folder, "/"), name+domain.NoteExtension)
 	id, err := ulid.NewGenerator(entropyReader{fill: u.entropy.Fill}).NewID(u.clock.Now())
 	if err != nil {
-		return Saved{}, err
+		return SavedSearch{}, err
 	}
 	definition := searchnote.Definition{ID: id, Title: title, Query: in.Query}
 	raw, err := searchnote.Create(id, title, exact, definition)
 	if err != nil {
-		return Saved{}, err
+		return SavedSearch{}, err
 	}
 	notes := u.open(vault)
 	if err := notes.Create(ctx, notePath, raw); err != nil {
 		if errors.Is(err, host.ErrAlreadyExists) {
-			return Saved{}, fmt.Errorf("a file is at %s; choose another title", notePath)
+			return SavedSearch{}, fmt.Errorf("a file is at %s; choose another title", notePath)
 		}
-		return Saved{}, err
+		return SavedSearch{}, err
 	}
 	if err := notes.Scan(ctx, []string{notePath}); err != nil {
-		return Saved{}, err
+		return SavedSearch{}, err
 	}
 	if !hasQuery {
-		return Saved{
+		return SavedSearch{
 			Path: notePath, URI: textplace.FormatNoteAddress(notePath), ResultCount: 0, Order: "", ComputedAt: time.Time{},
 			Warnings: nil, Errors: nil,
 		}, nil
@@ -139,18 +139,18 @@ func (u *UseCase) checkQuery(ctx context.Context, vault domain.VaultID, query st
 	return u.runner.CheckQuery(ctx, vault, query)
 }
 
-func newProblemOutput(problems []resultcache.Problem) Saved {
-	return Saved{
+func newProblemOutput(problems []resultcache.Problem) SavedSearch {
+	return SavedSearch{
 		Path: "", URI: "", ResultCount: 0, Order: "", ComputedAt: time.Time{}, Warnings: nil, Errors: problems,
 	}
 }
 
-func (u *UseCase) runFirst(ctx context.Context, vault domain.VaultID, notePath string) (Saved, error) {
+func (u *UseCase) runFirst(ctx context.Context, vault domain.VaultID, notePath string) (SavedSearch, error) {
 	record, err := u.runner.RunNow(ctx, vault, notePath)
 	if err != nil && ctx.Err() != nil {
-		return Saved{}, ctx.Err()
+		return SavedSearch{}, ctx.Err()
 	}
-	out := Saved{
+	out := SavedSearch{
 		Path: notePath, URI: textplace.FormatNoteAddress(notePath), ResultCount: len(record.Results), Order: record.Order,
 		ComputedAt: record.ComputedAt, Warnings: append([]string(nil), record.Warnings...), Errors: nil,
 	}

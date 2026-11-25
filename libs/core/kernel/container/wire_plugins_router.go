@@ -100,7 +100,7 @@ func StopPlugins(watch PluginWatch, ctx context.Context) error {
 	return watch.TeardownAll(ctx, pluginGracePeriod)
 }
 
-func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) pluginCommandUseCases {
+func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultParts, host *PluginExecution, versions plugincommand.VersionItems) pluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := host.Runtime.Manifests, when.NewConditions()
 	list := plugincommand.NewList(commands, commands, conditions)

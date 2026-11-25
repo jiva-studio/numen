@@ -18,7 +18,7 @@ import (
 const operationResultRows = 200_000
 
 func newFindSearchResults(
-	ports queryPorts, settingsDeps settingsWiring, searchDeps textSearch, db *vaultIndex, source sourceAccess, errorHandler func(error),
+	ports queryPorts, settingsDeps settingsParts, searchDeps textSearch, db *vaultIndex, source sourceAccess, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
 	limits, stageLimits := readSearchLimits(settingsDeps, errorHandler)
 	search := db.ChunkSearch()
@@ -57,7 +57,7 @@ func newFindSearchResults(
 	})
 }
 
-func readSearchLimits(settingsDeps settingsWiring, errorHandler func(error)) (searchquerydomain.Limits, searchquerydomain.StageLimits) {
+func readSearchLimits(settingsDeps settingsParts, errorHandler func(error)) (searchquerydomain.Limits, searchquerydomain.StageLimits) {
 	file, err := createSettingsStore(settingsDeps).ReadCheckedFile()
 	if err != nil {
 		reportSearchFallback(errorHandler, err)
@@ -76,7 +76,7 @@ type queryPorts struct {
 	calls        connectionport.ModelCalls
 }
 
-func openQueryPorts(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) queryPorts {
+func openQueryPorts(install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts) queryPorts {
 	ports := queryPorts{functions: searchfunctionbridge.Open(exec.Runtime.Activator), contentTypes: exec.Watch.ContentTypeTable,
 		getCatalog: getSearchCatalog(exec.Runtime.Manifests), clock: vaultDeps.Clock, rows: none.RerankRows{}}
 	connections, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)

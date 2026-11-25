@@ -36,7 +36,7 @@ type scene struct {
 	store  *hosttest.Store
 	model  *model
 	config settings.Config
-	run    *Proofreading
+	run    *Proofreader
 }
 
 func newScene(t *testing.T) *scene {
@@ -363,9 +363,9 @@ type stubTexts struct {
 	pages   map[string]host.TextPage
 }
 
-func (s *stubTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
+func (s *stubTexts) ListVersions(ctx context.Context, path string) (host.TextVersionList, error) {
 	if s.listErr != nil {
-		return host.TextListing{}, s.listErr
+		return host.TextVersionList{}, s.listErr
 	}
 	return s.Texts.ListVersions(ctx, path)
 }

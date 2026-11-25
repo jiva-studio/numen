@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 )
 
-func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, res *Resources, dialog editor.PathDialog) *windowidentity.UseCases {
+func openIdentityUseCases(install pluginInstall, vaultDeps vaultParts, res *Resources, dialog editor.PathDialog) *windowidentity.UseCases {
 	if install.Keys.Store == nil || res.Stores.Chains == nil {
 		return nil
 	}

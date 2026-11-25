@@ -31,7 +31,7 @@ const (
 	keyVaultsFolder          = "vaults.folder"
 )
 
-func listDetectedConnectionIDs(detected connectionport.Detected) []string {
+func listDetectedConnectionIDs(detected connectionport.DetectedConnections) []string {
 	if detected == nil {
 		return nil
 	}
@@ -42,7 +42,7 @@ func listDetectedConnectionIDs(detected connectionport.Detected) []string {
 	return ids
 }
 
-func listPendingDetections(types connectionport.Types, detected connectionport.Detected) []string {
+func listPendingDetections(types connectionport.Types, detected connectionport.DetectedConnections) []string {
 	if types == nil || detected == nil {
 		return nil
 	}
@@ -57,7 +57,7 @@ func listPendingDetections(types connectionport.Types, detected connectionport.D
 
 // AddDetectedRegistries answers settingsdomain.RegistryDetectedConnections and settingsdomain.RegistryPendingDetections from the detection, and
 // every other name from registries. A nil detection lists none.
-func AddDetectedRegistries(registries settingsdomain.Registries, types connectionport.Types, detected connectionport.Detected) settingsdomain.Registries {
+func AddDetectedRegistries(registries settingsdomain.Registries, types connectionport.Types, detected connectionport.DetectedConnections) settingsdomain.Registries {
 	return func(name string) ([]string, bool) {
 		switch name {
 		case settingsdomain.RegistryDetectedConnections:
@@ -71,7 +71,7 @@ func AddDetectedRegistries(registries settingsdomain.Registries, types connectio
 
 // AddDetectedConnectionIDs adds to the values a window follows the ids of the connections the providers detected,
 // under settingsdomain.DetectedConnectionsKey, so that the window reads the connections again when they change.
-func AddDetectedConnectionIDs(values settingsdomain.Values, detected connectionport.Detected) {
+func AddDetectedConnectionIDs(values settingsdomain.Values, detected connectionport.DetectedConnections) {
 	ids := listDetectedConnectionIDs(detected)
 	if values == nil || len(ids) == 0 {
 		return

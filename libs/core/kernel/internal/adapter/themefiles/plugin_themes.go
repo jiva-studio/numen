@@ -14,7 +14,7 @@ import (
 // PluginHost provides the plugins and their manifests.
 type PluginHost interface {
 	GetPluginInfos() []plugin.Info
-	GetPlugin(id string) (manifest.Discovered, bool)
+	GetPlugin(id string) (manifest.DiscoveredPlugin, bool)
 }
 
 // PluginThemes lists and reads the themes the manifests of the enabled plugins declare. It answers from the

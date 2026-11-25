@@ -60,18 +60,18 @@ func TestASearchFunctionDeclaredWronglyIsRefusedNamingTheField(t *testing.T) {
 	}
 }
 
-func searchPlugin(id string, names ...string) manifest.Discovered {
+func searchPlugin(id string, names ...string) manifest.DiscoveredPlugin {
 	var functions []searchfunction.Function
 	for _, name := range names {
 		functions = append(functions, searchfunction.Function{Name: name})
 	}
-	return manifest.Discovered{Manifest: manifest.Manifest{
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{
 		ID: id, Contributes: manifest.Contributes{SearchFunctions: searchfunction.Set{Version: 1, Functions: functions}},
 	}}
 }
 
 func TestTheSecondPluginToDeclareASearchFunctionIsRefusedWhole(t *testing.T) {
-	conflicts := manifest.ListContributionConflicts([]manifest.Discovered{
+	conflicts := manifest.ListContributionConflicts([]manifest.DiscoveredPlugin{
 		searchPlugin("md.example.a", "rhymes"), searchPlugin("md.example.b", "rhymes", "echoes"),
 	}, manifest.CoreClaims{})
 
@@ -82,7 +82,7 @@ func TestTheSecondPluginToDeclareASearchFunctionIsRefusedWhole(t *testing.T) {
 }
 
 func TestAPluginThatDeclaresABuiltinSearchFunctionIsRefusedWithTheCoreAsOwner(t *testing.T) {
-	conflicts := manifest.ListContributionConflicts([]manifest.Discovered{searchPlugin("md.example.a", "words")},
+	conflicts := manifest.ListContributionConflicts([]manifest.DiscoveredPlugin{searchPlugin("md.example.a", "words")},
 		manifest.CoreClaims{SearchFunctions: []string{"words", "meaning"}})
 
 	if len(conflicts) != 1 || conflicts[0].PluginID != "md.example.a" || conflicts[0].OwnerID != manifest.CoreOwnerID {

@@ -207,7 +207,7 @@ func (k *Keeper) runRefresh(ctx context.Context) {
 
 func (k *Keeper) refreshOnce(ctx context.Context) {
 	v, release := k.set.getView()
-	var demanding []manifest.Discovered
+	var demanding []manifest.DiscoveredPlugin
 	for _, p := range v.enabled() {
 		if len(p.Manifest.Backend.Requires) > 0 {
 			demanding = append(demanding, p)

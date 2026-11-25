@@ -68,7 +68,7 @@ type FindTextOutput struct {
 
 // FindText searches the text of a vault in one mode and resolves the notes the search results were read from.
 type FindText struct {
-	finds    resultFinding
+	finds    resultFinder
 	notes    noteport.NoteRefs
 	types    noteport.NoteTypes
 	tabKinds windowport.TabKinds
@@ -114,7 +114,7 @@ func getResultPaths(found []domain.SearchResult) []string {
 	return out
 }
 
-// resultFinding searches the text of a vault.
-type resultFinding interface {
+// resultFinder searches the text of a vault.
+type resultFinder interface {
 	Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.SearchResult, error)
 }

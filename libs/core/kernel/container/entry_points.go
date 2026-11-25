@@ -23,7 +23,7 @@ import (
 // the one shown last when none is named, and connects the plugins to the vault and the window. frame is the application
 // window around the editor, or nil.
 func (c Config) OpenEditor(
-	exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening,
+	exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowRequest,
 ) (*editor.Installation, error) {
 	ports, db, err := c.openRegistryIndex(res, ctx)
 	if err != nil {
@@ -45,7 +45,7 @@ func connectWindow(
 	ctx context.Context,
 	install pluginInstall,
 	exec *PluginExecution,
-	vaultDeps vaultWiring,
+	vaultDeps vaultParts,
 	opened *windowRoutes,
 	startup windowStartup,
 ) (*editor.Installation, error) {
@@ -75,8 +75,8 @@ type Shell struct {
 	Themes      error
 }
 
-// ShellOpening identifies the target window, its services and its output.
-type ShellOpening struct {
+// ShellRequest identifies the target window, its services and its output.
+type ShellRequest struct {
 	Target string
 	Log    ShellLog
 }
@@ -84,7 +84,7 @@ type ShellOpening struct {
 // OpenShell opens the registry and the cache, creates the window of target, binds the notes, the vault list,
 // the vault indexer, the plugin vault, the change feed and the themes of the shell window to api, and tells
 // log.Notify what it cannot follow.
-func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening ShellOpening) (Shell, error) {
+func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening ShellRequest) (Shell, error) {
 	exec = getPluginExecution(exec)
 	ports, db, err := c.openRegistryIndex(res, ctx)
 	if err != nil {
@@ -125,7 +125,7 @@ type ShellLog struct {
 	Notify func(message string)
 }
 
-func followShell(settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
+func followShell(settingsDeps settingsParts, vaultDeps vaultParts, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
 	changes, err := watchMoves(ctx, vaultDeps.IndexPath, vaultDeps.Watcher)
 	if err != nil {
 		notify(label + ": the index is not being followed: " + err.Error())

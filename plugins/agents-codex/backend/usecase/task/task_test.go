@@ -101,14 +101,14 @@ type gardenTools struct {
 	listErr error
 }
 
-func (g gardenTools) ListTools(context.Context) (tools.Listing, error) {
+func (g gardenTools) ListTools(context.Context) (tools.ToolList, error) {
 	if g.listErr != nil {
-		return tools.Listing{}, g.listErr
+		return tools.ToolList{}, g.listErr
 	}
 	if g.listed != nil {
-		return tools.Listing{Tools: g.listed}, nil
+		return tools.ToolList{Tools: g.listed}, nil
 	}
-	return tools.Listing{Tools: []*tools.ToolInfo{{Name: "note_read", Title: "Read a note", Effect: tools.ReadOnly}}}, nil
+	return tools.ToolList{Tools: []*tools.ToolInfo{{Name: "note_read", Title: "Read a note", Effect: tools.ReadOnly}}}, nil
 }
 
 func (gardenTools) InvokeTool(context.Context, tools.Call) (*tools.CallResponse, error) {

@@ -84,14 +84,14 @@ func (s *steps) EmbedWithProgress(
 	return step(ctx, onProgress)
 }
 
-func (s *steps) getVectorCounts(context.Context, domain.Vault) (held, embedded int64, err error) {
+func (s *steps) getVectorCounts(context.Context, domain.Vault) (EmbeddingProgress, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.planCalls++
 	if s.isPending {
-		return 4, 0, nil
+		return EmbeddingProgress{TotalCount: 4, EmbeddedCount: 0}, nil
 	}
-	return 4, 4, nil
+	return EmbeddingProgress{TotalCount: 4, EmbeddedCount: 4}, nil
 }
 
 func (s *steps) queueTexts(res vaultreading.IndexResult) {

@@ -33,7 +33,7 @@ func newFailingConfig(t *testing.T) TestInstallation {
 		t.Fatal(err)
 	}
 	host := openPluginRoles(t, "desktop.editor", root)
-	host.Supervision.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(context.Context, manifest.DiscoveredPlugin, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
 	return NewTestInstallation(Config{}, AdaptTestPlugins(host.Management, host.Supervision))

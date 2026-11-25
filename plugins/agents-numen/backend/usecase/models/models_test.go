@@ -42,7 +42,7 @@ func (f *fakeModels) ListModels(ctx context.Context, chat conversation.ChatConne
 	return listed, nil
 }
 
-func listOptions(t *testing.T, source *fakeModels) models.Listing {
+func listOptions(t *testing.T, source *fakeModels) models.ModelList {
 	t.Helper()
 	lister, err := models.NewLister(source)
 	if err != nil {

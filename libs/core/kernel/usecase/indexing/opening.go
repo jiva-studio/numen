@@ -25,7 +25,7 @@ type VaultOpener struct {
 	watcher  VaultWatcher
 	scan     Rebuildable
 	Buffered WriteRecorder
-	Refresh  Refreshing
+	Refresh  Refresher
 }
 
 // Rebuildable is the walk of a vault, which can be set to rebuild the index instead of trusting it.
@@ -34,7 +34,7 @@ type Rebuildable interface {
 }
 
 // ConfigureVaultOpener constructs a VaultOpener with the given watcher, scan, buffered repository, and refresh.
-func ConfigureVaultOpener(watcher VaultWatcher, scan Rebuildable, buffered WriteRecorder, refresh Refreshing) *VaultOpener {
+func ConfigureVaultOpener(watcher VaultWatcher, scan Rebuildable, buffered WriteRecorder, refresh Refresher) *VaultOpener {
 	return &VaultOpener{
 		watcher:  watcher,
 		scan:     scan,
@@ -44,7 +44,7 @@ func ConfigureVaultOpener(watcher VaultWatcher, scan Rebuildable, buffered Write
 }
 
 // GetRefresh brings named notes up to date, through whatever is following the vault they are in.
-func (o *VaultOpener) GetRefresh() Refreshing { return o.Refresh }
+func (o *VaultOpener) GetRefresh() Refresher { return o.Refresh }
 
 // GetScan returns the walk this opener makes, for a caller that re-reads the vault.
 func (o *VaultOpener) GetScan() Scan { return o.scan.SetRebuild(o.ShouldRebuild) }
@@ -73,16 +73,16 @@ func (o *VaultOpener) Begin(
 
 type OpenVault struct {
 	buffered     WriteRecorder
-	refresh      Refreshing
-	scan         progressScanning
+	refresh      Refresher
+	scan         progressScanner
 	vault        domain.Vault
 	errorHandler window.ErrorHandler
 	watching     runner
 	unwatched    error
 }
 
-// progressScanning reads a whole vault into the index and reports its progress.
-type progressScanning interface {
+// progressScanner reads a whole vault into the index and reports its progress.
+type progressScanner interface {
 	ScanWithProgress(
 		ctx context.Context, v domain.Vault, onProgress func(vaultreading.ScanResult),
 	) (vaultreading.ScanResult, error)

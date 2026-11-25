@@ -40,16 +40,16 @@ type LocalModel struct {
 
 // ModelInfo describes the embedding model properties exposed to clients.
 type ModelInfo struct {
-	Name           string   `json:"name"`
-	Dimensions     int      `json:"dimensions"`
-	MaxTokens      int      `json:"maxTokens"`
-	Pooling        string   `json:"pooling"`
-	From           string   `json:"from"`
-	Concurrency    int      `json:"concurrency"`
-	FloorHint      float64  `json:"floorHint"`
-	Handling       Handling `json:"handling"`
-	MinChunkLength int      `json:"minChunkLength"`
-	ChunkTokens    int      `json:"chunkTokens"`
+	Name           string      `json:"name"`
+	Dimensions     int         `json:"dimensions"`
+	MaxTokens      int         `json:"maxTokens"`
+	Pooling        string      `json:"pooling"`
+	From           string      `json:"from"`
+	Concurrency    int         `json:"concurrency"`
+	FloorHint      float64     `json:"floorHint"`
+	Handling       InputFormat `json:"handling"`
+	MinChunkLength int         `json:"minChunkLength"`
+	ChunkTokens    int         `json:"chunkTokens"`
 }
 
 // CheckIdentity verifies the model dimension, tokens, and pooling.

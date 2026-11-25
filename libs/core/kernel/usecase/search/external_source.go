@@ -13,11 +13,11 @@ import (
 const sourceTimeout = 2 * time.Second
 
 type sourceAnswer struct {
-	ranking Ranking
+	ranking ParticipantResults
 	err     error
 }
 
-func (u Search) rankSource(ctx context.Context, v domain.Vault, source *externalSource, q Query) (*Ranking, error) {
+func (u Search) rankSource(ctx context.Context, v domain.Vault, source *externalSource, q Query) (*ParticipantResults, error) {
 	sourceCtx, cancel := context.WithTimeout(ctx, sourceTimeout)
 	defer cancel()
 	answer := source.rank(sourceCtx, v, q)

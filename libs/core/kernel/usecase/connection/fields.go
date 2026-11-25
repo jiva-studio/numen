@@ -191,7 +191,10 @@ func checkAddress(declared manifest.ConnectionType, fields map[string]any, hasKe
 		if !isText || address == "" {
 			return nil
 		}
-		return CheckAddress(address, hasKey)
+		if hasKey {
+			return CheckAddressWithKey(address)
+		}
+		return CheckAddress(address)
 	}
 	return nil
 }

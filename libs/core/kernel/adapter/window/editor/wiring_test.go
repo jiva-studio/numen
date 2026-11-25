@@ -35,13 +35,13 @@ func (w wiring) openIndex(t *testing.T) *testIndex {
 	return db
 }
 
-func (w wiring) readVault(db *testIndex) indexing.OpenReading {
+func (w wiring) readVault(db *testIndex) indexing.ReadWholeVaultOpener {
 	return testPasses{wiring: w, db: db}.ReadWholeVault
 }
 
 // sessionOptions is what a test changes about the session it starts.
 type sessionOptions struct {
-	embedding *indexing.Embedding
+	embedding *indexing.EmbeddingSetup
 	idle      time.Duration
 	rebuild   bool
 	out       io.Writer
@@ -64,9 +64,9 @@ func (w wiring) startSession(
 	worker := indexing.NewWorker(indexing.Config{
 		Reading: w.readVault(db),
 		Source:  embedding.GetSource(),
-		VectorCounts: func(ctx context.Context, v domain.Vault) (held, embedded int64, err error) {
+		VectorCounts: func(ctx context.Context, v domain.Vault) (indexing.EmbeddingProgress, error) {
 			if !embedding.HasProgress() {
-				return 0, 0, indexing.ErrNoProgress
+				return indexing.EmbeddingProgress{}, indexing.ErrNoProgress
 			}
 			name, recipe := embedding.Describe()
 			state.Runtime.RecordModel(name, recipe)
@@ -122,7 +122,7 @@ func (p testPasses) ReadWholeVault(
 
 func (p testPasses) StartVault(
 	ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
-) windowsession.Started {
+) windowsession.StartedPasses {
 	opening := p.reading.OpenVaultWith(p.db, p.readers, p.watcher)
 	opening.ShouldRebuild = rebuild
 	var changed func(indexing.VaultChanges)
@@ -131,7 +131,7 @@ func (p testPasses) StartVault(
 	}
 
 	open := opening.Begin(ctx, v, changed, report.Failed)
-	return windowsession.Started{Read: open.Read, Run: open.Run, Unwatched: open.GetUnwatchedReason()}
+	return windowsession.StartedPasses{Read: open.Read, Run: open.Run, Unwatched: open.GetUnwatchedReason()}
 }
 
 // themeConfig is where the themes and the settings of an installation are kept.

@@ -18,7 +18,7 @@ import (
 // identifier, apply the change, store the note, and update the index.
 type Edit struct {
 	readers vaultport.VaultReaders
-	writers NoteWriting
+	writers NoteWriter
 	index   edit.IndexUpdater
 	now     machineport.Clock
 
@@ -34,7 +34,7 @@ type Edit struct {
 // caller believes is on disk, and how much of a file it will hold, are set
 // beside it.
 func NewEdit(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock,
+	readers vaultport.VaultReaders, writers NoteWriter, index edit.IndexUpdater, now machineport.Clock,
 ) Edit {
 	return Edit{readers: readers, writers: writers, index: index, now: now}
 }
@@ -76,7 +76,7 @@ func (e Edit) openFiles(v domain.Vault) (edit.Files, error) {
 type vaultFiles struct {
 	reader  vaultport.VaultReader
 	writer  vaultport.NoteWriter
-	writers NoteWriting
+	writers NoteWriter
 	vault   domain.Vault
 }
 

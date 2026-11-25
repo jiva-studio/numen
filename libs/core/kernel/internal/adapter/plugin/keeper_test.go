@@ -43,7 +43,7 @@ const (
 	launchDiesBeforeHandshake
 )
 
-func (l *keptLauncher) launch(ctx context.Context, _ catalogmanifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+func (l *keptLauncher) launch(ctx context.Context, _ catalogmanifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 	l.launches.Add(1)
 	cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 	if err := cmd.Start(); err != nil {
@@ -95,7 +95,7 @@ func newKeptHost(t *testing.T) keptHost {
 		demandPlugin: {},
 	}, map[string]int{keptPlugin: servePlugin(t, nil), demandPlugin: servePlugin(t, nil)})
 	launcher := &keptLauncher{t: t, port: servePlugin(t, nil)}
-	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p catalogmanifest.Discovered, port int, token string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p catalogmanifest.DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error) {
 		return launcher.launch(ctx, p, port, token)
 	})
 	policy := lifecycle.DefaultActivationPolicy()

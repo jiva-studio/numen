@@ -87,7 +87,7 @@ func (s queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.V
 
 // SaveVectors writes a group: the coarse row of each, and the vector itself
 // where the text it was made from addresses it.
-func (s sources) SaveVectors(ctx context.Context, vectors []vector.Stored) error {
+func (s sources) SaveVectors(ctx context.Context, vectors []vector.StoredVector) error {
 	out := make([]chunk.Vector, 0, len(vectors))
 	for _, v := range vectors {
 		row, err := chunk.ParseRow(v.ChunkID)

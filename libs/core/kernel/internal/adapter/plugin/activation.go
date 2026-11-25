@@ -24,9 +24,9 @@ type PluginEnablement interface {
 // activationPlugins is what an activation reads of the set of plugins: which one a start is for, how to launch it and the hold
 // against a scan of the folders.
 type activationPlugins interface {
-	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
+	getKnownPlugin(pluginID string) (manifest.DiscoveredPlugin, bool)
 	getView() (setView, func())
-	getLaunch(p manifest.Discovered) supervision.Launch
+	getLaunch(p manifest.DiscoveredPlugin) supervision.Launch
 }
 
 // hostState reports whether the host is shut down or in safe mode.
@@ -187,17 +187,17 @@ func createQuestionLease(holder plugindomain.Holder) lifecycle.Lease {
 	return lifecycle.Lease{Kind: lifecycle.QuestionLease, Holder: holder}
 }
 
-func (a *Activation) prepareSupervisor(ctx context.Context, pluginID string) (manifest.Discovered, *lifecycle.Supervisor, error) {
+func (a *Activation) prepareSupervisor(ctx context.Context, pluginID string) (manifest.DiscoveredPlugin, *lifecycle.Supervisor, error) {
 	if a.mode.IsClosed() {
-		return manifest.Discovered{}, nil, errHostClosed
+		return manifest.DiscoveredPlugin{}, nil, errHostClosed
 	}
 	if a.mode.IsSafeMode() {
-		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.Disabled, Err: ErrSafeModeActive}
+		return manifest.DiscoveredPlugin{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.Disabled, Err: ErrSafeModeActive}
 	}
 
 	p, ok := a.set.getKnownPlugin(pluginID)
 	if !ok {
-		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{
+		return manifest.DiscoveredPlugin{}, nil, &plugindomain.UnavailableError{
 			PluginID: pluginID, Reason: plugindomain.NotInstalled, Err: errPluginNotFound,
 		}
 	}
@@ -205,16 +205,16 @@ func (a *Activation) prepareSupervisor(ctx context.Context, pluginID string) (ma
 	sup := a.sups.Register(p)
 
 	if !a.enablement.IsPluginEnabled(pluginID) {
-		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.Disabled}
+		return manifest.DiscoveredPlugin{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.Disabled}
 	}
 	v, release := a.set.getView()
 	hasBackend := v.hasBackend(p)
 	release()
 	if !hasBackend {
-		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.WithoutBackend}
+		return manifest.DiscoveredPlugin{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.WithoutBackend}
 	}
 	if unmet := a.requires.GetUnmet(ctx, p.Manifest.Backend); unmet != "" {
-		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{
+		return manifest.DiscoveredPlugin{}, nil, &plugindomain.UnavailableError{
 			PluginID: pluginID, Reason: plugindomain.RequirementUnmet, Err: fmt.Errorf("it requires %s", unmet),
 		}
 	}
@@ -341,7 +341,7 @@ func (a *Activation) ensureActiveDuringDiscovery(
 }
 
 func (a *Activation) runActivation(
-	ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor, lease lifecycle.Lease,
+	ctx context.Context, p manifest.DiscoveredPlugin, sup *lifecycle.Supervisor, lease lifecycle.Lease,
 ) (transport.Endpoint, error) {
 	launch := a.set.getLaunch(p)
 	launch.Lease = lease

@@ -75,7 +75,7 @@ func run(cfg container.Config, services platform.Installation, debug debugOption
 		return err
 	}
 
-	opening := container.ShellOpening{
+	opening := container.ShellRequest{
 		Target: platform.TargetFlashcards,
 		Log:    container.ShellLog{Out: os.Stderr, Label: appName, Notify: notifyUser},
 	}

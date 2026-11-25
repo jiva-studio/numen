@@ -95,7 +95,7 @@ func newConfiguredHost(t *testing.T) (*pluginhost.Host, *configured) {
 			t.Error(err)
 		}
 	})
-	setPlugin(host.Management, configuredPluginID, manifest.Discovered{Manifest: manifest.Manifest{
+	setPlugin(host.Management, configuredPluginID, manifest.DiscoveredPlugin{Manifest: manifest.Manifest{
 		ID: configuredPluginID,
 		Settings: []manifest.Setting{
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},

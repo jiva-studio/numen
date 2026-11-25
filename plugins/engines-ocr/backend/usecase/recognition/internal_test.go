@@ -155,12 +155,12 @@ func (s *stubStore) Delete(ctx context.Context, name string) error {
 
 type stubTexts struct {
 	host.TextVersions
-	listRes host.TextListing
+	listRes host.TextVersionList
 	listErr error
 	putErr  error
 }
 
-func (t *stubTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
+func (t *stubTexts) ListVersions(ctx context.Context, path string) (host.TextVersionList, error) {
 	if t.listErr != nil || len(t.listRes.Versions) > 0 {
 		return t.listRes, t.listErr
 	}
@@ -288,7 +288,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 
 	rec := &progress.Record{Path: "books/scan.pdf", InputHash: "h1", Recipe: "r1", PageCount: 9}
 	task := &host.Task{ID: "recognize:books/scan.pdf"}
-	err = r.readPages(t.Context(), pageReading{
+	err = r.readPages(t.Context(), pageReader{
 		doc:        stubDocument{pages: 9},
 		recognizer: recEngine,
 		dpi:        72,
@@ -319,20 +319,20 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := rInitErr.readPages(t.Context(), pageReading{
+	if err := rInitErr.readPages(t.Context(), pageReader{
 		doc: stubDocument{pages: 1}, recognizer: recEngine, dpi: 72, store: s, task: &host.Task{},
 	}, &progress.Record{PageCount: 1}); err == nil {
 		t.Fatal("readPages succeeded when initial ReportTask failed")
 	}
 
-	if err := r.readPages(t.Context(), pageReading{
+	if err := r.readPages(t.Context(), pageReader{
 		doc: stubDocument{pages: 1, renderErr: errors.New("render failed")}, recognizer: recEngine, dpi: 72, store: s, task: &host.Task{},
 	}, &progress.Record{PageCount: 1}); err == nil {
 		t.Fatal("readPages succeeded when RenderPage failed")
 	}
 
 	recSentinel := errors.New("ocr engine fault")
-	err = r.readPages(t.Context(), pageReading{
+	err = r.readPages(t.Context(), pageReader{
 		doc: stubDocument{pages: 1}, recognizer: &stubRecognizer{err: recSentinel}, dpi: 72, store: s, task: &host.Task{},
 	}, &progress.Record{Path: "books/scan.pdf", PageCount: 1})
 	if !errors.Is(err, recSentinel) || !strings.Contains(err.Error(), "recognize page 1 of books/scan.pdf") {
@@ -340,7 +340,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	}
 
 	sWriteErr := &stubStore{Folder: v.Store(), writeErr: errors.New("store write failed")}
-	if err := r.readPages(t.Context(), pageReading{
+	if err := r.readPages(t.Context(), pageReader{
 		doc: stubDocument{pages: 8}, recognizer: recEngine, dpi: 72, store: sWriteErr, task: &host.Task{},
 	}, &progress.Record{Path: "books/scan.pdf", PageCount: 8}); !errors.Is(err, sWriteErr.writeErr) {
 		t.Fatalf("readPages when batch writeRecord failed = %v, want %v", err, sWriteErr.writeErr)
@@ -355,7 +355,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := rStepErr.readPages(t.Context(), pageReading{
+	if err := rStepErr.readPages(t.Context(), pageReader{
 		doc: stubDocument{pages: 1}, recognizer: recEngine, dpi: 72, store: s, task: &host.Task{},
 	}, &progress.Record{PageCount: 1}); err == nil {
 		t.Fatal("readPages succeeded when step ReportTask failed")

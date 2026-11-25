@@ -78,7 +78,7 @@ func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcr
 	if err != nil {
 		return err
 	}
-	raw, err := transcript.Reached{MS: ms, Size: int64(len(partial))}.Encode()
+	raw, err := transcript.PartialProgress{MS: ms, Size: int64(len(partial))}.Encode()
 	// gomutants:disable-next-line BRANCH_IF reason="Reached encodes two integers cannot fail"
 	if err != nil {
 		return err

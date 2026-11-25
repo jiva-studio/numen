@@ -68,7 +68,7 @@ type restartingLauncher struct {
 	servers []*httptest.Server
 }
 
-func (l *restartingLauncher) launch(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+func (l *restartingLauncher) launch(ctx context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 	cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 	if err := cmd.Start(); err != nil {
 		return nil, nil, err

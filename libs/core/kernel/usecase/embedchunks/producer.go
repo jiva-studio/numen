@@ -37,7 +37,7 @@ type preparedBatch struct {
 	place       searchsource.Place
 	pending     []domain.SearchResult
 	hashes      [][]byte
-	reused      map[int]vector.Stored
+	reused      map[int]vector.StoredVector
 	reusedCount int
 	asking      []searchsource.Text
 	askingMap   []int
@@ -64,7 +64,7 @@ func (u producer) produceBatches(
 	ctx context.Context,
 	v domain.Vault,
 	model searchsource.Description,
-	source *extracted,
+	source *extractor,
 	track *tracker,
 	out chan<- preparedBatch,
 ) error {
@@ -166,7 +166,7 @@ func sortBySource(chunks []domain.SearchResult, texts []string) {
 
 func (u producer) read(
 	ctx context.Context,
-	source *extracted,
+	source *extractor,
 	pending []domain.SearchResult,
 	res *vaultreading.EmbedResult,
 	mu *sync.Mutex,
@@ -239,7 +239,7 @@ func (u producer) prepareBatch(
 		place:     place,
 		pending:   pending,
 		hashes:    hashes,
-		reused:    make(map[int]vector.Stored),
+		reused:    make(map[int]vector.StoredVector),
 		asking:    make([]searchsource.Text, 0, len(texts)),
 		askingMap: make([]int, len(texts)),
 		sources:   getSources(pending),
@@ -259,7 +259,7 @@ func (u producer) prepareBatch(
 			continue
 		}
 		prep.askingMap[i] = -1
-		prep.reused[i] = vector.Stored{
+		prep.reused[i] = vector.StoredVector{
 			ChunkID: pending[i].ChunkID,
 			Hash:    hashes[i],
 			Recipe:  recipe,

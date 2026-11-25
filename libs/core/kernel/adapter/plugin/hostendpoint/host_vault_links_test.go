@@ -78,11 +78,11 @@ func (l *linkingVault) hasLink(from string, to domain.Address) bool {
 	return slices.Contains(l.links[from], to)
 }
 
-func (l *linkingVault) AddLinks(_ context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
+func (l *linkingVault) AddLinks(_ context.Context, additions []plugin.LinkAddition) ([]plugin.LinkResult, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.additions = append(l.additions, additions)
-	out := make([]plugin.LinkAdded, len(additions))
+	out := make([]plugin.LinkResult, len(additions))
 	rejected := map[string]error{}
 	for _, one := range additions {
 		if _, isChecked := rejected[one.From]; !isChecked {
@@ -92,19 +92,19 @@ func (l *linkingVault) AddLinks(_ context.Context, additions []plugin.LinkAdditi
 	savedStats := map[string]domain.FileStat{}
 	for i, one := range additions {
 		if err := rejected[one.From]; err != nil {
-			out[i] = plugin.LinkAdded{Err: err}
+			out[i] = plugin.LinkResult{Err: err}
 			continue
 		}
 		if _, isSaved := savedStats[one.From]; !isSaved {
 			stat, err := l.write(one.From)
 			if err != nil {
-				out[i] = plugin.LinkAdded{Err: err}
+				out[i] = plugin.LinkResult{Err: err}
 				continue
 			}
 			savedStats[one.From] = stat
 		}
 		l.links[one.From] = append(l.links[one.From], one.Link.Target)
-		out[i] = plugin.LinkAdded{Stat: savedStats[one.From]}
+		out[i] = plugin.LinkResult{Stat: savedStats[one.From]}
 	}
 	return out, nil
 }

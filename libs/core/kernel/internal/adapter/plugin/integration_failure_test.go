@@ -17,7 +17,7 @@ import (
 
 const failingPluginID = "org.example.sample"
 
-func failLaunching(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+func failLaunching(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 	return nil, nil, errors.New("exec format error")
 }
 

@@ -45,7 +45,7 @@ func newFrontendOnlyHost(t *testing.T) (*pluginhost.Host, *int) {
 		t.Fatalf("Discover: %v", err)
 	}
 	launches := 0
-	host.Supervision.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(context.Context, manifest.DiscoveredPlugin, int, string) (*os.Process, io.ReadCloser, error) {
 		launches++
 		return nil, nil, errors.New("no process is started in this test")
 	})

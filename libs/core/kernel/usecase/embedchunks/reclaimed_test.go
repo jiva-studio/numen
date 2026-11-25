@@ -31,7 +31,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	}
 
 	// What the index now holds, as a second vault finds it.
-	bought := map[string]vector.Stored{}
+	bought := map[string]vector.StoredVector{}
 	index.Kept = map[string][]byte{}
 	for _, target := range index.Vectors {
 		for _, v := range target {

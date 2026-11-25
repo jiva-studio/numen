@@ -41,7 +41,7 @@ func NewLists(files ListFiles, configs ConfigRevisions) *Lists {
 	return &Lists{files: files, configs: configs, refreshing: map[string]bool{}}
 }
 
-func newOptionList(resolved connection.Resolved, field string, options map[string]string, operations []string) connection.OptionList {
+func newOptionList(resolved connection.Resolution, field string, options map[string]string, operations []string) connection.OptionList {
 	return connection.OptionList{
 		ConnectionID: resolved.ID, Field: field, RowOptions: getPrecedingOptions(resolved.Declaration, field, options),
 		Operations: slices.Clone(operations),

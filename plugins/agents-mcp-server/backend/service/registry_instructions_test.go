@@ -27,10 +27,10 @@ const (
 // fakeToolHost lists the tools and instructions it has, which a test changes between sessions.
 type fakeToolHost struct {
 	mu      sync.Mutex
-	listing tools.Listing
+	listing tools.ToolList
 }
 
-func (h *fakeToolHost) ListTools(context.Context) (tools.Listing, error) {
+func (h *fakeToolHost) ListTools(context.Context) (tools.ToolList, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.listing, nil
@@ -40,7 +40,7 @@ func (h *fakeToolHost) InvokeTool(context.Context, tools.Call) (*tools.CallRespo
 	return &tools.CallResponse{Result: &tools.CallResult{Text: "picked"}}, nil
 }
 
-func (h *fakeToolHost) setListing(listing tools.Listing) {
+func (h *fakeToolHost) setListing(listing tools.ToolList) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.listing = listing
@@ -48,10 +48,10 @@ func (h *fakeToolHost) setListing(listing tools.Listing) {
 
 // fakeToolHostHandler serves a listing as the host's PluginToolService does.
 type fakeToolHostHandler struct {
-	listing tools.Listing
+	listing tools.ToolList
 }
 
-func (h fakeToolHostHandler) ListTools(context.Context, http.Header) (tools.Listing, error) {
+func (h fakeToolHostHandler) ListTools(context.Context, http.Header) (tools.ToolList, error) {
 	return h.listing, nil
 }
 
@@ -87,7 +87,7 @@ func newToolWithSentences(name string, sentences ...string) *tools.ToolInfo {
 
 func TestServerSendsDistinctToolSentencesInListingOrder(t *testing.T) {
 	t.Parallel()
-	host := &fakeToolHost{listing: tools.Listing{Tools: []*tools.ToolInfo{
+	host := &fakeToolHost{listing: tools.ToolList{Tools: []*tools.ToolInfo{
 		newToolWithSentences("beehive_count", beehiveCountSentence),
 		newToolWithSentences("orchard_pick", orchardPickSentence, orchardShareSentence),
 		newToolWithSentences("orchard_graft", orchardGraftSentence, orchardShareSentence),
@@ -108,7 +108,7 @@ func TestServerSendsDistinctToolSentencesInListingOrder(t *testing.T) {
 
 func TestSentenceOfUnlistedToolIsNotSentToANewSession(t *testing.T) {
 	t.Parallel()
-	host := &fakeToolHost{listing: tools.Listing{Tools: []*tools.ToolInfo{
+	host := &fakeToolHost{listing: tools.ToolList{Tools: []*tools.ToolInfo{
 		newToolWithSentences("beehive_count", beehiveCountSentence),
 		newToolWithSentences("orchard_pick", orchardPickSentence),
 	}}}
@@ -120,7 +120,7 @@ func TestSentenceOfUnlistedToolIsNotSentToANewSession(t *testing.T) {
 		t.Fatalf("before the plugin is disabled the instructions are %q", before)
 	}
 
-	host.setListing(tools.Listing{Tools: []*tools.ToolInfo{newToolWithSentences("beehive_count", beehiveCountSentence)}})
+	host.setListing(tools.ToolList{Tools: []*tools.ToolInfo{newToolWithSentences("beehive_count", beehiveCountSentence)}})
 	instructions := openSession(t, srv)
 
 	if strings.Contains(instructions, orchardPickSentence) {
@@ -140,7 +140,7 @@ func TestToolsWithNoSentencesLeaveOnlyTheServerLine(t *testing.T) {
 	for _, name := range names {
 		toolInfos = append(toolInfos, newReadTool(name))
 	}
-	srv, err := NewServer(Config{}, &fakeToolHost{listing: tools.Listing{Tools: toolInfos}})
+	srv, err := NewServer(Config{}, &fakeToolHost{listing: tools.ToolList{Tools: toolInfos}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +160,7 @@ func TestToolsWithNoSentencesLeaveOnlyTheServerLine(t *testing.T) {
 func TestHostListedSentencesAreSentToTheServerOverTheWire(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	mux.Handle(toolstest.NewServiceHandler(fakeToolHostHandler{listing: tools.Listing{
+	mux.Handle(toolstest.NewServiceHandler(fakeToolHostHandler{listing: tools.ToolList{
 		Tools: []*tools.ToolInfo{newToolWithSentences("orchard_pick", orchardPickSentence)},
 	}}))
 	served := httptest.NewServer(mux)

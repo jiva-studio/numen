@@ -23,7 +23,7 @@ import (
 )
 
 // Launcher is a function that spawns a plugin process and provides its stdout stream.
-type Launcher func(ctx context.Context, p manifest.Discovered, port int, token string) (*os.Process, io.ReadCloser, error)
+type Launcher func(ctx context.Context, p manifest.DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error)
 
 // BuiltIn is what serves the backend of a plugin linked into the binary, from the variables a launched
 // process of it is given.
@@ -33,7 +33,7 @@ type BuiltIn struct {
 
 // Launch is what a start of a plugin needs to know of it, and the first lease on it.
 type Launch struct {
-	Plugin       manifest.Discovered
+	Plugin       manifest.DiscoveredPlugin
 	BuiltIn      *BuiltIn
 	Requirements []manifest.DependencyRequirement
 	VaultPath    string
@@ -225,7 +225,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	}
 	launcher := p.getLauncher()
 	if launcher == nil {
-		launcher = func(ctx context.Context, _ manifest.Discovered, port int, token string) (*os.Process, io.ReadCloser, error) {
+		launcher = func(ctx context.Context, _ manifest.DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error) {
 			return p.launchDefault(ctx, launch, port, token)
 		}
 	}
@@ -270,7 +270,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	return endpoint, nil
 }
 
-func resolvePluginBinary(plug manifest.Discovered) (string, error) {
+func resolvePluginBinary(plug manifest.DiscoveredPlugin) (string, error) {
 	if plug.Manifest.Backend.Entrypoint == "" {
 		return "", security.ErrEmptyEntrypoint
 	}

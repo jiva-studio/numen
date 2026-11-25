@@ -70,7 +70,7 @@ func getLanguages(tracks map[string][]struct{}) []string {
 	return out
 }
 
-type published struct {
+type videoCaptions struct {
 	Events []struct {
 		Start    int `json:"tStartMs"`
 		Duration int `json:"dDurationMs"`
@@ -83,7 +83,7 @@ type published struct {
 
 // ParseCues reads the captions yt-dlp writes as JSON into cues in order, none overlapping.
 func ParseCues(raw []byte) ([]Cue, error) {
-	var captions published
+	var captions videoCaptions
 	if err := json.Unmarshal(raw, &captions); err != nil {
 		return nil, fmt.Errorf("read captions: %w", err)
 	}

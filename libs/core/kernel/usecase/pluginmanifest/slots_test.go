@@ -9,7 +9,7 @@ import (
 func TestListSlots_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 	order := 5
 	host := &manifestHost{
-		plugins: []manifest.Discovered{
+		plugins: []manifest.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.atlas", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Slots: []manifest.SlotEntry{
 				{Slot: "titleBar.commands", Command: "atlas.open", Group: "navigate", Order: &order},
 				{Slot: "palette.searchResult", Command: "atlas.open"},
@@ -46,7 +46,7 @@ func TestListSlotPoints_ReadsEnabledPluginsOnly(t *testing.T) {
 		return manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: slot, Title: "T"}}}
 	}
 	host := &manifestHost{
-		plugins: []manifest.Discovered{
+		plugins: []manifest.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.atlas", Frontend: &manifest.Frontend{}, Contributes: points("atlas.row")}},
 			{Manifest: manifest.Manifest{ID: "org.example.off", Frontend: &manifest.Frontend{}, Contributes: points("off.row")}},
 		},

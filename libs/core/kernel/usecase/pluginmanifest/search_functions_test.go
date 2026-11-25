@@ -20,7 +20,7 @@ func shelfFunctions(names ...string) searchfunction.Set {
 
 func TestListSearchFunctions_ReadsTheManifestsOfEnabledUncontestedPlugins(t *testing.T) {
 	host := &manifestHost{
-		plugins: []manifest.Discovered{
+		plugins: []manifest.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.shelf", Contributes: manifest.Contributes{SearchFunctions: shelfFunctions("shelved")}}},
 			{Manifest: manifest.Manifest{ID: "org.example.off", Contributes: manifest.Contributes{SearchFunctions: shelfFunctions("hidden")}}},
 			{Manifest: manifest.Manifest{ID: "org.example.copy", Contributes: manifest.Contributes{SearchFunctions: shelfFunctions("boxed", "shelved")}}},

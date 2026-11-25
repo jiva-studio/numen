@@ -48,12 +48,12 @@ func (u *ApplyStages) rerank(
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	scores, report, err := u.reranker.score(ctx, rerankInput{query: s.Query, instruction: s.Instruction, texts: texts, priority: req.Priority})
+	res, err := u.reranker.score(ctx, rerankInput{query: s.Query, instruction: s.Instruction, texts: texts, priority: req.Priority})
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	reranked := searchquery.ApplyRerank(r, window, units, scores)
-	reranked.Reranks = append(reranked.Reranks, report)
+	reranked := searchquery.ApplyRerank(r, window, units, res.scores)
+	reranked.Reranks = append(reranked.Reranks, res.report)
 	return reranked, nil
 }
 

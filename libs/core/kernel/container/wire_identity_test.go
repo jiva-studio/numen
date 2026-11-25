@@ -51,8 +51,8 @@ func (d saveDialog) ChooseSaveFile(context.Context, string, string, []string) (s
 	return d.path, true, nil
 }
 
-func getWiring() vaultWiring {
-	return vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}
+func getWiring() vaultParts {
+	return vaultParts{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}
 }
 
 func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *testing.T) {
@@ -147,7 +147,7 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 	keys := memoryKeys{}
 	clock := testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))
 	res := &Resources{Stores: identity.Stores{Keys: keys, Chains: &memoryChain{}}, Now: clock, progress: identity.NewProgress()}
-	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: keys}}, vaultWiring{Clock: clock}, res, nil)
+	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: keys}}, vaultParts{Clock: clock}, res, nil)
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}

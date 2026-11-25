@@ -29,7 +29,7 @@ func NewStore(
 }
 
 // ReadChecked returns the settings in force, or the defaults where the file is not there.
-func (s *Store) ReadChecked() (settingsdomain.Stored, error) {
+func (s *Store) ReadChecked() (settingsdomain.StoredSettings, error) {
 	file, err := s.ReadCheckedFile()
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (s *Store) ReadUncheckedFile() (File, error) {
 }
 
 // ReadUnchecked returns the settings as the file holds them.
-func (s *Store) ReadUnchecked() (settingsdomain.Stored, error) {
+func (s *Store) ReadUnchecked() (settingsdomain.StoredSettings, error) {
 	path, err := s.getPath()
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (s *Store) Write(entries []settingsdomain.Setting) error {
 type Defaults struct{}
 
 // GetDefaults returns the settings of an unconfigured installation.
-func (Defaults) GetDefaults() settingsdomain.Stored {
+func (Defaults) GetDefaults() settingsdomain.StoredSettings {
 	file := DefaultFile()
 	return &file
 }

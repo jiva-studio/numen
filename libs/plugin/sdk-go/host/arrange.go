@@ -44,9 +44,9 @@ type LinkAddition struct {
 	Link     domain.Link
 }
 
-// LinkAdded is the outcome of one addition: the note after the write, or the error of a link not
+// LinkResult is the outcome of one addition: the note after the write, or the error of a link not
 // written. A stale baseline returns ErrStale.
-type LinkAdded struct {
+type LinkResult struct {
 	Stat domain.FileStat
 	Err  error
 }

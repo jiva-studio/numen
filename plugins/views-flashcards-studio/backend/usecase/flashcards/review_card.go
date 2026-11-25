@@ -315,7 +315,7 @@ func (e deckCards) isCurrent(deck domain.FileStat, cardModels map[string]domain.
 	return true
 }
 
-type cached struct {
+type cacheEntry struct {
 	key deckKey
 	deckCards
 }
@@ -369,7 +369,7 @@ func (c *reviewCardCache) put(epoch uint64, key deckKey, e deckCards, limit int)
 		return
 	}
 	c.remove(key)
-	c.decks[key] = c.order.PushFront(&cached{key: key, deckCards: e})
+	c.decks[key] = c.order.PushFront(&cacheEntry{key: key, deckCards: e})
 	c.total += len(e.reviewCards)
 	for c.total > limit {
 		c.removeElement(c.order.Back())
@@ -449,10 +449,10 @@ func (c *reviewCardCache) invalidateAll() {
 	c.total = 0
 }
 
-func getEntry(pos *list.Element) *cached {
-	one, isCached := pos.Value.(*cached)
+func getEntry(pos *list.Element) *cacheEntry {
+	one, isCached := pos.Value.(*cacheEntry)
 	if !isCached || one == nil {
-		return &cached{key: deckKey{vault: "", path: ""}, deckCards: deckCards{deck: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, cardModels: nil, reviewCards: nil}}
+		return &cacheEntry{key: deckKey{vault: "", path: ""}, deckCards: deckCards{deck: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, cardModels: nil, reviewCards: nil}}
 	}
 	return one
 }

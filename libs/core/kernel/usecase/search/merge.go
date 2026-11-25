@@ -14,7 +14,7 @@ import (
 // 60 is the constant reciprocal rank fusion uses.
 const rankConstant = 60
 
-func merge(rankings ...Ranking) []domain.SearchResult {
+func merge(rankings ...ParticipantResults) []domain.SearchResult {
 	score := map[domain.ChunkID]float64{}
 	observed := map[domain.ChunkID]domain.SearchResult{}
 	for _, ranking := range rankings {
@@ -49,7 +49,7 @@ type resultPlace struct {
 	start, length int
 }
 
-func getLeadingSections(rankings []Ranking) map[string]domain.SearchResult {
+func getLeadingSections(rankings []ParticipantResults) map[string]domain.SearchResult {
 	sections := map[string]domain.SearchResult{}
 	for _, ranking := range rankings {
 		if !ranking.IsLeading {
@@ -64,7 +64,7 @@ func getLeadingSections(rankings []Ranking) map[string]domain.SearchResult {
 	return sections
 }
 
-func collapse(fused []domain.SearchResult, rankings []Ranking, each, limit int) []domain.SearchResult {
+func collapse(fused []domain.SearchResult, rankings []ParticipantResults, each, limit int) []domain.SearchResult {
 	sections := getLeadingSections(rankings)
 	out := make([]domain.SearchResult, 0, min(limit, len(fused)))
 	sourceCounts := map[string]int{}
@@ -102,7 +102,7 @@ type placeScores struct {
 	wordScore  *float64
 }
 
-func mergeScores(kept []domain.SearchResult, rankings []Ranking) []domain.SearchResult {
+func mergeScores(kept []domain.SearchResult, rankings []ParticipantResults) []domain.SearchResult {
 	best := map[resultPlace]placeScores{}
 	for _, ranking := range rankings {
 		for _, p := range ranking.Results {

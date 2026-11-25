@@ -687,7 +687,7 @@ func (w watchedReader) StatFile(ctx context.Context, path string) (domain.FileSt
 // watchedWriters records when the write lock was requested, before waiting for
 // it.
 type watchedWriters struct {
-	inner note.NoteWriting
+	inner note.NoteWriter
 	hold  func()
 }
 
