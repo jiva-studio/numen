@@ -51,3 +51,11 @@ Feature: See the whole vault on the phone
       When the person opens the file "Books/Guide.pdf" on the phone
       Then the phone warns about "Could not reach the sync server"
       And the phone has not downloaded the file "Books/Guide.pdf"
+
+  Rule: A move on the phone is a move in the vault
+
+    Scenario: A file that was not downloaded is moved on the phone
+      Given the person writes the file "Books/Guide.pdf" of 5 MB in the vault "Test"
+      When the person moves the file "Books/Guide.pdf" to "Archive/Guide.pdf" on the phone
+      Then the vault "Test" has the file "Archive/Guide.pdf"
+      And the vault "Test" does not have the file "Books/Guide.pdf"

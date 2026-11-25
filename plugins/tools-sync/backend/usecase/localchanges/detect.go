@@ -48,13 +48,17 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 	if err != nil {
 		return transfer.Scan{}, err
 	}
-	absent, err := u.deps.State.ReadAbsences(ctx, in.VaultID)
+	since, err := u.deps.State.ReadAbsences(ctx, in.VaultID)
 	if err != nil {
 		return transfer.Scan{}, err
 	}
 	gone, fresh := u.split(seen, in.Records)
+	candidates, listed, err := u.separateListed(ctx, in, gone)
+	if err != nil {
+		return transfer.Scan{}, err
+	}
 	scan := transfer.Scan{}
-	moves, err := u.keepGone(ctx, in, matchMoves(gone, fresh))
+	moves, err := u.keepGone(ctx, in, matchMoves(candidates, fresh, listed))
 	if err != nil {
 		return transfer.Scan{}, err
 	}
@@ -69,7 +73,7 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 		if moved[record.Path] {
 			continue
 		}
-		first, isKnown := absent[record.Path]
+		first, isKnown := since[record.Path]
 		if !isKnown {
 			first = now
 		}
@@ -83,7 +87,7 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 			scan.Removals = append(scan.Removals, record)
 		}
 	}
-	if maps.Equal(absent, kept) {
+	if maps.Equal(since, kept) {
 		return scan, nil
 	}
 	return scan, u.deps.State.WriteAbsences(ctx, in.VaultID, kept)
@@ -118,18 +122,47 @@ func (u *DetectMoves) split(seen map[string]note.FileSnapshot, records []transfe
 	return gone, fresh
 }
 
-func matchMoves(gone []transfer.FileRecord, fresh map[string]note.FileSnapshot) []transfer.Move {
-	goneCount, freshCount := map[key]int{}, map[key]int{}
+// separateListed returns the gone records without the records of files the vault lists as absent, which have no
+// sighting and are not renamed, and the listed files that no record names: they are what the files of the
+// gone records were renamed to.
+func (u *DetectMoves) separateListed(ctx context.Context, in transfer.ScanInput, gone []transfer.FileRecord) ([]transfer.FileRecord, []host.AbsentFile, error) {
+	if len(gone) == 0 {
+		return nil, nil, nil
+	}
+	listed, err := u.deps.Host.GetAbsent(in.VaultID).ListAbsentFiles(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	isListed := map[string]bool{}
+	for _, one := range listed {
+		isListed[one.Path] = true
+	}
+	isRecorded := map[string]bool{}
+	for _, record := range in.Records {
+		isRecorded[record.Path] = true
+	}
+	gone = slices.DeleteFunc(slices.Clone(gone), func(record transfer.FileRecord) bool { return isListed[record.Path] })
+	unclaimed := slices.DeleteFunc(slices.Clone(listed), func(one host.AbsentFile) bool {
+		return isRecorded[one.Path] || !note.IsSyncable(one.Path)
+	})
+	return gone, unclaimed, nil
+}
+
+func matchMoves(gone []transfer.FileRecord, fresh map[string]note.FileSnapshot, listed []host.AbsentFile) []transfer.Move {
+	goneCount, freshCount, listedCount := map[key]int{}, map[key]int{}, map[key]int{}
 	for _, record := range gone {
 		goneCount[key{record.BaseHash, record.Size}]++
 	}
 	for _, one := range fresh {
 		freshCount[key{one.Hash, one.Size}]++
 	}
+	for _, one := range listed {
+		listedCount[key{strings.ToLower(one.Hash), one.Size}]++
+	}
 	var moves []transfer.Move
 	for _, record := range gone {
 		k := key{record.BaseHash, record.Size}
-		if goneCount[k] != 1 || freshCount[k] != 1 {
+		if goneCount[k] != 1 || freshCount[k] != 1 || listedCount[k] != 0 {
 			continue
 		}
 		for path, one := range fresh {
@@ -138,7 +171,33 @@ func matchMoves(gone []transfer.FileRecord, fresh map[string]note.FileSnapshot) 
 			}
 		}
 	}
+	moves = append(moves, matchListed(gone, listed, goneCount, freshCount)...)
 	slices.SortFunc(moves, func(a, b transfer.Move) int { return strings.Compare(a.To, b.To) })
+	return moves
+}
+
+// matchListed pairs the gone records with the listed files of the same hash and size when there are as many of the
+// one as of the other and no present file has them. Files of one content are interchangeable, so the order of their
+// paths pairs them.
+func matchListed(gone []transfer.FileRecord, listed []host.AbsentFile, goneCount, freshCount map[key]int) []transfer.Move {
+	targets := map[key][]string{}
+	for _, one := range listed {
+		k := key{strings.ToLower(one.Hash), one.Size}
+		targets[k] = append(targets[k], one.Path)
+	}
+	sorted := slices.Clone(gone)
+	slices.SortFunc(sorted, func(a, b transfer.FileRecord) int { return strings.Compare(a.Path, b.Path) })
+	var moves []transfer.Move
+	taken := map[key]int{}
+	for _, record := range sorted {
+		k := key{record.BaseHash, record.Size}
+		if freshCount[k] != 0 || len(targets[k]) != goneCount[k] {
+			continue
+		}
+		paths := slices.Sorted(slices.Values(targets[k]))
+		moves = append(moves, transfer.Move{Record: record, To: paths[taken[k]]})
+		taken[k]++
+	}
 	return moves
 }
 
