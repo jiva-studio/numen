@@ -248,6 +248,7 @@ describe('SubscriptionCard', () => {
       'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
     )
     expect(wrapper.get('.subscription__badge').text()).toBe('Needs an identity')
+    expect(wrapper.get('.empty-block__title').text()).toBe('No identity on this device')
     expect(findChoose(wrapper)).toBeUndefined()
   })
 
@@ -268,6 +269,7 @@ describe('SubscriptionCard', () => {
 
     expect(wrapper.find('.subscription__badge').exists()).toBe(false)
     expect(wrapper.text()).toContain('The sync server is not available.')
+    expect(wrapper.get('.empty-block__title').text()).toBe('The sync server is not available.')
     expect(wrapper.text()).not.toContain('Could not connect')
     expect(findChoose(wrapper)).toBeUndefined()
   })

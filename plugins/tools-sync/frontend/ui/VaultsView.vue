@@ -4,10 +4,9 @@
  * status in words. It only reads: a vault gets in the list from the file tree.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
-import { Cloud, RefreshCw } from '@lucide/vue'
+import { Cloud, TriangleAlert } from '@lucide/vue'
 import {
   Button,
-  ErrorState,
   getCurrentDate,
   IslandCard,
   type MenuItem,
@@ -90,14 +89,15 @@ function report(failure: unknown): void {
     <ul v-if="status === 'loading'" class="sync-card__list" aria-busy="true">
       <VaultRowSkeleton v-for="index in skeletonRows" :key="index" />
     </ul>
-    <div v-else-if="status === 'error'" class="sync-card__state">
-      <ErrorState :message="error === '' ? words.loadFailed : error">
-        <Button variant="outline" @click="onRetry">
-          <RefreshCw :size="14" aria-hidden="true" />
-          {{ words.tryAgain }}
-        </Button>
-      </ErrorState>
-    </div>
+    <EmptyBlock
+      v-else-if="status === 'error'"
+      role="alert"
+      :icon="TriangleAlert"
+      :title="words.loadFailedTitle"
+      :text="error === '' ? words.loadFailed : error"
+    >
+      <Button variant="ghost" size="small" @click="onRetry">{{ words.tryAgain }}</Button>
+    </EmptyBlock>
     <template v-else>
       <p v-if="warning !== ''" class="sync-card__note" role="status">{{ warning }}</p>
       <p v-if="hasProblem" class="sync-card__note sync-card__note--alarm" role="alert">

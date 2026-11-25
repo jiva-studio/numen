@@ -9,12 +9,13 @@ import { formatErrorMessage } from '@numen/plugin-sdk'
  * stop waiting.
  */
 import { computed, onMounted, ref } from 'vue'
-import { ChevronRight, RotateCcw, ServerOff, Settings } from '@lucide/vue'
+import { ChevronRight, RotateCcw, ServerOff, Settings, UserRound } from '@lucide/vue'
 import { Button, CardAction, IslandCard, Spinner } from '@numen/ui'
 import { formatDate, getOfferDetail, getOfferLine, type PlanOffer } from '../lib/subscriptionView'
 import { useSubscription } from '../model/subscription'
 import { WORDS as words } from '../words'
 import AccountMenu from './AccountMenu.vue'
+import EmptyBlock from './EmptyBlock.vue'
 import DeleteCloudDataDialog from './DeleteCloudDataDialog.vue'
 import SwitchPlanDialog from './SwitchPlanDialog.vue'
 import type { SubscriptionCardProps } from './SubscriptionCard.types'
@@ -167,10 +168,13 @@ function onFailure(failure: unknown): void {
     </div>
     <div v-else class="subscription__content" :inert="isPaying || undefined" :aria-busy="isPaying">
       <p v-if="isFull" class="subscription__full">{{ words.cloudFull }}</p>
-      <p v-if="status === 'unreachable'" class="subscription__text subscription__away">
-        <ServerOff :size="16" aria-hidden="true" />
-        <span>{{ view.text }}</span>
-      </p>
+      <EmptyBlock v-if="status === 'unreachable'" :icon="ServerOff" :title="view.text" />
+      <EmptyBlock
+        v-else-if="status === 'noIdentity'"
+        :icon="UserRound"
+        :title="words.noIdentity"
+        :text="view.text"
+      />
       <p v-else-if="view.text !== ''" class="subscription__text">{{ view.text }}</p>
       <div v-if="planLine !== ''" class="subscription__row">
         <div class="subscription__label">

@@ -210,6 +210,23 @@ describe('VaultsView', () => {
     expect(wrapper.text()).not.toContain('boom')
   })
 
+  it('draws the failure as the block of an empty card: a title, the text and one button that retries', async () => {
+    const client = createClient()
+    client.listVaults.mockRejectedValueOnce(new ReportedError('boom'))
+    const wrapper = mount(VaultsView, { props: { client, now: () => NOW } })
+    await flushPromises()
+
+    const block = wrapper.get('.empty-block')
+    expect(block.get('.empty-block__title').text()).toBe('Something went wrong')
+    expect(block.get('.empty-block__text').text()).toBe('boom')
+    expect(block.findAll('button').map((one) => one.text())).toEqual(['Try again'])
+
+    await block.get('button').trigger('click')
+    await flushPromises()
+
+    expect(client.listVaults).toHaveBeenCalledTimes(2)
+  })
+
   it('shows a syncing vault with its sizes and a progress bar, and an up-to-date vault with no bar', async () => {
     const { wrapper } = await render({
       vaults: [
