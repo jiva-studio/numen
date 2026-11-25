@@ -138,9 +138,6 @@ func withoutMoved(changes []transfer.Change, moves []transfer.Move) []transfer.C
 }
 
 func (p *pass) guard(ctx context.Context, removals []transfer.FileRecord, tracked int) ([]transfer.FileRecord, transfer.Verdict, error) {
-	if len(removals) == 0 {
-		return nil, transfer.Go, nil
-	}
 	candidates := make([]transfer.Removal, len(removals))
 	for i, record := range removals {
 		candidates[i] = transfer.Removal{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, RevID: nil}

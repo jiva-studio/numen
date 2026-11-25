@@ -1,4 +1,4 @@
-package pull
+ || len(r.removals) == 0package pull
 
 import (
 	"context"
@@ -53,9 +53,6 @@ func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, 
 }
 
 func (r *run) settleRemovals(ctx context.Context) error {
-	if len(r.removals) == 0 {
-		return nil
-	}
 	candidates := make([]transfer.Removal, len(r.removals))
 	for i, one := range r.removals {
 		candidates[i] = transfer.Removal{FileID: one.record.FileID, Path: one.record.Path, BaseHash: one.record.BaseHash, RevID: one.revID}
@@ -63,7 +60,7 @@ func (r *run) settleRemovals(ctx context.Context) error {
 	verdict, err := r.deps.Guard.Execute(ctx, transfer.GuardInput{
 		Vault: r.in.VaultID, Direction: transfer.DirectionApply, Candidates: candidates, Tracked: len(r.records),
 	})
-	if err != nil || verdict == transfer.Pause {
+	if err != nil || verdict == transfer.Pause || len(r.removals) == 0 {
 		return err
 	}
 	for _, one := range r.removals {
