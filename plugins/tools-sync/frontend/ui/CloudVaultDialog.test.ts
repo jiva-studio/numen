@@ -50,9 +50,13 @@ describe('CloudVaultDialog', () => {
       attachTo: document.body,
       props: { cloudVaults: cloud, freeVaults: [device('Plain')], question: '' },
     })
-    const select = document.body.querySelector('select')!
-    select.value = 'bb22'
-    select.dispatchEvent(new Event('change'))
+    document.body.querySelector<HTMLButtonElement>('button[data-slot="select"]')!.click()
+    await wrapper.vm.$nextTick()
+    const option = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')].find((one) =>
+      one.textContent.includes('Recipes'),
+    )!
+    option.click()
+    await wrapper.vm.$nextTick()
     await wrapper.setProps({ cloudVaults: [...cloud] })
     getButton().click()
     await wrapper.vm.$nextTick()

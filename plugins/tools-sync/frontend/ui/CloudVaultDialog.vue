@@ -3,8 +3,8 @@
  * The dialog "Get a vault from the cloud": the vault of the identity to get and the vault of this device that
  * receives it. When notes of the two differ, it asks once more before it connects them.
  */
-import { computed, ref } from 'vue'
-import { Button, Dialog } from '@numen/ui'
+import { computed, ref, useId } from 'vue'
+import { Button, Dialog, Select } from '@numen/ui'
 import type { RemoteVault, Vault } from '../api/vaults'
 import { getChoice } from '../lib/choice'
 import { WORDS as words } from '../words'
@@ -43,6 +43,12 @@ const vaultId = computed({
     ),
   set: (next: string) => (pickedVault.value = next),
 })
+const cloudLabelId = useId()
+const deviceLabelId = useId()
+const cloudChoices = computed(() =>
+  props.cloudVaults.map((one) => ({ id: one.remoteId, text: one.name })),
+)
+const deviceChoices = computed(() => props.freeVaults.map((one) => ({ id: one.id, text: one.name })))
 const isAsking = computed(() => props.question !== '')
 const canChoose = computed(() => remoteId.value !== '' && vaultId.value !== '')
 
@@ -69,20 +75,27 @@ function onSecondary(): void {
   >
     <p v-if="isAsking" class="sync-dialog__text" role="status">{{ question }}</p>
     <template v-else>
-      <label class="sync-field">
-        <span class="sync-field__label">{{ words.cloudVault }}</span>
-        <select v-model="remoteId" class="sync-field__input">
-          <option v-for="one in cloudVaults" :key="one.remoteId" :value="one.remoteId">
-            {{ one.name }}
-          </option>
-        </select>
-      </label>
-      <label class="sync-field">
-        <span class="sync-field__label">{{ words.deviceVault }}</span>
-        <select v-model="vaultId" class="sync-field__input" :disabled="freeVaults.length === 0">
-          <option v-for="one in freeVaults" :key="one.id" :value="one.id">{{ one.name }}</option>
-        </select>
-      </label>
+      <div class="sync-field">
+        <span :id="cloudLabelId" class="sync-field__label">{{ words.cloudVault }}</span>
+        <Select
+          v-model="remoteId"
+          :choices="cloudChoices"
+          :name="words.cloudVault"
+          :aria-labelledby="cloudLabelId"
+          is-searchable
+        />
+      </div>
+      <div class="sync-field">
+        <span :id="deviceLabelId" class="sync-field__label">{{ words.deviceVault }}</span>
+        <Select
+          v-model="vaultId"
+          :choices="deviceChoices"
+          :name="words.deviceVault"
+          :aria-labelledby="deviceLabelId"
+          :is-disabled="freeVaults.length === 0"
+          is-searchable
+        />
+      </div>
       <p v-if="freeVaults.length === 0" class="sync-dialog__text" role="status">
         {{ words.noDeviceVault }}
       </p>
