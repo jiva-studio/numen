@@ -78,15 +78,19 @@ type Vault struct {
 	ConflictCount   int              `json:"conflictCount"`
 	PausedDeletions *PausedDeletions `json:"pausedDeletions"`
 	RemoteID        string           `json:"remoteId"`
-	// Syncing is true while a pass runs over the vault or work waits: files of the cloud not yet written here, or uploads
-	// and downloads not finished.
+	// Syncing is true while a pass runs over the vault or a transfer waits: uploads and downloads not finished. Files
+	// on demand do not count.
 	Syncing bool `json:"syncing"`
 	// SyncedBytes is the stored size of the files this device holds at their cloud head.
 	SyncedBytes uint64 `json:"syncedBytes"`
-	// TotalBytes is the size of the vault in the cloud while Syncing, else SyncedBytes.
+	// TotalBytes is the size of the vault in the cloud: SyncedBytes and OnDemandBytes.
 	TotalBytes uint64 `json:"totalBytes"`
 	// PendingFiles is the files whose transfer is listed and not finished.
 	PendingFiles int `json:"pendingFiles"`
+	// OnDemandFiles is the files that stay in the cloud until the person opens them; they are no pending work.
+	OnDemandFiles int `json:"onDemandFiles"`
+	// OnDemandBytes is the size of the OnDemandFiles in the cloud.
+	OnDemandBytes uint64 `json:"onDemandBytes"`
 }
 
 // ListVaultsRequest asks for every vault of the installation.

@@ -24,18 +24,17 @@ func (v *Listing) setProgress(ctx context.Context, id domain.VaultID, one *api.V
 	if err != nil {
 		return err
 	}
-	waiting := map[string]bool{}
-	var waitingBytes uint64
+	onDemand := map[string]bool{}
 	for _, file := range absent {
-		waiting[file.Path] = true
-		waitingBytes += uint64(max(file.Size, 0))
+		onDemand[file.Path] = true
+		one.OnDemandBytes += uint64(max(file.Size, 0))
 	}
 	records, err := v.deps.State.ReadRecords(ctx, id)
 	if err != nil {
 		return err
 	}
 	for _, record := range records {
-		if waiting[record.Path] {
+		if onDemand[record.Path] {
 			continue
 		}
 		size := record.BlobSize
@@ -44,6 +43,7 @@ func (v *Listing) setProgress(ctx context.Context, id domain.VaultID, one *api.V
 		}
 		one.SyncedBytes += size
 	}
+	waiting := map[string]bool{}
 	if v.moving.downloads != nil {
 		entries, err := v.moving.downloads.ReadDownloads(ctx, id)
 		if err != nil {
@@ -62,12 +62,14 @@ func (v *Listing) setProgress(ctx context.Context, id domain.VaultID, one *api.V
 			waiting[entry.Path] = true
 		}
 	}
+	for path := range onDemand {
+		if !waiting[path] {
+			one.OnDemandFiles++
+		}
+	}
 	one.PendingFiles = len(waiting)
 	one.Syncing = v.deps.Locker.IsLocked(id) || len(waiting) > 0
-	one.TotalBytes = one.SyncedBytes
-	if one.Syncing {
-		one.TotalBytes += waitingBytes
-	}
+	one.TotalBytes = one.SyncedBytes + one.OnDemandBytes
 	return nil
 }
 

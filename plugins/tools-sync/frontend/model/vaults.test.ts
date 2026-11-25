@@ -76,6 +76,51 @@ describe('useVaults', () => {
     })
   })
 
+  it('says how many files stay on demand and the size in the cloud on an idle vault', async () => {
+    const client = createClient([
+      createVault({
+        state: 'connected',
+        syncing: false,
+        onDemandFiles: 12,
+        onDemandBytes: 524_288_000,
+        syncedBytes: 1_048_576,
+        totalBytes: 525_336_576,
+      }),
+    ])
+    const model = createModel(client)
+
+    await model.actions.load()
+
+    expect(model.state.rows.value.at(0)).toMatchObject({
+      status: 'Up to date',
+      kind: 'ok',
+      size: '12 files on demand · 501 MB in the cloud',
+      isTransferring: false,
+    })
+  })
+
+  it('says one file on demand in the singular', async () => {
+    const client = createClient([
+      createVault({ state: 'connected', onDemandFiles: 1, totalBytes: 1_048_576 }),
+    ])
+    const model = createModel(client)
+
+    await model.actions.load()
+
+    expect(model.state.rows.value.at(0)?.size).toBe('1 file on demand · 1 MB in the cloud')
+  })
+
+  it('says nothing about files on demand when none stay in the cloud', async () => {
+    const client = createClient([
+      createVault({ state: 'connected', onDemandFiles: 0, totalBytes: 1_048_576, remoteId: 'bb22' }),
+    ])
+    const model = createModel(client)
+
+    await model.actions.load()
+
+    expect(model.state.rows.value.at(0)?.size).not.toContain('on demand')
+  })
+
   it('says one minute in the singular and less than a minute for a fresh sync', async () => {
     const client = createClient([
       createVault({ id: 'a', state: 'connected', lastSyncedAt: '2026-11-23T11:59:00Z' }),

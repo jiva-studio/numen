@@ -122,6 +122,7 @@ export const WORDS = {
   deleteCloudConfirm: 'Delete',
   notSyncing: 'Not syncing',
   sizeInCloud: (size: string): string => `${size} in the cloud`,
+  filesOnDemand: (count: number): string => `${count} ${count === 1 ? 'file' : 'files'} on demand`,
   notSyncedHere: 'This vault is not synced.',
   leaveShare: 'Leave',
   leaveTitle: 'Leave folder',

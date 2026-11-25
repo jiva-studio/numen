@@ -12,6 +12,8 @@
       "syncedBytes": 1932735283,
       "totalBytes": 2040109465,
       "pendingFiles": 49,
+      "onDemandFiles": 12,
+      "onDemandBytes": 524288000,
       "pausedDeletions": { "count": 5, "tracked": 10, "direction": "send" }
     },
     {
@@ -26,6 +28,8 @@
       "syncedBytes": 0,
       "totalBytes": 0,
       "pendingFiles": 0,
+      "onDemandFiles": 0,
+      "onDemandBytes": 0,
       "pausedDeletions": null
     },
     {
@@ -40,6 +44,8 @@
       "syncedBytes": 0,
       "totalBytes": 0,
       "pendingFiles": 0,
+      "onDemandFiles": 0,
+      "onDemandBytes": 0,
       "pausedDeletions": null
     }
   ]

@@ -85,6 +85,12 @@ const getSize = (cloud: readonly RemoteVault[], remoteId: string): string => {
   return one === undefined ? '' : words.sizeInCloud(formatCloudSize(one.sizeBytes))
 }
 
+const getOnDemandSize = (vault: Vault): string => {
+  const count = vault.onDemandFiles ?? 0
+  if (count <= 0) return ''
+  return `${words.filesOnDemand(count)} · ${words.sizeInCloud(formatCloudSize(vault.totalBytes ?? 0))}`
+}
+
 const getProgress = (synced: number, total: number): number =>
   total > 0 ? Math.min(Math.max(synced / total, 0), 1) : 0
 
@@ -148,8 +154,10 @@ export const getRow = (
     const status = words.statusSyncing
     return { ...base, status, tone: 'warning', kind: 'syncing', detail: '', canResolve: false, size, isTransferring: true, progress }
   }
+  const onDemand = getOnDemandSize(vault)
+  const size = onDemand === '' ? base.size : onDemand
   const status = words.statusUpToDate
-  return { ...base, status, tone: 'ok', kind: 'ok', detail: synced, canResolve: false }
+  return { ...base, status, tone: 'ok', kind: 'ok', detail: synced, canResolve: false, size }
 }
 
 export function useVaults(options: UseVaultsOptions) {

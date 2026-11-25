@@ -96,6 +96,8 @@ describe('the fixtures of the vaults service', () => {
       syncedBytes: 1_932_735_283,
       totalBytes: 2_040_109_465,
       pendingFiles: 49,
+      onDemandFiles: 12,
+      onDemandBytes: 524_288_000,
     })
   })
 

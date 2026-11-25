@@ -330,26 +330,32 @@ func TestListVaults_ReportsAnIdleVaultWithEveryFileAtItsHeadAsNotSyncing(t *test
 	}
 }
 
-func TestListVaults_ReportsAVaultWithAnAbsentFileAsSyncingWithLessSyncedThanTotal(t *testing.T) {
+func TestListVaults_ReportsAbsentFilesAsOnDemandAndNotAsPendingWork(t *testing.T) {
 	w := newWorld(t)
 	w.c.Connect(t, "Test")
 	w.c.WriteNote("Test", "Soup.md", "carrots")
 	if err := w.c.Sync(t.Context(), "Test"); err != nil {
 		t.Fatal(err)
 	}
-	absent := host.AbsentFile{Path: "Archive.pdf", Size: 5000, ModTime: time.Unix(0, 1), Hash: "00"}
-	if err := w.c.Host.GetAbsent("Test").PutAbsentFiles(t.Context(), []host.AbsentFile{absent}); err != nil {
+	absent := []host.AbsentFile{
+		{Path: "Archive.pdf", Size: 5000, ModTime: time.Unix(0, 1), Hash: "00"},
+		{Path: "Atlas.pdf", Size: 700, ModTime: time.Unix(0, 1), Hash: "01"},
+	}
+	if err := w.c.Host.GetAbsent("Test").PutAbsentFiles(t.Context(), absent); err != nil {
 		t.Fatal(err)
 	}
 	backend := service.NewBackend(w.c.SyncDeps()).WithTransfers(w.c.State, w.c.State)
 
 	one := findVault(t, listVaults(t, backend), "Test")
 
-	if !one.Syncing || one.PendingFiles != 1 {
-		t.Errorf("vault = %+v, want it syncing with one file pending", one)
+	if one.Syncing || one.PendingFiles != 0 {
+		t.Errorf("vault = %+v, want it idle with nothing pending", one)
 	}
-	if one.SyncedBytes == 0 || one.SyncedBytes >= one.TotalBytes {
-		t.Errorf("synced = %d, total = %d, want synced above zero and below total", one.SyncedBytes, one.TotalBytes)
+	if one.OnDemandFiles != 2 || one.OnDemandBytes != 5700 {
+		t.Errorf("on demand = %d files, %d bytes, want 2 files, 5700 bytes", one.OnDemandFiles, one.OnDemandBytes)
+	}
+	if one.SyncedBytes == 0 || one.TotalBytes != one.SyncedBytes+5700 {
+		t.Errorf("synced = %d, total = %d, want total as synced plus the 5700 bytes in the cloud", one.SyncedBytes, one.TotalBytes)
 	}
 }
 
