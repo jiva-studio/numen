@@ -122,7 +122,7 @@ func TestMoveNotesReturnsTooLargeForTheNoteThatIsTooLarge(t *testing.T) {
 	hostCallers.vault = vaultOf(tooLargeMoveVault{newFakeNoteVault()})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))

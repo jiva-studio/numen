@@ -604,7 +604,7 @@ export const AdoptChainResponseSchema: GenMessage<AdoptChainResponse> = /*@__PUR
 
 /**
  * HostAccountService serves the identity of this device to the plugins. The host identifies the plugin
- * by its token, and every call needs the permission identity. No call returns or accepts a secret key.
+ * by its token, and every call needs the permission identity, except the link, chain and restore calls, which need identity:link. No call returns or accepts a secret key.
  *
  * A device with no identity answers FAILED_PRECONDITION with an ErrorInfo detail whose reason is
  * NO_IDENTITY.

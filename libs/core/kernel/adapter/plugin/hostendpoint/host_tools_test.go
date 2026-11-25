@@ -51,7 +51,8 @@ func (r *recordedTools) CallTool(ctx context.Context, callerID string, call *v1.
 func newToolClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.PluginToolServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: &Endpoint{callers: fakeCallers.asCallers()}}))
+	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
+	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}, endpoint.newPermissionOption()))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewPluginToolServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))

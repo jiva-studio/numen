@@ -8,7 +8,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -25,7 +24,7 @@ func (e *arrangeCalls) WriteFrontmatter(
 	if len(req.Msg.GetNotes()) > frontmatterWriteLimit {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyFrontmatterWrites)
 	}
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}

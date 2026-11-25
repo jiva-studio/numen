@@ -8,7 +8,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -69,7 +68,7 @@ func (e *vaultsCalls) beginList(header http.Header) (List, error) {
 }
 
 func (e *vaultsCalls) beginListAs(header http.Header) (string, List, error) {
-	pluginID, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionVaultManage)
+	pluginID, err := e.auth.Authenticate(header.Get("Authorization"))
 	if err != nil {
 		return "", nil, err
 	}
@@ -105,7 +104,7 @@ func writeVault(v domain.Vault) *v1.Vault {
 func (e *vaultsCalls) ListVaults(
 	_ context.Context, req *connect.Request[v1.ListVaultsRequest],
 ) (*connect.Response[v1.ListVaultsResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}

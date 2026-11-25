@@ -56,7 +56,7 @@ func newBrokenClient(t *testing.T) (HostVaultClient, *fakeNoteVault) {
 	hostCallers.vault = vaultOf(brokenVault{vault})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))

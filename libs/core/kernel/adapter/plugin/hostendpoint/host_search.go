@@ -16,7 +16,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // searchEndpoint answers HostSearchService for the plugins that call the host.
@@ -35,8 +34,8 @@ type searchCall struct {
 	hasVault bool
 }
 
-func (e *searchEndpoint) begin(header http.Header, permission string, needsVault bool) (searchCall, error) {
-	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), permission)
+func (e *searchEndpoint) begin(header http.Header, needsVault bool) (searchCall, error) {
+	pluginID, err := e.endpoint.Authenticate(header.Get("Authorization"))
 	if err != nil {
 		return searchCall{}, err
 	}
@@ -89,7 +88,7 @@ func answerSearch(ctx context.Context, err error) (v1.HostSearchErrorCode, error
 func (e *searchEndpoint) GetEmbeddingState(
 	ctx context.Context, req *connect.Request[v1.GetEmbeddingStateRequest],
 ) (*connect.Response[v1.GetEmbeddingStateResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	call, err := e.begin(req.Header(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +113,7 @@ func (e *searchEndpoint) GetEmbeddingState(
 func (e *searchEndpoint) GetIndexStats(
 	ctx context.Context, req *connect.Request[v1.GetIndexStatsRequest],
 ) (*connect.Response[v1.GetIndexStatsResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	call, err := e.begin(req.Header(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +145,7 @@ func (e *searchEndpoint) GetIndexStats(
 func (e *searchEndpoint) EmbedTexts(
 	ctx context.Context, req *connect.Request[v1.EmbedTextsRequest],
 ) (*connect.Response[v1.EmbedTextsResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, false)
+	call, err := e.begin(req.Header(), false)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +167,7 @@ func (e *searchEndpoint) EmbedTexts(
 func (e *searchEndpoint) SampleSimilarities(
 	ctx context.Context, req *connect.Request[v1.SampleSimilaritiesRequest],
 ) (*connect.Response[v1.SampleSimilaritiesResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	call, err := e.begin(req.Header(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +197,7 @@ func (e *searchEndpoint) SampleSimilarities(
 func (e *searchEndpoint) GetBestSimilarity(
 	ctx context.Context, req *connect.Request[v1.GetBestSimilarityRequest],
 ) (*connect.Response[v1.GetBestSimilarityResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	call, err := e.begin(req.Header(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +215,7 @@ func (e *searchEndpoint) GetBestSimilarity(
 func (e *searchEndpoint) SearchText(
 	ctx context.Context, req *connect.Request[v1.HostSearchServiceSearchTextRequest],
 ) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	call, err := e.begin(req.Header(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +254,7 @@ func readKinds(names []string) ([]domain.SourceKind, error) {
 func (e *searchEndpoint) FindNearestChunks(
 	ctx context.Context, req *connect.Request[v1.FindNearestChunksRequest],
 ) (*connect.Response[v1.FindNearestChunksResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	call, err := e.begin(req.Header(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +300,7 @@ func writeSearchResults(found []domain.SearchResult) ([]*v1.SearchResult, error)
 func (e *searchEndpoint) GetSearchFloor(
 	ctx context.Context, req *connect.Request[v1.GetSearchFloorRequest],
 ) (*connect.Response[v1.GetSearchFloorResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionSearchPolicy, true)
+	call, err := e.begin(req.Header(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +324,7 @@ func (e *searchEndpoint) GetSearchFloor(
 func (e *searchEndpoint) SetSearchFloor(
 	ctx context.Context, req *connect.Request[v1.SetSearchFloorRequest],
 ) (*connect.Response[v1.SetSearchFloorResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionSearchPolicy, true)
+	call, err := e.begin(req.Header(), true)
 	if err != nil {
 		return nil, err
 	}

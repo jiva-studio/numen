@@ -7,7 +7,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -25,10 +24,10 @@ type AbsentFiles interface {
 }
 
 func serveAbsent[Q, R any](
-	ctx context.Context, c *calls, req *connect.Request[Q], permission string,
+	ctx context.Context, c *calls, req *connect.Request[Q],
 	withCode func(code v1.ErrorCode) *R, work func(pluginID string, absent AbsentFiles) (*R, error),
 ) (*connect.Response[R], error) {
-	pluginID, access, err := c.beginAs(req.Header(), permission)
+	pluginID, access, err := c.beginAs(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +51,7 @@ func serveAbsent[Q, R any](
 func (e *absentCalls) PutAbsentFiles(
 	ctx context.Context, req *connect.Request[v1.PutAbsentFilesRequest],
 ) (*connect.Response[v1.PutAbsentFilesResponse], error) {
-	return serveAbsent(ctx, e.calls, req, manifest.PermissionVaultWrite,
+	return serveAbsent(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.PutAbsentFilesResponse { return &v1.PutAbsentFilesResponse{Error: code} },
 		func(pluginID string, absent AbsentFiles) (*v1.PutAbsentFilesResponse, error) {
 			files := make([]vaultdomain.AbsentFile, len(req.Msg.GetFiles()))
@@ -68,7 +67,7 @@ func (e *absentCalls) PutAbsentFiles(
 func (e *absentCalls) ListAbsentFiles(
 	ctx context.Context, req *connect.Request[v1.ListAbsentFilesRequest],
 ) (*connect.Response[v1.ListAbsentFilesResponse], error) {
-	return serveAbsent(ctx, e.calls, req, manifest.PermissionVaultRead,
+	return serveAbsent(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.ListAbsentFilesResponse { return &v1.ListAbsentFilesResponse{Error: code} },
 		func(_ string, absent AbsentFiles) (*v1.ListAbsentFilesResponse, error) {
 			listed, err := absent.ListAbsentFiles(ctx)
@@ -86,7 +85,7 @@ func (e *absentCalls) ListAbsentFiles(
 func (e *absentCalls) FillFile(
 	ctx context.Context, req *connect.Request[v1.FillFileRequest],
 ) (*connect.Response[v1.FillFileResponse], error) {
-	return serveAbsent(ctx, e.calls, req, manifest.PermissionVaultWrite,
+	return serveAbsent(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.FillFileResponse { return &v1.FillFileResponse{Error: code} },
 		func(pluginID string, absent AbsentFiles) (*v1.FillFileResponse, error) {
 			return &v1.FillFileResponse{}, absent.FillFile(ctx, pluginID, req.Msg.GetPath(), req.Msg.GetStoreName())
@@ -96,7 +95,7 @@ func (e *absentCalls) FillFile(
 func (e *absentCalls) EvictFile(
 	ctx context.Context, req *connect.Request[v1.EvictFileRequest],
 ) (*connect.Response[v1.EvictFileResponse], error) {
-	return serveAbsent(ctx, e.calls, req, manifest.PermissionVaultWrite,
+	return serveAbsent(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.EvictFileResponse { return &v1.EvictFileResponse{Error: code} },
 		func(pluginID string, absent AbsentFiles) (*v1.EvictFileResponse, error) {
 			return &v1.EvictFileResponse{}, absent.EvictFile(ctx, pluginID, req.Msg.GetPath(), req.Msg.GetExpectedHash())

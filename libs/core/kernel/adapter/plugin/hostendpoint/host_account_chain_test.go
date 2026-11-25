@@ -143,7 +143,7 @@ func newRevokeSetup(t *testing.T) *revokeSetup {
 	endpoint := &Endpoint{callers: fake.asCallers()}
 	calls := AccountCalls{Chain: identity.NewAccountLink(account)}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{auth: endpoint, calls: calls}))
+	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{auth: endpoint, calls: calls}, endpoint.newPermissionOption()))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewHostAccountServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))

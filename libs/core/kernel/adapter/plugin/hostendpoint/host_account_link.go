@@ -9,7 +9,6 @@ import (
 	"connectrpc.com/connect"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
@@ -20,7 +19,7 @@ const (
 )
 
 func (e *accountEndpoint) getLinkOf(header http.Header) (AccountLink, error) {
-	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentityLink); err != nil {
+	if _, err := e.auth.Authenticate(header.Get("Authorization")); err != nil {
 		return nil, err
 	}
 	link := e.calls.Link
@@ -31,7 +30,7 @@ func (e *accountEndpoint) getLinkOf(header http.Header) (AccountLink, error) {
 }
 
 func (e *accountEndpoint) getChainOf(header http.Header) (AccountChain, error) {
-	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentityLink); err != nil {
+	if _, err := e.auth.Authenticate(header.Get("Authorization")); err != nil {
 		return nil, err
 	}
 	chain := e.calls.Chain

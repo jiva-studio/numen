@@ -54,8 +54,8 @@ const (
 	// and reading what is public of the identity of this device. The plugin never holds a secret key.
 	PermissionIdentity = "identity"
 
-	// PermissionIdentityLink allows carrying the link of a new device and the revoke of a device between the core and the
-	// sync server: the relay channel, the sealed messages of a link, the chain to publish and the chain to adopt. The
+	// PermissionIdentityLink allows carrying the link of a new device, the revoke of a device and the restore of an identity between the core and the
+	// sync server: the relay channel, the sealed messages of a link, the chain to publish and the chain to adopt, and the restore of an identity: the pending restore, the signature of the recovery key and its completion. The
 	// plugin never sees the QR text or the confirmation code.
 	PermissionIdentityLink = "identity:link"
 

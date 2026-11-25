@@ -7,7 +7,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
@@ -25,7 +24,7 @@ var (
 var errLinkSize = errors.New("a link call carries 1 to 262144 bytes, a channel 16")
 
 func (e *accountEndpoint) getAccountOf(header http.Header) (string, Account, error) {
-	pluginID, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentity)
+	pluginID, err := e.auth.Authenticate(header.Get("Authorization"))
 	if err != nil {
 		return "", nil, err
 	}
@@ -37,7 +36,7 @@ func (e *accountEndpoint) getAccountOf(header http.Header) (string, Account, err
 }
 
 func (e *accountEndpoint) getRestoreOf(header http.Header) (string, AccountRestore, error) {
-	pluginID, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentity)
+	pluginID, err := e.auth.Authenticate(header.Get("Authorization"))
 	if err != nil {
 		return "", nil, err
 	}

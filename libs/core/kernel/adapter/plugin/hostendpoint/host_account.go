@@ -8,7 +8,6 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -32,7 +31,7 @@ var (
 )
 
 // accountEndpoint answers the calls of HostAccountService. The plugin is the one the token names; the
-// request names none. Every call needs the permission identity.
+// request names none. Every call needs the permission identity, or identity:link for the link, chain and restore calls.
 type accountEndpoint struct {
 	numenv1connect.UnimplementedHostAccountServiceHandler
 
@@ -40,15 +39,15 @@ type accountEndpoint struct {
 	calls AccountCalls
 }
 
-// authority tells which plugin made a call and refuses a call of a plugin without the permission.
+// authority tells which plugin made a call.
 type authority interface {
-	Authorize(header, permission string) (string, error)
+	Authenticate(header string) (string, error)
 }
 
 func (e *accountEndpoint) SignAsDevice(
 	ctx context.Context, req *connect.Request[v1.SignAsDeviceRequest],
 ) (*connect.Response[v1.SignAsDeviceResponse], error) {
-	pluginID, err := e.auth.Authorize(req.Header().Get("Authorization"), manifest.PermissionIdentity)
+	pluginID, err := e.auth.Authenticate(req.Header().Get("Authorization"))
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +69,7 @@ func (e *accountEndpoint) SignAsDevice(
 func (e *accountEndpoint) GetPublicIdentity(
 	ctx context.Context, req *connect.Request[v1.GetPublicIdentityRequest],
 ) (*connect.Response[v1.GetPublicIdentityResponse], error) {
-	if _, err := e.auth.Authorize(req.Header().Get("Authorization"), manifest.PermissionIdentity); err != nil {
+	if _, err := e.auth.Authenticate(req.Header().Get("Authorization")); err != nil {
 		return nil, err
 	}
 	account := e.calls.Account

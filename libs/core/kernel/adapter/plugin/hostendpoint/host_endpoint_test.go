@@ -17,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // callers is a host that resolves the plugins registered with it and
@@ -159,7 +158,7 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 	fakeCallers := newCallers()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	for _, header := range []string{"", "token-a", "Basic token-a", "bearer token-a"} {
-		if _, err := endpoint.Authorize(header, manifest.PermissionVaultRead); readCode(t, err) != connect.CodeUnauthenticated {
+		if _, err := endpoint.Authenticate(header); readCode(t, err) != connect.CodeUnauthenticated {
 			t.Errorf("header %q was accepted", header)
 		}
 	}

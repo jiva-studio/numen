@@ -7,13 +7,12 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func (e *watchCalls) WatchIndexChanges(
 	ctx context.Context, req *connect.Request[v1.WatchIndexChangesRequest], stream *connect.ServerStream[v1.WatchIndexChangesResponse],
 ) error {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return err
 	}

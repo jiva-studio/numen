@@ -54,18 +54,15 @@ func TestAPluginOpensDataWithTheContextItChoosesForItsOwnID(t *testing.T) {
 	}
 }
 
-func TestSealedDataAndRestoreCallsNeedThePermissionIdentity(t *testing.T) {
+func TestSealedDataCallsNeedThePermissionIdentity(t *testing.T) {
 	h := newAccountHost(t)
 	h.callers.granted = []string{manifest.PermissionVaultRead}
 	client := h.client("token-a")
 
 	_, sealErr := client.SealData(t.Context(), connect.NewRequest(&v1.SealDataRequest{Plain: []byte("m")}))
 	_, openErr := client.OpenData(t.Context(), connect.NewRequest(&v1.OpenDataRequest{Sealed: []byte("m")}))
-	_, pendingErr := client.GetPendingRestore(t.Context(), connect.NewRequest(&v1.GetPendingRestoreRequest{}))
-	_, recoveryErr := client.SignAsRecovery(t.Context(), connect.NewRequest(&v1.SignAsRecoveryRequest{Message: []byte("m")}))
-	_, completeErr := client.CompleteRestore(t.Context(), connect.NewRequest(&v1.CompleteRestoreRequest{}))
 
-	for name, err := range map[string]error{"seal": sealErr, "open": openErr, "pending": pendingErr, "recovery": recoveryErr, "complete": completeErr} {
+	for name, err := range map[string]error{"seal": sealErr, "open": openErr} {
 		if connect.CodeOf(err) != connect.CodePermissionDenied {
 			t.Errorf("%s: error = %v, want permission denied", name, err)
 		}

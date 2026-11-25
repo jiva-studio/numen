@@ -214,7 +214,7 @@ func newArrangeClient(
 	hostCallers.vault = vaultOf(vault)
 	endpoint := &Endpoint{callers: hostCallers.over(list, granted...)}
 	mux := http.NewServeMux()
-	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
@@ -588,7 +588,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			hostCallers.vault = vaultOf(failingRenameVault{fakeNoteVault: newFakeNoteVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)})
 			endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 			mux := http.NewServeMux()
-			vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+			vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 			client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
@@ -730,7 +730,7 @@ func newEscapingPathClient(t *testing.T) (HostVaultClient, *fakeNoteVault) {
 	hostCallers.vault = vaultOf(escapingPathVault{vault})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))

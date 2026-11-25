@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // textEndpoint answers HostTextService for the plugins that call the host.
@@ -33,8 +32,8 @@ type textCall struct {
 	vault    domain.Vault
 }
 
-func (e *textEndpoint) begin(header http.Header, permission string) (textCall, error) {
-	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), permission)
+func (e *textEndpoint) begin(header http.Header) (textCall, error) {
+	pluginID, err := e.endpoint.Authenticate(header.Get("Authorization"))
 	if err != nil {
 		return textCall{}, err
 	}
@@ -78,7 +77,7 @@ const noTexts = v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT
 func (e *textEndpoint) PutTextVersion(
 	ctx context.Context, req *connect.Request[v1.PutTextVersionRequest],
 ) (*connect.Response[v1.PutTextVersionResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	call, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +104,7 @@ func (e *textEndpoint) PutTextVersion(
 func (e *textEndpoint) ListTextVersions(
 	ctx context.Context, req *connect.Request[v1.ListTextVersionsRequest],
 ) (*connect.Response[v1.ListTextVersionsResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	call, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +126,7 @@ func (e *textEndpoint) ListTextVersions(
 func (e *textEndpoint) ReadText(
 	ctx context.Context, req *connect.Request[v1.ReadTextRequest],
 ) (*connect.Response[v1.ReadTextResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	call, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}

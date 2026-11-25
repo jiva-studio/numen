@@ -3,10 +3,11 @@ package hostendpoint
 import (
 	"context"
 	"errors"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"io/fs"
 	"net/http"
 	"slices"
+
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"connectrpc.com/connect"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // windowEndpoint serves HostWindowService for the plugins that call the host.
@@ -27,7 +27,7 @@ type windowEndpoint struct {
 var _ numenv1connect.HostWindowServiceHandler = (*windowEndpoint)(nil)
 
 func (e *windowEndpoint) begin(header http.Header) (WindowControl, error) {
-	if _, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionWindowFocus); err != nil {
+	if _, err := e.endpoint.Authenticate(header.Get("Authorization")); err != nil {
 		return nil, err
 	}
 	return e.endpoint.callers.Lent.GetPluginWindow(), nil

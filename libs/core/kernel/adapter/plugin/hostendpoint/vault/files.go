@@ -10,7 +10,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -108,7 +107,7 @@ func readKind(f *v1.FileStat) domain.SourceKind {
 func (e *filesCalls) GetHostVault(
 	_ context.Context, req *connect.Request[v1.GetHostVaultRequest],
 ) (*connect.Response[v1.GetHostVaultResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +124,7 @@ func (e *filesCalls) GetHostVault(
 func (e *filesCalls) IndexVault(
 	ctx context.Context, req *connect.Request[v1.IndexVaultRequest],
 ) (*connect.Response[v1.IndexVaultResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.IndexVaultResponse {
 			return &v1.IndexVaultResponse{Error: code}
 		},
@@ -150,7 +149,7 @@ func (e *filesCalls) IndexVault(
 func (e *filesCalls) StatFile(
 	ctx context.Context, req *connect.Request[v1.StatFileRequest],
 ) (*connect.Response[v1.StatFileResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.StatFileResponse { return &v1.StatFileResponse{Error: code} },
 		func(vault *Access) (*v1.StatFileResponse, error) {
 			pos, err := vault.Files.StatFile(ctx, req.Msg.GetPath())
@@ -164,7 +163,7 @@ func (e *filesCalls) StatFile(
 func (e *filesCalls) ReadFile(
 	ctx context.Context, req *connect.Request[v1.ReadFileRequest],
 ) (*connect.Response[v1.ReadFileResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.ReadFileResponse { return &v1.ReadFileResponse{Error: code} },
 		func(vault *Access) (*v1.ReadFileResponse, error) {
 			if req.Msg.Length != nil {
@@ -181,7 +180,7 @@ func (e *filesCalls) ReadFile(
 func (e *filesCalls) WriteFile(
 	ctx context.Context, req *connect.Request[v1.WriteFileRequest],
 ) (*connect.Response[v1.WriteFileResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.WriteFileResponse { return &v1.WriteFileResponse{Error: code} },
 		func(vault *Access) (*v1.WriteFileResponse, error) {
 			pos, err := vault.Writer.WriteFile(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFileStat(req.Msg.GetBaseline()))
@@ -195,7 +194,7 @@ func (e *filesCalls) WriteFile(
 func (e *filesCalls) CreateFile(
 	ctx context.Context, req *connect.Request[v1.CreateFileRequest],
 ) (*connect.Response[v1.CreateFileResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.CreateFileResponse { return &v1.CreateFileResponse{Error: code} },
 		func(vault *Access) (*v1.CreateFileResponse, error) {
 			return &v1.CreateFileResponse{}, vault.Writer.CreateFile(ctx, req.Msg.GetPath(), req.Msg.GetContent())
@@ -205,7 +204,7 @@ func (e *filesCalls) CreateFile(
 func (e *filesCalls) LockVault(
 	ctx context.Context, req *connect.Request[v1.LockVaultRequest],
 ) (*connect.Response[v1.LockVaultResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.LockVaultResponse { return &v1.LockVaultResponse{Error: code} },
 		func(vault *Access) (*v1.LockVaultResponse, error) {
 			v, showing := vault.Switch.GetVault()
@@ -231,7 +230,7 @@ func (e *filesCalls) getLocks() Locks {
 func (e *filesCalls) UnlockVault(
 	_ context.Context, req *connect.Request[v1.UnlockVaultRequest],
 ) (*connect.Response[v1.UnlockVaultResponse], error) {
-	if _, err := e.begin(req.Header(), manifest.PermissionVaultWrite); err != nil {
+	if _, err := e.begin(req.Header()); err != nil {
 		return nil, err
 	}
 	if locks := e.getLocks(); locks != nil {
@@ -243,7 +242,7 @@ func (e *filesCalls) UnlockVault(
 func (e *filesCalls) ScanFiles(
 	ctx context.Context, req *connect.Request[v1.ScanFilesRequest],
 ) (*connect.Response[v1.ScanFilesResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.ScanFilesResponse { return &v1.ScanFilesResponse{Error: code} },
 		func(vault *Access) (*v1.ScanFilesResponse, error) {
 			return &v1.ScanFilesResponse{}, vault.Writer.ScanFiles(ctx, req.Msg.GetPaths())

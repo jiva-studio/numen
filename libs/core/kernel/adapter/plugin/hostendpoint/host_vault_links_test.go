@@ -154,7 +154,7 @@ func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) HostVa
 	}
 	endpoint := &Endpoint{callers: hostCallers.over(nil, granted...)}
 	mux := http.NewServeMux()
-	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))

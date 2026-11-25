@@ -5,7 +5,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
@@ -21,7 +20,7 @@ func readBaseline(stat *v1.FileStat) *domain.FileStat {
 func (e *filesCalls) MoveFile(
 	ctx context.Context, req *connect.Request[v1.HostFileServiceMoveFileRequest],
 ) (*connect.Response[v1.HostFileServiceMoveFileResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.HostFileServiceMoveFileResponse {
 			return &v1.HostFileServiceMoveFileResponse{Error: code}
 		},
@@ -37,7 +36,7 @@ func (e *filesCalls) MoveFile(
 func (e *filesCalls) RemoveFile(
 	ctx context.Context, req *connect.Request[v1.HostFileServiceRemoveFileRequest],
 ) (*connect.Response[v1.HostFileServiceRemoveFileResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.HostFileServiceRemoveFileResponse {
 			return &v1.HostFileServiceRemoveFileResponse{Error: code}
 		},
@@ -53,7 +52,7 @@ func (e *filesCalls) RemoveFile(
 func (e *filesCalls) ReadFileRange(
 	ctx context.Context, req *connect.Request[v1.ReadFileRangeRequest],
 ) (*connect.Response[v1.ReadFileRangeResponse], error) {
-	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
+	return serve(ctx, e.calls, req,
 		func(code v1.ErrorCode) *v1.ReadFileRangeResponse { return &v1.ReadFileRangeResponse{Error: code} },
 		func(vault *Access) (*v1.ReadFileRangeResponse, error) {
 			content, stat, err := vault.Ranges.ReadFileRange(ctx, req.Msg.GetPath(), req.Msg.GetStart(), req.Msg.GetLength())
@@ -67,7 +66,7 @@ func (e *filesCalls) ReadFileRange(
 func (e *filesCalls) PlaceFile(
 	ctx context.Context, req *connect.Request[v1.PlaceFileRequest],
 ) (*connect.Response[v1.PlaceFileResponse], error) {
-	pluginID, vault, err := e.beginAs(req.Header(), manifest.PermissionVaultWrite)
+	pluginID, vault, err := e.beginAs(req.Header())
 	if err != nil {
 		return nil, err
 	}

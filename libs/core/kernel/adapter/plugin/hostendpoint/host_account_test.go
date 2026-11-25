@@ -116,11 +116,11 @@ func newAccountHost(t *testing.T) accountHost {
 	}
 	fake := newCallers()
 	fake.confined = true
-	fake.granted = []string{manifest.PermissionIdentity}
+	fake.granted = []string{manifest.PermissionIdentity, manifest.PermissionIdentityLink}
 	endpoint := &Endpoint{callers: fake.asCallers()}
 	calls := AccountCalls{Account: operations, Restore: operations}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{auth: endpoint, calls: calls}))
+	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{auth: endpoint, calls: calls}, endpoint.newPermissionOption()))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return accountHost{operations: operations, callers: fake, client: func(token string) numenv1connect.HostAccountServiceClient {
@@ -270,7 +270,7 @@ func readReason(err error) string {
 	return ""
 }
 
-func TestLinkAndChainCallsNeedThePermissionIdentityLinkAndNotIdentity(t *testing.T) {
+func TestLinkChainAndRestoreCallsNeedThePermissionIdentityLinkAndNotIdentity(t *testing.T) {
 	h := newAccountHost(t)
 	client := h.client("token-a")
 	calls := map[string]func() error{
@@ -296,6 +296,18 @@ func TestLinkAndChainCallsNeedThePermissionIdentityLinkAndNotIdentity(t *testing
 		},
 		"AdoptChain": func() error {
 			_, err := client.AdoptChain(t.Context(), connect.NewRequest(&v1.AdoptChainRequest{Chain: []byte("chain")}))
+			return err
+		},
+		"GetPendingRestore": func() error {
+			_, err := client.GetPendingRestore(t.Context(), connect.NewRequest(&v1.GetPendingRestoreRequest{}))
+			return err
+		},
+		"SignAsRecovery": func() error {
+			_, err := client.SignAsRecovery(t.Context(), connect.NewRequest(&v1.SignAsRecoveryRequest{Message: []byte("m")}))
+			return err
+		},
+		"CompleteRestore": func() error {
+			_, err := client.CompleteRestore(t.Context(), connect.NewRequest(&v1.CompleteRestoreRequest{}))
 			return err
 		},
 	}

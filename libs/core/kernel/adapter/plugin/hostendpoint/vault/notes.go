@@ -7,7 +7,6 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -38,7 +37,7 @@ func writeLinks(links []domain.ResolvedLink) []*v1.HostLink {
 func (e *lookupsCalls) ListNoteRefs(
 	ctx context.Context, req *connect.Request[v1.ListNoteRefsRequest],
 ) (*connect.Response[v1.ListNoteRefsResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +61,7 @@ func (e *lookupsCalls) ListNoteRefs(
 func (e *lookupsCalls) ListNoteTypes(
 	ctx context.Context, req *connect.Request[v1.ListNoteTypesRequest],
 ) (*connect.Response[v1.ListNoteTypesResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +83,7 @@ func (e *lookupsCalls) ListNoteTypes(
 func (e *lookupsCalls) ListNamedPaths(
 	ctx context.Context, req *connect.Request[v1.ListNamedPathsRequest],
 ) (*connect.Response[v1.ListNamedPathsResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +101,7 @@ func (e *lookupsCalls) ListNamedPaths(
 func (e *lookupsCalls) ListPathsOfType(
 	ctx context.Context, req *connect.Request[v1.ListPathsOfTypeRequest],
 ) (*connect.Response[v1.ListPathsOfTypeResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +119,7 @@ func (e *lookupsCalls) ListPathsOfType(
 func (e *lookupsCalls) ListLinks(
 	ctx context.Context, req *connect.Request[v1.ListLinksRequest],
 ) (*connect.Response[v1.ListLinksResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +137,7 @@ func (e *lookupsCalls) ListLinks(
 func (e *lookupsCalls) ListBacklinks(
 	ctx context.Context, req *connect.Request[v1.HostLinkServiceListBacklinksRequest],
 ) (*connect.Response[v1.HostLinkServiceListBacklinksResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +160,7 @@ func (e *lookupsCalls) ListBacklinks(
 func (e *lookupsCalls) ResolveLinks(
 	ctx context.Context, req *connect.Request[v1.ResolveLinksRequest],
 ) (*connect.Response[v1.ResolveLinksResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
