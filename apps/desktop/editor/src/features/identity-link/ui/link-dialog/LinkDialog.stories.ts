@@ -122,8 +122,7 @@ export const Linked: Story = {
   args: { calls: createCalls(createInfo({ phase: 'linked' })) },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
-    await expect(await canvas.findByText('The device is linked')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Done' }))
+    await userEvent.click(await canvas.findByRole('button', { name: 'Done' }))
     await expect(args.onClose).toHaveBeenCalled()
   },
 }

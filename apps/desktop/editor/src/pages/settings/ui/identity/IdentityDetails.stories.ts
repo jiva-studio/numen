@@ -104,7 +104,7 @@ export const Loaded: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('button', { name: 'Link a new device' })).toBeVisible()
-    await expect(canvas.getAllByRole('button', { name: 'Remove' })).toHaveLength(1)
+    await expect(canvas.getByText('Phone')).toBeVisible()
   },
 }
 
@@ -124,7 +124,7 @@ export const Linking: Story = {
     const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('button', { name: 'Link a new device' }))
     await expect(await canvas.findByRole('dialog', { name: 'Link a device' })).toBeVisible()
-    await expect(await canvas.findByText('Scan this code.')).toBeVisible()
+    await expect(await canvas.findByText('Approve the other device here.')).toBeVisible()
   },
 }
 
@@ -132,7 +132,8 @@ export const Linking: Story = {
 export const Revoking: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.ownerDocument.body)
-    await userEvent.click(canvas.getByRole('button', { name: 'Remove' }))
+    await userEvent.pointer({ keys: '[MouseRight]', target: canvas.getByText('Phone') })
+    await userEvent.click(await canvas.findByRole('menuitem', { name: 'Remove' }))
     await expect(
       await canvas.findByRole('alertdialog', { name: 'Remove this device?' }),
     ).toBeVisible()
