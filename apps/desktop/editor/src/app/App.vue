@@ -82,7 +82,7 @@ provideDialogHost(content)
       :picker="picker"
     />
 
-    <PluginDialogs :entries="dialogs.entries.value" />
+    <PluginDialogs :entries="dialogs.entries.value" @fail="dialogs.close" />
   </main>
 </template>
 

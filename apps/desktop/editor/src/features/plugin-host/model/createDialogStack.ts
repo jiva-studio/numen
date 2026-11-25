@@ -15,17 +15,18 @@ export function createDialogStack(
 ) {
   const entries = shallowRef<readonly OpenDialog[]>([])
   let last = 0
+  const close = (id: number): void => {
+    entries.value = entries.value.filter((one) => one.id !== id)
+  }
   const host: DialogHost = {
     saveText,
     open: (options) => {
       const id = ++last
       entries.value = [...entries.value, { id, options }]
       return {
-        close: () => {
-          entries.value = entries.value.filter((one) => one.id !== id)
-        },
+        close: () => close(id),
       }
     },
   }
-  return { entries, host }
+  return { entries, host, close }
 }
