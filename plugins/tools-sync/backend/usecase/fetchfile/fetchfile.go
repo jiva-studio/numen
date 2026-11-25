@@ -295,7 +295,6 @@ func (u *FetchFile) readHead(ctx context.Context, t target, keys []vaultlink.Vau
 	}
 }
 
-// findHead looks in one page for the head of the file: the revision that is still the one the listing named.
 func (u *FetchFile) findHead(ctx context.Context, t target, keys []vaultlink.VaultKey, authors trust.Authors, changes []*syncv1.StoredRevision) (*syncv1.Revision, note.Meta, bool, error) {
 	for _, stored := range changes {
 		rev := stored.GetRevision()

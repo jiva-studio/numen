@@ -55,8 +55,6 @@ type OpenRemoteVault struct {
 	now      machineport.Clock
 }
 
-// NewOpenRemoteVault creates the opening over the list this installation keeps and its remover, the
-// places, Add, the provider and the clock.
 func NewOpenRemoteVault(
 	vaults vaultport.VaultList, remover vaultport.VaultRemover, places RemoteVaultPlaces, add Add,
 	provider RemoteVaultProvider, now machineport.Clock,
@@ -123,7 +121,6 @@ func (u *OpenRemoteVault) checkPath(path string) (vaultdomain.FolderState, error
 	return state, nil
 }
 
-// checkPlace refuses a path that is no absolute path, a whole disk or the home folder.
 func (u *OpenRemoteVault) checkPlace(path string) error {
 	if path == "." || !domain.IsAbsPath(path) {
 		return newInvalidPath("%q is not an absolute path", path)
@@ -141,7 +138,6 @@ func (u *OpenRemoteVault) checkPlace(path string) error {
 	return nil
 }
 
-// checkFolder reads the folder of the path and refuses one that cannot be filled: no parent, a file, or a folder with things in it.
 func (u *OpenRemoteVault) checkFolder(path string) (vaultdomain.FolderState, error) {
 	parentPath := u.paths.GetParentPath(path)
 	parent, err := u.folders.GetFolderState(parentPath)

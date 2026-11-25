@@ -198,7 +198,6 @@ func (u *Loop) Execute(ctx context.Context) error {
 	}
 }
 
-// runRound publishes the chain and, at every adoptEvery-th round, adopts the chain of the server; an idle device does neither.
 func (u *Loop) runRound(ctx context.Context, round int) (published, adopted error) {
 	if u.isIdle != nil && u.isIdle() {
 		return nil, nil

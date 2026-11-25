@@ -56,20 +56,14 @@ const readMode = (mode: ProtoKeyFileMode): KeyFileMode => {
 const writeMode = (mode: 'plaintext' | 'passphrase'): ProtoKeyFileMode =>
   mode === 'plaintext' ? ProtoKeyFileMode.PLAINTEXT : ProtoKeyFileMode.PASSPHRASE
 
-const readErrorCode = (code: ProtoErrorCode): KeyFileErrorCode | undefined => {
-  switch (code) {
-    case ProtoErrorCode.UNSPECIFIED:
-      return undefined
-    case ProtoErrorCode.WRONG_PASSPHRASE:
-      return 'wrongPassphrase'
-    case ProtoErrorCode.EMPTY_PASSPHRASE:
-      return 'emptyPassphrase'
-    case ProtoErrorCode.INTERNAL:
-      return 'saveFailed'
-    case ProtoErrorCode.INVALID:
-      return 'invalidMode'
-  }
+const errorCodes: Partial<Record<ProtoErrorCode, KeyFileErrorCode>> = {
+  [ProtoErrorCode.WRONG_PASSPHRASE]: 'wrongPassphrase',
+  [ProtoErrorCode.EMPTY_PASSPHRASE]: 'emptyPassphrase',
+  [ProtoErrorCode.INTERNAL]: 'saveFailed',
+  [ProtoErrorCode.INVALID]: 'invalidMode',
 }
+
+const readErrorCode = (code: ProtoErrorCode): KeyFileErrorCode | undefined => errorCodes[code]
 
 const readAnswer = (answer: { error: ProtoErrorCode }): Result<undefined, KeyFileFailure> => {
   const error = readErrorCode(answer.error)

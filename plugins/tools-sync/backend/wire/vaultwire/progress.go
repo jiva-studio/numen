@@ -39,7 +39,7 @@ func (v *VaultList) setProgress(ctx context.Context, id domain.VaultID, one *api
 			one.SyncedBytes += getStoredSize(record)
 		}
 	}
-	waiting, err := v.listWaiting(ctx, id)
+	waiting, err := v.getWaitingPaths(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -61,8 +61,7 @@ func getStoredSize(record transfer.FileRecord) uint64 {
 	return uint64(max(record.Size, 0))
 }
 
-// listWaiting returns the paths of the files whose download or upload is listed and not finished.
-func (v *VaultList) listWaiting(ctx context.Context, id domain.VaultID) (map[string]bool, error) {
+func (v *VaultList) getWaitingPaths(ctx context.Context, id domain.VaultID) (map[string]bool, error) {
 	waiting := map[string]bool{}
 	if v.moving.downloads != nil {
 		entries, err := v.moving.downloads.ReadDownloads(ctx, id)

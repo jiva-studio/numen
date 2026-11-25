@@ -118,8 +118,6 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 	return found, nil
 }
 
-// scanFile reads one file of the listing and returns its change, or nothing when the file is the one last sent, is not on this
-// device, or has not settled.
 func (u *ScanLocalChanges) scanFile(ctx context.Context, files ports.Files, path string, seen map[string]note.FileSnapshot, bases map[string]string) (*transfer.Change, error) {
 	if seen[path].Hash != "" && seen[path].Hash == bases[path] {
 		return nil, nil

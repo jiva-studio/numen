@@ -31,7 +31,7 @@ func getRPCCode(code server.ErrorCode) rpcerror.Code {
 	return rpcerror.Internal
 }
 
-// IsOffline says whether the plugin cannot reach its cloud: no server, no identity, no sign-in or an unreachable server.
+// IsOffline reports whether the plugin cannot reach its cloud: no server, no identity, no sign-in or an unreachable server.
 func IsOffline(err error) bool {
 	failure, ok := errors.AsType[*server.APIError](err)
 	return ok && (failure.Code == server.CodeUnavailable || failure.Code == server.CodeFailedPrecondition)

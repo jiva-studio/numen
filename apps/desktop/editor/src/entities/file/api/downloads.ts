@@ -19,5 +19,3 @@ export const createDownloadApi = (files: WindowClients['files']) => ({
     return listed.entries.some((one) => one.path === path && one.isAbsent)
   },
 })
-
-export type DownloadApi = ReturnType<typeof createDownloadApi>
