@@ -1,7 +1,6 @@
 package platform
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -58,7 +57,7 @@ func TestTheApplicationReadsTheSavedTestIdentities(t *testing.T) {
 			store := getKeyStore()
 			applyCredentialsFile(store, nil)
 			account := identity.NewAccount(func() pluginport.KeyStore { return store }, namedDevice{}, fixedClock{}, nil, getChainStore())
-			public, err := account.GetPublicIdentity(context.Background())
+			public, err := account.GetPublicIdentity(t.Context())
 			if err != nil {
 				t.Fatalf("the application finds no identity: %v", err)
 			}
