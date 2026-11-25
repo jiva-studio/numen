@@ -160,6 +160,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		},
 		Entries: p.state,
 	}
+	downloads := downloadwire.New(fetching)
 	hub := shareinvite.NewHub()
 	invites := shareinvite.Deps{
 		Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.getHealth(), Clock: p.clock, Identity: p.identity, Device: device.Host{},
@@ -171,7 +172,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		WithInvites(invitewire.New(invites)).
 		WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).
 		WithTransfers(p.state, p.state).
-		WithDownloads(downloadwire.New(fetching)).
+		WithDownloads(downloads).
 		WithAccountData(accountdata.Deps{Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep})
 	life = lifecycle.NewLifecycle(lifecycle.Deps{
 		Pass: pass, Loop: loop, Stream: idleStream{}, Host: p.vaults, State: p.state, Clock: p.clock,
@@ -186,6 +187,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
 		}, p.clock).Execute,
 		"share-invite": shareinvite.NewCourier(hub).Execute,
+		"downloads":    func(ctx context.Context) error { <-ctx.Done(); downloads.Close(); return ctx.Err() },
 		"lifecycle":    func(ctx context.Context) error { <-ctx.Done(); return errors.Join(ctx.Err(), life.Close()) },
 		"rotate":       rotatevaultkeys.NewLoop(rotatevaultkeys.LoopDeps{Deps: rotateDeps(deps), Health: p.getHealth(), IsIdle: isIdle}, p.clock).Execute,
 	}

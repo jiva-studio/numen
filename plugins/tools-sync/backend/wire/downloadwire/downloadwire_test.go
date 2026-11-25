@@ -64,7 +64,7 @@ func TestGetFetchProgress_NoDownloadRuns_IsNotKnown(t *testing.T) {
 	w.WriteGuide(t, guidePath)
 	downloads := newDownloads(w)
 
-	got, err := downloads.GetFetchProgress(t.Context(), api.GetFetchProgressRequest{Path: guidePath})
+	got, err := downloads.GetFetchProgress(t.Context(), api.GetFetchProgressRequest{VaultID: string(synctest.PhoneVault), Path: guidePath})
 
 	if err != nil {
 		t.Fatal(err)

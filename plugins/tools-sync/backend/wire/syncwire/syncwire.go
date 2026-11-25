@@ -51,7 +51,7 @@ func NewGuard(deps Deps) *deletions.GuardDeletions {
 
 // NewDownloads returns the use case that stages the files the pull brings down.
 func NewDownloads(deps Deps) *download.DownloadFile {
-	return download.NewDownloadFile(download.Deps{Blobs: deps.DownloadBlobs, Entries: deps.DownloadEntries, Host: deps.Host, Digests: deps.Digests})
+	return download.NewDownloadFile(download.Deps{Blobs: deps.DownloadBlobs, Entries: deps.DownloadEntries, Records: deps.State, Host: deps.Host, Digests: deps.Digests})
 }
 
 func newDeletionsDeps(deps Deps) deletions.Deps {

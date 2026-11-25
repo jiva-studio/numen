@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
@@ -33,6 +34,7 @@ const (
 type Deps struct {
 	Blobs   ports.BlobReader
 	Entries ports.DownloadEntries
+	Records ports.Records
 	Host    ports.Host
 	Digests ports.Digests
 }
@@ -125,7 +127,9 @@ func (u *DownloadFile) Discard(ctx context.Context, vault domain.VaultID, fileID
 	return r.discard(ctx)
 }
 
-// Sweep deletes the staged files of the vault that no kept download names.
+// Sweep deletes the staged files of the vault that no kept download names. A file a fetch left is kept while a record
+// of a file the vault still lists as absent names its blob, so that the next fetch goes on from it; every other file
+// of a fetch is left over from a crash or from a file that is gone, unless a running fetch holds it.
 func (u *DownloadFile) Sweep(ctx context.Context, vault domain.VaultID) error {
 	store := u.deps.Host.Store(vault)
 	files, err := store.List(ctx)
@@ -137,15 +141,38 @@ func (u *DownloadFile) Sweep(ctx context.Context, vault domain.VaultID) error {
 	if err != nil {
 		return err
 	}
-	var failure error
+	keptFetches, failure := u.getKeptFetches(ctx, vault, files)
+	isFetchKnown := failure == nil
 	for _, file := range files {
-		isStaged := strings.HasSuffix(file.Name, ".part")
+		isStaged := strings.HasSuffix(file.Name, ".part") && !note.IsFetchName(file.Name)
 		isNamed := slices.ContainsFunc(entries, func(e transfer.DownloadEntry) bool { return e.StagedName == file.Name })
-		if isStaged && !isNamed && !u.isHeld(vault, file.Name) {
+		isFetch := isFetchKnown && note.IsFetchName(file.Name) && !keptFetches[file.Name]
+		if (isStaged && !isNamed || isFetch) && !u.isHeld(vault, file.Name) {
 			failure = errors.Join(failure, store.Delete(ctx, file.Name))
 		}
 	}
 	return failure
+}
+
+func (u *DownloadFile) getKeptFetches(ctx context.Context, vault domain.VaultID, files []host.StoreFile) (map[string]bool, error) {
+	kept := map[string]bool{}
+	if !slices.ContainsFunc(files, func(file host.StoreFile) bool { return note.IsFetchName(file.Name) }) {
+		return kept, nil
+	}
+	listed, err := u.deps.Host.GetAbsent(vault).ListAbsentFiles(ctx)
+	if err != nil {
+		return nil, err
+	}
+	records, err := u.deps.Records.ReadRecords(ctx, vault)
+	if err != nil {
+		return nil, err
+	}
+	for _, record := range records {
+		if slices.ContainsFunc(listed, func(one host.AbsentFile) bool { return one.Path == record.Path }) {
+			kept[note.GetFetchPartName(record.BlobID)] = true
+		}
+	}
+	return kept, nil
 }
 
 func withoutFile(entries []transfer.DownloadEntry, fileID []byte) []transfer.DownloadEntry {

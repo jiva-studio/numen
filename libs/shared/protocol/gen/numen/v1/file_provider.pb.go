@@ -200,6 +200,7 @@ func (*FileProviderServiceDropDownloadResponse) Descriptor() ([]byte, []int) {
 type GetFetchProgressRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	VaultId       string                 `protobuf:"bytes,2,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -237,6 +238,13 @@ func (*GetFetchProgressRequest) Descriptor() ([]byte, []int) {
 func (x *GetFetchProgressRequest) GetPath() string {
 	if x != nil {
 		return x.Path
+	}
+	return ""
+}
+
+func (x *GetFetchProgressRequest) GetVaultId() string {
+	if x != nil {
+		return x.VaultId
 	}
 	return ""
 }
@@ -313,9 +321,10 @@ const file_numen_v1_file_provider_proto_rawDesc = "" +
 	"&FileProviderServiceDropDownloadRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\")\n" +
-	"'FileProviderServiceDropDownloadResponse\"-\n" +
+	"'FileProviderServiceDropDownloadResponse\"H\n" +
 	"\x17GetFetchProgressRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"u\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x19\n" +
+	"\bvault_id\x18\x02 \x01(\tR\avaultId\"u\n" +
 	"\x18GetFetchProgressResponse\x12\x19\n" +
 	"\bis_known\x18\x01 \x01(\bR\aisKnown\x12\x1d\n" +
 	"\n" +

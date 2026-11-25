@@ -481,7 +481,7 @@ func TestPullChanges_PlacesABigFileOnceAndShowsNoFileAtItsPathUntilItIsWhole(t *
 				t.Error("a file was in the vault while it was still being received")
 			}
 		}},
-		Entries: p.b.State, Host: p.b.Host, Digests: wired.Digests,
+		Entries: p.b.State, Records: p.b.State, Host: p.b.Host, Digests: wired.Digests,
 	})
 
 	result, err := pull.NewPullChanges(deps).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll})

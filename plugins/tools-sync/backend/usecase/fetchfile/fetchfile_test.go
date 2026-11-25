@@ -347,7 +347,7 @@ func TestFetchFile_GetProgress_RunningDownload_ReturnsTheBytesOfTheRangesThatCam
 	go func() { finished <- use.Execute(t.Context(), synctest.PhoneVault, guidePath) }()
 	<-gate.reached
 
-	got, isRunning := use.GetProgress(guidePath)
+	got, isRunning := use.GetProgress(synctest.PhoneVault, guidePath)
 
 	close(gate.release)
 	if err := <-finished; err != nil {
@@ -364,13 +364,13 @@ func TestFetchFile_GetProgress_NoDownloadRuns_ReturnsNotRunning(t *testing.T) {
 	w.WriteGuide(t, guidePath)
 	use := fetchfile.NewFetchFile(w.Phone.FetchDeps())
 
-	if _, isRunning := use.GetProgress(guidePath); isRunning {
+	if _, isRunning := use.GetProgress(synctest.PhoneVault, guidePath); isRunning {
 		t.Error("a download runs before any was started")
 	}
 	if err := use.Execute(t.Context(), synctest.PhoneVault, guidePath); err != nil {
 		t.Fatal(err)
 	}
-	if _, isRunning := use.GetProgress(guidePath); isRunning {
+	if _, isRunning := use.GetProgress(synctest.PhoneVault, guidePath); isRunning {
 		t.Error("a download runs after it ended")
 	}
 }
@@ -391,7 +391,7 @@ func TestFetchFile_GetProgress_ResumedDownload_StartsAtTheBytesOfThePart(t *test
 	go func() { finished <- use.Execute(t.Context(), synctest.PhoneVault, guidePath) }()
 	<-gate.reached
 
-	got, isRunning := use.GetProgress(guidePath)
+	got, isRunning := use.GetProgress(synctest.PhoneVault, guidePath)
 
 	close(gate.release)
 	if err := <-finished; err != nil {

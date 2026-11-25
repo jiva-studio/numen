@@ -39,6 +39,9 @@ func New(deps Deps) *Downloads {
 	}
 }
 
+// Close stops the downloads that run and refuses new ones, so that the next session builds its own over the same parts.
+func (d *Downloads) Close() { d.fetch.Close() }
+
 // FetchFile downloads the absent file at the path of the vault.
 func (d *Downloads) FetchFile(ctx context.Context, request api.FetchFileRequest) (api.FetchFileResponse, error) {
 	return api.FetchFileResponse{}, d.fetch.Execute(ctx, domain.VaultID(request.VaultID), request.Path)
@@ -87,10 +90,10 @@ func (d *Downloads) getVaultDownloads(ctx context.Context, id domain.VaultID) ([
 	return listed, nil
 }
 
-// GetFetchProgress says how many bytes of the running download of the file at the path have come. No download
+// GetFetchProgress says how many bytes of the running download of the file at the path of the vault have come. No download
 // of the path running is not known.
 func (d *Downloads) GetFetchProgress(ctx context.Context, request api.GetFetchProgressRequest) (api.GetFetchProgressResponse, error) {
-	progress, isRunning := d.fetch.GetProgress(request.Path)
+	progress, isRunning := d.fetch.GetProgress(domain.VaultID(request.VaultID), request.Path)
 	if !isRunning {
 		return api.GetFetchProgressResponse{IsKnown: false, BytesDone: 0, BytesTotal: 0}, nil
 	}

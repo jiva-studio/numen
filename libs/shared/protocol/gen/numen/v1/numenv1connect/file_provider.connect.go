@@ -52,7 +52,7 @@ type FileProviderServiceClient interface {
 	// DropDownload removes the download of the file at the path of the vault. A file with changes the
 	// provider has not kept is a failed precondition, and its bytes stay.
 	DropDownload(context.Context, *connect.Request[v1.FileProviderServiceDropDownloadRequest]) (*connect.Response[v1.FileProviderServiceDropDownloadResponse], error)
-	// GetFetchProgress says how many bytes of the download at the path have come and how many the file has.
+	// GetFetchProgress says how many bytes of the download at the path of the vault have come and how many the file has.
 	// It is not known when no download of that path runs.
 	GetFetchProgress(context.Context, *connect.Request[v1.GetFetchProgressRequest]) (*connect.Response[v1.GetFetchProgressResponse], error)
 }
@@ -119,7 +119,7 @@ type FileProviderServiceHandler interface {
 	// DropDownload removes the download of the file at the path of the vault. A file with changes the
 	// provider has not kept is a failed precondition, and its bytes stay.
 	DropDownload(context.Context, *connect.Request[v1.FileProviderServiceDropDownloadRequest]) (*connect.Response[v1.FileProviderServiceDropDownloadResponse], error)
-	// GetFetchProgress says how many bytes of the download at the path have come and how many the file has.
+	// GetFetchProgress says how many bytes of the download at the path of the vault have come and how many the file has.
 	// It is not known when no download of that path runs.
 	GetFetchProgress(context.Context, *connect.Request[v1.GetFetchProgressRequest]) (*connect.Response[v1.GetFetchProgressResponse], error)
 }

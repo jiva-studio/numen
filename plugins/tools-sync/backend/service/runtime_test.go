@@ -1,12 +1,15 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"maps"
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/settingswire"
 )
 
@@ -17,9 +20,31 @@ func TestRuntimeStart_ReturnsTheLoopsByName(t *testing.T) {
 	_, loops := r.start(t.Context(), "http://sync.example.test")
 
 	got := slices.Sorted(maps.Keys(loops))
-	want := []string{"chain", "lifecycle", "link", "restore", "rotate", "share-invite", "sign-in", "sync", "watch"}
+	want := []string{"chain", "downloads", "lifecycle", "link", "restore", "rotate", "share-invite", "sign-in", "sync", "watch"}
 	if !slices.Equal(got, want) {
 		t.Errorf("loops = %v, want %v", got, want)
+	}
+}
+
+func TestRuntimeStart_DownloadsLoop_EndsTheDownloadsOfTheSessionBeforeItReturns(t *testing.T) {
+	t.Parallel()
+	r := newRuntime(parts{clock: clock.System{}})
+	backend, loops := r.start(t.Context(), "http://sync.example.test")
+	ctx, stop := context.WithCancel(t.Context())
+	finished := make(chan struct{})
+	go func() {
+		defer close(finished)
+		if err := loops["downloads"](ctx); !errors.Is(err, context.Canceled) {
+			t.Errorf("the downloads loop returned %v, want context.Canceled", err)
+		}
+	}()
+
+	stop()
+	<-finished
+
+	_, err := backend.Downloads.FetchFile(t.Context(), api.FetchFileRequest{VaultID: "v-1", Path: "Books/Guide.pdf"})
+	if !errors.Is(err, fetchfile.ErrClosed) {
+		t.Errorf("a download after the session ended returned %v, want ErrClosed", err)
 	}
 }
 

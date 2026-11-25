@@ -42,7 +42,9 @@ type key struct {
 
 // Execute returns the moves and the removals of the records. A move is a record whose file is gone and a settled file
 // without a record that has its hash and size, when both are the only ones with them. A removal is a record whose
-// file stayed gone for the removal delay.
+// file stayed gone for the removal delay. A file the vault lists as absent has no sighting and is no gone record;
+// when it is renamed, the listed file no record names takes the place of the file without a record, and listed files
+// of one content are paired in the order of their paths, since they are interchangeable.
 func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (transfer.Scan, error) {
 	seen, err := u.deps.State.ReadSightings(ctx, in.VaultID)
 	if err != nil {
@@ -53,7 +55,7 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 		return transfer.Scan{}, err
 	}
 	gone, fresh := u.split(seen, in.Records)
-	candidates, listed, err := u.separateListed(ctx, in, gone)
+	candidates, listed, err := u.getRenameCandidates(ctx, in, gone)
 	if err != nil {
 		return transfer.Scan{}, err
 	}
@@ -122,10 +124,7 @@ func (u *DetectMoves) split(seen map[string]note.FileSnapshot, records []transfe
 	return gone, fresh
 }
 
-// separateListed returns the gone records without the records of files the vault lists as absent, which have no
-// sighting and are not renamed, and the listed files that no record names: they are what the files of the
-// gone records were renamed to.
-func (u *DetectMoves) separateListed(ctx context.Context, in transfer.ScanInput, gone []transfer.FileRecord) ([]transfer.FileRecord, []host.AbsentFile, error) {
+func (u *DetectMoves) getRenameCandidates(ctx context.Context, in transfer.ScanInput, gone []transfer.FileRecord) ([]transfer.FileRecord, []host.AbsentFile, error) {
 	if len(gone) == 0 {
 		return nil, nil, nil
 	}
@@ -176,9 +175,6 @@ func matchMoves(gone []transfer.FileRecord, fresh map[string]note.FileSnapshot, 
 	return moves
 }
 
-// matchListed pairs the gone records with the listed files of the same hash and size when there are as many of the
-// one as of the other and no present file has them. Files of one content are interchangeable, so the order of their
-// paths pairs them.
 func matchListed(gone []transfer.FileRecord, listed []host.AbsentFile, goneCount, freshCount map[key]int) []transfer.Move {
 	targets := map[key][]string{}
 	for _, one := range listed {

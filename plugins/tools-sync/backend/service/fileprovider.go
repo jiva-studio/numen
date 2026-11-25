@@ -27,9 +27,9 @@ func (p fileProvider) DropDownload(ctx context.Context, vaultID, path string) er
 	return providerwire.NewError(err)
 }
 
-func (p fileProvider) GetFetchProgress(ctx context.Context, path string) (fileprovider.Progress, error) {
+func (p fileProvider) GetFetchProgress(ctx context.Context, vaultID, path string) (fileprovider.Progress, error) {
 	answer, err := handle(ctx, p.runtime, api.MethodGetFetchProgress, func(b *Backend) (api.GetFetchProgressResponse, error) {
-		return b.GetFetchProgress(ctx, api.GetFetchProgressRequest{Path: path})
+		return b.GetFetchProgress(ctx, api.GetFetchProgressRequest{VaultID: vaultID, Path: path})
 	})
 	return fileprovider.Progress{IsKnown: answer.IsKnown, BytesDone: answer.BytesDone, BytesTotal: answer.BytesTotal}, providerwire.NewError(err)
 }

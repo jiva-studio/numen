@@ -29,8 +29,8 @@ func (r *recorder) DropDownload(_ context.Context, vaultID, path string) error {
 	return r.err
 }
 
-func (r *recorder) GetFetchProgress(_ context.Context, path string) (Progress, error) {
-	r.calls = append(r.calls, "progress "+path)
+func (r *recorder) GetFetchProgress(_ context.Context, vaultID, path string) (Progress, error) {
+	r.calls = append(r.calls, "progress "+vaultID+" "+path)
 	return Progress{IsKnown: true, BytesDone: 4, BytesTotal: 7}, r.err
 }
 
@@ -74,7 +74,7 @@ func TestTheHandlerAnswersTheProgressOfThePluginForThePath(t *testing.T) {
 	plugin := &recorder{}
 	client := serve(t, plugin)
 
-	answer, err := client.GetFetchProgress(t.Context(), connect.NewRequest(&v1.GetFetchProgressRequest{Path: "a.pdf"}))
+	answer, err := client.GetFetchProgress(t.Context(), connect.NewRequest(&v1.GetFetchProgressRequest{VaultId: "v-1", Path: "a.pdf"}))
 
 	if err != nil {
 		t.Fatal(err)
@@ -82,7 +82,7 @@ func TestTheHandlerAnswersTheProgressOfThePluginForThePath(t *testing.T) {
 	if !answer.Msg.GetIsKnown() || answer.Msg.GetBytesDone() != 4 || answer.Msg.GetBytesTotal() != 7 {
 		t.Errorf("the answer is %v", answer.Msg)
 	}
-	if len(plugin.calls) != 1 || plugin.calls[0] != "progress a.pdf" {
+	if len(plugin.calls) != 1 || plugin.calls[0] != "progress v-1 a.pdf" {
 		t.Errorf("the plugin was called with %q", plugin.calls)
 	}
 }

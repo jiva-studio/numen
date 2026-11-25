@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -34,6 +35,9 @@ var (
 	ErrNotAbsent = errors.New("the file is not listed as absent")
 	// ErrHeadChanged means the head of the file on the server is not the one the vault lists.
 	ErrHeadChanged = errors.New("the head of the file is not the one listed")
+
+	// ErrClosed means the downloads were stopped with their session and take no new call.
+	ErrClosed = errors.New("the downloads were stopped")
 
 	errHeld = errors.New("the file is already placed")
 )
@@ -72,11 +76,13 @@ type Deps struct {
 }
 
 // FetchFile downloads the blob of an absent file in ranges, keeps what came in the store folder of the plugin
-// so that a download resumes, and fills the file once its hash is the one of the entry.
+// so that a download resumes, and fills the file once its hash is the one of the entry. The bytes stay in the store
+// folder when the vault refuses the file, and a pass keeps them while the file is listed as absent.
 type FetchFile struct {
-	deps    Deps
-	mu      sync.Mutex
-	running map[string]*download
+	deps     Deps
+	mu       sync.Mutex
+	running  map[string]*download
+	isClosed bool
 }
 
 type download struct {
@@ -100,12 +106,12 @@ type Progress struct {
 	IsStaged bool
 }
 
-// GetProgress returns how far the running download of the file at path has come, and false when none runs.
-func (u *FetchFile) GetProgress(path string) (Progress, bool) {
+// GetProgress returns how far the running download of the file at path of the vault has come, and false when none runs.
+func (u *FetchFile) GetProgress(vault domain.VaultID, path string) (Progress, bool) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	for _, own := range u.running {
-		if own.path == path {
+		if own.vault == vault && own.path == path {
 			total := own.total.Load()
 			return Progress{Vault: own.vault, Bytes: min(own.bytes.Load(), total), Total: total, IsStaged: own.staged.Load()}, true
 		}
@@ -115,7 +121,7 @@ func (u *FetchFile) GetProgress(path string) (Progress, bool) {
 
 // NewFetchFile returns the use case over the dependencies.
 func NewFetchFile(deps Deps) *FetchFile {
-	return &FetchFile{deps: deps, mu: sync.Mutex{}, running: map[string]*download{}}
+	return &FetchFile{deps: deps, mu: sync.Mutex{}, running: map[string]*download{}, isClosed: false}
 }
 
 // Execute downloads the file at path. Two calls for one path share one download, and each returns its result. The
@@ -124,7 +130,10 @@ func NewFetchFile(deps Deps) *FetchFile {
 func (u *FetchFile) Execute(ctx context.Context, id domain.VaultID, path string) error {
 	key := string(id) + "\x00" + path
 	for {
-		own, isJoined := u.join(ctx, key, id, path)
+		own, isJoined, err := u.join(ctx, key, id, path)
+		if err != nil {
+			return err
+		}
 		if !isJoined {
 			select {
 			case <-own.done:
@@ -143,12 +152,15 @@ func (u *FetchFile) Execute(ctx context.Context, id domain.VaultID, path string)
 	}
 }
 
-func (u *FetchFile) join(ctx context.Context, key string, id domain.VaultID, path string) (*download, bool) {
+func (u *FetchFile) join(ctx context.Context, key string, id domain.VaultID, path string) (*download, bool, error) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
+	if u.isClosed {
+		return nil, false, ErrClosed
+	}
 	own, isRunning := u.running[key]
 	if isRunning && own.waiters == 0 {
-		return own, false
+		return own, false, nil
 	}
 	if !isRunning {
 		runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
@@ -157,7 +169,22 @@ func (u *FetchFile) join(ctx context.Context, key string, id domain.VaultID, pat
 		go u.finish(runCtx, key, own, id, path)
 	}
 	own.waiters++
-	return own, true
+	return own, true, nil
+}
+
+// Close stops the running downloads, waits until each has ended, and refuses every later call. The bytes that came
+// stay in the store folder, so a download of the next session goes on from them. Two sessions never write one part.
+func (u *FetchFile) Close() {
+	u.mu.Lock()
+	u.isClosed = true
+	running := slices.Collect(maps.Values(u.running))
+	u.mu.Unlock()
+	for _, own := range running {
+		own.cancel()
+	}
+	for _, own := range running {
+		<-own.done
+	}
 }
 
 func (u *FetchFile) finish(ctx context.Context, key string, own *download, id domain.VaultID, path string) {
@@ -204,7 +231,8 @@ func (u *FetchFile) run(ctx context.Context, own *download, id domain.VaultID, p
 		defer u.deps.Stage.Hold(id, note.GetStoredName(t.record.FileID))()
 		return u.runLarge(ctx, t, rev, meta)
 	}
-	defer u.deps.Stage.Hold(id, getPartName(rev))()
+	defer u.deps.Stage.Hold(id, note.GetFetchPartName(rev.GetBlobId()))()
+	defer u.deps.Stage.Hold(id, note.GetFetchPlainName(t.record.FileID))()
 	blob, err := u.readBlob(ctx, t, rev)
 	if err != nil {
 		return err
@@ -213,13 +241,21 @@ func (u *FetchFile) run(ctx context.Context, own *download, id domain.VaultID, p
 	if err != nil {
 		return u.dropPart(ctx, t, rev, err)
 	}
-	store := u.deps.Host.Store(id)
-	name := "fetch-" + hex.EncodeToString(t.record.FileID) + ".bin"
+	return u.place(ctx, t, rev, plain)
+}
+
+func (u *FetchFile) place(ctx context.Context, t target, rev *syncv1.Revision, plain []byte) error {
+	store := u.deps.Host.Store(t.id)
+	name := note.GetFetchPlainName(t.record.FileID)
 	if err := store.Write(ctx, name, plain); err != nil {
 		return err
 	}
-	fillErr := u.deps.Host.GetAbsent(id).FillFile(ctx, path, name)
-	return errors.Join(fillErr, store.Delete(ctx, name), u.dropPart(ctx, t, rev, nil))
+	fillErr := u.deps.Host.GetAbsent(t.id).FillFile(ctx, t.path, name)
+	err := errors.Join(fillErr, store.Delete(ctx, name))
+	if fillErr == nil || errors.Is(fillErr, host.ErrHashMismatch) {
+		return u.dropPart(ctx, t, rev, err)
+	}
+	return err
 }
 
 func (u *FetchFile) runLarge(ctx context.Context, t target, rev *syncv1.Revision, meta note.Meta) error {
@@ -360,17 +396,13 @@ func (u *FetchFile) openMeta(ctx context.Context, id domain.VaultID, keys []vaul
 	return meta, err == nil, nil
 }
 
-func getPartName(rev *syncv1.Revision) string {
-	return "fetch-" + hex.EncodeToString(rev.GetBlobId()) + ".part"
-}
-
 func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision) ([]byte, error) {
 	size := int64(rev.GetBlobSize())
 	if size <= 0 {
 		return nil, fmt.Errorf("download %s: the blob has a size of %d bytes: %w", t.path, size, note.ErrCorruptBlob)
 	}
 	store := u.deps.Host.Store(t.id)
-	name := getPartName(rev)
+	name := note.GetFetchPartName(rev.GetBlobId())
 	part, err := store.Read(ctx, name)
 	if err != nil && !errors.Is(err, host.ErrNotExist) {
 		return nil, err
@@ -400,7 +432,7 @@ func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision
 }
 
 func (u *FetchFile) dropPart(ctx context.Context, t target, rev *syncv1.Revision, cause error) error {
-	return errors.Join(cause, u.deps.Host.Store(t.id).Delete(ctx, getPartName(rev)))
+	return errors.Join(cause, u.deps.Host.Store(t.id).Delete(ctx, note.GetFetchPartName(rev.GetBlobId())))
 }
 
 func (u *FetchFile) readRange(ctx context.Context, t target, rev *syncv1.Revision, from, length int64) ([]byte, error) {

@@ -78,3 +78,20 @@ func hasSkippedEnd(lower string) bool {
 func isTextExtension(extension string) bool {
 	return slices.Contains([]string{".txt", ".json", ".csv", ".xml", ".html", ".svg", ".yaml", ".yml", ".toml", ".log"}, extension)
 }
+
+const fetchPrefix = "fetch-"
+
+// GetFetchPartName returns the name of the file in the store folder that keeps the bytes of a blob a fetch
+// brought down so far.
+func GetFetchPartName(blobID []byte) string {
+	return fetchPrefix + hex.EncodeToString(blobID) + ".part"
+}
+
+// GetFetchPlainName returns the name of the file in the store folder that holds the opened bytes of a file a
+// fetch is about to place.
+func GetFetchPlainName(fileID []byte) string {
+	return fetchPrefix + hex.EncodeToString(fileID) + ".bin"
+}
+
+// IsFetchName reports whether the name in the store folder is one of a fetch.
+func IsFetchName(name string) bool { return strings.HasPrefix(name, fetchPrefix) }

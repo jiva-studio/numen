@@ -52,7 +52,7 @@ func (s *storage) DropDownload(
 func (s *storage) GetFetchProgress(
 	_ context.Context, r *connect.Request[v1.GetFetchProgressRequest],
 ) (*connect.Response[v1.GetFetchProgressResponse], error) {
-	s.record("progress " + r.Msg.GetPath())
+	s.record("progress " + r.Msg.GetVaultId() + " " + r.Msg.GetPath())
 	return connect.NewResponse(&v1.GetFetchProgressResponse{IsKnown: true, BytesDone: 3 << 20, BytesTotal: 10 << 20}), s.err
 }
 
@@ -168,7 +168,7 @@ func TestGetFetchProgress_PluginAnswers_ReturnsTheBytesOfThePlugin(t *testing.T)
 	if want := (vaultdomain.DownloadProgress{IsKnown: true, BytesDone: 3 << 20, BytesTotal: 10 << 20}); got != want {
 		t.Errorf("the progress is %+v, want %+v", got, want)
 	}
-	if calls := plugin.getCalls(); len(calls) != 1 || calls[0] != "progress Books/Guide.pdf" {
+	if calls := plugin.getCalls(); len(calls) != 1 || calls[0] != "progress v-1 Books/Guide.pdf" {
 		t.Errorf("the plugin was called with %q", calls)
 	}
 }

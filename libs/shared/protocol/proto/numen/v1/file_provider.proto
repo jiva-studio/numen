@@ -16,7 +16,7 @@ service FileProviderService {
   // provider has not kept is a failed precondition, and its bytes stay.
   rpc DropDownload(FileProviderServiceDropDownloadRequest) returns (FileProviderServiceDropDownloadResponse);
 
-  // GetFetchProgress says how many bytes of the download at the path have come and how many the file has.
+  // GetFetchProgress says how many bytes of the download at the path of the vault have come and how many the file has.
   // It is not known when no download of that path runs.
   rpc GetFetchProgress(GetFetchProgressRequest) returns (GetFetchProgressResponse);
 }
@@ -37,6 +37,7 @@ message FileProviderServiceDropDownloadResponse {}
 
 message GetFetchProgressRequest {
   string path = 1;
+  string vault_id = 2;
 }
 
 message GetFetchProgressResponse {

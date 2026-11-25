@@ -142,8 +142,6 @@ func (u *FillFile) Execute(ctx context.Context, v domain.Vault, path, storeName 
 	return edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
 
-// hasPlaced reports whether the bytes of the entry are already at its path, which is what a fill leaves when the
-// registry failed to delete the entry after the placement.
 func (u *FillFile) hasPlaced(ctx context.Context, v domain.Vault, entry vault.AbsentFile) (bool, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {

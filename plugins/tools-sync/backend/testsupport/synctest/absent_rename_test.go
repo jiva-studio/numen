@@ -59,7 +59,7 @@ func TestRenamingAnAbsentFileOnThePhoneRenamesItOnTheComputer(t *testing.T) {
 	}
 }
 
-func TestAnAbsentFileRenamedOnThePhoneDownloadsUnderItsNewName(t *testing.T) {
+func TestFetchFile_RenamedAbsentFile_DownloadsAtTheNewPath(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	want := w.WriteGuide(t, guidePath)
 	moveOnPhone(t, w, guidePath, renamedPath)
@@ -74,7 +74,7 @@ func TestAnAbsentFileRenamedOnThePhoneDownloadsUnderItsNewName(t *testing.T) {
 	}
 }
 
-func TestAnAbsentFileRenamedOnThePhoneIsListedUnderItsNewNameAfterTheNextPasses(t *testing.T) {
+func TestThePhoneKeepsListingTheNewNameAfterARename(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
 	moveOnPhone(t, w, guidePath, renamedPath)
@@ -140,4 +140,3 @@ func TestDeletingAnAbsentFileOnThePhoneAfterARenameRemovesItFromTheVault(t *test
 		t.Error("the computer still has a file the phone deleted after a rename")
 	}
 }
-

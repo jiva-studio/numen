@@ -24,9 +24,9 @@ type Handler interface {
 	// DropDownload removes the download of the file at path of the vault. A file with changes the plugin
 	// has not kept is a failed precondition, and its bytes stay.
 	DropDownload(ctx context.Context, vaultID, path string) error
-	// GetFetchProgress says how far the download at path has come. It is not known when no download of
-	// that path runs.
-	GetFetchProgress(ctx context.Context, path string) (Progress, error)
+	// GetFetchProgress says how far the download at path of the vault has come. It is not known when no
+	// download of that path in that vault runs.
+	GetFetchProgress(ctx context.Context, vaultID, path string) (Progress, error)
 }
 
 // Progress is how far a download has come. Without a running download IsKnown is false and the sizes are
@@ -63,7 +63,7 @@ func (a *adapter) DropDownload(
 func (a *adapter) GetFetchProgress(
 	ctx context.Context, req *connect.Request[v1.GetFetchProgressRequest],
 ) (*connect.Response[v1.GetFetchProgressResponse], error) {
-	progress, err := a.h.GetFetchProgress(ctx, req.Msg.GetPath())
+	progress, err := a.h.GetFetchProgress(ctx, req.Msg.GetVaultId(), req.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}

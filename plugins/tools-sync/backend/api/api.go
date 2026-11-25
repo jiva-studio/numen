@@ -259,9 +259,10 @@ type GetDownloadsResponse struct {
 	Downloads []Download `json:"downloads"`
 }
 
-// GetFetchProgressRequest asks how far the download of the file at Path has come.
+// GetFetchProgressRequest asks how far the download of the file at Path of the vault has come.
 type GetFetchProgressRequest struct {
-	Path string `json:"path"`
+	VaultID string `json:"vaultId"`
+	Path    string `json:"path"`
 }
 
 // GetFetchProgressResponse is how far a running download has come. IsKnown is false when none runs.
