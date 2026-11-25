@@ -215,7 +215,7 @@ func parseInstant(nanos int64) time.Time {
 
 func refuse(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, file.ErrChanged), edit.IsNoNote(err):
+	case errors.Is(err, file.ErrChanged), edit.IsNoNote(err), errors.Is(err, vault.ErrFileAbsent):
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, vault.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)

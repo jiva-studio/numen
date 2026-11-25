@@ -85,6 +85,10 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			fmt.Errorf("Old.md: %w", edit.ErrBodyUnwritable),
 			v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true,
 		},
+		"a file the vault lists and does not hold": {
+			fmt.Errorf("read Book.pdf: %w", vault.ErrFileAbsent),
+			v1.ErrorCode_ERROR_CODE_FILE_ABSENT, true,
+		},
 		"a file the vault leaves alone": {
 			fmt.Errorf("Old.png: %w", edit.ErrNotANote),
 			v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true,
