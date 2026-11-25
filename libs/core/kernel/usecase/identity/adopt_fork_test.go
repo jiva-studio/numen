@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"testing"
+	"time"
 
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
@@ -52,5 +54,26 @@ func TestAdoptChain_KeepsTheForkTheRecoveryKeySignedWhenItIsAsLongAsTheChainOfTh
 
 	if got := device.readChain(t); !bytes.Equal(got.Bytes(), byRecovery.Bytes()) {
 		t.Error("the chain file still holds the fork signed by a device, want the fork signed by the recovery key")
+	}
+}
+
+func TestLinkJoiner_RefusesAGrantWhoseChainIsDatedFarAfterItsClock(t *testing.T) {
+	t.Parallel()
+	host := newLinkDevice("Laptop", testsupport.NewClockAt(getNow().Add(identitylib.MaxClockSkew+time.Hour)))
+	joiner := newLinkDevice("Phone", testsupport.NewClockAt(getNow()))
+	host.createAccount(t)
+	r := newRelay(t, host)
+	if _, err := host.start().Execute(t.Context(), identitydomain.LinkRoleHost, identitydomain.LinkModeShow, ""); err != nil {
+		t.Fatal(err)
+	}
+	r.settle(t, host, joiner)
+	if _, err := joiner.start().Execute(t.Context(), identitydomain.LinkRoleJoiner, identitydomain.LinkModeScan, host.getLink(t).QRText); err != nil {
+		t.Fatal(err)
+	}
+	r.settle(t, host, joiner)
+	approvePeer(t, r, host, joiner)
+
+	if got := joiner.getLink(t).Phase; got != identitydomain.LinkPhaseFailed {
+		t.Errorf("the joiner is in phase %v, want FAILED for a chain dated after its clock", got)
 	}
 }

@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"fmt"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
@@ -36,6 +37,9 @@ func (u *ConfirmJoin) Execute(ctx context.Context, approve bool) error {
 	}
 	if err := u.records.checkAbsent(ctx); err != nil {
 		return err
+	}
+	if err := link.chain.VerifyAt(u.clock.Now()); err != nil {
+		return fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
 	state, err := identitylib.NewState(link.record, link.chain)
 	if err != nil {

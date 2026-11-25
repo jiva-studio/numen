@@ -1,25 +1,27 @@
 package identity
 
 import (
+	"time"
+
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-func receiveAsJoinerLocked(store *linkStore, link *pendingLink, kind byte, body []byte) {
+func receiveAsJoinerLocked(store *linkStore, link *pendingLink, now time.Time, kind byte, body []byte) {
 	switch kind {
 	case messageRefuse:
 		store.endLocked(link, identitydomain.LinkPhaseFailed, decodeRefuse(body))
 	case messageGrant:
-		receiveGrantLocked(store, link, body)
+		receiveGrantLocked(store, link, now, body)
 	}
 }
 
-func receiveGrantLocked(store *linkStore, link *pendingLink, body []byte) {
+func receiveGrantLocked(store *linkStore, link *pendingLink, now time.Time, body []byte) {
 	if link.progress.Phase != identitydomain.LinkPhaseWaitingForAccept {
 		return
 	}
 	wrapped, chain, err := decodeGrant(body)
-	if err != nil || !readGrant(link, wrapped, chain) {
+	if err != nil || !readGrant(link, now, wrapped, chain) {
 		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain))
 		store.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonInvalid)
 		return
@@ -28,9 +30,9 @@ func receiveGrantLocked(store *linkStore, link *pendingLink, body []byte) {
 	store.setPhaseLocked(link, identitydomain.LinkPhaseConfirmAccount)
 }
 
-func readGrant(link *pendingLink, wrappedBytes, chainBytes []byte) bool {
+func readGrant(link *pendingLink, now time.Time, wrappedBytes, chainBytes []byte) bool {
 	chain, err := identitylib.ParseChain(chainBytes)
-	if err != nil || !chain.IsActiveDevice(link.record.Device.SignerKey()) {
+	if err != nil || chain.VerifyAt(now) != nil || !chain.IsActiveDevice(link.record.Device.SignerKey()) {
 		return false
 	}
 	wrapped, err := identitylib.ParseWrappedAccountKeys(wrappedBytes)
