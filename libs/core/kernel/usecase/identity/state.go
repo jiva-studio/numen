@@ -9,6 +9,7 @@ import (
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
@@ -17,7 +18,7 @@ import (
 type records struct {
 	keys   pluginport.KeyStore
 	chains ChainStore
-	clock  Clock
+	clock  machineport.InstallationClock
 }
 
 func (r records) readRecord(ctx context.Context) (identitylib.Record, error) {
