@@ -11,10 +11,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
 
+// stuckRevisions answers every read with more to come and the position it was asked for, and ends the stream after maxCalls so a
+// pull that trusts it returns instead of looping.
 type stuckRevisions struct {
 	ports.Revisions
 	calls int
 }
+
+const maxCalls = 5
 
 func (s *stuckRevisions) GetChanges(ctx context.Context, vaultID []byte, since uint64, limit uint32) (*syncv1.GetChangesResponse, error) {
 	s.calls++
@@ -22,8 +26,11 @@ func (s *stuckRevisions) GetChanges(ctx context.Context, vaultID []byte, since u
 	if err != nil {
 		return nil, err
 	}
+	if s.calls > maxCalls {
+		return &syncv1.GetChangesResponse{NextSeq: since, HeadSeq: since, HasMore: false, RestoreEpochId: live.GetRestoreEpochId()}, nil
+	}
 	return &syncv1.GetChangesResponse{
-		NextSeq: since, HeadSeq: since + 5, HasMore: true, RestoreEpochId: live.GetRestoreEpochId(),
+		NextSeq: since, HeadSeq: since, HasMore: true, RestoreEpochId: live.GetRestoreEpochId(),
 	}, nil
 }
 
@@ -38,7 +45,7 @@ func TestPullChanges_AServerThatSendsMoreAndNeverAdvancesTheCursorEndsThePull(t 
 	if !errors.Is(err, syncprotocol.ErrPageStuck) {
 		t.Fatalf("error = %v, want ErrPageStuck", err)
 	}
-	if stuck.calls > 2 {
-		t.Errorf("asked %d times", stuck.calls)
+	if stuck.calls != 1 {
+		t.Errorf("asked %d times, want once: the first page already shows the cursor stuck", stuck.calls)
 	}
 }
