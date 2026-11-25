@@ -10,7 +10,7 @@ import { getRingView, RING_LENGTH } from './ringView'
 const props = withDefaults(
   defineProps<{
     /** From 0 to 1; undefined where the progress is not known. */
-    value?: number
+    value?: number | undefined
     size?: 'small' | 'large'
     /** The name of what progresses; without it the ring is decorative. */
     label?: string
