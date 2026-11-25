@@ -123,7 +123,7 @@ func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, l
 	w.Installation.Mount(editor.NewRoute(windowsearch.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
 
-func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tabKinds, placing *notePlacing, files vaultport.FileProvider) {
+func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tabKinds, placing *notePlacing, files file.FileProvider) {
 	readers := vaultDeps.Readers
 	folders := filewindow.NewFolders(
 		&w.session.Runtime,
