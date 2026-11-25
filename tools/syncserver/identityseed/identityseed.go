@@ -25,7 +25,7 @@ const (
 	IdentityFile = "identity.json"
 	// ServerFile is the saved state of the fake sync server, in the layout the server reads with -state-dir.
 	ServerFile = "server.json"
-	// Purpose is written into IdentityFile so nobody takes the keys for real ones.
+	// Purpose is written into IdentityFile and marks the keys as keys of tests.
 	Purpose = "TEST ONLY: keys of the acceptance scenarios, never used for a real identity. Regenerate with npm run acceptance:identity."
 
 	keyName        = "identity"

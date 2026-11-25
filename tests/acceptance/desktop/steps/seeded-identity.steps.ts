@@ -6,7 +6,7 @@ const SECOND_COMPUTER_VAULT = 'Copy'
 
 const startFirstComputer = async (person: Person, vault: string): Promise<void> => {
   if (!person.scenario.hasWorld) person.vault.createEmptyVault(vault)
-  if (!person.sync.isRunning()) await person.sync.start()
+  if (person.sync.getStateDir() === undefined) await person.sync.start()
   await person.computers.giveIdentity()
   await person.application.startApplication('editor')
 }

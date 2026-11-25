@@ -5,7 +5,7 @@
 import { expect, type ViewportSize } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
 import { DevicesDriver } from './devices.js'
-import type { IdentityComputer } from './identity-seed.js'
+import { writeSeedServerState, type IdentityComputer } from './identity-seed.js'
 import { IdentityDriver } from './identity.js'
 import { SubscriptionDriver } from './subscription.js'
 import { DEFAULT_VAULT } from './rules.js'
@@ -146,8 +146,13 @@ export class ComputerDriver {
 
   /** Gives the person the identity of the test identities on the first computer, and makes the sync server know its account. */
   async giveIdentity(): Promise<void> {
-    this.owner.identity.give('first')
-    await this.owner.sync.learnAccount()
+    const { identity, sync } = this.owner
+    const state = sync.getStateDir()
+    if (state === undefined) throw new Error('no sync server ran: begin with a sync server runs')
+    identity.give('first')
+    await sync.pause()
+    writeSeedServerState(state)
+    await sync.resume()
   }
 
   private async startComputer(vault: string, identity?: IdentityComputer): Promise<SecondComputer> {
