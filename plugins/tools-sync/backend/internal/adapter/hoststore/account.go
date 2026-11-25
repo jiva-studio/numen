@@ -141,3 +141,56 @@ func (s *State) WriteJournal(ctx context.Context, journal restore.Journal) error
 }
 
 var errNoVault = vaultlink.ErrNoVaults
+
+const entrySightingsFile = "chain-sightings.json"
+
+type entrySightingsDocument struct {
+	Seen map[string]int64 `json:"seen"`
+}
+
+// ReadEntrySightings returns the earliest time any vault holds for each entry, nil when no vault holds a copy.
+func (s *State) ReadEntrySightings(ctx context.Context) (map[string]int64, error) {
+	ids, err := s.listVaults(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var merged map[string]int64
+	for _, id := range ids {
+		var document entrySightingsDocument
+		found, err := s.read(ctx, id, entrySightingsFile, &document)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			continue
+		}
+		if merged == nil {
+			merged = map[string]int64{}
+		}
+		for entry, at := range document.Seen {
+			if first, isKnown := merged[entry]; !isKnown || at < first {
+				merged[entry] = at
+			}
+		}
+	}
+	return merged, nil
+}
+
+// WriteEntrySightings replaces the copy of the sightings in every vault.
+func (s *State) WriteEntrySightings(ctx context.Context, seen map[string]int64) error {
+	ids, err := s.listVaults(ctx)
+	if err != nil {
+		return err
+	}
+	kept := 0
+	for _, id := range ids {
+		isKept, err := s.writeCopy(ctx, id, entrySightingsFile, entrySightingsDocument{Seen: seen})
+		if err != nil {
+			return err
+		}
+		if isKept {
+			kept++
+		}
+	}
+	return checkAnyKept(kept)
+}

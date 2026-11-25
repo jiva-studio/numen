@@ -326,8 +326,9 @@ func (c Chain) IsPreferredOver(other Chain) bool {
 // CoolingOff is how long a revoke signed by a device, not by the recovery key, is shown as a notice to the other devices.
 const CoolingOff = 72 * time.Hour
 
-// DeviceRevocation is a revoke of a device that another device signed.
+// DeviceRevocation is a revoke of a device that another device signed. ID is the hash of the entry; At is the time the signer gave it, which the signer chose.
 type DeviceRevocation struct {
+	ID     [32]byte
 	By     ed25519.PublicKey
 	Device ed25519.PublicKey
 	At     time.Time
@@ -340,13 +341,14 @@ func (c Chain) ListDeviceRevocations() []DeviceRevocation {
 		if entry.Kind != KindRevokeDevice || entry.Revoke == nil || bytes.Equal(entry.Signer, c.Root().Sign) {
 			continue
 		}
-		found = append(found, DeviceRevocation{By: bytes.Clone(entry.Signer), Device: bytes.Clone(entry.Revoke.Device), At: entry.Time})
+		found = append(found, DeviceRevocation{ID: hashEntry(entry), By: bytes.Clone(entry.Signer), Device: bytes.Clone(entry.Revoke.Device), At: entry.Time})
 	}
 	return found
 }
 
-// DeviceAddition is the addition of a device that another device signed.
+// DeviceAddition is the addition of a device that another device signed. ID is the hash of the entry; At is the time the signer gave it, which the signer chose.
 type DeviceAddition struct {
+	ID     [32]byte
 	By     ed25519.PublicKey
 	Device ed25519.PublicKey
 	At     time.Time
@@ -359,7 +361,7 @@ func (c Chain) ListDeviceAdditions() []DeviceAddition {
 		if entry.Kind != KindAddDevice || entry.AddDevice == nil || bytes.Equal(entry.Signer, c.Root().Sign) {
 			continue
 		}
-		found = append(found, DeviceAddition{By: bytes.Clone(entry.Signer), Device: bytes.Clone(entry.AddDevice.Device.Sign), At: entry.Time})
+		found = append(found, DeviceAddition{ID: hashEntry(entry), By: bytes.Clone(entry.Signer), Device: bytes.Clone(entry.AddDevice.Device.Sign), At: entry.Time})
 	}
 	return found
 }

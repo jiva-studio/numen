@@ -181,7 +181,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		"sign-in": keep.Execute, "restore": watch.Execute,
 		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.getHealth(), Clock: p.clock, Server: address}).Execute,
 		"chain": chaincourier.NewLoop(chaincourier.Deps{
-			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.getHealth(), Clock: p.clock,
+			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.getHealth(), Clock: p.clock, Sightings: p.state,
 			IsIdle:  isIdle,
 			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
 		}, p.clock).Execute,

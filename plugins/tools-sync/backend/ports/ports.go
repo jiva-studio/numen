@@ -212,6 +212,13 @@ type Pins interface {
 	WritePin(ctx context.Context, address string, key []byte) error
 }
 
+// EntrySightings keeps when this device first saw each device entry of the chain of the account, by the hex of the hash of the entry, in
+// seconds since the Unix epoch. It reads nil when nothing was written yet.
+type EntrySightings interface {
+	ReadEntrySightings(ctx context.Context) (map[string]int64, error)
+	WriteEntrySightings(ctx context.Context, seen map[string]int64) error
+}
+
 // Mirror keeps the pinned keys and the copies of the logs of the account in one place.
 type Mirror interface {
 	Pins
