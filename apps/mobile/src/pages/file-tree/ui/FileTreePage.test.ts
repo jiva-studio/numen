@@ -31,7 +31,7 @@ function coreWith(
   answers: Partial<Pick<Core, 'fetchFile' | 'dropDownload'>> = {},
 ) {
   const core = {
-    listFiles: vi.fn(async () => rows),
+    listFiles: vi.fn(async (_path: string) => rows),
     fetchFile: vi.fn(async () => ({ ok: true as const, value: null })),
     dropDownload: vi.fn(async () => ({ ok: true as const, value: null })),
     ...answers,
