@@ -95,7 +95,7 @@ func TestApprove_AddsTheDeviceAsReaderOfTheFolder(t *testing.T) {
 	waiting := waitPhase(t, readerDeps, id, shareinvite.PhaseWaiting)
 	requests := w.waitRequest(t, 1)
 
-	if err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), requests[0].ID); err != nil {
+	if err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), requests[0].ID, requests[0].Fingerprint); err != nil {
 		t.Fatal(err)
 	}
 
@@ -283,7 +283,7 @@ func TestRevoke_StopsALinkThatWasNotUsed(t *testing.T) {
 func TestApprove_RefusesARequestThatDoesNotExist(t *testing.T) {
 	w := newWorld(t)
 
-	err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), "00")
+	err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), "00", "")
 
 	if !errors.Is(err, domainshare.ErrUnknownRequest) {
 		t.Errorf("error = %v, want ErrUnknownRequest", err)
@@ -304,7 +304,7 @@ func TestApprove_ShareTheWholeVaultWhenTheFolderIsEmpty(t *testing.T) {
 		t.Errorf("request label = %q, want the vault name", requests[0].Label)
 	}
 
-	if err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), requests[0].ID); err != nil {
+	if err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), requests[0].ID, requests[0].Fingerprint); err != nil {
 		t.Fatal(err)
 	}
 
@@ -340,4 +340,40 @@ func TestJoin_IgnoresAnUnauthenticatedUsedMarkerBeforeAuthentication(t *testing.
 	id := join(t, readerDeps, link, "Anna laptop")
 
 	waitPhase(t, readerDeps, id, shareinvite.PhaseWaiting)
+}
+
+func TestApprove_RefusesAFingerprintThatIsNotTheOneOfTheRequest(t *testing.T) {
+	w := newWorld(t)
+	_, readerDeps := w.newReader(t, "Reader")
+	id := join(t, readerDeps, w.start(t).Link, "Anna laptop")
+	waitPhase(t, readerDeps, id, shareinvite.PhaseWaiting)
+	requests := w.waitRequest(t, 1)
+
+	for name, confirmed := range map[string]string{"empty": "", "another": w.owner.Fake.Public().AccountFingerprint} {
+		err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), requests[0].ID, confirmed)
+		if !errors.Is(err, domainshare.ErrFingerprintNotConfirmed) {
+			t.Errorf("%s fingerprint: error = %v, want ErrFingerprintNotConfirmed", name, err)
+		}
+	}
+
+	overview, err := w.owner.GetShare(t.Context(), owned, folder)
+	if err != nil || len(overview.Readers) != 0 {
+		t.Errorf("readers = %+v, %v, want none", overview.Readers, err)
+	}
+	if left := shareinvite.NewListRequests(w.sharer).Execute(t.Context()); len(left) != 1 {
+		t.Errorf("requests = %+v, want the request to stay open for the right fingerprint", left)
+	}
+}
+
+func TestApprove_AcceptsTheFingerprintWithOtherSpacingAndCase(t *testing.T) {
+	w := newWorld(t)
+	_, readerDeps := w.newReader(t, "Reader")
+	id := join(t, readerDeps, w.start(t).Link, "Anna laptop")
+	waitPhase(t, readerDeps, id, shareinvite.PhaseWaiting)
+	requests := w.waitRequest(t, 1)
+	typed := strings.ToLower(strings.Join(strings.Fields(requests[0].Fingerprint), "  "))
+
+	if err := shareinvite.NewApprove(w.sharer).Execute(t.Context(), requests[0].ID, typed); err != nil {
+		t.Fatal(err)
+	}
 }

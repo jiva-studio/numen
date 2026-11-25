@@ -120,7 +120,7 @@ describe('the identity store', () => {
     const { store } = createStore(createClient({ create }))
     const answer = await store.create(WORDS)
     expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
-    expect(create).toHaveBeenCalledExactlyOnceWith(WORDS)
+    expect(create).toHaveBeenCalledExactlyOnceWith(WORDS, true)
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
   })
 
@@ -255,7 +255,7 @@ describe('the identity store restoring from words', () => {
     const answer = await settle(store.restore({ words: WORDS }))
 
     expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
-    expect(startRestore).toHaveBeenCalledExactlyOnceWith(WORDS)
+    expect(startRestore).toHaveBeenCalledExactlyOnceWith(WORDS, true)
     expect(create).not.toHaveBeenCalled()
     expect(reads).toBe(3)
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
@@ -521,7 +521,7 @@ describe('the identity store and the recovery kit', () => {
     const pending = store.restore({ sheets: SHEETS })
     await vi.advanceTimersByTimeAsync(2000)
     expect(await pending).toStrictEqual({ ok: true, value: createSampleIdentity() })
-    expect(startRestoreFromKit).toHaveBeenCalledExactlyOnceWith(SHEETS)
+    expect(startRestoreFromKit).toHaveBeenCalledExactlyOnceWith(SHEETS, true)
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
     vi.useRealTimers()
   })

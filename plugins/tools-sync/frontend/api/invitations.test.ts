@@ -58,12 +58,12 @@ describe('the client of the owner of a folder', () => {
   it('allows, declines and revokes by the id', async () => {
     const { owner, sent } = createClients(() => Response.json({}))
 
-    await owner.approveShareRequest('r1')
+    await owner.approveShareRequest('r1', '1111 2222')
     await owner.declineShareRequest('r2')
     await owner.revokeShareInvitation('i3')
 
     expect(sent.map((one) => [one.url.split('/').at(-1), one.body])).toStrictEqual([
-      ['ApproveShareRequest', { requestId: 'r1' }],
+      ['ApproveShareRequest', { requestId: 'r1', fingerprint: '1111 2222' }],
       ['DeclineShareRequest', { requestId: 'r2' }],
       ['RevokeShareInvitation', { id: 'i3' }],
     ])

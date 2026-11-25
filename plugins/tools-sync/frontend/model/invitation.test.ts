@@ -112,7 +112,7 @@ describe('the dialog of a folder shared by a link', () => {
 
     await view.approve()
 
-    expect(invitations.approveShareRequest).toHaveBeenCalledWith('r1')
+    expect(invitations.approveShareRequest).toHaveBeenCalledWith('r1', REQUEST.fingerprint)
     expect(view.request).toBeUndefined()
     expect(view.isLinkAlive).toBe(false)
     expect(view.people).toStrictEqual([{ deviceName: 'Phone', fingerprint: '1111 2222' }])

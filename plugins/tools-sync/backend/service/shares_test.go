@@ -49,7 +49,7 @@ func TestSharing_AFolderReachesAReaderByALinkThroughTheMethodsOfTheView(t *testi
 		t.Fatalf("request = %+v, status = %+v, want one code on both sides", requests.Requests[0], status)
 	}
 
-	if _, err := ownerSide.ApproveShareRequest(ctx, api.ApproveShareRequestRequest{RequestID: requests.Requests[0].RequestID}); err != nil {
+	if _, err := ownerSide.ApproveShareRequest(ctx, api.ApproveShareRequestRequest{RequestID: requests.Requests[0].RequestID, Fingerprint: requests.Requests[0].Fingerprint}); err != nil {
 		t.Fatal(err)
 	}
 
