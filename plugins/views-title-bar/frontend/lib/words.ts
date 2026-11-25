@@ -11,7 +11,6 @@ export interface TitleBarWords {
   readonly nothing: string
   readonly createVault: string
   readonly cloud: string
-  readonly cloud: string
   readonly loadingText: string
 }
 
@@ -26,7 +25,6 @@ export const TITLE_BAR_WORDS: TitleBarWords = {
   search: 'Search vaults',
   nothing: 'No vault found',
   createVault: 'Create vault',
-  cloud: 'Cloud',
   cloud: 'Cloud',
   loadingText: 'Loading…',
 }
