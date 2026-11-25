@@ -60,11 +60,13 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole, stallM
 
   const ask = async (call: () => Promise<Result<unknown, string>>): Promise<void> => {
     isBusy.value = true
+    const started = generation
     try {
       const answer = await call()
+      if (isDisposed || started !== generation) return
       problem.value = answer.ok ? '' : answer.error
     } finally {
-      isBusy.value = false
+      if (!isDisposed && started === generation) isBusy.value = false
     }
     await poll.readOnce()
   }

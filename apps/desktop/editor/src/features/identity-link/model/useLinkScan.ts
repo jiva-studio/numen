@@ -1,17 +1,25 @@
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 /** How long the check of the camera may take before the dialog shows the field to paste the link into. */
 const CAMERA_CHECK_MS = 2000
 
-function findCameraInTime(findCamera: () => Promise<boolean>): Promise<boolean> {
-  return new Promise((resolve) => {
+interface CameraCheck {
+  found: Promise<boolean>
+  cancel: () => void
+}
+
+function findCameraInTime(findCamera: () => Promise<boolean>): CameraCheck {
+  let cancel = (): void => undefined
+  const found = new Promise<boolean>((resolve) => {
     const timer = setTimeout(() => resolve(false), CAMERA_CHECK_MS)
-    const settle = (found: boolean): void => {
+    const settle = (isFound: boolean): void => {
       clearTimeout(timer)
-      resolve(found)
+      resolve(isFound)
     }
+    cancel = () => settle(false)
     findCamera().then(settle, () => settle(false))
   })
+  return { found, cancel: () => cancel() }
 }
 
 /**
@@ -21,13 +29,15 @@ function findCameraInTime(findCamera: () => Promise<boolean>): Promise<boolean> 
 export function useLinkScan(findCamera: () => Promise<boolean>) {
   const phase = ref<'checking' | 'camera' | 'paste'>('checking')
   const attempt = ref(0)
+  let isDisposed = false
+  let cancelCheck = (): void => undefined
 
   async function detect(): Promise<void> {
-    if (await findCameraInTime(findCamera)) {
-      phase.value = 'camera'
-      return
-    }
-    phase.value = 'paste'
+    const check = findCameraInTime(findCamera)
+    cancelCheck = check.cancel
+    const isFound = await check.found
+    if (isDisposed) return
+    phase.value = isFound ? 'camera' : 'paste'
   }
 
   function restart(): void {
@@ -39,6 +49,10 @@ export function useLinkScan(findCamera: () => Promise<boolean>) {
   }
 
   onMounted(detect)
+  onBeforeUnmount(() => {
+    isDisposed = true
+    cancelCheck()
+  })
 
   return { phase, attempt, restart, setUnavailable }
 }

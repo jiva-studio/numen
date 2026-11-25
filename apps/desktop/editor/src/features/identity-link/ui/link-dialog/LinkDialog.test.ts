@@ -93,6 +93,18 @@ describe('the dialog that links a new device', () => {
     expect(decideLink).toHaveBeenCalledWith(false)
   })
 
+  it('keeps the decline off while an approval is being sent', async () => {
+    const link = createLinkInfo({
+      phase: 'confirmPeer',
+      peerName: 'Phone',
+      peerFingerprint: '1111 2222',
+    })
+    const decideLink = vi.fn(() => new Promise<never>(() => undefined))
+    await mountDialog(link, { decideLink })
+    await click(findButton(/^Link device$/))
+    expect(findButton(/^Don't link$/).hasAttribute('disabled')).toBe(true)
+  })
+
   it('checks the steps once linked and keeps the same three', async () => {
     await mountDialog(createLinkInfo({ phase: 'linked' }))
     expect(getScreen().findAll('ol li[data-state="done"]')).toHaveLength(3)

@@ -44,6 +44,7 @@ const isDone = computed(() => props.view === 'linked')
     v-if="!isDone"
     type="button"
     variant="ghost"
+    :disabled="isAsking && isBusy"
     @click="isAsking ? emit('decline') : emit('close')"
   >
     {{ view === 'peer' ? words.linkDecline : isAsking ? words.linkCancel : words.linkClose }}

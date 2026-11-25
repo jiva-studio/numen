@@ -140,6 +140,24 @@ describe('useLinkSession', () => {
     expect(cancelLink).toHaveBeenCalled()
   })
 
+  it('reads nothing after the dialog closes while an answer is pending', async () => {
+    let finish: () => void = () => undefined
+    const getLink = vi.fn(() => ok(createLinkInfo()))
+    const { session, answers, wrapper } = mountSession({
+      startLink: () => ok(createLinkInfo()),
+      getLink,
+      decideLink: () =>
+        new Promise((resolve) => (finish = () => resolve({ ok: true as const, value: undefined }))),
+    })
+    await session.start('show')
+    getLink.mockClear()
+    const asking = answers.decide(true)
+    wrapper.unmount()
+    finish()
+    await asking
+    expect(getLink).not.toHaveBeenCalled()
+  })
+
   it('does not stay busy when a call throws', async () => {
     const { session } = mountSession({
       startLink: () => Promise.reject(new Error('down')),
