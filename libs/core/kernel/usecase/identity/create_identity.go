@@ -6,7 +6,6 @@ import (
 	"io"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
@@ -70,7 +69,7 @@ func (u *CreateIdentity) buildState(recovery identitylib.RecoveryWords) (identit
 // stateBuilder makes the state of a device that starts an account, or that joins one with its recovery words.
 type stateBuilder struct {
 	names  DeviceName
-	clock  machineport.InstallationClock
+	clock  Clock
 	random io.Reader
 }
 

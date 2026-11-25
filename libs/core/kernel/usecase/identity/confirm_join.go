@@ -4,20 +4,19 @@ import (
 	"context"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
 // ConfirmJoin is the answer of the person on the new device to the account the host offers.
 type ConfirmJoin struct {
 	links   linkHold
-	clock   machineport.InstallationClock
+	clock   Clock
 	records records
 }
 
 // NewConfirmJoin returns the use case that joins the account or declines it.
 func NewConfirmJoin(d Deps) *ConfirmJoin {
-	return &ConfirmJoin{links: d.progress.links, clock: d.clock, records: d.records}
+	return &ConfirmJoin{links: d.progress.links, clock: d.getClock(), records: d.records}
 }
 
 // Execute keeps the chain and then the record when the person approves, and tells the host; a decline keeps nothing.

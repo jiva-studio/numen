@@ -9,7 +9,6 @@ import (
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
@@ -18,7 +17,7 @@ import (
 type records struct {
 	keys   pluginport.KeyStore
 	chains ChainStore
-	clock  machineport.InstallationClock
+	clock  Clock
 }
 
 func (r records) readRecord(ctx context.Context) (identitylib.Record, error) {
@@ -116,7 +115,7 @@ func (r records) writeRecord(ctx context.Context, record identitylib.Record) err
 }
 
 func (r records) writeNewState(ctx context.Context, record identitylib.Record, chain identitylib.Chain) error {
-	if err := r.raiseHighWater(ctx, chain); err != nil {
+	if err := raiseHighWater(ctx, r.keys, chain); err != nil {
 		return err
 	}
 	if err := r.writeChain(ctx, chain); err != nil {
@@ -133,7 +132,7 @@ func (r records) adoptState(ctx context.Context, state identitylib.State, chain 
 	if next.Chain.Len() == state.Chain.Len() {
 		return next, nil
 	}
-	if err := r.raiseHighWater(ctx, next.Chain); err != nil {
+	if err := raiseHighWater(ctx, r.keys, next.Chain); err != nil {
 		return identitylib.State{}, err
 	}
 	if err := r.writeRecord(ctx, next.Record); err != nil {
@@ -174,8 +173,8 @@ func toIdentity(state identitylib.State) (identitydomain.Identity, error) {
 
 func getHighWaterName(fingerprint string) string { return "chain-length-" + fingerprint }
 
-func (r records) checkHighWater(ctx context.Context, fingerprint string, length int) error {
-	value, err := r.keys.GetKey(ctx, getHighWaterName(fingerprint))
+func checkHighWater(ctx context.Context, keys pluginport.KeyStore, fingerprint string, length int) error {
+	value, err := keys.GetKey(ctx, getHighWaterName(fingerprint))
 	if isNoKey(err) {
 		return nil
 	}
@@ -192,19 +191,19 @@ func (r records) checkHighWater(ctx context.Context, fingerprint string, length 
 	return nil
 }
 
-func (r records) raiseHighWater(ctx context.Context, chain identitylib.Chain) error {
+func raiseHighWater(ctx context.Context, keys pluginport.KeyStore, chain identitylib.Chain) error {
 	if chain.Len() <= newIdentityChainLength {
 		return nil
 	}
 	fingerprint := chain.Root().Fingerprint().String()
-	err := r.checkHighWater(ctx, fingerprint, chain.Len())
+	err := checkHighWater(ctx, keys, fingerprint, chain.Len())
 	if errors.Is(err, identitydomain.ErrChainOutdated) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	if err := r.keys.SetKey(ctx, getHighWaterName(fingerprint), strconv.Itoa(chain.Len())); err != nil {
+	if err := keys.SetKey(ctx, getHighWaterName(fingerprint), strconv.Itoa(chain.Len())); err != nil {
 		return fmt.Errorf("%w: keep the chain length: %w", identitydomain.ErrKeyStore, err)
 	}
 	return nil

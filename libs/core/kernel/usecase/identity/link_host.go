@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
@@ -13,7 +12,7 @@ import (
 // the chain, has the server accept the chain and grants the device the account keys.
 type linkHost struct {
 	records records
-	clock   machineport.InstallationClock
+	clock   Clock
 }
 
 func (h linkHost) receiveLocked(store *linkStore, link *pendingLink, kind byte, body []byte) error {

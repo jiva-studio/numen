@@ -7,7 +7,6 @@ import (
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
@@ -16,13 +15,13 @@ type StartLink struct {
 	links   linkHold
 	records records
 	names   DeviceName
-	clock   machineport.InstallationClock
+	clock   Clock
 	random  io.Reader
 }
 
 // NewStartLink returns the use case that starts a link.
 func NewStartLink(d Deps) *StartLink {
-	return &StartLink{links: d.progress.links, records: d.records, names: d.names, clock: d.clock, random: d.random}
+	return &StartLink{links: d.progress.links, records: d.records, names: d.names, clock: d.getClock(), random: d.random}
 }
 
 // Execute starts a link in the mode: show makes a QR code once the courier gave the link a channel, scan reads the text of a QR code.

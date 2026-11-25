@@ -5,18 +5,17 @@ import (
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // GetLinkWork tells the courier what to carry.
 type GetLinkWork struct {
 	links linkHold
-	clock machineport.InstallationClock
+	clock Clock
 }
 
 // NewGetLinkWork returns the use case that tells the courier what to carry.
 func NewGetLinkWork(d Deps) *GetLinkWork {
-	return &GetLinkWork{links: d.progress.links, clock: d.clock}
+	return &GetLinkWork{links: d.progress.links, clock: d.getClock()}
 }
 
 // Execute drops the blobs the version sinceVersion covers and returns the work: the channel to make or use, the blobs to post to the other side

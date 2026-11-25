@@ -10,9 +10,3 @@ import (
 type Clock interface {
 	Now() time.Time
 }
-
-// InstallationClock is the time source of an installation: the time now and a signal after a delay.
-type InstallationClock interface {
-	Clock
-	After(d time.Duration) <-chan time.Time
-}

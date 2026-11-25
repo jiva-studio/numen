@@ -8,7 +8,6 @@ import (
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
@@ -25,13 +24,13 @@ type KitSaver interface {
 type SaveRecoveryKit struct {
 	records records
 	random  io.Reader
-	clock   machineport.InstallationClock
+	clock   Clock
 	saver   KitSaver
 }
 
 // NewSaveRecoveryKit returns the use case that makes a recovery kit and saves it through saver.
 func NewSaveRecoveryKit(d Deps, saver KitSaver) *SaveRecoveryKit {
-	return &SaveRecoveryKit{records: d.records, random: d.random, clock: d.clock, saver: saver}
+	return &SaveRecoveryKit{records: d.records, random: d.random, clock: d.getClock(), saver: saver}
 }
 
 // Execute proves the account first with exactly one of words and sheets, then makes the kit and

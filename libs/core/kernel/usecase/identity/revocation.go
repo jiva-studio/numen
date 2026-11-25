@@ -6,7 +6,6 @@ import (
 	"io"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
@@ -15,7 +14,7 @@ const maxRevokeAttempts = 3
 // revocation makes the chain that revokes a device and goes on with it when the server answers.
 type revocation struct {
 	records records
-	clock   machineport.InstallationClock
+	clock   Clock
 	random  io.Reader
 }
 

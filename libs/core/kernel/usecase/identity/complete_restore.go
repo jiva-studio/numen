@@ -78,7 +78,7 @@ func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore
 func (c restoreCompletion) buildRestoredState(ctx context.Context, restore *pendingRestore, chainBytes []byte) (identitylib.State, error) {
 	fingerprint := restore.recovery.Public().Fingerprint().String()
 	if len(chainBytes) == 0 {
-		if err := c.records.checkHighWater(ctx, fingerprint, 0); err != nil {
+		if err := checkHighWater(ctx, c.records.keys, fingerprint, 0); err != nil {
 			return identitylib.State{}, err
 		}
 		if !restore.mark.IsZero() {
@@ -96,7 +96,7 @@ func (c restoreCompletion) buildRestoredState(ctx context.Context, restore *pend
 	if !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
 		return identitylib.State{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
 	}
-	if err := c.records.checkHighWater(ctx, fingerprint, chain.Len()); err != nil {
+	if err := checkHighWater(ctx, c.records.keys, fingerprint, chain.Len()); err != nil {
 		return identitylib.State{}, err
 	}
 	if !restore.mark.IsZero() && !chain.HasMark(restore.mark) {

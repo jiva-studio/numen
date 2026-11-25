@@ -4,19 +4,18 @@ import (
 	"context"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // PutLinkInbound hands the core a blob the other side posted to the relay.
 type PutLinkInbound struct {
 	links linkHold
-	clock machineport.InstallationClock
+	clock Clock
 	host  linkHost
 }
 
 // NewPutLinkInbound returns the use case that takes a blob from the courier.
 func NewPutLinkInbound(d Deps) *PutLinkInbound {
-	return &PutLinkInbound{links: d.progress.links, clock: d.clock, host: d.getHost()}
+	return &PutLinkInbound{links: d.progress.links, clock: d.getClock(), host: d.getHost()}
 }
 
 // Execute takes a blob that came from the relay. A blob that does not authenticate is dropped, so someone who knows the channel

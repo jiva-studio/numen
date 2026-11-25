@@ -6,20 +6,19 @@ import (
 	"io"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
 // SetLinkChannel gives the link the channel the courier made on the relay.
 type SetLinkChannel struct {
 	links  linkHold
-	clock  machineport.InstallationClock
+	clock  Clock
 	random io.Reader
 }
 
 // NewSetLinkChannel returns the use case that gives the link its channel.
 func NewSetLinkChannel(d Deps) *SetLinkChannel {
-	return &SetLinkChannel{links: d.progress.links, clock: d.clock, random: d.random}
+	return &SetLinkChannel{links: d.progress.links, clock: d.getClock(), random: d.random}
 }
 
 // Execute makes the key and the secret of the QR code for the channel of 16 bytes. It returns ErrNoLink when no link waits for a channel.

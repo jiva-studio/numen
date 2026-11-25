@@ -4,18 +4,17 @@ import (
 	"context"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // GetChainPublish tells the courier which chain the server must hold.
 type GetChainPublish struct {
 	links linkHold
-	clock machineport.InstallationClock
+	clock Clock
 }
 
 // NewGetChainPublish returns the use case that tells the courier which chain to publish.
 func NewGetChainPublish(d Deps) *GetChainPublish {
-	return &GetChainPublish{links: d.progress.links, clock: d.clock}
+	return &GetChainPublish{links: d.progress.links, clock: d.getClock()}
 }
 
 // Execute returns the chain a link or a revoke waits to have accepted, or none.

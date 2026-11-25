@@ -8,11 +8,11 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
@@ -27,7 +27,6 @@ const (
 type Deps struct {
 	records  records
 	names    DeviceName
-	clock    machineport.InstallationClock
 	random   io.Reader
 	progress *Progress
 
@@ -48,9 +47,9 @@ type SharedKeys struct {
 }
 
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
-func NewDeps(keys pluginport.KeyStore, names DeviceName, clock machineport.InstallationClock) Deps {
+func NewDeps(keys pluginport.KeyStore, names DeviceName, clock Clock) Deps {
 	progress := NewProgress()
-	return Deps{records: records{keys: keys, clock: clock}, names: names, clock: clock, random: rand.Reader, progress: progress, createLock: progress.gate}
+	return Deps{records: records{keys: keys, clock: clock}, names: names, random: rand.Reader, progress: progress, createLock: progress.gate}
 }
 
 // WithCreateLock makes the use cases over one key store create the identity one at a time. Every
@@ -82,15 +81,15 @@ func (d Deps) WithChains(chains ChainStore) Deps {
 }
 
 func (d Deps) getBuilder() stateBuilder {
-	return stateBuilder{names: d.names, clock: d.clock, random: d.random}
+	return stateBuilder{names: d.names, clock: d.getClock(), random: d.random}
 }
 
 func (d Deps) getHost() linkHost {
-	return linkHost{records: d.records, clock: d.clock}
+	return linkHost{records: d.records, clock: d.getClock()}
 }
 
 func (d Deps) getRevocation() revocation {
-	return revocation{records: d.records, clock: d.clock, random: d.random}
+	return revocation{records: d.records, clock: d.getClock(), random: d.random}
 }
 
 func normalizeEntryName(name string) string {
@@ -120,3 +119,11 @@ func encodeRecord(record identitylib.Record) string {
 func (d Deps) getCompletion() restoreCompletion {
 	return restoreCompletion{records: d.records, restores: d.progress.restores, builder: d.getBuilder(), gate: d.createLock}
 }
+
+// Clock is the time source of an installation: the time now and a signal after a delay.
+type Clock interface {
+	Now() time.Time
+	After(d time.Duration) <-chan time.Time
+}
+
+func (d Deps) getClock() Clock { return d.records.clock }
