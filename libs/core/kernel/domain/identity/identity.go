@@ -81,7 +81,6 @@ type Sheet struct {
 }
 
 var (
-	// ErrLinkText means a text is not a link text.
 	ErrLinkText = errors.New("the text is not a link")
 	// ErrOwnDevice means the device to revoke is this device.
 	ErrOwnDevice = errors.New("a device cannot revoke itself")

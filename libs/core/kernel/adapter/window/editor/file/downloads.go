@@ -54,8 +54,6 @@ func (h *Downloads) DropDownload(
 	return connect.NewResponse(&v1.DropDownloadResponse{}), nil
 }
 
-// newDownloadError keeps the code and the message of a failure the provider answered, and answers a
-// provider that is not there or cannot start as a failed precondition.
 func newDownloadError(err error) error {
 	var answered *connect.Error
 	if errors.As(err, &answered) {

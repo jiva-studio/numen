@@ -76,7 +76,7 @@ func TestADownloadRefusedByTheProviderKeepsItsCodeAndMessage(t *testing.T) {
 	}
 }
 
-func TestADownloadWithoutAProviderPluginFailsAsAPreconditionThatSaysSo(t *testing.T) {
+func TestFetchFile_NoProviderPlugin_FailedPrecondition(t *testing.T) {
 	missing := &plugindomain.UnavailableError{Capability: "files.provider", Reason: plugindomain.NotInstalled}
 	handler := newDownloadsHandler(window{vault: domain.Vault{ID: "v-1"}}, &provider{err: missing})
 

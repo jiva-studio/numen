@@ -117,7 +117,6 @@ func (u *Lifecycle) Suspend(ctx context.Context) error {
 	return errors.Join(stopped, u.flush(context.WithoutCancel(ctx)))
 }
 
-// IsResumed tells whether the loop and the stream run now.
 func (u *Lifecycle) IsResumed() bool {
 	u.mu.Lock()
 	defer u.mu.Unlock()

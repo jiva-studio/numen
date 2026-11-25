@@ -178,7 +178,7 @@ func listFetchFiles(t *testing.T, w *synctest.PhoneWorld) []string {
 	return names
 }
 
-func TestFetchFile_LeavesNoFileOfItsOwnInTheStoreAfterThePlacement(t *testing.T) {
+func TestFetchFile_PlacedFile_StoreHasNoFetchFiles(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
 
@@ -191,7 +191,7 @@ func TestFetchFile_LeavesNoFileOfItsOwnInTheStoreAfterThePlacement(t *testing.T)
 	}
 }
 
-func TestFetchFile_LeavesNoFileOfItsOwnInTheStoreAfterDamagedBytes(t *testing.T) {
+func TestFetchFile_DamagedBytes_StoreHasNoFetchFiles(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.WriteGuide(t, guidePath)
 	w.Server.SetBlobCorruption(true)

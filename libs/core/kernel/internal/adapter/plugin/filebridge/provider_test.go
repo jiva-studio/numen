@@ -60,7 +60,6 @@ func (s *storage) getCalls() []string {
 	return append([]string(nil), s.calls...)
 }
 
-// startHost discovers a plugin with the given manifest text, which the process it launches serves.
 func startHost(t *testing.T, manifestText string, handle func(*http.ServeMux)) *pluginhost.Host {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -119,7 +118,7 @@ func TestFetchingAFileCallsTheEnabledPluginThatProvidesFiles(t *testing.T) {
 	}
 }
 
-func TestDroppingADownloadCallsThePluginAndKeepsItsRefusal(t *testing.T) {
+func TestDropDownload_PluginRefusal_ReturnsRefusal(t *testing.T) {
 	plugin := &storage{err: connect.NewError(connect.CodeFailedPrecondition, errors.New("The file has changes that are not sent"))}
 	host := startHost(t, providerManifest, func(mux *http.ServeMux) {
 		mux.Handle(numenv1connect.NewFileProviderServiceHandler(plugin))

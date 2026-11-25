@@ -33,8 +33,7 @@ type Deps struct {
 	Endorse  Endorser
 	Health   ports.Health
 	Clock    ports.Clock
-	// IsIdle tells the loop to do nothing while it returns true. It is optional.
-	IsIdle func() bool
+	IsIdle   func() bool
 }
 
 // Endorser signs the heads the devices of a revoke wrote, so the revoke does not make them unverified.
