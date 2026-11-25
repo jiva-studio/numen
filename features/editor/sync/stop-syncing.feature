@@ -11,7 +11,7 @@ Feature: Stop syncing a vault
     Scenario: The vault is not synced any more and keeps its notes
       Given the empty vault "Test"
       And a sync server runs
-      And the person creates an identity
+      And the person has an identity
       And the application "editor" starts
       And the person syncs the vault "Test"
       And the person writes the note "Food/Shopping list" with the text "milk" in the vault "Test"

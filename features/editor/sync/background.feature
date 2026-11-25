@@ -9,7 +9,7 @@ Feature: Numen Sync keeps working
   Background:
     Given the empty vault "Test"
     And a sync server runs
-    And the person creates an identity
+    And the person has an identity
 
   Rule: Numen Sync works while it is on
 

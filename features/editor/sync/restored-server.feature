@@ -9,7 +9,7 @@ Feature: Numen Sync after the server is restored from a backup
   Background:
     Given the empty vault "Test"
     And a sync server that sells subscriptions runs
-    And the person creates an identity
+    And the person has an identity
     And the application "editor" starts
     And the person opens the page "Identity and licenses"
     And the person buys the subscription

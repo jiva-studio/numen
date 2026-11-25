@@ -9,7 +9,7 @@ Feature: Connect a folder that holds notes
   Background:
     Given the empty vault "Test"
     And a sync server runs
-    And the person creates an identity
+    And the person has an identity
     And the application "editor" starts
     And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
     And the person syncs the vault "Test"

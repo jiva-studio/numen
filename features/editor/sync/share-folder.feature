@@ -7,11 +7,7 @@ Feature: Share a folder with another person
   So that we use the same notes and nothing else of mine is shown
 
   Background:
-    Given the empty vault "Test"
-    And a sync server runs
-    And the person creates an identity
-    And the application "editor" starts
-    And the person syncs the vault "Test"
+    Given the person has the synced vault "Test"
     And the person writes the note "Food/Shopping list" with the text "milk" in the vault "Test"
     And the person writes the note "Plan" with the text "tea" in the vault "Test"
     And the reader sets up an identity

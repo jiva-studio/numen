@@ -9,7 +9,7 @@ Feature: Numen Sync plan and the notes in the cloud
   Background:
     Given the empty vault "Test"
     And a sync server that sells the plans "Basic" with 10 GB, "Plus" with 100 GB and "Pro" with 250 GB runs
-    And the person creates an identity
+    And the person has an identity
     And the application "editor" starts
     And the person opens the page "Identity and licenses"
     And the person buys the plan "Basic"

@@ -7,13 +7,7 @@ Feature: Sync a note changed on two computers
   So that I can choose later which text to keep
 
   Background:
-    Given the empty vault "Test"
-    And a sync server runs
-    And the person creates an identity
-    And the application "editor" starts
-    And the person syncs the vault "Test"
-    And a second computer restores the identity from the recovery words
-    And the second computer connects its vault "Copy" to the synced vault "Test"
+    Given the person has the synced vault "Test" on two computers
 
   Rule: The latest version stays and the other is kept in a conflict copy
 

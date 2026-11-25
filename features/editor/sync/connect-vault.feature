@@ -9,7 +9,7 @@ Feature: Connect a vault to Numen Sync
   Background:
     Given the empty vault "Test"
     And a sync server runs
-    And the person creates an identity
+    And the person has an identity
     And the application "editor" starts
 
   Rule: A vault is connected as a new synced vault or to an existing one

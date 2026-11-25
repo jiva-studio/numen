@@ -9,7 +9,7 @@ Feature: Numen Sync subscription
   Background:
     Given the empty vault "Test"
     And a sync server that sells subscriptions runs
-    And the person creates an identity
+    And the person has an identity
     And the application "editor" starts
 
   Rule: The page "Identity and licenses" shows the subscription

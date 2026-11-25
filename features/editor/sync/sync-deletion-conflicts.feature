@@ -7,13 +7,7 @@ Feature: Sync a file removed on one computer and changed on the other
   So that I lose a text only when I remove it myself
 
   Background:
-    Given the empty vault "Test"
-    And a sync server runs
-    And the person creates an identity
-    And the application "editor" starts
-    And the person syncs the vault "Test"
-    And a second computer restores the identity from the recovery words
-    And the second computer connects its vault "Copy" to the synced vault "Test"
+    Given the person has the synced vault "Test" on two computers
 
   Rule: A change wins over a removal
 

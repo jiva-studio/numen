@@ -7,13 +7,7 @@ Feature: Sync notes between computers
   So that I can continue my work anywhere
 
   Background:
-    Given the empty vault "Test"
-    And a sync server runs
-    And the person creates an identity
-    And the application "editor" starts
-    And the person syncs the vault "Test"
-    And a second computer restores the identity from the recovery words
-    And the second computer connects its vault "Copy" to the synced vault "Test"
+    Given the person has the synced vault "Test" on two computers
 
   Rule: A note written on one computer appears on the other
 

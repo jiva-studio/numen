@@ -7,13 +7,7 @@ Feature: Receive changes within seconds
   So that I see my work on both computers without waiting
 
   Background:
-    Given the empty vault "Test"
-    And a sync server runs
-    And the person creates an identity
-    And the application "editor" starts
-    And the person syncs the vault "Test"
-    And a second computer restores the identity from the recovery words
-    And the second computer connects its vault "Copy" to the synced vault "Test"
+    Given the person has the synced vault "Test" on two computers
     And the computers do not look for changes by themselves
 
   Rule: A change reaches the other computer within seconds

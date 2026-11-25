@@ -7,13 +7,7 @@ Feature: Sync after a long absence
   So that removed notes do not come back and no change of mine is lost
 
   Background:
-    Given the empty vault "Test"
-    And a sync server runs
-    And the person creates an identity
-    And the application "editor" starts
-    And the person syncs the vault "Test"
-    And a second computer restores the identity from the recovery words
-    And the second computer connects its vault "Copy" to the synced vault "Test"
+    Given the person has the synced vault "Test" on two computers
     And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
     And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
     And the person writes the note "Plan" with the text "tea" in the vault "Test"
