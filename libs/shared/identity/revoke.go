@@ -154,17 +154,17 @@ func sealPreviousKeys(random io.Reader, fresh AccountKeys, epoch uint32, previou
 	return aead.Seal(nonce, nonce, plain, getHistoryAssociatedData(epoch)), nil
 }
 
-func openPreviousKeys(kek [32]byte, epoch uint32, sealed []byte) ([32]byte, error) {
+func openPreviousKeys(kek [32]byte, epoch uint32, sealed []byte) (box, previous [32]byte, err error) {
 	aead, err := newHistoryAEAD(kek)
 	if err != nil || len(sealed) != previousKeysSize {
-		return [32]byte{}, ErrUnwrap
+		return [32]byte{}, [32]byte{}, ErrUnwrap
 	}
 	plain, err := aead.Open(nil, sealed[:sealNonceSize], sealed[sealNonceSize:], getHistoryAssociatedData(epoch))
 	if err != nil || len(plain) != plainSize {
-		return [32]byte{}, ErrUnwrap
+		return [32]byte{}, [32]byte{}, ErrUnwrap
 	}
 	defer clear(plain)
-	return [32]byte(plain[32:]), nil
+	return [32]byte(plain[:32]), [32]byte(plain[32:]), nil
 }
 
 // GetWrappedFor returns the keys wrapped for the device by the latest entry that wraps for it; the genesis is not looked at.
@@ -200,14 +200,30 @@ func (c Chain) openHistoryFrom(current AccountKeys, epoch uint32) (AccountKeys, 
 		if revoke == nil || revoke.Epoch > epoch {
 			continue
 		}
-		previous, err := openPreviousKeys(kek, revoke.Epoch, revoke.PreviousKeys)
+		box, previous, err := openPreviousKeys(kek, revoke.Epoch, revoke.PreviousKeys)
 		if err != nil {
 			return AccountKeys{}, err
+		}
+		if public, err := deriveBoxPublicKey(box); err != nil || public != c.getAccountBox(revoke.Epoch-1) {
+			return AccountKeys{}, fmt.Errorf("%w: the key history of epoch %d holds another account box", ErrUnwrap, revoke.Epoch)
 		}
 		keys.earlier[revoke.Epoch-1] = previous
 		kek = previous
 	}
 	return keys, nil
+}
+
+// getAccountBox returns the account box public key the chain gives the epoch.
+func (c Chain) getAccountBox(epoch uint32) [32]byte {
+	for _, entry := range c.entries[min(1, len(c.entries)):] {
+		if revoke := entry.keyChange(); revoke != nil && revoke.Epoch == epoch {
+			return revoke.AccountBox
+		}
+	}
+	if len(c.entries) == 0 || c.entries[0].Genesis == nil || epoch != 0 {
+		return [32]byte{}
+	}
+	return c.entries[0].Genesis.AccountBox
 }
 
 func (c Chain) getKeyEpoch(sign ed25519.PublicKey) uint32 {
