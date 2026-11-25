@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 )
@@ -14,12 +12,10 @@ import (
 const shelfPlugin = "md.test.shelf"
 
 func getShelfCatalog() searchquery.Catalog {
-	return searchquery.MergeCatalog(searchquery.GetBuiltinCatalog(), searchquery.ConvertManifestFunctions(shelfPlugin, searchfunction.Set{
-		Version: 1, Functions: []searchfunction.Function{
-			{Name: "shelved", Args: []searchfunction.Arg{{Name: "shelf", Type: searchfunction.ArgString}}, Level: searchfunction.LevelDocument},
-			{Name: "isShelved", Level: searchfunction.LevelDocument},
-		},
-	}))
+	return searchquery.MergeCatalog(searchquery.GetBuiltinCatalog(), []searchquery.Function{
+		{Name: "shelved", Args: []searchquery.ValueType{searchquery.TypeString}, ArgNames: []string{"shelf"}, Result: searchquery.TypeBool, Level: searchquery.LevelDocument, PluginID: shelfPlugin},
+		{Name: "isShelved", Args: []searchquery.ValueType{}, ArgNames: []string{}, Result: searchquery.TypeBool, Level: searchquery.LevelDocument, PluginID: shelfPlugin},
+	})
 }
 
 func parseOver(text string, catalog searchquery.Catalog) (searchquery.Query, error) {

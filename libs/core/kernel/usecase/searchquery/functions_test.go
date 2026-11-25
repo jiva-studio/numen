@@ -9,8 +9,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
-
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
@@ -79,12 +77,10 @@ func (p *shelfPlugin) FindDocuments(ctx context.Context, call searchquerydomain.
 }
 
 func getShelfCatalog() searchquerydomain.Catalog {
-	return searchquerydomain.MergeCatalog(searchquerydomain.GetBuiltinCatalog(), searchquerydomain.ConvertManifestFunctions(shelfPluginID, searchfunction.Set{
-		Version: 1, Functions: []searchfunction.Function{
-			{Name: "shelved", Args: []searchfunction.Arg{{Name: "shelf", Type: searchfunction.ArgString}}, Level: searchfunction.LevelDocument},
-			{Name: "isShelved", Level: searchfunction.LevelDocument},
-		},
-	}))
+	return searchquerydomain.MergeCatalog(searchquerydomain.GetBuiltinCatalog(), []searchquerydomain.Function{
+		{Name: "shelved", Args: []searchquerydomain.ValueType{searchquerydomain.TypeString}, ArgNames: []string{"shelf"}, Result: searchquerydomain.TypeBool, Level: searchquerydomain.LevelDocument, PluginID: shelfPluginID},
+		{Name: "isShelved", Args: []searchquerydomain.ValueType{}, ArgNames: []string{}, Result: searchquerydomain.TypeBool, Level: searchquerydomain.LevelDocument, PluginID: shelfPluginID},
+	})
 }
 
 func newShelfWorld(t *testing.T) world {
