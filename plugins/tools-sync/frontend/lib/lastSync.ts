@@ -5,7 +5,11 @@ const MINUTES_PER_HOUR = 60
 const HOURS_PER_DAY = 24
 const DAYS_PER_WEEK = 7
 
-const dateFormat = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', year: 'numeric' })
+const dateFormat = new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+})
 
 /** The time since a sync in plain words: minutes, hours, days, and a date from a week on. */
 export function formatLastSync(syncedAt: Date, now: Date): string {
