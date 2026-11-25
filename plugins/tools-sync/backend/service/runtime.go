@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
@@ -156,17 +157,20 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).
 		WithDownloads(downloadwire.New(fetching)).
 		WithAccountData(accountdata.Deps{Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep})
-	backend.SetLifecycle(lifecycle.NewLifecycle(lifecycle.Deps{
+	life := lifecycle.NewLifecycle(lifecycle.Deps{
 		Pass: pass, Loop: loop, Stream: idleStream{}, Host: p.vaults, State: p.state, Clock: p.clock,
-	}))
+	})
+	backend.SetLifecycle(life)
 	loopsOf := map[string]func(context.Context) error{
 		"sign-in": keep.Execute, "restore": watch.Execute,
 		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.getHealth(), Clock: p.clock, Server: address}).Execute,
 		"chain": chaincourier.NewLoop(chaincourier.Deps{
 			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.getHealth(), Clock: p.clock,
+			IsIdle:  func() bool { return r.isForeground.IsOn() && !life.IsResumed() },
 			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
 		}, p.clock).Execute,
 		"share-invite": shareinvite.NewCourier(hub).Execute,
+		"lifecycle":    func(ctx context.Context) error { <-ctx.Done(); return errors.Join(ctx.Err(), life.Close()) },
 		"rotate":       rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
 	}
 	if !r.isForeground.IsOn() {

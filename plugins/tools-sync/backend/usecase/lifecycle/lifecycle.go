@@ -117,6 +117,28 @@ func (u *Lifecycle) Suspend(ctx context.Context) error {
 	return errors.Join(stopped, u.flush(context.WithoutCancel(ctx)))
 }
 
+// IsResumed tells whether the loop and the stream run now.
+func (u *Lifecycle) IsResumed() bool {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return u.running != nil
+}
+
+// Close stops the loop and the stream without a last pass, for a session that ends. A later Suspend does nothing.
+func (u *Lifecycle) Close() error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.isFlushed = true
+	if u.running == nil {
+		return nil
+	}
+	u.running.stop()
+	u.running.done.Wait()
+	failed := errors.Join(u.running.failed...)
+	u.running = nil
+	return failed
+}
+
 func (u *Lifecycle) flush(ctx context.Context) error {
 	ids, err := u.getConnectedIDs(ctx)
 	if err != nil {

@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	retryWait    = 3 * time.Second
-	silenceBeats = 3
-	minHeartbeat = time.Second
+	retryWait        = 3 * time.Second
+	longestRetryWait = 2 * time.Minute
+	silenceBeats     = 3
+	minHeartbeat     = time.Second
 )
 
 // Deps are the ports WatchChanges needs.
@@ -38,25 +39,33 @@ func NewWatchChanges(deps Deps) *WatchChanges { return &WatchChanges{deps: deps}
 // the interval reports a server that is away.
 func (u *WatchChanges) Execute(ctx context.Context) error {
 	var closeErr error
+	wait := retryWait
 	for {
-		closeErr = u.runOnce(ctx)
+		var isOpened bool
+		isOpened, closeErr = u.runOnce(ctx)
+		if isOpened {
+			wait = retryWait
+		}
 		if err := ctx.Err(); err != nil {
 			return errors.Join(err, closeErr)
 		}
-		if err := u.deps.Clock.Wait(ctx, retryWait); err != nil {
+		if err := u.deps.Clock.Wait(ctx, wait); err != nil {
 			return err
+		}
+		if !isOpened {
+			wait = min(2*wait, longestRetryWait)
 		}
 	}
 }
 
-func (u *WatchChanges) runOnce(ctx context.Context) (closeErr error) {
+func (u *WatchChanges) runOnce(ctx context.Context) (isOpened bool, closeErr error) {
 	watch, err := u.deps.Hints.Watch(ctx)
 	if err != nil {
-		return nil
+		return false, nil
 	}
 	defer func() { closeErr = watch.Close() }()
 	u.read(ctx, watch)
-	return nil
+	return true, nil
 }
 
 type received struct {

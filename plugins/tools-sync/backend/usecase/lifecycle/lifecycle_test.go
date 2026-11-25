@@ -190,3 +190,49 @@ func TestResume_SendsTheNoteCreatedWhileTheApplicationWasClosed(t *testing.T) {
 		return ok && text == "eggs"
 	})
 }
+
+func TestClose_ClosesTheStreamWithoutAPassAndAsksForNothingMore(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	s := &synctest.Stream{}
+	life := newLifecycle(w, s)
+	if err := life.Resume(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	synctest.WaitUntil(t, "an open stream", func() bool { return s.CountOpen() == 1 })
+	w.Computer.WriteNote(synctest.ComputerVault, "Shopping list.md", "milk")
+	w.Clock.Advance(time.Minute)
+	w.SyncComputer(t)
+	asked := w.Server.CountRequests()
+
+	if err := life.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if open := s.CountOpen(); open != 0 {
+		t.Errorf("%d streams are open after Close, want 0", open)
+	}
+	w.Clock.Advance(2 * interval)
+	if got := w.Server.CountRequests(); got != asked {
+		t.Errorf("the server took %d requests after Close, want none", got-asked)
+	}
+}
+
+func TestIsResumed_FollowsResumeAndSuspend(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	life := newLifecycle(w, &synctest.Stream{})
+	if life.IsResumed() {
+		t.Fatal("resumed before Resume")
+	}
+	if err := life.Resume(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if !life.IsResumed() {
+		t.Error("not resumed after Resume")
+	}
+	if err := life.Suspend(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if life.IsResumed() {
+		t.Error("resumed after Suspend")
+	}
+}

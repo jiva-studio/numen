@@ -17,7 +17,7 @@ func TestRuntimeStart_ReturnsTheLoopsByName(t *testing.T) {
 	_, loops := r.start(t.Context(), "http://sync.example.test")
 
 	got := slices.Sorted(maps.Keys(loops))
-	want := []string{"chain", "link", "restore", "rotate", "share-invite", "sign-in", "sync", "watch"}
+	want := []string{"chain", "lifecycle", "link", "restore", "rotate", "share-invite", "sign-in", "sync", "watch"}
 	if !slices.Equal(got, want) {
 		t.Errorf("loops = %v, want %v", got, want)
 	}

@@ -16,6 +16,7 @@ import (
 
 const (
 	publishInterval  = time.Second
+	longestRetryWait = time.Minute
 	adoptEvery       = 30
 	noticeKey        = "device-revoked-others"
 	publishFailedKey = "chain-publish-failed"
@@ -32,6 +33,8 @@ type Deps struct {
 	Endorse  Endorser
 	Health   ports.Health
 	Clock    ports.Clock
+	// IsIdle tells the loop to do nothing while it returns true. It is optional.
+	IsIdle func() bool
 }
 
 // Endorser signs the heads the devices of a revoke wrote, so the revoke does not make them unverified.
@@ -155,27 +158,42 @@ type Loop struct {
 	adopt    *Adopt
 	clock    ports.Clock
 	health   ports.Health
+	isIdle   func() bool
 	isFailed bool
 	isClean  bool
 }
 
 // NewLoop returns the loop over the dependencies and the clock it waits on.
 func NewLoop(deps Deps, clock ports.Clock) *Loop {
-	return &Loop{publish: NewPublish(deps), adopt: NewAdopt(deps), clock: clock, health: deps.Health, isFailed: false, isClean: false}
+	return &Loop{publish: NewPublish(deps), adopt: NewAdopt(deps), clock: clock, health: deps.Health, isIdle: deps.IsIdle, isFailed: false, isClean: false}
 }
 
 // Execute runs until ctx ends and returns its error with the failures of the last round. A failed round is tried again at the next one;
 // a failed publish is logged and shown to the person until a round publishes again.
 func (u *Loop) Execute(ctx context.Context) error {
+	wait := publishInterval
 	for round := 0; ; round++ {
+		if u.isIdle != nil && u.isIdle() {
+			wait = publishInterval
+			if err := u.clock.Wait(ctx, wait); err != nil {
+				return err
+			}
+			continue
+		}
 		_, published := u.publish.Execute(ctx)
 		u.reportPublish(ctx, published)
 		var adopted error
 		if round%adoptEvery == 0 {
 			_, adopted = u.adopt.Execute(ctx)
 		}
-		if err := u.clock.Wait(ctx, publishInterval); err != nil {
+		if published == nil && adopted == nil {
+			wait = publishInterval
+		}
+		if err := u.clock.Wait(ctx, wait); err != nil {
 			return errors.Join(err, published, adopted)
+		}
+		if published != nil || adopted != nil {
+			wait = min(2*wait, longestRetryWait)
 		}
 	}
 }

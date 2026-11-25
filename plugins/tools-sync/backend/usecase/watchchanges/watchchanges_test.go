@@ -16,11 +16,12 @@ import (
 )
 
 const (
-	source      domain.VaultID = "Source"
-	target      domain.VaultID = "Target"
-	retryWait                  = 3 * time.Second
-	heartbeat                  = 2 * time.Second
-	silenceWait                = 3 * heartbeat
+	source           domain.VaultID = "Source"
+	target           domain.VaultID = "Target"
+	retryWait                       = 3 * time.Second
+	heartbeat                       = 2 * time.Second
+	silenceWait                     = 3 * heartbeat
+	longestRetryWait                = 2 * time.Minute
 )
 
 type world struct {
@@ -159,17 +160,37 @@ func TestWatchChanges_WakesAfterTheReopenForACommitMadeWhileTheStreamWasDown(t *
 	synctest.WaitUntil(t, "the wake of the catch-up", func() bool { return w.wakes.Count(target) >= 1 })
 }
 
-func TestWatchChanges_WaitsTheSameRetryWaitAfterEachFailureOfTheOpen(t *testing.T) {
+func TestWatchChanges_DoublesTheRetryWaitAfterEachFailureOfTheOpenUpToTheLongestWait(t *testing.T) {
 	w := newWorld(t)
 	w.server.SetDown(true)
 	start(t, w.b, w.b.Cloud, w.wakes)
 
+	want := retryWait
 	for range 10 {
-		if got := w.b.Clock.AwaitWait(t); got != retryWait {
-			t.Fatalf("wait = %v, want %v each time with no growth", got, retryWait)
+		if got := w.b.Clock.AwaitWait(t); got != want {
+			t.Fatalf("wait = %v, want %v", got, want)
 		}
-		w.b.Clock.Advance(retryWait)
+		w.b.Clock.Advance(want)
+		want = min(2*want, longestRetryWait)
 	}
+}
+
+func TestWatchChanges_WaitsTheShortRetryWaitAgainOnceTheStreamOpens(t *testing.T) {
+	w := newWorld(t)
+	w.server.SetDown(true)
+	start(t, w.b, w.b.Cloud, w.wakes)
+	for _, want := range []time.Duration{retryWait, 2 * retryWait} {
+		awaitWaitOf(t, w.b.Clock, want)
+		w.b.Clock.Advance(want)
+	}
+	awaitWaitOf(t, w.b.Clock, 4*retryWait)
+	w.server.SetDown(false)
+	w.b.Clock.Advance(4 * retryWait)
+	w.awaitStream(t)
+
+	w.server.Fake.EndStreams()
+
+	awaitWaitOf(t, w.b.Clock, retryWait)
 }
 
 func TestWatchChanges_RaisesNoHealthItemWhileTheStreamFails(t *testing.T) {
@@ -178,8 +199,7 @@ func TestWatchChanges_RaisesNoHealthItemWhileTheStreamFails(t *testing.T) {
 	start(t, w.b, w.b.Cloud, w.wakes)
 
 	for range 3 {
-		w.b.Clock.AwaitWait(t)
-		w.b.Clock.Advance(retryWait)
+		w.b.Clock.Advance(w.b.Clock.AwaitWait(t))
 	}
 
 	if items := w.b.Health.List(); len(items) != 0 {

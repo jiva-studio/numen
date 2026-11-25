@@ -5,7 +5,9 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -250,4 +252,60 @@ func TestAdopt_RaisesANoticeWhenAnotherDeviceAddedADevice(t *testing.T) {
 	if len(items) != 1 || items[0].Key != "device-revoked-others" || !strings.Contains(items[0].Text, "added another device") {
 		t.Errorf("health items = %+v, want one notice that a device added another device", items)
 	}
+}
+
+func startLoop(t *testing.T, deps chaincourier.Deps, clock ports.Clock) {
+	t.Helper()
+	ctx, stop := context.WithCancel(t.Context())
+	t.Cleanup(stop)
+	go func() {
+		if err := chaincourier.NewLoop(deps, clock).Execute(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
+	}()
+}
+
+func TestLoop_DoublesTheWaitAfterEachFailedRoundUpToAMinute(t *testing.T) {
+	t.Parallel()
+	earlier, current := newThreeRestores(t)
+	if err := current.Fake.RevokeDevice(earlier.GetDeviceSignKey(t)); err != nil {
+		t.Fatal(err)
+	}
+	current.GoOffline()
+	startLoop(t, current.ChainDeps(), current.Clock)
+
+	want := time.Second
+	for range 9 {
+		if got := current.Clock.AwaitWait(t); got != want {
+			t.Fatalf("wait = %v, want %v", got, want)
+		}
+		current.Clock.Advance(want)
+		want = min(2*want, time.Minute)
+	}
+}
+
+func TestLoop_DoesNothingWhileIdleAndWorksAgainWhenNotIdle(t *testing.T) {
+	t.Parallel()
+	earlier, current := newThreeRestores(t)
+	if err := current.Fake.RevokeDevice(earlier.GetDeviceSignKey(t)); err != nil {
+		t.Fatal(err)
+	}
+	current.GoOffline()
+	var isIdle atomic.Bool
+	isIdle.Store(true)
+	deps := current.ChainDeps()
+	deps.IsIdle = isIdle.Load
+	startLoop(t, deps, current.Clock)
+
+	for range 3 {
+		current.Clock.AwaitWait(t)
+		current.Clock.Advance(time.Second)
+	}
+	if items := current.Health.List(); len(items) != 0 {
+		t.Fatalf("health items = %+v while idle, want none", items)
+	}
+
+	isIdle.Store(false)
+	current.Clock.Advance(time.Second)
+	synctest.WaitUntil(t, "the failed publish", func() bool { return len(current.Health.List()) == 1 })
 }
