@@ -68,7 +68,7 @@ const submitText = async (canvas: ReturnType<typeof within>, text: string) => {
 export const CheckingCamera: Story = {
   args: { findCamera: () => new Promise<boolean>(() => undefined) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     const dialog = canvas.getByRole('dialog', { name: 'Use existing' })
     await expect(dialog).toBeVisible()
     await expect(canvas.getByText('Checking the camera')).toBeVisible()
@@ -87,7 +87,7 @@ export const CameraReady: Story = {
     },
   },
   play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(await canvas.findByText('Scan the code shown on your other device.')).toBeVisible()
     await expect(canvas.queryByRole('textbox')).toBeNull()
     await expect(canvas.queryByRole('button', { name: /paste/i })).toBeNull()
@@ -100,7 +100,7 @@ export const CameraReady: Story = {
 /** No camera on the machine: the field for the link text is asked for. */
 export const NoCamera: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(
       await canvas.findByText('Paste the link shown on your other device.'),
     ).toBeVisible()
@@ -115,7 +115,7 @@ export const CameraDenied: Story = {
     camera: () => Promise.reject(new DOMException('no', 'NotAllowedError')),
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(
       await canvas.findByText('Paste the link shown on your other device.'),
     ).toBeVisible()
@@ -125,7 +125,7 @@ export const CameraDenied: Story = {
 /** The link text is pasted and used. */
 export const Filled: Story = {
   play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await submitText(canvas, QR_TEXT)
     await expect(args.calls.start).toHaveBeenCalledWith('joiner', 'scan', QR_TEXT)
   },
@@ -135,7 +135,7 @@ export const Filled: Story = {
 export const Refused: Story = {
   args: { calls: createRefusal('This text is not the link of a QR code.') },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await submitText(canvas, 'nonsense')
     await expect(await canvas.findByRole('alert')).toHaveTextContent('not the link of a QR code')
   },
@@ -144,7 +144,7 @@ export const Refused: Story = {
 /** The link text is accepted and the other device has to answer. */
 export const WaitingForTheOtherDevice: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await submitText(canvas, QR_TEXT)
     await expect(await canvas.findByText('Waiting for the other device')).toBeVisible()
     await expect(canvas.getByText('Studio laptop')).toBeVisible()
@@ -157,7 +157,7 @@ export const AskedToJoin: Story = {
     calls: createCalls(joiner({ phase: 'confirmAccount', accountFingerprint: '3F2A 91C0' })),
   },
   play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await submitText(canvas, QR_TEXT)
     await expect(await canvas.findByText('Use identity 3F2A 91C0 on this device?')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Use identity' }))
@@ -169,7 +169,7 @@ export const AskedToJoin: Story = {
 export const Linked: Story = {
   args: { calls: createCalls(joiner({ phase: 'linked' })) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await submitText(canvas, QR_TEXT)
     await expect(await canvas.findByText('The device is linked')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Done' })).toBeVisible()
@@ -180,7 +180,7 @@ export const Linked: Story = {
 export const Failed: Story = {
   args: { calls: createCalls(joiner({ phase: 'failed', reason: 'declined' })) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await submitText(canvas, QR_TEXT)
     await expect(await canvas.findByRole('alert')).toHaveTextContent('The new device was declined.')
     await expect(canvas.getByRole('button', { name: 'Try again' })).toBeVisible()
@@ -191,7 +191,7 @@ export const Failed: Story = {
 export const Preparing: Story = {
   args: { calls: createCalls(joiner({ phase: 'waitingForChannel', qrText: '' })) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await submitText(canvas, QR_TEXT)
     await expect(await canvas.findByText('Preparing the link')).toBeVisible()
   },
@@ -201,7 +201,7 @@ export const Preparing: Story = {
 export const Timeout: Story = {
   args: { stallMs: 1000, calls: createCalls(joiner({ phase: 'waitingForChannel', qrText: '' })) },
   play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await submitText(canvas, QR_TEXT)
     await expect(
       await canvas.findByText(/Can't connect right now/, undefined, { timeout: 8000 }),

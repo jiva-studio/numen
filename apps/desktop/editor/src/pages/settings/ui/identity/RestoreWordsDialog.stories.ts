@@ -43,7 +43,7 @@ type Story = StoryObj<Knobs>
 /** Nothing entered: no message line and Restore waits. */
 export const Empty: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('dialog', { name: 'Recovery words' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Restore' })).toBeDisabled()
   },
@@ -52,7 +52,7 @@ export const Empty: Story = {
 /** The 12 words are recognized. */
 export const Words: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('textbox'))
     await userEvent.paste(PHRASE)
     await expect(canvas.getByText('12 words recognized')).toBeVisible()
@@ -64,6 +64,6 @@ export const Words: Story = {
 export const Busy: Story = {
   args: { isBusy: true },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('textbox')).toBeDisabled()
+    await expect(within(canvasElement.ownerDocument.body).getByRole('textbox')).toBeDisabled()
   },
 }

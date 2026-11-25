@@ -40,7 +40,7 @@ type Story = StoryObj<IdentitySetupProps>
 /** Three empty fields and a Continue that waits. */
 export const Empty: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('dialog', { name: 'Check the words' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled()
   },
@@ -50,7 +50,7 @@ export const Empty: Story = {
 export const Filled: Story = {
   args: { entered: { 2: 'basil', 5: 'fjord', 9: 'ivory' }, isComplete: true },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('button', { name: 'Continue' })).toBeEnabled()
+    await expect(within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Continue' })).toBeEnabled()
   },
 }
 
@@ -58,7 +58,7 @@ export const Filled: Story = {
 export const Mistaken: Story = {
   args: { entered: { 2: 'basil', 5: 'wrong', 9: 'ivory' }, wrong: [5], problem: 'Check the words.' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('alert')).toHaveTextContent('Check the words.')
+    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent('Check the words.')
   },
 }
 
@@ -66,7 +66,7 @@ export const Mistaken: Story = {
 export const Busy: Story = {
   args: { isBusy: true, isComplete: true },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('button', { name: 'Back' })).toBeDisabled()
     await userEvent.tab()
   },

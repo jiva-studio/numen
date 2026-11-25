@@ -49,7 +49,7 @@ type Story = StoryObj<IdentitySetupProps>
 /** The twelve words, shown once, and the warning that the words cannot be recovered. */
 export const Words: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('dialog', { name: 'Recovery words' })).toBeVisible()
     await expect(canvas.getByText('amber')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'I wrote the words down' }))
@@ -60,7 +60,7 @@ export const Words: Story = {
 /** Cancel closes the dialog. */
 export const Cancelled: Story = {
   play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Cancel' }))
+    await userEvent.click(within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Cancel' }))
     await expect(onCancel).toHaveBeenCalled()
   },
 }

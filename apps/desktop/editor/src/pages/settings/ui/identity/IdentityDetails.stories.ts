@@ -102,7 +102,7 @@ type Story = StoryObj<Knobs>
 /** Both cards: Delete in the header of the identity, Link a new device in the header of the devices. */
 export const Loaded: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('button', { name: 'Link a new device' })).toBeVisible()
     await expect(canvas.getAllByRole('button', { name: 'Remove' })).toHaveLength(1)
   },
@@ -112,14 +112,14 @@ export const Loaded: Story = {
 export const Alone: Story = {
   args: { devices: [THIS_DEVICE] },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole('button', { name: 'Remove' })).toBeNull()
+    await expect(within(canvasElement.ownerDocument.body).queryByRole('button', { name: 'Remove' })).toBeNull()
   },
 }
 
 /** The header action opens the link dialog over the tab, and the link waits for the server. */
 export const Linking: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('button', { name: 'Link a new device' }))
     await expect(
       await canvas.findByRole('dialog', { name: 'Link a device' }),
@@ -131,7 +131,7 @@ export const Linking: Story = {
 /** Revoking another device asks first, in the shared dialog. */
 export const Revoking: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('button', { name: 'Remove' }))
     await expect(await canvas.findByRole('alertdialog', { name: 'Remove this device?' })).toBeVisible()
   },
@@ -142,7 +142,7 @@ export const Deleting: Story = {
   args: { isAskingDelete: true },
   play: async ({ canvasElement }) => {
     await expect(
-      await within(canvasElement).findByRole('alertdialog', { name: 'Delete the identity from this device?' }),
+      await within(canvasElement.ownerDocument.body).findByRole('alertdialog', { name: 'Delete the identity from this device?' }),
     ).toBeVisible()
   },
 }

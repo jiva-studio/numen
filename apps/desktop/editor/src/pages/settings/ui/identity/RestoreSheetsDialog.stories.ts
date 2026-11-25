@@ -36,7 +36,7 @@ type Story = StoryObj<Knobs>
 /** Two waiting slots and no text field. */
 export const Waiting: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('dialog', { name: 'Recovery kit: scan' })).toBeVisible()
     await expect(canvas.getByText('First sheet')).toBeVisible()
     await expect(canvas.queryByRole('textbox')).toBeNull()
@@ -47,7 +47,7 @@ export const Waiting: Story = {
 export const OneScanned: Story = {
   args: { slots: [3, undefined] },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByText('Sheet 3')).toBeVisible()
     await expect(canvas.getByText('Second sheet')).toBeVisible()
   },
@@ -57,7 +57,7 @@ export const OneScanned: Story = {
 export const Refused: Story = {
   args: { slots: [3, undefined], note: 'Sheet 3 is scanned already. Scan another sheet.' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('alert')).toHaveTextContent('scanned already')
+    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent('scanned already')
   },
 }
 
@@ -65,7 +65,7 @@ export const Refused: Story = {
 export const Restoring: Story = {
   args: { slots: [3, 1], isBusy: true },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Restoring…')).toBeVisible()
+    await expect(within(canvasElement.ownerDocument.body).getByText('Restoring…')).toBeVisible()
   },
 }
 
@@ -73,7 +73,7 @@ export const Restoring: Story = {
 export const Failed: Story = {
   args: { slots: [3, 1], problem: 'The sheets belong to another identity.' },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('alert')).toHaveTextContent('another identity')
     await expect(canvas.queryByRole('button', { name: 'Try again' })).toBeNull()
   },

@@ -103,7 +103,7 @@ export const DetailsOpenFromTheInfoButton: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     const button = canvas.getByRole('button', { name: 'About Hooks & skills' })
     await expect(canvas.queryByRole('button', { name: 'About Soft wrap' })).toBeNull()
 

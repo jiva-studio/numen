@@ -36,6 +36,7 @@ func getUnservedProcedures() []string {
 	return []string{
 		numenv1connect.LogServiceGetLogLevelProcedure, numenv1connect.LogServiceSetLogLevelProcedure,
 		numenv1connect.LogServiceWatchLogsProcedure, numenv1connect.PluginHealthServiceWatchHealthProcedure,
+		numenv1connect.SearchServiceSearchNamesProcedure, numenv1connect.SearchServiceCancelSearchProcedure,
 	}
 }
 

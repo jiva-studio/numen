@@ -33,7 +33,7 @@ const CHOOSE = '<KeyFileDialog :problem="\'\'" :is-busy="false" @choose="onChoos
 export const ChoosePassphrase: Story = {
   render: () => frame(CHOOSE, { KeyFileDialog }),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('dialog', { name: 'Key storage' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Continue' })).toBeDisabled()
     await userEvent.type(canvas.getByLabelText('Passphrase'), 'moon river')
@@ -47,7 +47,7 @@ export const ChoosePassphrase: Story = {
 export const ChooseMismatch: Story = {
   render: () => frame(CHOOSE, { KeyFileDialog }),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.type(canvas.getByLabelText('Passphrase'), 'moon river')
     await userEvent.type(canvas.getByLabelText('Repeat the passphrase'), 'moon')
     await expect(canvas.getByRole('alert')).toHaveTextContent('not the same')
@@ -59,7 +59,7 @@ export const ChooseMismatch: Story = {
 export const ChoosePlainFile: Story = {
   render: () => frame(CHOOSE, { KeyFileDialog }),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('radio', { name: /Save in a file/ }))
     await expect(canvas.getByText(/Anyone with access to your files/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Continue' }))
@@ -75,7 +75,7 @@ export const ChooseRefused: Story = {
       { KeyFileDialog },
     ),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/could not be saved/)).toBeVisible()
+    await expect(within(canvasElement.ownerDocument.body).getByText(/could not be saved/)).toBeVisible()
   },
 }
 
@@ -87,7 +87,7 @@ export const UnlockAtStart: Story = {
       { KeyFileUnlockDialog },
     ),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.type(canvas.getByLabelText('Passphrase'), 'moon river')
     await userEvent.click(canvas.getByRole('button', { name: 'Unlock' }))
     await expect(onUnlock).toHaveBeenCalledWith('moon river')
@@ -102,7 +102,7 @@ export const UnlockWrongPassphrase: Story = {
       { KeyFileUnlockDialog },
     ),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('alert')).toHaveTextContent('does not open')
+    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent('does not open')
   },
 }
 
@@ -114,7 +114,7 @@ export const RowPassphrase: Story = {
       { KeyFileRow },
     ),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByText('Where keys are kept')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Change' })).toBeVisible()
   },

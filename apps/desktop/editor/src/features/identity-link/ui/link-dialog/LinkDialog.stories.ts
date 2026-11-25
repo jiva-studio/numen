@@ -49,7 +49,7 @@ const peer = (overrides: Parameters<typeof createInfo>[0] = {}) =>
 /** The QR code, the steps, the Copy link button and what is waited for. */
 export const ShowingQr: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(await canvas.findByRole('dialog', { name: 'Link a device' })).toBeVisible()
     await expect(canvas.getByRole('img', { name: 'QR code' })).toBeVisible()
     await expect(
@@ -66,7 +66,7 @@ export const ShowingQr: Story = {
 export const Preparing: Story = {
   args: { calls: createCalls(createInfo({ phase: 'waitingForChannel', qrText: '' })) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(await canvas.findByRole('button', { name: 'Copy link' })).toBeDisabled()
   },
 }
@@ -78,7 +78,7 @@ export const Timeout: Story = {
     calls: createCalls(createInfo({ phase: 'waitingForChannel', qrText: '' })),
   },
   play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(
       await canvas.findByText(/Can't connect right now/, undefined, { timeout: 8000 }),
     ).toBeVisible()
@@ -91,7 +91,7 @@ export const Timeout: Story = {
 export const Refused: Story = {
   args: { calls: createRefusal('Another link is running.') },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(await canvas.findByRole('alert')).toHaveTextContent('Another link is running.')
   },
 }
@@ -100,7 +100,7 @@ export const Refused: Story = {
 export const NewDeviceAsked: Story = {
   args: { calls: createCalls(peer()) },
   play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(await canvas.findByText('Phone')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Link device' }))
     await expect(args.calls.decide).toHaveBeenCalledWith(true)
@@ -111,7 +111,7 @@ export const NewDeviceAsked: Story = {
 export const Declined: Story = {
   args: { calls: createCalls(peer()) },
   play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(await canvas.findByRole('button', { name: "Don't link" }))
     await expect(args.calls.decide).toHaveBeenCalledWith(false)
   },
@@ -121,7 +121,7 @@ export const Declined: Story = {
 export const Linked: Story = {
   args: { calls: createCalls(createInfo({ phase: 'linked' })) },
   play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(await canvas.findByText('The device is linked')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Done' }))
     await expect(args.onClose).toHaveBeenCalled()
@@ -132,7 +132,7 @@ export const Linked: Story = {
 export const Failed: Story = {
   args: { calls: createCalls(createInfo({ phase: 'failed', reason: 'staleChain' })) },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(await canvas.findByRole('alert')).toHaveTextContent(
       'The identity changed while linking.',
     )

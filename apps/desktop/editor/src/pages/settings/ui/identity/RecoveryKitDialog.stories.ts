@@ -47,7 +47,7 @@ type Story = StoryObj<Knobs>
 /** Nothing entered: the save waits. */
 export const Empty: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByRole('button', { name: 'Download PDF' })).toBeDisabled()
   },
 }
@@ -55,7 +55,7 @@ export const Empty: Story = {
 /** The 12 words are entered and the kit is saved. */
 export const Filled: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('textbox'))
     await userEvent.paste(PHRASE)
     const button = canvas.getByRole('button', { name: 'Download PDF' })
@@ -69,7 +69,7 @@ export const Filled: Story = {
 export const Refused: Story = {
   args: { problem: 'These words do not belong to this identity.' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('alert')).toHaveTextContent('do not belong')
+    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent('do not belong')
   },
 }
 
@@ -77,6 +77,6 @@ export const Refused: Story = {
 export const Busy: Story = {
   args: { isBusy: true },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('button', { name: 'Saving…' })).toBeDisabled()
+    await expect(within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Saving…' })).toBeDisabled()
   },
 }
