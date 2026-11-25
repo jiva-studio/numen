@@ -74,7 +74,7 @@ func getIndexPermissions() map[string]string {
 		numenv1connect.HostSearchServiceSampleSimilaritiesProcedure:  manifest.PermissionIndexRead,
 		numenv1connect.HostSearchServiceGetBestSimilarityProcedure:   manifest.PermissionIndexRead,
 		numenv1connect.HostSearchServiceFindNearestChunksProcedure:   manifest.PermissionIndexRead,
-		numenv1connect.HostSearchServiceSearchTextProcedure:          manifest.PermissionIndexRead,
+		numenv1connect.SearchServiceSearchTextProcedure:              manifest.PermissionIndexRead,
 		numenv1connect.HostSearchServiceStartSearchProcedure:         manifest.PermissionIndexRead,
 		numenv1connect.HostSearchServiceGetSearchProcedure:           manifest.PermissionIndexRead,
 		numenv1connect.HostSearchServiceDeleteSearchProcedure:        manifest.PermissionIndexRead,

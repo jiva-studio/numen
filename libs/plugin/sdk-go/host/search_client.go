@@ -14,10 +14,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// SearchClient works the search index and the search floor through HostSearchService.
+// SearchClient works the search index and the search floor through HostSearchService and SearchService.
 type SearchClient struct {
-	rpc   numenv1connect.HostSearchServiceClient
-	vault string
+	rpc        numenv1connect.HostSearchServiceClient
+	textSearch numenv1connect.SearchServiceClient
+	vault      string
 }
 
 var (
@@ -41,7 +42,11 @@ func NewSearchClient(endpoint hostcall.Endpoint) *SearchClient {
 }
 
 func newSearchClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *SearchClient {
-	return &SearchClient{rpc: numenv1connect.NewHostSearchServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...)}
+	opts := transport.BuildOptions(endpoint)
+	return &SearchClient{
+		rpc:        numenv1connect.NewHostSearchServiceClient(httpClient, endpoint.BaseURL, opts...),
+		textSearch: numenv1connect.NewSearchServiceClient(httpClient, endpoint.BaseURL, opts...),
+	}
 }
 
 // With returns the client for the vault with the given identity, used as the shown vault is. A call on
@@ -188,7 +193,7 @@ func (c *SearchClient) SearchText(ctx context.Context, query SearchResultQuery) 
 	for i, kind := range query.Kinds {
 		kinds[i] = string(kind)
 	}
-	res, err := c.rpc.SearchText(ctx, newSearchRequest(c, &v1.HostSearchServiceSearchTextRequest{
+	res, err := c.textSearch.SearchText(ctx, newSearchRequest(c, &v1.SearchTextRequest{
 		Query: query.Query, Limit: clampInt32(query.Limit), ResultsPerSource: clampInt32(query.ResultsPerSource),
 		Kinds: kinds, PathPrefix: query.PathPrefix,
 	}))

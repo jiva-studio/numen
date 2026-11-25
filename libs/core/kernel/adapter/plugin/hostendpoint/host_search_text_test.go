@@ -37,9 +37,9 @@ func (s *recordingSearch) FindNearestChunks(_ context.Context, v domain.Vault, _
 func TestHostSearchTextReturnPlacesAndCheckPermission(t *testing.T) {
 	search := &recordingSearch{}
 	fakeCallers := newSearchCallers(search)
-	client := newSearchClient(t, fakeCallers, "token-a")
+	client := newTextSearchClient(t, fakeCallers, "token-a")
 
-	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{
+	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "heron", Limit: 5, Kinds: []string{"file"}, PathPrefix: "library/",
 	}))
 	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || len(got.Msg.GetResults()) != 2 {
@@ -65,10 +65,10 @@ func TestHostSearchTextReturnPlacesAndCheckPermission(t *testing.T) {
 
 func TestHostSearchTextDenyPluginWithoutPermission(t *testing.T) {
 	fakeCallers := newSearchCallers(&recordingSearch{})
-	denied := newSearchClient(t, fakeCallers, "token-b")
+	denied := newTextSearchClient(t, fakeCallers, "token-b")
 	if _, err := denied.SearchText(
 		t.Context(),
-		connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{Query: "heron"}),
+		connect.NewRequest(&v1.SearchTextRequest{Query: "heron"}),
 	); readCode(
 		t,
 		err,
@@ -80,16 +80,16 @@ func TestHostSearchTextDenyPluginWithoutPermission(t *testing.T) {
 func TestHostSearchTextRejectUnknownVaultAndKind(t *testing.T) {
 	search := &recordingSearch{}
 	fakeCallers := newSearchCallers(search)
-	client := newSearchClient(t, fakeCallers, "token-a")
+	client := newTextSearchClient(t, fakeCallers, "token-a")
 
-	unknown := connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{Query: "heron"})
+	unknown := connect.NewRequest(&v1.SearchTextRequest{Query: "heron"})
 	unknown.Header().Set("Numen-Vault", "v9")
 	if _, err := client.SearchText(t.Context(), unknown); readCode(t, err) != connect.CodeNotFound {
 		t.Errorf("an unknown vault got %v, want not found", err)
 	}
 	if _, err := client.SearchText(
 		t.Context(),
-		connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{Query: "heron", Kinds: []string{"book"}}),
+		connect.NewRequest(&v1.SearchTextRequest{Query: "heron", Kinds: []string{"book"}}),
 	); readCode(
 		t,
 		err,
@@ -103,8 +103,8 @@ func TestHostSearchTextRejectUnknownVaultAndKind(t *testing.T) {
 
 func TestHostSearchWithoutIndexReportsNoIndex(t *testing.T) {
 	fakeCallers := newSearchCallers(nil)
-	client := newSearchClient(t, fakeCallers, "token-a")
-	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{Query: "heron"}))
+	client := newTextSearchClient(t, fakeCallers, "token-a")
+	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{Query: "heron"}))
 	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_MODEL {
 		t.Errorf("returned %v (%v), want the no-index error", got.Msg, err)
 	}
@@ -120,8 +120,8 @@ func (s *farSearch) SearchText(context.Context, domain.Vault, plugin.SearchResul
 }
 
 func TestHostSearchTextRejectsResultBeyondWireRange(t *testing.T) {
-	client := newSearchClient(t, newSearchCallers(&farSearch{}), "token-a")
-	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{Query: "heron"}))
+	client := newTextSearchClient(t, newSearchCallers(&farSearch{}), "token-a")
+	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{Query: "heron"}))
 	if readCode(t, err) != connect.CodeOutOfRange {
 		t.Errorf("a passage ending past the largest range returned %v (%v), want out of range", got, err)
 	}

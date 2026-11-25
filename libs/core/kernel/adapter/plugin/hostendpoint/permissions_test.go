@@ -23,7 +23,7 @@ func getMountedServices() []string {
 		numenv1connect.HostDependencyServiceName, numenv1connect.ConnectionCallServiceName,
 		numenv1connect.HostAccountServiceName, numenv1connect.HostStoreServiceName,
 		numenv1connect.HostTextServiceName, numenv1connect.HostQueueServiceName,
-		numenv1connect.HostSearchServiceName, numenv1connect.PluginToolServiceName,
+		numenv1connect.HostSearchServiceName, numenv1connect.SearchServiceName, numenv1connect.PluginToolServiceName,
 		numenv1connect.HostWindowServiceName, numenv1connect.PluginHealthServiceName,
 		numenv1connect.HostProcessServiceName, numenv1connect.LogServiceName,
 		numenv1connect.HostVaultServiceName, numenv1connect.VaultsServiceName,

@@ -19,9 +19,9 @@ service SearchService {
   rpc SearchNames(SearchNamesRequest) returns (SearchNamesResponse);
 
   // SearchText is the text a vault holds that answers what was typed, by
-  // the words in it or by what it means or by what a section is called. The
-  // caller says which way it is asked, so a client drawing them apart asks once
-  // for each.
+  // the words in it or by what it means or by what a section is called. On the
+  // window endpoint the caller names a mode; on the host endpoint it runs the
+  // hybrid search and requires index:read.
   rpc SearchText(SearchTextRequest) returns (SearchTextResponse);
 
   // CancelSearch stops the SearchNames or SearchText call that carries the
@@ -103,6 +103,18 @@ message SearchTextRequest {
   // The id CancelSearch names this call by, chosen by the client and unique
   // among its calls. Empty when the call cannot be cancelled.
   string search_id = 4;
+
+  // The kinds of source to search, "note" or "file". Empty means every kind.
+  repeated string kinds = 5;
+
+  // Limits the search to the sources whose path starts with it, relative to the
+  // vault, in either Unicode form (NFC or NFD). The index applies it, so the
+  // limit counts search results under the prefix. Empty means the whole vault.
+  string path_prefix = 6;
+
+  // Maximum search results of one source. Zero or less takes the endpoint default;
+  // above the limit means the limit.
+  int32 results_per_source = 7;
 }
 
 message CancelSearchRequest {
@@ -112,8 +124,10 @@ message CancelSearchRequest {
 message CancelSearchResponse {}
 
 message SearchTextResponse {
-  // The search results that answer, best first, one per source.
+  // The search results that answer, best first.
   repeated SearchResult results = 1;
+
+  ErrorCode error = 2;
 }
 
 // SearchResult is what a search returns: the text around a hit, and where it came
