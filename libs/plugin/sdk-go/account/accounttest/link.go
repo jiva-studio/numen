@@ -312,6 +312,9 @@ func (s *service) AdoptChain(_ context.Context, req *connect.Request[v1.AdoptCha
 	if err != nil || !chain.IsExtensionOf(f.record.Chain) {
 		return nil, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
+	if wrapped, ok := chain.GetWrappedFor(f.record.Device.SignerKey()); ok && chain.Epoch() > f.record.Chain.Epoch() {
+		f.record.Wrapped = wrapped
+	}
 	f.record.Chain = chain
 	return connect.NewResponse(&v1.AdoptChainResponse{}), nil
 }

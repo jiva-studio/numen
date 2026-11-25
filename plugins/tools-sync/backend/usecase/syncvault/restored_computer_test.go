@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
-func TestSyncVault_ARestoreFromTheWordsOnAnotherComputerLeavesTheFirstComputerActive(t *testing.T) {
+func TestSyncVault_RestoreOnAnotherComputerKeepsTheFirstComputerWorking(t *testing.T) {
 	clock := synctest.NewClock(synctest.GetStart())
 	server := synctest.NewServer(t, clock, fakeserver.Config{})
 	words := synctest.NewWords(t)
