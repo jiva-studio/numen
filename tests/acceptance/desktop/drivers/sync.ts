@@ -176,7 +176,7 @@ export class SyncDriver {
 
   /** Starts a trial of the plan on the identity, as the stand-in of the payment does for an identity that asked for one. */
   async startTrial(plan: string): Promise<void> {
-    await this.expectSessionForAccount()
+    await this.expectSignedIn()
     const ends = await this.sendAdminRequest(`/admin/trial?plan=${plan.toLowerCase()}`, 'the start of the trial')
     this.trial = { plan, endsAt: new Date(ends.trim()) }
   }
@@ -378,10 +378,6 @@ export class SyncDriver {
 
   /** Expects a session of the identity: the plugin signed in with it. */
   async expectSignedIn(): Promise<void> {
-    await this.expectSessionForAccount()
-  }
-
-  async expectSessionForAccount(): Promise<void> {
     const account = this.identity.getAccountFingerprint()
     await expect
       .poll(async () => (await this.readSessions()).map((one) => one.accountFingerprint), { timeout: 15_000 })

@@ -27,7 +27,7 @@ export class SyncedFilesDriver {
   /** Puts a file in the vault: a sample when the file has an extension that has one and no size, else bytes of the size. */
   addFile(computer: ComputerName, filePath: string, megabytes: number | undefined, vault: string): void {
     const { world, vault: name } = this.computers.getPlace(computer, vault)
-    const sample = SAMPLE_OF_EXTENSION[path.extname(filePath).toLowerCase()]
+    const sample = SAMPLE_OF_EXTENSION[path.extname(filePath).toLowerCase()] as string | undefined
     if (megabytes === undefined && sample !== undefined) world.copySample(name, getSampleKind(sample), filePath, sample)
     else world.writeBytes(name, filePath, buildFixture(filePath, megabytes))
   }
