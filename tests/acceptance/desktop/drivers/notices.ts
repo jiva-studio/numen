@@ -3,12 +3,20 @@ import { expect } from 'playwright/test'
 import type { ComputerDriver } from './computer.js'
 import type { SharedReaderDriver } from './shared-reader.js'
 import type { SharingDriver } from './sharing.js'
-import { readSyncWarnings } from './sync.js'
+import type { Scenario } from './scenario.js'
+import { SYNC_PLUGIN } from './sync.js'
 
 /** A notice shows within a few passes of the plugin on both computers. */
 const TOLD_LIMIT_MS = 20_000
 
 const escapePattern = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** The warnings the application lists for the plugin "Numen Sync" of a computer. */
+const readSyncWarnings = async (scenario: Scenario): Promise<string[]> => {
+  const head = await scenario.getServer().readStreamHead('PluginHealthService/WatchHealth', {})
+  const items = (head['items'] ?? []) as { pluginId?: string; text?: string }[]
+  return items.flatMap((one) => (one.pluginId === SYNC_PLUGIN && one.text !== undefined ? [one.text] : []))
+}
 
 export class NoticeDriver {
   constructor(

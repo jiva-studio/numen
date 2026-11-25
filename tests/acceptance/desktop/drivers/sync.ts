@@ -20,7 +20,7 @@ import type { Scenario } from './scenario.js'
 
 const SYNCSERVER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tools/syncserver')
 const BINARY = path.join(SYNCSERVER, 'bin', 'fakesync')
-const SYNC_PLUGIN = 'md.numen.tools.sync'
+export const SYNC_PLUGIN = 'md.numen.tools.sync'
 /** The server lets a session live this long, so the plugin signs in again 2 seconds after it signed in. */
 const SESSION_SECONDS = 62
 /** How often the plugin asks the server for changes, so a scenario waits seconds and not half a minute. */
@@ -139,13 +139,6 @@ export const findBackendPids = (processes: string, backend: string): number[] =>
     .split('\n')
     .map((line) => /^\s*(\d+)\s+(\S+)/.exec(line))
     .flatMap((found) => (found?.[1] !== undefined && found[2].endsWith(`/bin/${backend}`) ? [Number(found[1])] : []))
-
-/** The warnings the application lists for the plugin "Numen Sync" of a computer. */
-export const readSyncWarnings = async (scenario: Scenario): Promise<string[]> => {
-  const head = await scenario.getServer().readStreamHead('PluginHealthService/WatchHealth', {})
-  const items = (head['items'] ?? []) as { pluginId?: string; text?: string }[]
-  return items.flatMap((one) => (one.pluginId === SYNC_PLUGIN && one.text !== undefined ? [one.text] : []))
-}
 
 export class SyncDriver {
   private running: RunningSync | undefined
