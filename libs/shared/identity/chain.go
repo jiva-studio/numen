@@ -138,27 +138,12 @@ func (c Chain) Verify() error {
 	}
 	var state roster
 	for i, entry := range c.entries {
-		if (i == 0) != (entry.Kind == KindGenesis) {
-			return fmt.Errorf("%w: entry %d has kind %d", ErrMalformed, i, entry.Kind)
-		}
-		if err := checkLink(c.entries, i); err != nil {
+		if err := verifyEntry(c.entries, i, &state); err != nil {
 			return err
 		}
-		if i == 0 {
-			root, err := verifyGenesis(entry)
-			if err != nil {
-				return err
-			}
-			state = newRoster(root)
-			continue
+		if i > 0 {
+			state.apply(entry)
 		}
-		if entry.Time.Before(c.entries[i-1].Time) {
-			return fmt.Errorf("%w: entry %d is older than the entry before", ErrEntryTime, i)
-		}
-		if err := state.verify(entry, i); err != nil {
-			return err
-		}
-		state.apply(entry)
 	}
 	if len(c.Bytes()) > MaxChainBytes {
 		return fmt.Errorf("%w: more than %d bytes", ErrChainTooLong, MaxChainBytes)
@@ -364,4 +349,26 @@ func (e Entry) keyChange() *Revoke {
 		return e.Revoke
 	}
 	return nil
+}
+
+func verifyEntry(entries []Entry, i int, state *roster) error {
+	entry := entries[i]
+	if (i == 0) != (entry.Kind == KindGenesis) {
+		return fmt.Errorf("%w: entry %d has kind %d", ErrMalformed, i, entry.Kind)
+	}
+	if err := checkLink(entries, i); err != nil {
+		return err
+	}
+	if i == 0 {
+		root, err := verifyGenesis(entry)
+		if err != nil {
+			return err
+		}
+		*state = newRoster(root)
+		return nil
+	}
+	if entry.Time.Before(entries[i-1].Time) {
+		return fmt.Errorf("%w: entry %d is older than the entry before", ErrEntryTime, i)
+	}
+	return state.verify(entry, i)
 }
