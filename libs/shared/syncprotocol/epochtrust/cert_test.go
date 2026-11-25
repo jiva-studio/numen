@@ -189,7 +189,7 @@ func hexOf(key []byte) string { return hex.EncodeToString(key) }
 
 func TestGetRoots_IgnoresTheRootOfTheSettingForEverySpellingOfTheDefaultServer(t *testing.T) {
 	t.Parallel()
-	public, _ := newKey(t, 7)
+	_, public := newKey(t, 7)
 	for _, address := range []string{
 		"https://sync.numen.md",
 		"https://sync.numen.md/",
@@ -207,7 +207,7 @@ func TestGetRoots_IgnoresTheRootOfTheSettingForEverySpellingOfTheDefaultServer(t
 
 func TestGetRoots_ReturnsOnlyTheRootOfTheSettingForAnotherServer(t *testing.T) {
 	t.Parallel()
-	public, _ := newKey(t, 7)
+	_, public := newKey(t, 7)
 	for _, address := range []string{"https://sync.example.com", "https://sync.numen.md:8443", "http://sync.numen.md", "https://evilsync.numen.md"} {
 		roots, err := epochtrust.GetRoots(address, hexOf(public))
 		if err != nil || len(roots) != 1 || !bytes.Equal(roots[0], public) {
