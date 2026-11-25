@@ -268,3 +268,37 @@ func TestAcceptInvitation_RefusesAnOwnerChainShorterThanTheOneOfTheInvitation(t 
 		t.Error("an invitation was accepted over an owner chain shorter than its own, want a refusal")
 	}
 }
+
+type recordingVaults struct {
+	ports.VaultList
+	removed []domain.VaultID
+}
+
+func (r *recordingVaults) RemoveVault(ctx context.Context, id domain.VaultID) (string, error) {
+	r.removed = append(r.removed, id)
+	return r.VaultList.RemoveVault(ctx, id)
+}
+
+type refusingLocker struct{}
+
+func (refusingLocker) LockVault(context.Context, domain.VaultID) (func(), error) {
+	return nil, errors.New("the lock is refused")
+}
+
+func TestAcceptInvitation_RemovesTheVaultItAddedWhenItCannotLockIt(t *testing.T) {
+	w := newWorld(t)
+	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
+	w.syncOwner(t)
+	invitation := w.shareWith(t, w.reader, "Anna")
+	deps := w.reader.ReceiveDeps()
+	vaults := &recordingVaults{VaultList: deps.Vaults}
+	deps.Vaults, deps.Locker = vaults, refusingLocker{}
+
+	if _, err := receive.NewAcceptInvitation(deps).Execute(t.Context(), invitation.Text); err == nil {
+		t.Fatal("the refused lock was not seen")
+	}
+
+	if len(vaults.removed) != 1 {
+		t.Errorf("removed vaults = %v, want the one vault that was added", vaults.removed)
+	}
+}

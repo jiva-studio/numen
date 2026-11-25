@@ -210,16 +210,23 @@ func (u *AcceptInvitation) receive(ctx context.Context, o opened, read followed)
 	}
 	unlock, err := u.deps.Locker.LockVault(ctx, vault.ID)
 	if err != nil {
-		return Accepted{}, err
+		return Accepted{}, u.dropVault(ctx, vault.ID, err)
 	}
 	defer unlock()
 	if err := u.writeLink(ctx, vault.ID, o, read); err != nil {
-		return Accepted{}, err
+		return Accepted{}, u.dropVault(ctx, vault.ID, err)
 	}
 	if err := u.runFirstPass(ctx, vault.ID); err != nil {
 		return Accepted{}, err
 	}
 	return Accepted{VaultID: vault.ID, Name: vault.Name}, nil
+}
+
+func (u *AcceptInvitation) dropVault(ctx context.Context, id domain.VaultID, cause error) error {
+	if _, err := u.deps.Vaults.RemoveVault(context.WithoutCancel(ctx), id); err != nil {
+		return errors.Join(cause, fmt.Errorf("remove the vault of the share: %w", err))
+	}
+	return cause
 }
 
 func (u *AcceptInvitation) joinAgain(ctx context.Context, id domain.VaultID, o opened, read followed) (Accepted, error) {

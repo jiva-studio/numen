@@ -82,6 +82,7 @@ func (u *Leave) Execute(ctx context.Context, id domain.VaultID) error {
 		return err
 	}
 	if _, err := u.deps.Vaults.RemoveVault(ctx, id); err != nil {
+		link.ServerSeq = 0
 		return errors.Join(err, u.deps.Links.WriteLink(ctx, id, link))
 	}
 	return nil
