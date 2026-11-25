@@ -406,7 +406,7 @@ func TestStartRestoreFromKit_RefusesASheetWithAMistakeAndNothingIsPending(t *tes
 	if !errors.Is(err, identitydomain.ErrInvalidSheets) {
 		t.Fatalf("error = %v, want ErrInvalidSheets", err)
 	}
-	var sheetErr *identitylib.SheetError
+	var sheetErr *identitydomain.SheetError
 	if !errors.As(err, &sheetErr) || sheetErr.Position != 2 {
 		t.Errorf("error %v does not name the position 2", err)
 	}
@@ -476,5 +476,26 @@ func TestRecoveryKit_KeepsNoWordNoSecretNoSheetInTheKeyStore(t *testing.T) {
 				t.Errorf("%s holds a recovery secret or a share value", name)
 			}
 		}
+	}
+}
+
+func TestStartRestoreFromKit_NamesThePositionOfTheSheetAndWhetherItRepeatsAnother(t *testing.T) {
+	t.Parallel()
+	k := newKit("Laptop")
+	createdWith(t, k, getLegalWords())
+	made := kitOf(t, k, getLegalWords())
+	twice := [][]string{pick(t, made, 2)[0], pick(t, made, 2)[0]}
+	broken := pick(t, made, 1, 2)
+	broken[1] = withWrongWord(broken[1])
+
+	_, errTwice := restoredOn(t, twice)
+	_, errBroken := restoredOn(t, broken)
+
+	var repeated, wrong *identitydomain.SheetError
+	if !errors.As(errTwice, &repeated) || repeated.Position != 2 || !repeated.IsDuplicate {
+		t.Errorf("the same sheet twice: error = %v, want a SheetError of position 2 that repeats another", errTwice)
+	}
+	if !errors.As(errBroken, &wrong) || wrong.Position != 2 || wrong.IsDuplicate {
+		t.Errorf("a sheet with a mistake: error = %v, want a SheetError of position 2 that repeats none", errBroken)
 	}
 }

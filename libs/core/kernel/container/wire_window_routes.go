@@ -39,7 +39,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	keyfileusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/keyfile"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
@@ -110,7 +109,7 @@ func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultR
 	}
 }
 
-func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock identity.Clock, runs *searchquery.SearchRuns) {
+func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock timeSource, runs *searchquery.SearchRuns) {
 	status := editor.SearchTasks{Tasks: w.page.Window}
 	finds := newSearch(searchDeps, session.index, session.source.searchSource, status.ReportWordsAlone, status.ClearWordsAlone)
 	handler := windowsearch.NewHandler(
@@ -210,7 +209,7 @@ func mountHealth(w *windowRoutes, exec *PluginExecution) {
 	w.Installation.Mount(editor.NewRoute(windowhealth.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
 
-func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer identity.Clock) *logsusecase.Record {
+func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer timeSource) *logsusecase.Record {
 	return logsusecase.NewRecord(entries, logfiles.NewBesideIndex(indexPath), getLevel, timer)
 }
 

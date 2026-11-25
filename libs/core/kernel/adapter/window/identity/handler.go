@@ -15,8 +15,6 @@ import (
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
-	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
-	"github.com/jiva-studio/numen/libs/shared/identity/slip39"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
@@ -218,11 +216,11 @@ func getDetail(err error) string {
 }
 
 func getSheetDetail(err error) string {
-	var sheetErr *identitylib.SheetError
-	if !errors.As(err, &sheetErr) {
+	sheetErr, ok := errors.AsType[*identitydomain.SheetError](err)
+	if !ok {
 		return identitydomain.ErrInvalidSheets.Error()
 	}
-	if errors.Is(err, slip39.ErrDuplicateMember) {
+	if sheetErr.IsDuplicate {
 		return fmt.Sprintf("sheets 1 and %d are the same sheet", sheetErr.Position)
 	}
 	return fmt.Sprintf("sheet %d is not valid", sheetErr.Position)

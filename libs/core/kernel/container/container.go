@@ -6,6 +6,8 @@
 package container
 
 import (
+	"time"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -246,4 +248,9 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		PluginCatalog:   res.PluginCatalog,
 		Keys:            identity.SharedKeys{Store: res.Stores.Keys, CreateLock: getCreateGate(res)},
 	}
+}
+
+type timeSource interface {
+	Now() time.Time
+	After(d time.Duration) <-chan time.Time
 }

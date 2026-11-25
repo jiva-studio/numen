@@ -314,8 +314,8 @@ func TestStartLink_RefusesASecondLinkAndATextThatIsNotAQRCode(t *testing.T) {
 	clock := testsupport.NewClockAt(getNow())
 	host := newLinkDevice("Laptop", clock)
 	host.createAccount(t)
-	if _, err := host.start().Execute(t.Context(), identitydomain.LinkRoleHost, identitydomain.LinkModeScan, "https://example.org"); !errors.Is(err, identitylib.ErrLinkPayload) {
-		t.Errorf("a text that is not a link: error = %v, want ErrLinkPayload", err)
+	if _, err := host.start().Execute(t.Context(), identitydomain.LinkRoleHost, identitydomain.LinkModeScan, "https://example.org"); !errors.Is(err, identitydomain.ErrLinkText) {
+		t.Errorf("a text that is not a link: error = %v, want ErrLinkText", err)
 	}
 	if _, err := host.start().Execute(t.Context(), identitydomain.LinkRoleHost, identitydomain.LinkModeShow, ""); err != nil {
 		t.Fatal(err)

@@ -9,7 +9,6 @@ import (
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
-	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
@@ -142,13 +141,13 @@ func getLinkErrorCode(err error) (v1.IdentityErrorCode, bool) {
 	}{
 		{identitydomain.ErrLinkActive, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_ACTIVE},
 		{identitydomain.ErrNoLink, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_LINK},
-		{identitylib.ErrLinkPayload, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_TEXT_INVALID},
+		{identitydomain.ErrLinkText, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LINK_TEXT_INVALID},
 		{identitydomain.ErrLastDevice, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_LAST_DEVICE},
 		{identitydomain.ErrRevokeRaced, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_REVOKE_RACED},
-		{identitylib.ErrSelfRevoke, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE},
+		{identitydomain.ErrOwnDevice, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE},
 		{identitydomain.ErrNoIdentity, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY},
 		{identitydomain.ErrDeviceRevoked, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_DEVICE_REVOKED},
-		{identitylib.ErrUnknownDevice, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNKNOWN_DEVICE},
+		{identitydomain.ErrUnknownDevice, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNKNOWN_DEVICE},
 	}
 	for _, refusal := range refusals {
 		if errors.Is(err, refusal.target) {

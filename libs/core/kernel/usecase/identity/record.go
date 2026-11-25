@@ -30,7 +30,7 @@ func restoreSecret(sheets [][]string) (identitylib.RecoverySecret, error) {
 	for i, words := range sheets {
 		sheet, err := identitylib.ParseSheet(words)
 		if err != nil {
-			return identitylib.RecoverySecret{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidSheets, &identitylib.SheetError{Position: i + 1, Err: err})
+			return identitylib.RecoverySecret{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidSheets, &identitydomain.SheetError{Position: i + 1, IsDuplicate: false, Err: err})
 		}
 		parsed[i] = sheet
 	}
@@ -39,7 +39,7 @@ func restoreSecret(sheets [][]string) (identitylib.RecoverySecret, error) {
 	case errors.Is(err, identitylib.ErrNotEnoughSheets):
 		return identitylib.RecoverySecret{}, fmt.Errorf("%w: %w", identitydomain.ErrNotEnoughSheets, err)
 	case err != nil:
-		return identitylib.RecoverySecret{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidSheets, err)
+		return identitylib.RecoverySecret{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidSheets, mapSheetError(err))
 	}
 	return secret, nil
 }

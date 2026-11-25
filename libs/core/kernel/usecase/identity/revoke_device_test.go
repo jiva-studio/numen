@@ -88,10 +88,10 @@ func TestRevokeDevice_RemovesDeviceFromListAndNextSealUsesNewEpoch(t *testing.T)
 func TestRevokeDevice_RefusesThisDeviceAndAnUnknownDevice(t *testing.T) {
 	t.Parallel()
 	l := newLinkPair(t)
-	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.host)); !errors.Is(err, identitylib.ErrSelfRevoke) {
-		t.Errorf("this device: error = %v, want ErrSelfRevoke", err)
+	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.host)); !errors.Is(err, identitydomain.ErrOwnDevice) {
+		t.Errorf("this device: error = %v, want ErrOwnDevice", err)
 	}
-	if err := l.host.revoke().Execute(t.Context(), "0000 0000 0000 0000 0000 0000 0000 0000"); !errors.Is(err, identitylib.ErrUnknownDevice) {
+	if err := l.host.revoke().Execute(t.Context(), "0000 0000 0000 0000 0000 0000 0000 0000"); !errors.Is(err, identitydomain.ErrUnknownDevice) {
 		t.Errorf("an unknown device: error = %v, want ErrUnknownDevice", err)
 	}
 	if pending, err := l.host.publish().Execute(t.Context()); err != nil || pending.IsPending {

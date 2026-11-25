@@ -4,6 +4,7 @@ package identity
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -78,3 +79,24 @@ type Sheet struct {
 	Number int
 	Words  []string
 }
+
+var (
+	// ErrLinkText means a text is not a link text.
+	ErrLinkText = errors.New("the text is not a link")
+	// ErrOwnDevice means the device to revoke is this device.
+	ErrOwnDevice = errors.New("a device cannot revoke itself")
+	// ErrUnknownDevice means the device is not an active device of the account.
+	ErrUnknownDevice = errors.New("the device is not active in the account")
+)
+
+// SheetError names the sheet that makes a set of sheets invalid by its 1-based position in the sheets given, and
+// whether it repeats an earlier sheet. It carries no word.
+type SheetError struct {
+	Position    int
+	IsDuplicate bool
+	Err         error
+}
+
+func (e *SheetError) Error() string { return fmt.Sprintf("sheet %d: %v", e.Position, e.Err) }
+
+func (e *SheetError) Unwrap() error { return e.Err }

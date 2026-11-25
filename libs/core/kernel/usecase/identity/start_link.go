@@ -26,7 +26,7 @@ func NewStartLink(d Deps) *StartLink {
 
 // Execute starts a link in the mode: show makes a QR code once the courier gave the link a channel, scan reads the text of a QR code.
 // A host needs an identity that was not revoked (ErrNoIdentity, ErrDeviceRevoked); a joiner needs none (ErrIdentityExists). A text that is
-// not a link is identitylib.ErrLinkPayload. Only one link runs at a time (ErrLinkActive); it lasts ten minutes.
+// not a link is ErrLinkText. Only one link runs at a time (ErrLinkActive); it lasts ten minutes.
 func (u *StartLink) Execute(ctx context.Context, role identitydomain.LinkRole, mode identitydomain.LinkMode, scanned string) (identitydomain.Link, error) {
 	store, release := u.links.hold()
 	defer release()
@@ -90,7 +90,7 @@ func (u *StartLink) setHostIdentity(ctx context.Context, link *pendingLink) erro
 func (u *StartLink) readQRText(store *linkStore, link *pendingLink, scanned string) error {
 	payload, err := identitylib.ParseLinkPayload(scanned)
 	if err != nil {
-		return err
+		return mapLinkTextError(err)
 	}
 	scanner, first, err := identitylib.NewLinkScanner(u.random, payload)
 	if err != nil {
