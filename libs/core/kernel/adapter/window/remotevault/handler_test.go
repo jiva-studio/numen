@@ -61,8 +61,8 @@ func newFixture(t *testing.T) *fixture {
 	add := vaults.NewAdd(vaultreader.Identity{}, registry, registry, registry, clock)
 	handler := remotevault.NewHandler(
 		vaults.NewListRemoteVaults(remote),
-		vaults.NewSuggestVaultPath(func() string { return "" }, user, vaultfolder.Folders{}),
-		vaults.NewOpenRemoteVault(registry, registry, vaultfolder.Folders{}, user, add, remote, clock),
+		vaults.NewSuggestVaultPath(func() string { return "" }, user, vaultfolder.Folders{}, vaultfolder.Folders{}),
+		vaults.NewOpenRemoteVault(registry, registry, vaultfolder.Folders{}, vaultfolder.Folders{}, user, add, remote, clock),
 	)
 	mux := http.NewServeMux()
 	mux.Handle(remotevault.NewRoute(handler, connect.WithInterceptors()))

@@ -18,9 +18,11 @@ import (
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
 	windowidentity "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/identity"
+	windowkeyfile "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/keyfile"
 	windowlicense "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/license"
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
+	windowremotevault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/remotevault"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
@@ -29,10 +31,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vaults"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
-	"github.com/jiva-studio/numen/libs/core/kernel/container/wireparts"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfolder"
+	machineadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
@@ -373,13 +376,16 @@ func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultWiring
 }
 
 func mountKeyFile(w *windowRoutes, res *Resources) {
-	if res == nil || res.KeyFile == nil {
-		return
+	if res != nil && res.KeyFile != nil {
+		w.Installation.Mount(editor.NewRoute(windowkeyfile.NewFileRoute(res.KeyFile, w.page.Gate.CountQuestions())))
 	}
-	w.Installation.Mount(wireparts.NewKeyFileRoute(res.KeyFile, w.page.Gate.CountQuestions()))
 }
 
 func mountRemoteVaults(w *windowRoutes, ports registry.Ports, add vault.Add, plugins windowPlugins, now machineport.Clock) {
-	parts := wireparts.RemoteVaults{Ports: ports, Add: add, Provider: plugins.remoteVaults, NewFolder: plugins.newVaultsFolder, Now: now}
-	w.Installation.Mount(wireparts.NewRemoteVaultRoute(parts, w.page.Gate.CountQuestions()))
+	folders, user := vaultfolder.Folders{}, machineadapter.UserFolders{}
+	w.Installation.Mount(editor.NewRoute(windowremotevault.NewRoute(windowremotevault.NewHandler(
+		vault.NewListRemoteVaults(plugins.remoteVaults),
+		vault.NewSuggestVaultPath(plugins.newVaultsFolder, user, folders, folders),
+		vault.NewOpenRemoteVault(ports.Vaults, ports.Remover, folders, folders, user, add, plugins.remoteVaults, now),
+	), w.page.Gate.CountQuestions())))
 }

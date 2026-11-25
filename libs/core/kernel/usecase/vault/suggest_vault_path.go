@@ -22,12 +22,16 @@ type SuggestedPath struct {
 type SuggestVaultPath struct {
 	setting NewVaultsFolder
 	user    UserFolders
+	paths   NewVaultPaths
 	folders NewVaultFolders
 }
 
-// NewSuggestVaultPath creates the suggestion over the setting, the folders of the person and the filesystem.
-func NewSuggestVaultPath(setting NewVaultsFolder, user UserFolders, folders NewVaultFolders) *SuggestVaultPath {
-	return &SuggestVaultPath{setting: setting, user: user, folders: folders}
+// NewSuggestVaultPath creates the suggestion over the setting, the folders of the person, the paths and the
+// filesystem.
+func NewSuggestVaultPath(
+	setting NewVaultsFolder, user UserFolders, paths NewVaultPaths, folders NewVaultFolders,
+) *SuggestVaultPath {
+	return &SuggestVaultPath{setting: setting, user: user, paths: paths, folders: folders}
 }
 
 // Execute returns the folder given, or the setting Folder for new vaults when none is given, or the Documents
@@ -48,12 +52,12 @@ func (u *SuggestVaultPath) Execute(name, chosen string) (SuggestedPath, error) {
 	if !domain.IsAbsPath(folder) {
 		return SuggestedPath{}, newInvalidPath("the folder for new vaults %q is not an absolute path", folder)
 	}
-	folder = u.folders.CleanPath(folder)
+	folder = u.paths.CleanPath(folder)
 	base := getFolderName(name)
-	suggested := SuggestedPath{Folder: folder, Path: u.folders.JoinPath(folder, base)}
+	suggested := SuggestedPath{Folder: folder, Path: u.paths.JoinPath(folder, base)}
 	for number := 1; ; number++ {
 		if number > 1 {
-			suggested.Path = u.folders.JoinPath(folder, fmt.Sprintf("%s %d", base, number))
+			suggested.Path = u.paths.JoinPath(folder, fmt.Sprintf("%s %d", base, number))
 		}
 		state, err := u.folders.GetFolderState(suggested.Path)
 		if err != nil {

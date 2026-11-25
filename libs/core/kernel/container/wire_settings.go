@@ -9,7 +9,6 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/container/wireparts"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
@@ -22,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	vaultusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
@@ -125,10 +123,6 @@ func listAppSettings(c settingsWiring) []plugindomain.Setting {
 		settingsadapter.JSONCodec{}, createSettingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{},
 		getThemeRegistry(c),
 	).Execute()
-}
-
-func getNewVaultsFolder(c settingsWiring) vaultusecase.NewVaultsFolder {
-	return wireparts.NewNewVaultsFolder(func() (settingsadapter.File, error) { return createSettings(c) }, c.HandleError)
 }
 
 func syncSetting(c settingsWiring) naming.SyncSetting {

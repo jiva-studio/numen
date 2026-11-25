@@ -9,8 +9,8 @@ import (
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
+	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/container/wireparts"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -149,8 +149,9 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 		tasks:  tasks, events: exec.Runtime.pluginEventEmitter, vault: exec.Runtime.pluginBinding,
 		triggers:  getTriggerSource(install, exec, settingsDeps, vaultDeps, db.FrontmatterChanges()),
 		startFeed: getFeedStart(exec, settingsDeps, vaultDeps, db), kinds: newTabKinds(exec, settingsDeps, vaultDeps, db),
-		files:        filebridge.NewProvider(exec.Runtime.Activator, exec.Runtime.Resolver),
-		remoteVaults: vaultbridge.NewProvider(exec.Runtime.Activator, exec.Runtime.Resolver), newVaultsFolder: getNewVaultsFolder(settingsDeps),
+		files:           filebridge.NewProvider(exec.Runtime.Activator, exec.Runtime.Resolver),
+		remoteVaults:    vaultbridge.NewProvider(exec.Runtime.Activator, exec.Runtime.Resolver),
+		newVaultsFolder: settingsadapter.NewNewVaultsFolderReader(func() (settingsadapter.File, error) { return createSettings(settingsDeps) }, settingsDeps.HandleError),
 	}
 }
 
@@ -186,7 +187,7 @@ func buildWindow(
 
 	diag := windowsession.NewDiagnostics(opening.Out, page.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
-		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: wireparts.NewIndexSession(indexer),
+		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: indexer.NewWindowSession,
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, indexer, getTextVersions(vaultDeps.TextVersions), diag),
 		Passes:   startVault(vaultDeps, db, current), Triggers: plugins.triggers, StartFeed: plugins.startFeed,
 		Report: editor.ReportVault(vaultDeps.RecordLog),

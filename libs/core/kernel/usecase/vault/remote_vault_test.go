@@ -63,7 +63,7 @@ func newRemoteFixture(t *testing.T) *remoteFixture {
 	provider := &fakeProvider{}
 	parent := t.TempDir()
 	user := fixedFolders{home: filepath.Join(parent, "home"), documents: filepath.Join(parent, "Documents")}
-	open := vaults.NewOpenRemoteVault(registry, registry, vaultfolder.Folders{}, user, add, provider, clock)
+	open := vaults.NewOpenRemoteVault(registry, registry, vaultfolder.Folders{}, vaultfolder.Folders{}, user, add, provider, clock)
 	return &remoteFixture{t: t, registry: registry, provider: provider, parent: parent, open: open}
 }
 
@@ -288,7 +288,7 @@ func TestListRemoteVaults_ProviderFailsOrOffersNothing_ReturnsEmptyList(t *testi
 func newSuggestion(parent, setting string) (*vaults.SuggestVaultPath, string) {
 	documents := filepath.Join(parent, "Documents")
 	user := fixedFolders{home: parent, documents: documents}
-	return vaults.NewSuggestVaultPath(func() string { return setting }, user, vaultfolder.Folders{}), documents
+	return vaults.NewSuggestVaultPath(func() string { return setting }, user, vaultfolder.Folders{}, vaultfolder.Folders{}), documents
 }
 
 func TestTheDocumentsFolderIsWhereANewVaultGoesWhenNoFolderIsSet(t *testing.T) {

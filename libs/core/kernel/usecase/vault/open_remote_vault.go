@@ -12,14 +12,18 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// NewVaultFolders is what the filesystem does for the folder of a new vault.
-type NewVaultFolders interface {
+// NewVaultPaths is the path work of the machine for the folder of a new vault.
+type NewVaultPaths interface {
 	// CleanPath returns the shortest path of the machine that names the same folder.
 	CleanPath(path string) string
 	// GetParentPath returns the path of the folder that holds the path. A disk root is its own parent.
 	GetParentPath(path string) string
 	// JoinPath returns the path of the machine made of the elements.
 	JoinPath(elements ...string) string
+}
+
+// NewVaultFolders is what the filesystem does for the folder of a new vault.
+type NewVaultFolders interface {
 	// GetFolderState returns whether the path exists, whether it is a folder and whether the folder is empty.
 	GetFolderState(path string) (vaultdomain.FolderState, error)
 	// CreateFolder makes the folder at the path. Its parent exists.
@@ -43,6 +47,7 @@ type UserFolders interface {
 type OpenRemoteVault struct {
 	vaults   vaultport.VaultList
 	remover  vaultport.VaultRemover
+	paths    NewVaultPaths
 	folders  NewVaultFolders
 	user     UserFolders
 	add      Add
@@ -53,11 +58,12 @@ type OpenRemoteVault struct {
 // NewOpenRemoteVault creates the opening over the list this installation keeps and its remover, the
 // filesystem, the folders of the person, Add, the provider and the clock.
 func NewOpenRemoteVault(
-	vaults vaultport.VaultList, remover vaultport.VaultRemover, folders NewVaultFolders, user UserFolders, add Add,
+	vaults vaultport.VaultList, remover vaultport.VaultRemover, paths NewVaultPaths, folders NewVaultFolders,
+	user UserFolders, add Add,
 	provider RemoteVaultProvider, now machineport.Clock,
 ) *OpenRemoteVault {
 	return &OpenRemoteVault{
-		vaults: vaults, remover: remover, folders: folders, user: user, add: add, provider: provider, now: now,
+		vaults: vaults, remover: remover, paths: paths, folders: folders, user: user, add: add, provider: provider, now: now,
 	}
 }
 
@@ -66,7 +72,7 @@ func NewOpenRemoteVault(
 // vault. A failure after the folder was made removes the vault from the list again, and removes the folder
 // when this call made it and it holds nothing else.
 func (u *OpenRemoteVault) Execute(ctx context.Context, remoteID, path string) (id domain.VaultID, err error) {
-	path = u.folders.CleanPath(path)
+	path = u.paths.CleanPath(path)
 	state, err := u.checkPath(path)
 	if err != nil {
 		return "", err
@@ -97,17 +103,17 @@ func (u *OpenRemoteVault) checkPath(path string) (vaultdomain.FolderState, error
 	if path == "." || !domain.IsAbsPath(path) {
 		return vaultdomain.FolderState{}, newInvalidPath("%q is not an absolute path", path)
 	}
-	if u.folders.GetParentPath(path) == path {
+	if u.paths.GetParentPath(path) == path {
 		return vaultdomain.FolderState{}, newInvalidPath("%s is a whole disk; a vault is a folder of its own", path)
 	}
 	home, err := u.user.GetHomeFolder()
 	if err != nil {
 		return vaultdomain.FolderState{}, err
 	}
-	if path == u.folders.CleanPath(home) {
+	if path == u.paths.CleanPath(home) {
 		return vaultdomain.FolderState{}, newInvalidPath("%s is the home folder; a vault is a folder of its own", path)
 	}
-	parentPath := u.folders.GetParentPath(path)
+	parentPath := u.paths.GetParentPath(path)
 	parent, err := u.folders.GetFolderState(parentPath)
 	if err != nil {
 		return vaultdomain.FolderState{}, err
