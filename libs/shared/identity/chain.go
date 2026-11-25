@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"slices"
 	"time"
@@ -128,7 +129,8 @@ func (c Chain) AppendDevice(by Signer, device DevicePublicKey, name string, at t
 // MaxChainBytes is the longest encoded chain a device or the server accepts.
 const MaxChainBytes = 192 << 10
 
-// RecoveryReserveBytes is the last part of MaxChainBytes that only entries signed by the recovery key may fill.
+// RecoveryReserveBytes is the last part of MaxChainBytes that only entries signed by the recovery key may fill, so a device that fills the
+// chain with its own entries cannot keep the recovery key from revoking it.
 const RecoveryReserveBytes = 32 << 10
 
 // MaxActiveDevices is the most devices a chain lists as active.
@@ -148,7 +150,22 @@ func (c Chain) Verify() error {
 			state.apply(entry)
 		}
 	}
-	if len(c.Bytes()) > MaxChainBytes {
+	return c.checkSize()
+}
+
+// checkSize refuses a chain of more than MaxChainBytes, and an entry that a device signed after the chain passed MaxChainBytes - RecoveryReserveBytes.
+func (c Chain) checkSize() error {
+	deviceLimit := MaxChainBytes - RecoveryReserveBytes
+	root := c.Root().Sign
+	bodies := 0
+	for i, entry := range c.entries {
+		size := len(encodeEntry(entry))
+		bodies += size + len(binary.AppendUvarint(nil, uint64(size)))
+		if total := bodies + len(binary.AppendUvarint(nil, uint64(i+1))); i > 0 && !bytes.Equal(entry.Signer, root) && total > deviceLimit {
+			return fmt.Errorf("%w: entry %d of a device ends at %d bytes, at most %d", ErrChainTooLong, i, total, deviceLimit)
+		}
+	}
+	if total := bodies + len(binary.AppendUvarint(nil, uint64(len(c.entries)))); total > MaxChainBytes {
 		return fmt.Errorf("%w: more than %d bytes", ErrChainTooLong, MaxChainBytes)
 	}
 	return nil
