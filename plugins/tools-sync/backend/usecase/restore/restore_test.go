@@ -284,3 +284,33 @@ func TestRecoverVault_KeepsAChangeOfTheLinkMadeWhileItRuns(t *testing.T) {
 		t.Errorf("link = name %q epoch %x, want the name Renamed and the epoch id of the recovery", link.CatalogName, link.RestoreEpochID)
 	}
 }
+
+func TestRecoverAccount_DropsTheCachedCatalogOfAnotherIdentityAndSendsNothing(t *testing.T) {
+	t.Parallel()
+	p := newFirst(t)
+	p.a.Connect(t, source)
+	clock := synctest.NewClock(synctest.GetStart())
+	other := synctest.NewFirstComputer(t, synctest.NewServer(t, clock, fakeserver.Config{}), clock, target, synctest.NewWords(t))
+	stale, err := syncprotocol.EncodeCatalogEntry(other.NewCatalogEntry(t, nil, bytes.Repeat([]byte{7}, 16), true, []byte("body")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := p.a.State.WriteJournal(t.Context(), restore.Journal{Kind: restore.KindCatalog, Entries: [][]byte{stale}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.server.Fake.DeleteAccountData(); err != nil {
+		t.Fatal(err)
+	}
+
+	err = usecase.NewRecoverAccount(p.a.RestoreDeps()).Execute(t.Context())
+
+	if !errors.Is(err, usecase.ErrForeignJournal) {
+		t.Errorf("Execute = %v, want ErrForeignJournal", err)
+	}
+	if got := len(readCache(t, p.a)); got != 0 {
+		t.Errorf("cache holds %d entries, want it dropped", got)
+	}
+	if got := len(p.a.ReadCatalog(t)); got != 0 {
+		t.Errorf("server holds %d catalog entries, want none sent", got)
+	}
+}

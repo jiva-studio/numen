@@ -5,8 +5,10 @@ package restore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
@@ -18,6 +20,9 @@ var ErrEpochUntrusted = domain.ErrEpochUntrusted
 
 // ErrDiverged is domain.ErrDiverged: a log on the server differs from the copy of this device, so nothing is replayed.
 var ErrDiverged = domain.ErrDiverged
+
+// ErrForeignJournal is domain.ErrForeignJournal: the copy of the catalog on this device holds an entry of another identity; it was dropped and nothing is replayed.
+var ErrForeignJournal = domain.ErrForeignJournal
 
 // Committer commits notes to the server.
 type Committer interface {
@@ -91,6 +96,9 @@ func (u *RecoverAccount) replayCatalog(ctx context.Context) error {
 	if err != nil || len(cache.Entries) == 0 {
 		return err
 	}
+	if err := u.checkAuthors(ctx, cache); err != nil {
+		return u.dropForeign(ctx, err)
+	}
 	entries, err := u.deps.Catalog.GetCatalog(ctx, 0)
 	if err != nil {
 		return err
@@ -119,4 +127,35 @@ func (u *RecoverAccount) replayCatalog(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (u *RecoverAccount) checkAuthors(ctx context.Context, cache domain.Journal) error {
+	raw, err := u.deps.Chain.GetAccountChain(ctx)
+	if err != nil {
+		return err
+	}
+	chain, err := identity.ParseChain(raw)
+	if err != nil {
+		return fmt.Errorf("read the chain of the account: %w", err)
+	}
+	for _, encoded := range cache.Entries {
+		entry, err := syncprotocol.DecodeCatalogEntry(encoded)
+		if err != nil {
+			return err
+		}
+		if !chain.IsActiveDevice(entry.GetAuthorDeviceSignKey()) {
+			return domain.ErrForeignJournal
+		}
+	}
+	return nil
+}
+
+func (u *RecoverAccount) dropForeign(ctx context.Context, cause error) error {
+	if !errors.Is(cause, domain.ErrForeignJournal) {
+		return cause
+	}
+	if err := u.deps.Mirror.WriteJournal(ctx, domain.Journal{Kind: domain.KindCatalog, Entries: nil}); err != nil {
+		return err
+	}
+	return cause
 }

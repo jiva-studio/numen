@@ -28,6 +28,9 @@ func (p *pass) recover(ctx context.Context) (bool, error) {
 	if err == nil {
 		err = p.use.steps.RecoverVault.Execute(ctx, p.id)
 	}
+	if errors.Is(err, restore.ErrForeignJournal) {
+		return p.registerAgain(ctx)
+	}
 	switch {
 	case errors.Is(err, restore.ErrEpochUntrusted):
 		return false, p.use.reports.raise(ctx, getKey(keyEpochUntrusted, p.id), textEpochUntrusted)
@@ -38,6 +41,19 @@ func (p *pass) recover(ctx context.Context) (bool, error) {
 	}
 	if err := p.use.reports.clearRestore(ctx, p.id); err != nil {
 		return false, err
+	}
+	if err := p.pull(ctx); err != nil {
+		return false, err
+	}
+	return p.verdict == restore.Same, nil
+}
+
+func (p *pass) registerAgain(ctx context.Context) (bool, error) {
+	if err := p.use.deps.Forget.ForgetVault(ctx, p.id); err != nil {
+		return false, err
+	}
+	if err := p.use.steps.Register.Execute(ctx, p.id); err != nil {
+		return false, p.use.reports.settle(ctx, p.id, err)
 	}
 	if err := p.pull(ctx); err != nil {
 		return false, err

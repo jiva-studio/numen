@@ -85,6 +85,9 @@ var ErrKeyChanged = errors.New("the restore key of the sync server changed")
 // ErrEpochUntrusted means the announcement of the server has no valid certificate of a known root key.
 var ErrEpochUntrusted = errors.New("the restore epoch of the server is not trusted")
 
+// ErrForeignJournal means the copy of a log holds an entry whose author is no device of the account chain.
+var ErrForeignJournal = errors.New("the copy of the log holds an entry of another identity")
+
 // ErrDiverged means the log on the server differs from the copy at an entry both hold.
 var ErrDiverged = errors.New("the log on the sync server differs from the copy of this device")
 

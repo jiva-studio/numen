@@ -431,3 +431,34 @@ func TestSyncVault_IgnoresARestoreAnnouncementNoKnownRootVouchesForAndKeepsTheLo
 	}
 	wantNote(t, p.a, source, "Shopping list.md", "milk")
 }
+
+func TestSyncVault_CreatesTheVaultAgainWhenTheCachedCatalogHoldsAnEntryOfAnotherIdentity(t *testing.T) {
+	p := newSubscribedPair(t)
+	p.a.WriteNote(source, "Shopping list.md", "milk")
+	sync(t, p.a, source)
+	remote := p.a.GetRemoteID(t, source)
+	clock := synctest.NewClock(synctest.GetStart())
+	other := synctest.NewFirstComputer(t, synctest.NewServer(t, clock, fakeserver.Config{}), clock, "Other", synctest.NewWords(t))
+	stale, err := syncprotocol.EncodeCatalogEntry(other.NewCatalogEntry(t, nil, remote, true, []byte("body")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := p.a.State.WriteJournal(t.Context(), restore.Journal{Kind: restore.KindCatalog, Entries: [][]byte{stale}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.server.Fake.DeleteAccountData(); err != nil {
+		t.Fatal(err)
+	}
+
+	sync(t, p.a, source)
+
+	wantServerNote(t, p, "Shopping list.md", "milk")
+	entries := p.a.ReadCatalog(t)
+	public, err := p.a.Account.GetPublicIdentity(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || !bytes.Equal(entries[0].GetAuthorDeviceSignKey(), public.DeviceSignKey) {
+		t.Errorf("catalog = %d entries, want one authored by this device", len(entries))
+	}
+}
