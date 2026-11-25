@@ -38,7 +38,7 @@ func (p *pair) remove(t *testing.T, records ...transfer.FileRecord) []transfer.O
 
 func (p *pair) move(t *testing.T, moves ...transfer.Move) []transfer.Outcome {
 	t.Helper()
-	outcomes, err := commit.NewCommitMoves(p.a.CommitDeps()).Execute(t.Context(), transfer.MoveInput{Vault: p.vault, Moves: moves})
+	outcomes, err := commit.NewCommitMoves(p.a.CommitDeps()).Execute(t.Context(), commit.MoveInput{Vault: p.vault, Moves: moves})
 	if err != nil {
 		t.Fatal(err)
 	}
