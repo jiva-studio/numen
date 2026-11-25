@@ -261,10 +261,10 @@ func (r *pullRun) apply(ctx context.Context, change *syncv1.ShareChange) error {
 	}
 	stored := change.GetChange()
 	rev := stored.GetRevision()
-	if r.link.Received.IsRegressed(rev.GetFileId(), stored.GetRevId()) {
+	if r.link.Received.IsRegressed(rev.GetFileId(), stored.GetRevId(), rev.GetFileVersion()) {
 		return fmt.Errorf("%w: a file is served at a revision older than the one this reader has seen", domainshare.ErrRolledBack)
 	}
-	r.link.Received.RecordRevision(rev.GetFileId(), stored.GetRevId())
+	r.link.Received.RecordRevision(rev.GetFileId(), stored.GetRevId(), rev.GetFileVersion())
 	if change.GetLeft() || rev.GetDeleted() {
 		return r.remove(ctx, rev.GetFileId(), stored.GetSeq())
 	}

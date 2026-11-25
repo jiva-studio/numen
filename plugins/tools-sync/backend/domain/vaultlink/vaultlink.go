@@ -215,51 +215,41 @@ const (
 // Received is what a received vault knows of its share: the share, the pinned root of the owner, the sealed keys and
 // the last entry of the share log it verified.
 type Received struct {
-	ShareRootID   string              `json:"shareRootId"`
-	OwnerRoot     []byte              `json:"ownerRoot"`
-	OwnerChain    []byte              `json:"ownerChain"`
-	SealedKeys    []byte              `json:"sealedKeys"`
-	ServerVersion uint64              `json:"serverVersion"`
-	HeadID        []byte              `json:"headId"`
-	VaultID       []byte              `json:"vaultId"`
-	Epoch         uint32              `json:"epoch"`
-	Name          string              `json:"name"`
-	IsEnded       bool                `json:"isEnded"`
-	Seen          map[string][][]byte `json:"seen,omitempty"`
+	ShareRootID   string                  `json:"shareRootId"`
+	OwnerRoot     []byte                  `json:"ownerRoot"`
+	OwnerChain    []byte                  `json:"ownerChain"`
+	SealedKeys    []byte                  `json:"sealedKeys"`
+	ServerVersion uint64                  `json:"serverVersion"`
+	HeadID        []byte                  `json:"headId"`
+	VaultID       []byte                  `json:"vaultId"`
+	Epoch         uint32                  `json:"epoch"`
+	Name          string                  `json:"name"`
+	IsEnded       bool                    `json:"isEnded"`
+	Seen          map[string]SeenRevision `json:"seen,omitempty"`
 }
 
-// maxSeen is how many revisions of a file a received share remembers.
-const maxSeen = 8
+// SeenRevision is the newest revision a received share served for a file: its id and its signed version.
+type SeenRevision struct {
+	RevID   []byte `json:"revId"`
+	Version uint64 `json:"version"`
+}
 
-// IsRegressed reports whether the revision is one the share served for the file before its newest one.
-func (r *Received) IsRegressed(fileID, revID []byte) bool {
-	seen := r.Seen[hex.EncodeToString(fileID)]
-	if len(seen) == 0 {
+// IsRegressed reports whether the revision is older than the newest one the share served for the file: a lower
+// version, or the same version with another id.
+func (r *Received) IsRegressed(fileID, revID []byte, version uint64) bool {
+	seen, isSeen := r.Seen[hex.EncodeToString(fileID)]
+	if !isSeen {
 		return false
 	}
-	for _, one := range seen[:len(seen)-1] {
-		if bytes.Equal(one, revID) {
-			return true
-		}
-	}
-	return false
+	return version < seen.Version || (version == seen.Version && !bytes.Equal(seen.RevID, revID))
 }
 
 // RecordRevision remembers that the share served the revision as the newest of the file.
-func (r *Received) RecordRevision(fileID, revID []byte) {
+func (r *Received) RecordRevision(fileID, revID []byte, version uint64) {
 	if r.Seen == nil {
-		r.Seen = map[string][][]byte{}
+		r.Seen = map[string]SeenRevision{}
 	}
-	key := hex.EncodeToString(fileID)
-	seen := r.Seen[key]
-	if len(seen) > 0 && bytes.Equal(seen[len(seen)-1], revID) {
-		return
-	}
-	seen = append(seen, revID)
-	if len(seen) > maxSeen {
-		seen = seen[len(seen)-maxSeen:]
-	}
-	r.Seen[key] = seen
+	r.Seen[hex.EncodeToString(fileID)] = SeenRevision{RevID: revID, Version: version}
 }
 
 // RetiredFile is a file another computer removed and this device applied: its id and the signed version of the removal.

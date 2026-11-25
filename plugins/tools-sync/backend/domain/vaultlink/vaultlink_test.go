@@ -59,3 +59,32 @@ func TestLink_ReadsBackWhatItWrote(t *testing.T) {
 		t.Errorf("link = %+v, want %+v", read, link)
 	}
 }
+
+func TestReceived_IsRegressed_RefusesAnyVersionBelowTheNewestAndAnotherRevisionOfTheSameVersion(t *testing.T) {
+	t.Parallel()
+	received := vaultlink.Received{}
+	file := []byte{1}
+	for version := uint64(1); version <= 20; version++ {
+		received.RecordRevision(file, []byte{byte(version)}, version)
+	}
+
+	for name, one := range map[string]struct {
+		revID     []byte
+		version   uint64
+		regressed bool
+	}{
+		"the first version":          {[]byte{1}, 1, true},
+		"a version of the middle":    {[]byte{10}, 10, true},
+		"the same revision again":    {[]byte{20}, 20, false},
+		"another revision of it":     {[]byte{99}, 20, true},
+		"a newer version":            {[]byte{21}, 21, false},
+		"a removal below the newest": {[]byte{50}, 3, true},
+	} {
+		if got := received.IsRegressed(file, one.revID, one.version); got != one.regressed {
+			t.Errorf("%s: IsRegressed = %v, want %v", name, got, one.regressed)
+		}
+	}
+	if received.IsRegressed([]byte{2}, []byte{1}, 1) {
+		t.Error("a file the share never served is regressed")
+	}
+}

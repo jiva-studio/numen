@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -344,4 +345,28 @@ func TestPullShare_WritesTheFileBeforeItPersistsTheRecordOfIt(t *testing.T) {
 		t.Errorf("records of %v were persisted before their files were written", spy.missing)
 	}
 	wantNote(t, w.reader, received.VaultID, "Bread.md", "flour")
+}
+
+func TestPullShare_RefusesAFileServedAtAVersionBelowTheNewestEvenAfterManyNewerRevisions(t *testing.T) {
+	w := newWorld(t)
+	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
+	w.syncOwner(t)
+	received := w.receive(t, w.reader, w.shareWith(t, w.reader, "Anna"))
+	older, err := w.reader.Cloud.GetShareChanges(t.Context(), w.shareID(t, received.VaultID), 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range 12 {
+		w.owner.WriteNote(owned, "Food/Soup.md", "carrots and "+strings.Repeat("leeks ", i+1))
+		w.syncOwner(t)
+		if err := w.reader.Sync(t.Context(), received.VaultID); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	err = w.pullWith(t, received.VaultID, olderChanges{Shares: w.reader.Cloud, page: older})
+
+	if !errors.Is(err, share.ErrRolledBack) {
+		t.Errorf("error = %v, want ErrRolledBack for a file served at its first version after twelve newer ones", err)
+	}
 }

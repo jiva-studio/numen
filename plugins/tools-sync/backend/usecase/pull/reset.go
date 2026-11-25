@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
 func (r *run) reconcile(ctx context.Context) error {
@@ -44,6 +45,7 @@ func (r *run) reconcile(ctx context.Context) error {
 func (r *run) forgetAbsent(present map[string]bool) {
 	for _, record := range slices.Clone(r.records) {
 		if !present[string(record.FileID)] {
+			r.link.MergeRetired([]vaultlink.RetiredFile{{FileID: record.FileID, Version: record.Version}})
 			r.removeRecord(record.FileID)
 		}
 	}

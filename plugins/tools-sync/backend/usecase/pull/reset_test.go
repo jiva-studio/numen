@@ -265,3 +265,15 @@ func TestPullChanges_RemovesNothingWhenAResetOmitsMostOfTheNotes(t *testing.T) {
 		t.Error("paused removals were reported although nothing was queued for removal")
 	}
 }
+
+func TestPullChanges_KeepsTheVersionOfANoteTheServerNoLongerHasAsAFloorOnAReset(t *testing.T) {
+	w := newAway(t)
+	w.forgetRemoval(t, "Shopping list.md", w.shopping)
+
+	w.pull(t, trustAll)
+
+	link := w.b.Link(t, target)
+	if floor := link.GetFloor(w.shopping.FileID); floor < w.shopping.Record.Version || floor == 0 {
+		t.Errorf("floor = %d, want at least the version %d the note had: an old signed revision must stay refused", floor, w.shopping.Record.Version)
+	}
+}

@@ -236,7 +236,7 @@ func (u *AcceptInvitation) joinAgain(ctx context.Context, id domain.VaultID, o o
 	}
 	defer unlock()
 	err = u.deps.Links.UpdateLink(ctx, id, func(fresh *vaultlink.Link) error {
-		var seen map[string][][]byte
+		var seen map[string]vaultlink.SeenRevision
 		if fresh.Received != nil {
 			seen = fresh.Received.Seen
 		}
@@ -264,7 +264,7 @@ func (u *AcceptInvitation) runFirstPass(ctx context.Context, id domain.VaultID) 
 	return u.deps.Statuses.WriteStatus(ctx, id, getStatus(result, u.deps.Clock.Now()))
 }
 
-func (u *AcceptInvitation) buildReceivedRecord(ctx context.Context, o opened, read followed, seen map[string][][]byte) (vaultlink.Received, error) {
+func (u *AcceptInvitation) buildReceivedRecord(ctx context.Context, o opened, read followed, seen map[string]vaultlink.SeenRevision) (vaultlink.Received, error) {
 	keys, err := read.position.Keys.Encode()
 	if err != nil {
 		return vaultlink.Received{}, err
