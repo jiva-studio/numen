@@ -23,21 +23,27 @@ func NewReadFile(readers vaultport.VaultReaders, versions VaultVersions) *ReadFi
 	return &ReadFile{readers: readers, versions: versions}
 }
 
-func (u *ReadFile) Execute(ctx context.Context, v domain.Vault, path string) ([]byte, domain.FileStat, error) {
+// FileContent holds the bytes of a file with the stat taken for the read.
+type FileContent struct {
+	Content []byte
+	Stat    domain.FileStat
+}
+
+func (u *ReadFile) Execute(ctx context.Context, v domain.Vault, path string) (FileContent, error) {
 	version := u.versions.GetVersion(v)
 	reader, err := u.readers.Open(v)
 	if err != nil {
-		return nil, domain.FileStat{}, err
+		return FileContent{}, err
 	}
 	stat, err := reader.StatFile(ctx, path)
 	if err != nil {
-		return nil, domain.FileStat{}, err
+		return FileContent{}, err
 	}
 	content, err := reader.Read(ctx, path)
 	if err != nil {
-		return nil, domain.FileStat{}, err
+		return FileContent{}, err
 	}
 	stat.Hash = domain.HashContent(content)
 	stat.Version = version
-	return content, stat, nil
+	return FileContent{Content: content, Stat: stat}, nil
 }

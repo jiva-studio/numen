@@ -72,14 +72,20 @@ func (s *Searches) DropExpired(incoming int) []searchrun.Record {
 	return kept
 }
 
+// SearchHandle pairs a stored search record with the channel closed when the run stops.
+type SearchHandle struct {
+	Record      searchrun.Record
+	StopChannel <-chan struct{}
+}
+
 // Find returns searchrun.ErrNotFound for a search that is unknown, expired, removed or of another owner.
-func (s *Searches) Find(owner string, id searchrun.ID) (searchrun.Record, <-chan struct{}, error) {
+func (s *Searches) Find(owner string, id searchrun.ID) (SearchHandle, error) {
 	s.DropExpired(0)
 	r, stopped, isFound := s.Store.FindSearch(id)
 	if !isFound || r.Start.Owner != owner {
-		return searchrun.Record{}, nil, searchrun.ErrNotFound
+		return SearchHandle{}, searchrun.ErrNotFound
 	}
-	return r, stopped, nil
+	return SearchHandle{Record: r, StopChannel: stopped}, nil
 }
 
 // Touch records that the search was read now.
@@ -98,7 +104,7 @@ type keptSearches interface {
 	Parts() *Searches
 	Drop(ids []searchrun.ID)
 	DropExpired(incoming int) []searchrun.Record
-	Find(owner string, id searchrun.ID) (searchrun.Record, <-chan struct{}, error)
+	Find(owner string, id searchrun.ID) (SearchHandle, error)
 	Touch(id searchrun.ID)
 }
 

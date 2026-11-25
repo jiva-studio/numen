@@ -100,10 +100,20 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	return true
 }
 
+type indexMode int
+
+const (
+	indexIncremental indexMode = iota
+	indexRebuild
+)
+
 func (p *pass) indexSources(ctx context.Context) (isStoppedByWake bool) {
-	request := p.isRebuild
+	mode := indexIncremental
+	if p.isRebuild {
+		mode = indexRebuild
+	}
 	p.isRebuild = false
-	return p.indexTexts(ctx, request)
+	return p.indexTexts(ctx, mode)
 }
 
 func (p *pass) embedRecognized(ctx context.Context) (isStoppedByWake bool) {
@@ -117,9 +127,9 @@ func (p *pass) embedRecognized(ctx context.Context) (isStoppedByWake bool) {
 	return p.embed(ctx)
 }
 
-func (p *pass) indexTexts(ctx context.Context, rebuild bool) (isStoppedByWake bool) {
+func (p *pass) indexTexts(ctx context.Context, mode indexMode) (isStoppedByWake bool) {
 	events := p.events
-	making, err := p.env.openReading(ctx, p.v, rebuild)
+	making, err := p.env.openReading(ctx, p.v, mode == indexRebuild)
 	if err != nil {
 		events.ReportTask(work.Task{ID: work.IndexingTexts, Title: taskIndexingTexts, Error: err.Error()})
 		return false
@@ -226,13 +236,13 @@ func (w *Worker) planVectors(ctx context.Context, v domain.Vault) vectorPlan {
 		plan.hasPending = true
 		return plan
 	}
-	target, embedded, err := w.vectorCounts(ctx, v)
+	progress, err := w.vectorCounts(ctx, v)
 	if err != nil {
 		plan.hasPending = true
 		return plan
 	}
-	plan.skipped = min(plan.skipped, max(0, target-embedded))
-	plan.pending = max(0, target-embedded-plan.skipped)
+	plan.skipped = min(plan.skipped, max(0, progress.TotalCount-progress.EmbeddedCount))
+	plan.pending = max(0, progress.TotalCount-progress.EmbeddedCount-plan.skipped)
 	plan.hasPending = plan.pending > 0
 	return plan
 }

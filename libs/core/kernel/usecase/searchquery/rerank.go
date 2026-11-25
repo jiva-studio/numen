@@ -40,26 +40,31 @@ type rerankInput struct {
 	priority           modelcall.Priority
 }
 
-func (rr reranker) score(ctx context.Context, in rerankInput) ([]float64, searchquery.RerankReport, error) {
+type rerankResult struct {
+	scores []float64
+	report searchquery.RerankReport
+}
+
+func (rr reranker) score(ctx context.Context, in rerankInput) (rerankResult, error) {
 	rows, err := rr.rows.ListRows(settingsdomain.AppOwner, operationresult.OperationRerank)
 	if err != nil {
-		return nil, searchquery.RerankReport{}, err
+		return rerankResult{}, err
 	}
 	if len(rows) == 0 {
-		return nil, searchquery.RerankReport{}, searchquery.ErrNoReranker
+		return rerankResult{}, searchquery.ErrNoReranker
 	}
 	var failures []searchquery.RerankFailure
 	for _, row := range rows {
-		scores, report, err := rr.scoreWith(ctx, row, in)
+		res, err := rr.scoreWith(ctx, row, in)
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return nil, searchquery.RerankReport{}, ctxErr
+			return rerankResult{}, ctxErr
 		}
 		if err == nil {
-			return scores, report, nil
+			return res, nil
 		}
 		failures = append(failures, searchquery.RerankFailure{ConnectionName: row.ConnectionName, Reason: getFailureReason(err)})
 	}
-	return nil, searchquery.RerankReport{}, &searchquery.RerankError{Failures: failures}
+	return rerankResult{}, &searchquery.RerankError{Failures: failures}
 }
 
 const rerankBatchSize = 32
@@ -80,10 +85,10 @@ func getFailureReason(err error) string {
 	return err.Error()
 }
 
-func (rr reranker) scoreWith(ctx context.Context, row modelcall.Row, in rerankInput) ([]float64, searchquery.RerankReport, error) {
+func (rr reranker) scoreWith(ctx context.Context, row modelcall.Row, in rerankInput) (rerankResult, error) {
 	resolved, err := rr.resolve(row.ConnectionID)
 	if err != nil {
-		return nil, searchquery.RerankReport{}, errUnavailable
+		return rerankResult{}, errUnavailable
 	}
 	recipe := operationresult.GetRerankRecipeHash(operationresult.RerankRecipe{
 		Fingerprint: resolved.Fingerprint, ProviderVersion: resolved.PluginVersion, Options: row.Options,
@@ -95,7 +100,7 @@ func (rr reranker) scoreWith(ctx context.Context, row modelcall.Row, in rerankIn
 	}
 	stored, err := rr.results.FindResults(ctx, operationresult.OperationRerank, recipe, hashes, rr.clock.Now())
 	if err != nil {
-		return nil, searchquery.RerankReport{}, err
+		return rerankResult{}, err
 	}
 	scores, missing := getStoredScores(hashes, stored)
 	report := searchquery.RerankReport{
@@ -103,19 +108,19 @@ func (rr reranker) scoreWith(ctx context.Context, row modelcall.Row, in rerankIn
 		SentCount: len(missing), ReusedCount: len(hashes) - len(missing),
 	}
 	if len(missing) == 0 {
-		return scores, report, nil
+		return rerankResult{scores: scores, report: report}, nil
 	}
 	if err := rr.callRow(ctx, row, in, missing, scores); err != nil {
-		return nil, searchquery.RerankReport{}, err
+		return rerankResult{}, err
 	}
 	outputs := make(map[string][]byte, len(missing))
 	for _, i := range missing {
 		outputs[hashes[i]] = operationresult.EncodeScore(scores[i])
 	}
 	if err := rr.results.SaveResults(ctx, operationresult.OperationRerank, recipe, outputs, rr.clock.Now()); err != nil {
-		return nil, searchquery.RerankReport{}, err
+		return rerankResult{}, err
 	}
-	return scores, report, nil
+	return rerankResult{scores: scores, report: report}, nil
 }
 
 func getStoredScores(hashes []string, stored map[string][]byte) ([]float64, []int) {

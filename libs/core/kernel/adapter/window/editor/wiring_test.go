@@ -64,9 +64,9 @@ func (w wiring) startSession(
 	worker := indexing.NewWorker(indexing.Config{
 		Reading: w.readVault(db),
 		Source:  embedding.GetSource(),
-		VectorCounts: func(ctx context.Context, v domain.Vault) (held, embedded int64, err error) {
+		VectorCounts: func(ctx context.Context, v domain.Vault) (indexing.EmbeddingProgress, error) {
 			if !embedding.HasProgress() {
-				return 0, 0, indexing.ErrNoProgress
+				return indexing.EmbeddingProgress{}, indexing.ErrNoProgress
 			}
 			name, recipe := embedding.Describe()
 			state.Runtime.RecordModel(name, recipe)

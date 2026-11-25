@@ -21,9 +21,9 @@ func NewVectorCounts(embedding *EmbeddingSetup, recorder indexport.ModelRecorder
 }
 
 // Execute answers ErrNoProgress where the index cannot report how far the embedding is.
-func (u VectorCounts) Execute(ctx context.Context, v domain.Vault) (held, embedded int64, err error) {
+func (u VectorCounts) Execute(ctx context.Context, v domain.Vault) (EmbeddingProgress, error) {
 	if !u.embedding.HasProgress() {
-		return 0, 0, ErrNoProgress
+		return EmbeddingProgress{}, ErrNoProgress
 	}
 	name, recipe := u.embedding.Describe()
 	u.recorder.RecordModel(name, recipe)
