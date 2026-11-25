@@ -2,7 +2,7 @@
  * The icon one entry of the files tree is drawn as.
  */
 import { describe, expect, it } from 'vitest'
-import { AudioLines, File, FileText, Folder, FolderOpen, Layers } from '@lucide/vue'
+import { AudioLines, Cloud, File, FileText, Folder, FolderOpen, Layers } from '@lucide/vue'
 import type { Entry } from '@/entities/file'
 import { registerTabKindIcon } from '@/entities/note'
 import { getEntryIcon } from './entryIcon'
@@ -63,5 +63,16 @@ describe('the icon of an entry', () => {
       File,
     )
     expect(getEntryIcon(entry({ isNote: false, type: 'sample' }), false)).toBe(File)
+  })
+})
+
+describe('the icon of a file not on this device', () => {
+  it('is a cloud, whatever the file would be drawn as', () => {
+    expect(getEntryIcon(entry({ isAbsent: true }), false)).toBe(Cloud)
+    expect(getEntryIcon(entry({ isAbsent: true, isNote: false }), false)).toBe(Cloud)
+  })
+
+  it('is not a cloud for a file that is here', () => {
+    expect(getEntryIcon(entry({ isNote: false }), false)).toBe(File)
   })
 })

@@ -40,6 +40,7 @@ useRenameFocus(() => props.isRenaming, field)
     :data-tree-row="row.id"
     :data-selected="isSelected && !isRenaming ? '' : undefined"
     :data-renaming="isRenaming ? '' : undefined"
+    :data-muted="row.isMuted || undefined"
     :data-dragged="isDragged || undefined"
     :data-last="row.isLast || undefined"
     :data-into="isDropInside || undefined"
@@ -99,6 +100,10 @@ useRenameFocus(() => props.isRenaming, field)
   --tree-row-bg: var(--numen-accent);
   --tree-row-ring: color-mix(in srgb, var(--numen-accent-ink) 55%, var(--numen-accent));
   color: var(--numen-accent-ink);
+}
+
+.tree__row[data-muted]:not([data-selected]) .tree__name {
+  color: var(--numen-hushed);
 }
 
 .tree__row[data-dragged] {

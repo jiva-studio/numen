@@ -51,3 +51,16 @@ describe('the listing as rows', () => {
     })
   })
 })
+
+describe('a file that is not on this device', () => {
+  it('is a muted row, and a file that is here is not', () => {
+    const absent: ListingRow = {
+      entry: { ...entry('Lecture.mp4'), isAbsent: true },
+      rows: [],
+    }
+
+    const rows = getRows([absent, createListingRow('Cover.png')])
+
+    expect(rows.map((one) => one.isMuted)).toStrictEqual([true, undefined])
+  })
+})

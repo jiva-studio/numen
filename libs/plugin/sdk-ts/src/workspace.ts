@@ -244,6 +244,10 @@ export interface VaultEntry {
   readonly type: NoteType
   readonly tabKind?: string
   readonly modifiedAt?: number
+  // Whether the file is listed and its bytes are not on this device; the provider is the id of the
+  // plugin that can bring them.
+  readonly isAbsent?: boolean
+  readonly provider?: string
 }
 
 // VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.

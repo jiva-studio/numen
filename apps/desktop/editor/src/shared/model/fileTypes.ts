@@ -30,6 +30,9 @@ export interface Entry {
   readonly type: NoteType
   readonly tabKind?: string
   readonly modifiedAt?: number
+  /** The bytes are not on this device; `provider` is the plugin that can bring them. */
+  readonly isAbsent?: boolean
+  readonly provider?: string
 }
 
 /** Where a note was filed, or why none was made. */

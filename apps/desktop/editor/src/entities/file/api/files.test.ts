@@ -131,3 +131,20 @@ describe('the kinds of files', () => {
     })
   })
 })
+
+describe('a file not on this device', () => {
+  it('is listed with its provider, and a file that is here carries neither', async () => {
+    const api = createApi()
+    request.listFiles.mockResolvedValue({
+      entries: [
+        { path: 'a.mp4', name: 'a.mp4', isFolder: false, isAbsent: true, provider: 'p' },
+        { path: 'b.png', name: 'b.png', isFolder: false, isAbsent: false, provider: '' },
+      ],
+    })
+
+    const [absent, here] = await api.listFiles('')
+
+    expect(absent).toMatchObject({ isAbsent: true, provider: 'p' })
+    expect(here).not.toHaveProperty('isAbsent')
+  })
+})

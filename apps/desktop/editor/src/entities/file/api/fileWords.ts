@@ -12,6 +12,8 @@ interface EntryWire {
   readonly type: string
   readonly tabKind?: string
   readonly modifiedUnixMs?: bigint | number
+  readonly isAbsent?: boolean
+  readonly provider?: string
 }
 
 /** One row of a listing, kept as the plain value the window carries it as. */
@@ -23,4 +25,6 @@ export const mapEntry = (one: EntryWire): Entry => ({
   type: mapNoteType(one.type),
   ...(one.tabKind ? { tabKind: one.tabKind } : {}),
   ...(one.modifiedUnixMs ? { modifiedAt: Number(one.modifiedUnixMs) } : {}),
+  ...(one.isAbsent ? { isAbsent: true } : {}),
+  ...(one.provider ? { provider: one.provider } : {}),
 })

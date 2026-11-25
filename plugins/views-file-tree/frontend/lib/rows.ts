@@ -14,5 +14,6 @@ export function getRows(entries: readonly ListingRow[]): Row[] {
     name: one.entry.name,
     hasChildren: one.entry.isFolder,
     rows: getRows(one.rows),
+    ...(one.entry.isAbsent ? { isMuted: true } : {}),
   }))
 }

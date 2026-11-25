@@ -18,7 +18,7 @@ const props = defineProps<{ state: FilesTabState }>()
 /* --------------------------------- State ---------------------------------- */
 const rows = computed(() => getRows(props.state.list.queries.rows.value))
 
-const { dropTarget, renamingPath, items, getRowIcon, getItemIcon } = useFilesTabView(
+const { dropTarget, renamingPath, items, getRowIcon, getItemIcon, isAbsent } = useFilesTabView(
   () => props.state,
 )
 
@@ -112,7 +112,13 @@ function onDismissMenu() {
       @menu="onOpenMenu"
     >
       <template #icon="{ id, isOpen }">
-        <component :is="getRowIcon(id, isOpen)" class="files__icon" aria-hidden="true" />
+        <component
+          :is="getRowIcon(id, isOpen)"
+          class="files__icon"
+          :role="isAbsent(id) ? 'img' : undefined"
+          :aria-label="isAbsent(id) ? words.absent : undefined"
+          :aria-hidden="isAbsent(id) ? undefined : true"
+        />
       </template>
 
       <template #end="{ id }">

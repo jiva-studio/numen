@@ -114,3 +114,12 @@ describe('renaming', () => {
     scope.stop()
   })
 })
+
+describe('a muted row', () => {
+  it('is marked, and an ordinary row is not', async () => {
+    const row = mountRow()
+    expect(row.attributes('data-muted')).toBeUndefined()
+    await row.setProps({ row: { ...ROW, isMuted: true } })
+    expect(row.attributes('data-muted')).toBe('')
+  })
+})

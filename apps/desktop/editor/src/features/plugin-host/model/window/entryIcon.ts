@@ -1,10 +1,10 @@
 /**
  * The icon for one entry of the files tree. A folder's icon reflects whether
  * its contents are shown; a note's icon is that of the tab kind that opens it, and every
- * other file's icon is that of the reader that opens it.
+ * other file's icon is that of the reader that opens it. A file whose bytes are not on this device is a cloud.
  */
 import type { Component } from 'vue'
-import { File, Folder, FolderOpen } from '@lucide/vue'
+import { Cloud, File, Folder, FolderOpen } from '@lucide/vue'
 import type { Entry } from '@/entities/file'
 import { getNoteIcon } from '@/entities/note'
 
@@ -15,6 +15,7 @@ export const getEntryIcon = (
 ): Component => {
   if (!entry) return File
   if (entry.isFolder) return isOpen ? FolderOpen : Folder
+  if (entry.isAbsent) return Cloud
   if (entry.isNote) return getNoteIcon(entry.tabKind)
   return findFileIcon?.(entry.path) ?? File
 }

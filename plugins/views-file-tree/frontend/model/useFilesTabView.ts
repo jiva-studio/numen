@@ -10,6 +10,7 @@ export interface FilesTabView {
   readonly items: ComputedRef<MenuItems>
   readonly getRowIcon: (id: string, isOpen: boolean) => Component
   readonly getItemIcon: (id: string) => Component | null
+  readonly isAbsent: (id: string) => boolean
 }
 
 /**
@@ -38,5 +39,8 @@ export function useFilesTabView(getState: () => FilesTabState): FilesTabView {
 
   const getItemIcon = (id: string): Component | null => getState().menu.getIcon(id)
 
-  return { dropTarget, renamingPath, items, getRowIcon, getItemIcon }
+  const isAbsent = (id: string): boolean =>
+    getState().list.queries.getEntryAt(id)?.isAbsent === true
+
+  return { dropTarget, renamingPath, items, getRowIcon, getItemIcon, isAbsent }
 }

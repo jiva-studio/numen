@@ -18,6 +18,8 @@ export interface Row {
   readonly name: string
   readonly hasChildren: boolean
   readonly rows?: readonly Row[]
+  /** Whether the name is drawn in the muted ink. */
+  readonly isMuted?: boolean
 }
 
 /**
@@ -49,6 +51,7 @@ export interface ShownRow {
   readonly isLast: boolean
   readonly hasRows: boolean
   readonly isOpen: boolean
+  readonly isMuted?: boolean
 }
 
 /**
@@ -72,6 +75,7 @@ export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonl
         isLast: index === children.length - 1,
         hasRows: inside.length > 0,
         isOpen: isOpened,
+        ...(row.isMuted ? { isMuted: true } : {}),
       })
 
       if (isOpened) walk(inside, row.id, level + 1)
