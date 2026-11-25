@@ -55,7 +55,8 @@ export const createCodeCamera = (text: string) => (): Promise<MediaStream> => {
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = (modules.length + 2 * QUIET) * CELL
   const drawing = canvas.getContext('2d')
-  if (drawing !== null) {
+  const draw = (): void => {
+    if (drawing === null) return
     drawing.fillStyle = '#ffffff'
     drawing.fillRect(0, 0, canvas.width, canvas.height)
     drawing.fillStyle = '#000000'
@@ -65,5 +66,9 @@ export const createCodeCamera = (text: string) => (): Promise<MediaStream> => {
       }),
     )
   }
-  return Promise.resolve(canvas.captureStream(FRAME_RATE))
+  draw()
+  const stream = canvas.captureStream(FRAME_RATE)
+  const timer = setInterval(draw, 1000 / FRAME_RATE)
+  stream.getTracks().forEach((track) => track.addEventListener('ended', () => clearInterval(timer)))
+  return Promise.resolve(stream)
 }
