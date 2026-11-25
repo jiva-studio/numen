@@ -48,28 +48,21 @@ const mountFiles = async () => {
 }
 
 describe('a file that is not on this device', () => {
-  it('has its name muted ', async () => {
+  it('marks its row at the end as not on this device', async () => {
     const row = (await mountFiles()).get('[data-tree-row="Lecture.mp4"]')
 
-    expect(row.attributes('data-muted')).toBe('')
-  })
-
-  it('names its icon as not on this device', async () => {
-    const row = (await mountFiles()).get('[data-tree-row="Lecture.mp4"]')
-
-    expect(row.get('[data-badge="cloud"]').attributes('aria-label')).toBe('Not on this device')
+    expect(row.get('[data-status="cloud"]').attributes('aria-label')).toBe('Not on this device')
   })
 
   it('names its download while it runs', async () => {
     const row = (await mountFiles()).get('[data-tree-row="Film.mp4"]')
 
-    expect(row.get('[data-badge="loading"]').attributes('aria-label')).toBe('Downloading…')
+    expect(row.get('[data-status="loading"]').attributes('aria-label')).toBe('Downloading…')
   })
 
   it('leaves a file that is here as any other', async () => {
     const row = (await mountFiles()).get('[data-tree-row="Cover.png"]')
 
-    expect(row.attributes('data-muted')).toBeUndefined()
-    expect(row.find('[data-badge]').exists()).toBe(false)
+    expect(row.find('[data-status]').exists()).toBe(false)
   })
 })

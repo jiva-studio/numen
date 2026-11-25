@@ -491,17 +491,3 @@ describe('what follows the pointer', () => {
     expect(label([])).toBeNull()
   })
 })
-
-describe('a muted row', () => {
-  it('stays muted in the order of the walk, and an ordinary row carries no mark', () => {
-    const shown = flatten(
-      [
-        { id: 'a', name: 'a', hasChildren: false, isMuted: true },
-        { id: 'b', name: 'b', hasChildren: false },
-      ],
-      new Set(),
-    )
-
-    expect(shown.map((one) => one.isMuted)).toStrictEqual([true, undefined])
-  })
-})

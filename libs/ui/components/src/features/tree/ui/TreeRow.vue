@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, useTemplateRef, type VNode } from 'vue'
-import { Cloud } from '@lucide/vue'
-import { Spinner } from '@/shared/ui/spinner'
+import { Cloud, RefreshCw } from '@lucide/vue'
 import { useRenameFocus } from '../model/useRenameFocus'
 import type { RowId } from '../lib/row'
 import type { TreeRowProps } from './TreeRow.types'
@@ -42,7 +41,6 @@ useRenameFocus(() => props.isRenaming, field)
     :data-tree-row="row.id"
     :data-selected="isSelected && !isRenaming ? '' : undefined"
     :data-renaming="isRenaming ? '' : undefined"
-    :data-muted="row.isMuted ? '' : undefined"
     :data-dragged="isDragged || undefined"
     :data-last="row.isLast || undefined"
     :data-into="isDropInside || undefined"
@@ -52,16 +50,6 @@ useRenameFocus(() => props.isRenaming, field)
   >
     <span class="tree__icon flex shrink-0 items-center">
       <slot />
-      <span
-        v-if="row.badge"
-        class="tree__badge"
-        role="img"
-        :aria-label="row.badge.label"
-        :data-badge="row.badge.kind"
-      >
-        <Spinner v-if="row.badge.kind === 'loading'" class="tree__spinner" />
-        <Cloud v-else class="tree__cloud" aria-hidden="true" />
-      </span>
     </span>
 
     <TreeField
@@ -75,6 +63,17 @@ useRenameFocus(() => props.isRenaming, field)
       @blur="emit('blur')"
     />
     <span v-else class="tree__name min-w-0 truncate">{{ row.name }}</span>
+
+    <span
+      v-if="row.status"
+      class="tree__status flex shrink-0 items-center justify-center"
+      role="img"
+      :aria-label="row.status.label"
+      :data-status="row.status.kind"
+    >
+      <RefreshCw v-if="row.status.kind === 'loading'" class="tree__sync" aria-hidden="true" />
+      <Cloud v-else class="tree__cloud" aria-hidden="true" />
+    </span>
 
     <span class="tree__end flex shrink-0 items-center">
       <slot name="end" :id="row.id">
@@ -114,10 +113,6 @@ useRenameFocus(() => props.isRenaming, field)
   color: var(--numen-accent-ink);
 }
 
-.tree__row[data-muted]:not([data-selected]) .tree__name {
-  color: var(--numen-hushed);
-}
-
 .tree__row[data-dragged] {
   opacity: var(--dragged-fade);
 }
@@ -142,33 +137,47 @@ useRenameFocus(() => props.isRenaming, field)
   background: var(--numen-ring);
 }
 
-.tree__badge {
-  --badge: 0.625rem;
-  position: absolute;
-  inset-inline-end: -0.25rem;
-  inset-block-end: -0.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: var(--badge);
-  block-size: var(--badge);
-  border-radius: var(--numen-radius-pill);
-  background: var(--tree-row-bg);
+.tree__status {
+  --status: 1rem;
+  box-sizing: content-box;
+  inline-size: var(--status);
+  margin-inline-start: auto;
+  padding-inline-start: var(--gap);
   color: var(--numen-hushed);
 }
 
-.tree__row[data-selected] .tree__badge {
+.tree__status + .tree__end {
+  margin-inline-start: 0;
+}
+
+.tree__status[data-status='loading'] {
+  color: var(--numen-accent);
+}
+
+.tree__row[data-selected] .tree__status {
   color: var(--numen-accent-ink);
 }
 
-.tree__cloud {
-  inline-size: var(--badge);
-  block-size: var(--badge);
+.tree__cloud,
+.tree__sync {
+  inline-size: var(--status);
+  block-size: var(--status);
 }
 
-.tree__spinner {
-  --spinner-size: var(--badge);
-  --spinner-thickness: 0.125rem;
+.tree__sync {
+  animation: tree-sync-turn var(--numen-wait-spin) linear infinite;
+}
+
+@keyframes tree-sync-turn {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tree__sync {
+    animation: none;
+  }
 }
 
 .tree__icon {

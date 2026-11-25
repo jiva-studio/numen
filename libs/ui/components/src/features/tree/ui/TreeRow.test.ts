@@ -115,25 +115,16 @@ describe('renaming', () => {
   })
 })
 
-describe('a muted row', () => {
-  it('is marked, and an ordinary row is not', async () => {
+describe('a row status', () => {
+  it('is a named cloud or a named loading ring at the end of the row, and none otherwise', async () => {
     const row = mountRow()
-    expect(row.attributes('data-muted')).toBeUndefined()
-    await row.setProps({ row: { ...ROW, isMuted: true } })
-    expect(row.attributes('data-muted')).toBe('')
-  })
-})
+    expect(row.find('[data-status]').exists()).toBe(false)
 
-describe('a row badge', () => {
-  it('is a named cloud or a named loading ring at the icon, and none otherwise', async () => {
-    const row = mountRow()
-    expect(row.find('[data-badge]').exists()).toBe(false)
+    await row.setProps({ row: { ...ROW, status: { kind: 'cloud', label: 'Not here' } } })
+    expect(row.get('[data-status="cloud"]').attributes('aria-label')).toBe('Not here')
 
-    await row.setProps({ row: { ...ROW, badge: { kind: 'cloud', label: 'Not here' } } })
-    expect(row.get('[data-badge="cloud"]').attributes('aria-label')).toBe('Not here')
-
-    await row.setProps({ row: { ...ROW, badge: { kind: 'loading', label: 'Coming' } } })
-    expect(row.get('[data-badge="loading"]').attributes('aria-label')).toBe('Coming')
-    expect(row.find('[data-badge="cloud"]').exists()).toBe(false)
+    await row.setProps({ row: { ...ROW, status: { kind: 'loading', label: 'Coming' } } })
+    expect(row.get('[data-status="loading"]').attributes('aria-label')).toBe('Coming')
+    expect(row.find('[data-status="cloud"]').exists()).toBe(false)
   })
 })
