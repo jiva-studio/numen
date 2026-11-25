@@ -1,7 +1,7 @@
 /**
- * The reads of one link at a fixed interval. Each read carries its number: an answer older than one already
+ * The reads of one link, each started one interval after the previous one finished. Each read carries its number: an answer older than one already
  * applied is dropped, and one that arrives after a reset or a stop is dropped too. Reads that keep failing
- * stop the interval, and a link that waits for its channel through too many reads stops it as well; both are reported
+ * stop the reads, and a link that waits for its channel through too many reads stops them as well; both are reported
  * once as stalled, so the dialog does not wait on a core that does not answer.
  */
 import type { Result } from '@numen/result'
@@ -21,7 +21,8 @@ export interface LinkPollOptions {
 }
 
 export function createLinkPoll(options: LinkPollOptions) {
-  let timer: ReturnType<typeof setInterval> | undefined
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let chain = 0
   let epoch = 0
   let lastRead = 0
   let lastApplied = 0
@@ -30,7 +31,8 @@ export function createLinkPoll(options: LinkPollOptions) {
   let isStopped = false
 
   const stop = (): void => {
-    if (timer !== undefined) clearInterval(timer)
+    chain += 1
+    if (timer !== undefined) clearTimeout(timer)
     timer = undefined
   }
 
@@ -56,8 +58,22 @@ export function createLinkPoll(options: LinkPollOptions) {
     failures = 0
     options.onInfo(answer.value)
     waits = options.isWaiting(answer.value) ? waits + 1 : 0
-    if (waits >= options.stallAfter) options.onStalled()
+    if (waits >= options.stallAfter) {
+      stop()
+      options.onStalled()
+    }
     if (options.isEnded(answer.value)) stop()
+  }
+
+  const schedule = (): void => {
+    const mine = chain
+    timer = setTimeout(() => options.run(tick(mine)), options.intervalMs)
+  }
+
+  const tick = async (mine: number): Promise<void> => {
+    timer = undefined
+    await readOnce()
+    if (mine === chain && !isStopped) schedule()
   }
 
   return {
@@ -71,7 +87,7 @@ export function createLinkPoll(options: LinkPollOptions) {
     },
     start(): void {
       stop()
-      timer = setInterval(() => options.run(readOnce()), options.intervalMs)
+      schedule()
     },
     dispose(): void {
       stop()

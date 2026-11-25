@@ -99,4 +99,42 @@ describe('the identity section restoring from words', () => {
     section?.actions.cancel()
     expect(signal?.aborted).toBe(true)
   })
+
+  it('shows no problem when the person cancels the restore that was waiting', async () => {
+    const installation: InstallationIdentity = {
+      identity: ref<IdentityInfo | undefined>(undefined),
+      load: vi.fn(() => Promise.resolve()),
+      create: vi.fn(),
+      delete: vi.fn(),
+      recovery: {
+        generateWords: vi.fn(),
+        restore: (_proof, given) =>
+          new Promise((_resolve, reject) => {
+            given?.addEventListener('abort', () => reject(given.reason), { once: true })
+          }),
+        saveKit: vi.fn(),
+      },
+      devices: createInertDevices(),
+      keyFile: createInertKeyFile(),
+    }
+    let section: ReturnType<typeof useIdentitySection> | undefined
+    mount(
+      defineComponent({
+        setup() {
+          section = useIdentitySection(
+            () => installation,
+            () => undefined,
+          )
+          return () => null
+        },
+      }),
+    )
+    section?.actions.startRestore('restore-words')
+    section?.restore.words.setText(RECOVERY_WORDS.slice(0, 12).join(' '))
+    section?.actions.restore().catch(() => undefined)
+    await flushPromises()
+    section?.actions.cancel()
+    await flushPromises()
+    expect(section?.call.problem.value).toBe('')
+  })
 })

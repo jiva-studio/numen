@@ -77,7 +77,7 @@ function onSubmit(): void {
 .identity-setup__check {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--numen-inset);
 }
 
 .identity-setup__problem {
