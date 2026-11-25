@@ -106,7 +106,7 @@ func (r *runtime) configure(values map[string]string) {
 	r.removal.Set(values[settingRemovalDelay])
 	r.received.Set(values[settingReceivedFolder])
 	r.epochRoot.Set(values[settingswire.SettingEpochRoot])
-	r.session.Configure(r.settings.ReadServerAddress(values[settingswire.SettingServer]))
+	r.session.Configure(r.settings.ReadServerAddress(values[settingswire.SettingServer]), values[settingForeground]+"\x00"+values[settingswire.SettingEpochRoot])
 }
 
 func (r *runtime) start(ctx context.Context, address string) (*Backend, map[string]func(context.Context) error) {

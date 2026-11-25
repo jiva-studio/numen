@@ -2,6 +2,8 @@ package syncvault_test
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"testing"
@@ -12,9 +14,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
@@ -563,5 +567,46 @@ func TestSyncVault_AFileThatGrewPastTheSmallLimitAfterTheScanIsNotSentAsItsFirst
 	meta := synctest.OpenMeta(t, p.a.GetVaultKey(t, source), heads[0].GetRevision())
 	if meta.Size != grown.GetStat().Size || meta.Hash != grown.GetStat().Hash {
 		t.Errorf("sent size %d, want the whole file of %d bytes, not the first %d", meta.Size, grown.GetStat().Size, note.SmallFileLimit)
+	}
+}
+
+type failingSecondCommit struct {
+	ports.Revisions
+
+	calls int
+}
+
+func (f *failingSecondCommit) CommitRevisions(ctx context.Context, vaultID []byte, revisions []*syncv1.Revision) (*syncv1.CommitRevisionsResponse, error) {
+	f.calls++
+	if f.calls > 1 {
+		return nil, errors.New("the server is gone")
+	}
+	return f.Revisions.CommitRevisions(ctx, vaultID, revisions)
+}
+
+func TestSyncVault_APassThatFailsAfterCommittingARemovalKeepsTheRecordsWithoutTheRemovedFile(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	p.a.WriteNote(source, pdf, pdfText)
+	p.a.Clock.Advance(time.Minute)
+	sync(t, p.a, source)
+	p.a.Vaults.With(source).Remove(pdf)
+	sync(t, p.a, source)
+	p.afterDelay()
+	p.a.WriteNote(source, "Papers/New.md", "new")
+	deps := p.a.WireDeps()
+	deps.Revisions = &failingSecondCommit{Revisions: deps.Revisions}
+
+	if err := syncwire.NewSyncVault(deps).Execute(t.Context(), source); err == nil {
+		t.Fatal("the pass succeeded, want the failure of the second commit")
+	}
+
+	records, err := p.a.State.ReadRecords(t.Context(), source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, record := range records {
+		if record.Path == pdf {
+			t.Errorf("records still hold %s after the removal committed", pdf)
+		}
 	}
 }

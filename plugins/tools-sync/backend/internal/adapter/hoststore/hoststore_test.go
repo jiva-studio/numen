@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -151,5 +152,24 @@ func TestLockVault_AWaitingPassStopsWithItsContext(t *testing.T) {
 
 	if _, err := state.LockVault(ctx, id); err == nil {
 		t.Error("a canceled wait got the vault")
+	}
+}
+
+func TestForgetVault_DeletesTheShareStatesOfTheVault(t *testing.T) {
+	state, _, id := newStateWithCounter(t)
+	if err := state.WriteLink(t.Context(), id, vaultlink.Link{RemoteVaultID: "00"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := state.WriteShareStates(t.Context(), id, []share.Progress{{ShareRootID: "aa"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := state.ForgetVault(t.Context(), id); err != nil {
+		t.Fatal(err)
+	}
+
+	states, err := state.ReadShareStates(t.Context(), id)
+	if err != nil || len(states) != 0 {
+		t.Errorf("share states = %v, %v, want none after the vault is forgotten", states, err)
 	}
 }

@@ -75,6 +75,7 @@ type Supervisor[T any] struct {
 	configure sync.Mutex
 	mu        sync.Mutex
 	address   string
+	options   string
 	cancel    context.CancelFunc
 	done      chan struct{}
 	current   T
@@ -85,7 +86,7 @@ type Supervisor[T any] struct {
 func NewSupervisor[T any](start Start[T]) *Supervisor[T] {
 	var none T
 	return &Supervisor[T]{
-		start: start, configure: sync.Mutex{}, mu: sync.Mutex{}, address: "", cancel: nil, done: nil, current: none, isStarted: false,
+		start: start, configure: sync.Mutex{}, mu: sync.Mutex{}, address: "", options: "", cancel: nil, done: nil, current: none, isStarted: false,
 	}
 }
 
@@ -96,13 +97,13 @@ func (s *Supervisor[T]) Get() (T, bool) {
 	return s.current, s.isStarted
 }
 
-// Configure runs the session over address; an empty address runs none, and the address that runs is left alone. It
+// Configure runs the session over address; an empty address runs none, and the address that runs with the same options is left alone. The options are the settings the session is built from besides the address. It
 // waits for the old loops and builds the new session without holding the lock Get takes, so Get never waits on it.
-func (s *Supervisor[T]) Configure(address string) {
+func (s *Supervisor[T]) Configure(address, options string) {
 	s.configure.Lock()
 	defer s.configure.Unlock()
 	s.mu.Lock()
-	isSame := address == s.address && s.cancel != nil
+	isSame := address == s.address && options == s.options && s.cancel != nil
 	s.mu.Unlock()
 	if isSame {
 		return
@@ -111,7 +112,7 @@ func (s *Supervisor[T]) Configure(address string) {
 	if address == "" {
 		return
 	}
-	s.startLoops(address)
+	s.startLoops(address, options)
 }
 
 // Stop ends the loops and waits for them.
@@ -121,12 +122,12 @@ func (s *Supervisor[T]) Stop() {
 	s.stopLoops()
 }
 
-func (s *Supervisor[T]) startLoops(address string) {
+func (s *Supervisor[T]) startLoops(address, options string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	current, loops := s.start(ctx, address)
 	s.mu.Lock()
-	s.address, s.cancel, s.done, s.current, s.isStarted = address, cancel, done, current, true
+	s.address, s.options, s.cancel, s.done, s.current, s.isStarted = address, options, cancel, done, current, true
 	s.mu.Unlock()
 	var group sync.WaitGroup
 	for name, run := range loops {
@@ -143,7 +144,7 @@ func (s *Supervisor[T]) stopLoops() {
 	s.mu.Lock()
 	cancel, done := s.cancel, s.done
 	var none T
-	s.address, s.cancel, s.done, s.current, s.isStarted = "", nil, nil, none, false
+	s.address, s.options, s.cancel, s.done, s.current, s.isStarted = "", "", nil, nil, none, false
 	s.mu.Unlock()
 	if cancel == nil {
 		return

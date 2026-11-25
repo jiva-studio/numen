@@ -120,7 +120,7 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 	} {
 		var retry bool
 		if records, retry, err = step(ctx, vault, records); err != nil {
-			return false, err
+			return false, errors.Join(err, p.use.deps.State.WriteRecords(ctx, p.id, records))
 		}
 		isRetry = isRetry || retry
 	}

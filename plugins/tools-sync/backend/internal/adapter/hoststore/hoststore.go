@@ -234,7 +234,7 @@ func (s *State) WriteShareStates(ctx context.Context, id domain.VaultID, states 
 // failure in between leaves a vault that is still linked. The pinned keys and the journals of the account stay.
 func (s *State) ForgetVault(ctx context.Context, id domain.VaultID) error {
 	for _, name := range []string{
-		recordsFile, statusFile, sightingsFile, feedFile, uploadsFile, downloadsFile, pendingFile, answerFile, absencesFile, linkFile,
+		recordsFile, statusFile, sightingsFile, feedFile, uploadsFile, downloadsFile, pendingFile, answerFile, absencesFile, sharesFile, linkFile,
 	} {
 		if err := s.delete(ctx, id, name); err != nil {
 			return err

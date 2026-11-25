@@ -3,6 +3,7 @@ package loops_test
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -21,10 +22,10 @@ func TestSupervisor_GetAnswersWhileConfigureWaitsForTheOldLoopsToStop(t *testing
 			return nil
 		}}
 	})
-	supervisor.Configure("first")
+	supervisor.Configure("first", "")
 	configured := make(chan struct{})
 	go func() {
-		supervisor.Configure("second")
+		supervisor.Configure("second", "")
 		close(configured)
 	}()
 	<-stopping
@@ -55,7 +56,7 @@ func TestSupervisor_GetAnswersWhileTheSessionIsBeingBuilt(t *testing.T) {
 	})
 	configured := make(chan struct{})
 	go func() {
-		supervisor.Configure("first")
+		supervisor.Configure("first", "")
 		close(configured)
 	}()
 	<-building
@@ -91,7 +92,7 @@ func TestSupervisor_GetReportsNoSessionWhileTheLoopsStop(t *testing.T) {
 			return nil
 		}}
 	})
-	supervisor.Configure("first")
+	supervisor.Configure("first", "")
 	stopped := make(chan struct{})
 	go func() {
 		supervisor.Stop()
@@ -106,4 +107,21 @@ func TestSupervisor_GetReportsNoSessionWhileTheLoopsStop(t *testing.T) {
 	}
 	close(release)
 	<-stopped
+}
+
+func TestSupervisor_ConfigureStartsTheSessionAgainWhenOnlyTheOptionsChange(t *testing.T) {
+	var starts atomic.Int64
+	supervisor := loops.NewSupervisor(func(_ context.Context, address string) (string, map[string]func(context.Context) error) {
+		starts.Add(1)
+		return address, nil
+	})
+	t.Cleanup(supervisor.Stop)
+
+	supervisor.Configure("first", "a")
+	supervisor.Configure("first", "a")
+	supervisor.Configure("first", "b")
+
+	if got := starts.Load(); got != 2 {
+		t.Errorf("the session was built %d times, want 2: once for each options value", got)
+	}
 }
