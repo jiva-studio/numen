@@ -9,6 +9,7 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
+	"github.com/jiva-studio/numen/libs/core/kernel/container/wireparts"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
@@ -127,15 +128,7 @@ func listAppSettings(c settingsWiring) []plugindomain.Setting {
 }
 
 func getNewVaultsFolder(c settingsWiring) vaultusecase.NewVaultsFolder {
-	return func() string {
-		target, err := createSettings(c)
-		if err != nil {
-			c.HandleError(fmt.Errorf("read settings: %w", err))
-		}
-		folder, _ := target.GetValue(settingsdomain.AppOwner, "vaults", "folder")
-		text, _ := folder.(string)
-		return text
-	}
+	return wireparts.NewNewVaultsFolder(func() (settingsadapter.File, error) { return createSettings(c) }, c.HandleError)
 }
 
 func syncSetting(c settingsWiring) naming.SyncSetting {

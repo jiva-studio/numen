@@ -10,6 +10,7 @@ import (
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/container/wireparts"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -185,7 +186,7 @@ func buildWindow(
 
 	diag := windowsession.NewDiagnostics(opening.Out, page.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
-		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(indexer),
+		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: wireparts.NewIndexSession(indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, indexer, getTextVersions(vaultDeps.TextVersions), diag),
 		Passes:   startVault(vaultDeps, db, current), Triggers: plugins.triggers, StartFeed: plugins.startFeed,
 		Report: editor.ReportVault(vaultDeps.RecordLog),
