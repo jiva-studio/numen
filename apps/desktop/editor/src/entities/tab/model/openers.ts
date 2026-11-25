@@ -27,6 +27,7 @@ interface OpenPlacement {
 type FileOpener = (path: string, title: string, options?: FilePlacement | OpenPlacement) => void
 
 import type { SourceReader } from '../lib/kinds'
+import type { DownloadTabs } from './createDownloadTabs'
 export type { SourceReader }
 
 /**
@@ -42,10 +43,8 @@ export interface FileOpenerDeps {
   isFileAbsent?(path: string): Promise<boolean>
   /** Brings the bytes of an absent file onto this device; rejects with the reason to show. */
   fetchFile?(path: string): Promise<void>
-  /** Tells that a download starts or ends. */
-  onDownloadChange?(isRunning: boolean): void
-  /** Tells that a download failed. */
-  onDownloadFailure?(error: unknown): void
+  /** The tabs that stand for files while they download. */
+  downloadTabs?: DownloadTabs
 }
 
 /** A reader registered for an extension, with the icon its files carry. */
@@ -66,19 +65,42 @@ const fetchFileKind = async (vault: FileOpenerDeps, path: string): Promise<FileK
   return (await vault.readFileKinds([path])).get(path) ?? null
 }
 
-/** Brings an absent file onto this device; false where it could not, after the failure is reported. */
-const downloadFile = async (vault: FileOpenerDeps, path: string): Promise<boolean> => {
+/**
+ * Brings an absent file onto this device while a tab stands for it; false where the file is not to
+ * be opened: a download of it already runs, it failed, or its tab was closed.
+ */
+const downloadFile = async (
+  vault: FileOpenerDeps,
+  path: string,
+  title: string,
+): Promise<boolean> => {
   if (!vault.fetchFile || !(await vault.isFileAbsent?.(path))) return true
-  vault.onDownloadChange?.(true)
+  const { downloadTabs } = vault
+  if (downloadTabs && !(await downloadTabs.start(path, title))) return false
   try {
     await vault.fetchFile(path)
-    vault.onDownloadChange?.(false)
-    return true
   } catch (error) {
-    vault.onDownloadChange?.(false)
-    vault.onDownloadFailure?.(error)
+    downloadTabs?.fail(path, error)
     return false
   }
+  if (!downloadTabs || downloadTabs.isOpen(path)) return true
+  downloadTabs.finish(path)
+  return false
+}
+
+/** Opens a downloaded file, then removes the tab that stood for it; a failure to open it is shown in that tab. */
+const openDownloaded = async (
+  vault: FileOpenerDeps,
+  path: string,
+  open: () => Promise<void>,
+): Promise<void> => {
+  try {
+    await open()
+  } catch (error) {
+    vault.downloadTabs?.fail(path, error)
+    throw error
+  }
+  vault.downloadTabs?.finish(path)
 }
 
 export function createFileOpeners(vault: FileOpenerDeps) {
@@ -161,18 +183,22 @@ export function createFileOpeners(vault: FileOpenerDeps) {
     options?: FilePlacement | OpenPlacement,
   ): Promise<void> => {
     const placement = typeof options === 'string' ? { where: options } : options
-    if (!(await downloadFile(vault, path))) return
-    const kind = await fetchFileKind(vault, path)
-    if (kind && (await openNote(path, kind, title, placement))) return
-    await readFile(path, placement?.selector ?? null)
+    if (!(await downloadFile(vault, path, title))) return
+    await openDownloaded(vault, path, async () => {
+      const kind = await fetchFileKind(vault, path)
+      if (kind && (await openNote(path, kind, title, placement))) return
+      await readFile(path, placement?.selector ?? null)
+    })
   }
 
   /** Opens a file at ranges of its text: a note in its editor, whole, any other file in its reader. */
   const openFileAt = async (path: string, spans: readonly TextRange[]): Promise<void> => {
-    if (!(await downloadFile(vault, path))) return
-    const kind = await fetchFileKind(vault, path)
-    if (kind && (await openNote(path, kind, ''))) return
-    await readFile(path, null, spans)
+    if (!(await downloadFile(vault, path, ''))) return
+    await openDownloaded(vault, path, async () => {
+      const kind = await fetchFileKind(vault, path)
+      if (kind && (await openNote(path, kind, ''))) return
+      await readFile(path, null, spans)
+    })
   }
 
   return {

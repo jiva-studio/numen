@@ -1,5 +1,8 @@
 /** The tabs a window keeps: what kinds there are, what opens one, and what each is called. */
 export { createFileOpeners } from './model/openers'
+export { createDownloadTabs } from './model/createDownloadTabs'
+export type { DownloadTabs } from './model/createDownloadTabs'
+export { default as DownloadPane } from './ui/DownloadPane.vue'
 export type { FileOpeners } from './model/openers'
 export type { Tab } from './lib/tab'
 export type { Writable } from './lib/writable'

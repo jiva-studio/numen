@@ -1,7 +1,7 @@
 /** The downloads of files the window has running: which paths are being brought, and who is told when that changes. */
 export interface Downloads {
   /** Brings the bytes of the file; a download of the path already running is joined, not started twice. */
-  fetch(path: string): Promise<void>
+  fetch: (path: string) => Promise<void>
   isRunning(path: string): boolean
   /** Calls the handler with the path of each download that starts or ends; returns what stops it. */
   watch(handler: (path: string) => void): () => void

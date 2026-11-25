@@ -12,8 +12,6 @@ import { ERRORS } from '../api/errors'
 export { ERRORS }
 
 export const WORDS = {
-  /** Shown while the bytes of a file that is not on this device are brought. */
-  downloading: 'Downloading…',
   /** The row of a submenu or a pick list of items while they are read. */
   loadingItems: 'Loading…',
   /** Status corner text shown while something about the vault is wrong. */

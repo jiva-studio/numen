@@ -7,6 +7,7 @@ import type { JsonValue } from '@/shared/api/json'
 import { closeTab, openTabAdjacent, findPane } from '@numen/workbench'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
 import type { SavedTab } from '../lib/tab'
+import { DOWNLOAD_KIND } from '../lib/downloadFailure'
 import { createRestoreFailedKind } from './restoreFailed'
 import {
   createUnavailableKind,
@@ -240,7 +241,8 @@ export function createTabClosers(store: TabStore) {
   const reconcileTab = (path: string, newKind: string) => {
     if (!path) return
     for (const [id, one] of store.open.value) {
-      if (one.kind.kind === newKind || one.kind.display?.isTool) continue
+      if (one.kind.kind === newKind || one.kind.kind === DOWNLOAD_KIND || one.kind.display?.isTool)
+        continue
       if (getTabPath(one) === path) requestClose(id)
     }
   }

@@ -2,6 +2,7 @@
  * The tabs of the window: the tabs, the links between them, the files they open, the sync of their
  * paths and the session that keeps their links with the core.
  */
+import { runInBackground } from '@numen/ui'
 import type { PluginStatus } from '@numen/plugin-loader'
 import type { SettingsStore } from '@/entities/settings'
 import {
@@ -9,7 +10,9 @@ import {
   createTabPluginStarts,
   createTabSync,
   createWindowTabs,
+  createDownloadTabs,
   createFileOpeners,
+  DownloadPane,
   RestoreFailedPane,
   UnavailablePane,
 } from '@/entities/tab'
@@ -17,7 +20,6 @@ import { focusWindow, isSecondaryWindow } from '@/entities/window'
 import { createTabLinking, createWindowTabLinkSession } from '@/features/tab-linking'
 import { createMoveAcceptor, createMovedTabStarter } from '@/features/tab-move'
 import { formatError } from '@/shared/api/errors'
-import { WORDS } from '@/shared/ui/words'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowApi } from './createWindowApi'
 
@@ -59,12 +61,17 @@ export function createTabsPart(deps: TabsPartDeps) {
     isMain,
     writeMessage,
   })
+  const downloads = createDownloadTabs(DownloadPane, windowTabs, (path, title) =>
+    runInBackground(tabOpeners.openFile(path, title), (error) =>
+      writeMessage(formatError(error), 'error'),
+    ),
+  )
+  windowTabs.kinds.registerKind(downloads.kind)
   const tabOpeners = createFileOpeners({
     readFileKinds: api.vault.file.getFileKinds,
     isFileAbsent: api.vault.file.isFileAbsent,
     fetchFile: api.vault.downloads.fetch,
-    onDownloadChange: (isRunning) => writeMessage(isRunning ? WORDS.downloading : ''),
-    onDownloadFailure: (error) => writeMessage(formatError(error), 'error'),
+    downloadTabs: downloads.tabs,
     reconcileTab: windowTabs.panes.reconcileTab,
     startTabKind: pluginStarts.startTabKind,
     startExtensionReader: pluginStarts.startExtensionReader,
