@@ -341,8 +341,8 @@ func TestCompleteRestore_WithNoChainMakesANewIdentityOfTheWords(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.AccountFingerprint != expected.AccountFingerprint || k.keys.setCalled != 2 {
-		t.Errorf("identity = %+v after %d writes, want the account of the words from the record and the chain length", got, k.keys.setCalled)
+	if got.AccountFingerprint != expected.AccountFingerprint || k.keys.setCalled != 1 {
+		t.Errorf("identity = %+v after %d writes, want the account of the words from one write", got, k.keys.setCalled)
 	}
 	chain, err := identitylib.ParseChain(k.getChain(t))
 	if err != nil || len(chain.ListDevices()) != 1 {
@@ -500,8 +500,8 @@ func TestStartRestore_CompletesAsAnOfflineRestoreWhenNoPluginCompletesItIn30Seco
 	if pending, err := k.pending.Execute(t.Context()); err != nil || pending.IsPending {
 		t.Errorf("pending = %+v, error = %v, want nothing pending after the fallback", pending, err)
 	}
-	if k.keys.setCalled != 2 {
-		t.Errorf("the record was written %d times, want twice (the record and the chain length)", k.keys.setCalled)
+	if k.keys.setCalled != 1 {
+		t.Errorf("the record was written %d times, want once", k.keys.setCalled)
 	}
 }
 
@@ -518,8 +518,8 @@ func TestStartRestore_ADeadlineThatPassesAfterTheRestoreCompletedChangesNothing(
 
 	k.clock.Advance(2 * restoreFallback)
 
-	if k.keys.setCalled != 2 || k.keys.snapshot()[keyName] != before[keyName] {
-		t.Errorf("the record was written %d times and changed, want the two writes of CompleteRestore", k.keys.setCalled)
+	if k.keys.setCalled != 1 || k.keys.snapshot()[keyName] != before[keyName] {
+		t.Errorf("the record was written %d times and changed, want the one write of CompleteRestore", k.keys.setCalled)
 	}
 }
 
@@ -634,8 +634,8 @@ func TestCompleteRestore_ConcurrentCreateResultsInOneIdentity(t *testing.T) {
 			refused++
 		}
 	}
-	if succeeded != 1 || refused != 1 || k.keys.setCalled != 2 {
-		t.Errorf("succeeded = %d, refused = %d, writes = %d, want 1, 1, 2", succeeded, refused, k.keys.setCalled)
+	if succeeded != 1 || refused != 1 || k.keys.setCalled != 1 {
+		t.Errorf("succeeded = %d, refused = %d, writes = %d, want 1, 1, 1", succeeded, refused, k.keys.setCalled)
 	}
 }
 

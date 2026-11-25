@@ -193,6 +193,9 @@ func checkHighWater(ctx context.Context, keys pluginport.KeyStore, fingerprint s
 }
 
 func raiseHighWater(ctx context.Context, keys pluginport.KeyStore, chain identitylib.Chain) error {
+	if chain.Len() <= newIdentityChainLength {
+		return nil
+	}
 	fingerprint := chain.Root().Fingerprint().String()
 	err := checkHighWater(ctx, keys, fingerprint, chain.Len())
 	if errors.Is(err, identitydomain.ErrChainOutdated) {
@@ -206,3 +209,5 @@ func raiseHighWater(ctx context.Context, keys pluginport.KeyStore, chain identit
 	}
 	return nil
 }
+
+const newIdentityChainLength = 2

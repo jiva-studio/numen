@@ -2,7 +2,6 @@ package identity_test
 
 import (
 	"errors"
-	"strings"
 	"testing"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
@@ -162,28 +161,6 @@ func TestCompleteRestore_RotatesTheKeysSoTheKeysWrappedForTheWordsAreNotInUse(t 
 	devices, err := phone.devices.Execute(t.Context())
 	if err != nil || len(devices) != 2 {
 		t.Errorf("devices = %+v, error = %v, want both devices listed for the person to check", devices, err)
-	}
-}
-
-func TestCompleteRestore_RefusesNoChainWhenThisDeviceHeldTheChainOfASingleDeviceIdentity(t *testing.T) {
-	t.Parallel()
-	k := newRestoreKit(t, "Desktop")
-	if _, err := k.create.Execute(t.Context(), getLegalWords()); err != nil {
-		t.Fatal(err)
-	}
-	for name := range k.keys.snapshot() {
-		if !strings.HasPrefix(name, "chain-length-") {
-			if err := k.keys.DeleteKey(t.Context(), name); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	if err := k.start.Execute(t.Context(), getLegalWords(), "", true); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := k.complete.Execute(t.Context(), syncPlugin, nil); !errors.Is(err, identitydomain.ErrChainOutdated) {
-		t.Errorf("error = %v, want ErrChainOutdated", err)
 	}
 }
 

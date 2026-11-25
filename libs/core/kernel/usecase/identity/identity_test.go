@@ -158,8 +158,8 @@ func TestCreateIdentity_KeepsOneRecordThatGetIdentityReads(t *testing.T) {
 		t.Fatal(err)
 	}
 	stored := k.keys.snapshot()
-	if len(stored) != 2 || k.keys.setCalled != 2 {
-		t.Fatalf("key store = %v after %d writes, want the record and the chain length written once each", stored, k.keys.setCalled)
+	if len(stored) != 1 || k.keys.setCalled != 1 {
+		t.Fatalf("key store = %v after %d writes, want one entry written once", stored, k.keys.setCalled)
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(stored[keyName])
 	if err != nil {
