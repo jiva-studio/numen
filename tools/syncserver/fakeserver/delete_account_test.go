@@ -186,6 +186,6 @@ func TestDeleteAccount_IsNotRestoredByASignInOfARevokedDevice(t *testing.T) {
 		t.Fatal("a revoked device signed in")
 	}
 	if _, isDeleting := errors.AsType[syncprotocol.AccountDeletingError](e.signInAgain(false)); !isDeleting {
-		t.Error("a sign-in of a revoked device cancelled the deletion of the account")
+		t.Error("a sign-in of a revoked device canceled the deletion of the account")
 	}
 }
