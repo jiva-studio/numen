@@ -91,7 +91,7 @@ func (s *Requests) ListShareRequests(ctx context.Context, _ api.ListShareRequest
 
 // ApproveShareRequest lets the device read the folder.
 func (s *Requests) ApproveShareRequest(ctx context.Context, request api.ApproveShareRequestRequest) (api.ApproveShareRequestResponse, error) {
-	return api.ApproveShareRequestResponse{}, s.approve.Execute(ctx, request.RequestID)
+	return api.ApproveShareRequestResponse{}, s.approve.Execute(ctx, request.RequestID, request.Fingerprint)
 }
 
 // DeclineShareRequest refuses the device.

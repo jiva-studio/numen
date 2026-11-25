@@ -162,7 +162,7 @@ func getRefusals() []error {
 		share.ErrNotForThisAccount, share.ErrAlreadyReceived, share.ErrOwnerChanged, share.ErrEnded, share.ErrDamagedLog, share.ErrNotReady,
 		share.ErrReceivedStop, share.ErrNotReceived,
 		share.ErrUnknownReader, share.ErrNotShared, share.ErrRolledBack, share.ErrBadLink, share.ErrLinkExpired, share.ErrLinkOtherServer,
-		share.ErrLinkUsed, share.ErrUnknownRequest, share.ErrLinkDeclined, share.ErrLinkMismatch,
+		share.ErrLinkUsed, share.ErrUnknownRequest, share.ErrFingerprintNotConfirmed, share.ErrLinkDeclined, share.ErrLinkMismatch,
 	}
 }
 

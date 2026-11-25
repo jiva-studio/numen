@@ -97,12 +97,17 @@ type Approve struct{ deps Deps }
 func NewApprove(deps Deps) *Approve { return &Approve{deps: deps} }
 
 // Execute shares the folder if it is not shared yet, adds the person as a reader, and sends the person the invitation
-// over the channel of the link. The link is used up. A failure before the reader is added leaves the request to
-// answer again; a request after its link expired is ErrLinkExpired.
-func (u *Approve) Execute(ctx context.Context, id string) error {
+// over the channel of the link. The link is used up. The fingerprint is the one the sharer confirmed with the person and must be the
+// fingerprint of the request (ErrFingerprintNotConfirmed otherwise, and the request stays to answer). A failure before the reader is
+// added leaves the request to answer again; a request after its link expired is ErrLinkExpired.
+func (u *Approve) Execute(ctx context.Context, id, fingerprint string) error {
 	o, p, err := claim(u.deps, id)
 	if err != nil {
 		return err
+	}
+	if !isSameFingerprint(fingerprint, p.fingerprint) {
+		release(u.deps.Hub, p)
+		return domainshare.ErrFingerprintNotConfirmed
 	}
 	invited, err := addReader(ctx, u.deps, o, p)
 	if err != nil {
@@ -165,4 +170,8 @@ func (u *Revoke) Execute(ctx context.Context, id string) error {
 		return err
 	}
 	return nil
+}
+
+func isSameFingerprint(confirmed, wanted string) bool {
+	return confirmed != "" && strings.EqualFold(strings.Join(strings.Fields(confirmed), " "), strings.Join(strings.Fields(wanted), " "))
 }

@@ -23,8 +23,10 @@ export const createAccountApi = (identity: AccountClient) => ({
     identity.create(words),
 
   /** Starts to restore the cloud data of the twelve `words`; the core completes it in the background. */
-  startRestore: (words: readonly string[]): Promise<Result<undefined, IdentityFailure>> =>
-    identity.startRestore(words),
+  startRestore: (
+    words: readonly string[],
+    isUnmarkedConfirmed: boolean,
+  ): Promise<Result<undefined, IdentityFailure>> => identity.startRestore(words, isUnmarkedConfirmed),
 
   /** Removes the identity from this device. */
   deleteIdentity: (): Promise<void> => identity.delete(),
@@ -38,7 +40,9 @@ export const createAccountApi = (identity: AccountClient) => ({
   /** Starts to restore the cloud data of two `sheets` of a kit; the core completes it in the background. */
   startRestoreFromKit: (
     sheets: readonly (readonly string[])[],
-  ): Promise<Result<undefined, IdentityFailure>> => identity.startRestoreFromKit(sheets),
+    isUnmarkedConfirmed: boolean,
+  ): Promise<Result<undefined, IdentityFailure>> =>
+    identity.startRestoreFromKit(sheets, isUnmarkedConfirmed),
 })
 
 /** The calls of a link of this device to an account. */

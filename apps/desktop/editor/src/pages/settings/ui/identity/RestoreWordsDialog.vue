@@ -32,6 +32,7 @@ const isComplete = computed(() => props.reading.proof !== undefined)
   <IdentityDialog
     :title="words.identityRestoreWords"
     :hint="words.restoreWordsHint"
+    :caution="words.restoreUnverifiedNote"
     @submit="emit('restore')"
     @cancel="emit('cancel')"
   >

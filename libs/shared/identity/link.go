@@ -192,6 +192,7 @@ type LinkChannel struct {
 	send, receive       cipher.AEAD
 	transcript          [32]byte
 	code                string
+	codeKey             [32]byte
 	sendCount, recvNext uint64
 }
 
@@ -228,10 +229,14 @@ func newLinkChannel(private *ecdh.PrivateKey, peer *ecdh.PublicKey, p LinkPayloa
 	if err != nil {
 		return nil, err
 	}
-	if isScanner {
-		return &LinkChannel{send: toDisplayer, receive: toScanner, transcript: transcript, code: code}, nil
+	codeKey, err := newLinkCodeKey(pseudo, transcript)
+	if err != nil {
+		return nil, err
 	}
-	return &LinkChannel{send: toScanner, receive: toDisplayer, transcript: transcript, code: code}, nil
+	if isScanner {
+		return &LinkChannel{send: toDisplayer, receive: toScanner, transcript: transcript, code: code, codeKey: codeKey}, nil
+	}
+	return &LinkChannel{send: toScanner, receive: toDisplayer, transcript: transcript, code: code, codeKey: codeKey}, nil
 }
 
 func newLinkCode(pseudo []byte, transcript [32]byte) (string, error) {

@@ -40,6 +40,7 @@ type join struct {
 	scanner     *identity.LinkScanner
 	channel     *identity.LinkChannel
 	chain       []byte
+	account     string
 	name        string
 	phase       Phase
 	code        string
@@ -130,7 +131,7 @@ func (u *Join) Execute(ctx context.Context, text, deviceName string) (JoinReques
 		return JoinRequest{}, err
 	}
 	mine := &join{
-		id: id, invitation: invitation, scanner: scanner, channel: nil, chain: own.Chain, name: domainshare.CleanDeviceName(getDeviceName(u.deps, deviceName)),
+		id: id, invitation: invitation, scanner: scanner, channel: nil, chain: own.Chain, account: chain.Root().Fingerprint().String(), name: domainshare.CleanDeviceName(getDeviceName(u.deps, deviceName)),
 		phase: PhaseConnecting, code: "", failure: nil, hasFinished: false,
 	}
 	key := hex.EncodeToString(id)
@@ -265,7 +266,7 @@ func bindJoin(ctx context.Context, deps Deps, mine *join, body []byte) {
 		return
 	}
 	deps.Hub.mu.Lock()
-	mine.channel, mine.code, mine.phase = channel, channel.Code(), PhaseWaiting
+	mine.channel, mine.code, mine.phase = channel, channel.GetCodeFor(mine.invitation.Fingerprint, mine.account), PhaseWaiting
 	deps.Hub.mu.Unlock()
 }
 

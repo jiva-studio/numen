@@ -3,7 +3,7 @@
  * The dialog "Share folder": the link to send with its validity, the wait for a device, the request to read
  * with its code and the buttons that allow or decline it, and the devices that read the folder.
  */
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Copy } from '@lucide/vue'
 import { Button, Dialog, Spinner } from '@numen/ui'
 import { getCodeText } from '../lib/code'
@@ -20,6 +20,10 @@ const folderName = computed(() => props.state.name)
 const isAsking = computed(() => props.state.request !== undefined)
 const isWaiting = computed(() => props.state.isLinkAlive && !isAsking.value)
 const step = computed(() => (isAsking.value ? 'asking' : props.state.isLinkAlive ? 'link' : 'done'))
+const isConfirmed = ref(false)
+watch(() => props.state.request?.requestId, () => {
+  isConfirmed.value = false
+})
 const getDevice = (name: string, fingerprint: string): string =>
   words.deviceLabel(name, getShortFingerprint(fingerprint))
 
@@ -74,6 +78,12 @@ function onDecline(): void {
         }}
         {{ words.confirmationCode(getCodeText(state.request.code)) }}
       </p>
+      <p class="sync-dialog__text">{{ words.requestFingerprint(state.request.fingerprint) }}</p>
+      <p class="sync-dialog__text sync-dialog__text--hushed">{{ words.fingerprintNote }}</p>
+      <label class="sync-dialog__text">
+        <input v-model="isConfirmed" type="checkbox" />
+        {{ words.fingerprintConfirm }}
+      </label>
       <p class="sync-dialog__text sync-dialog__text--hushed">{{ words.readOnlyHint }}</p>
     </div>
     <p v-if="state.error !== ''" class="sync-dialog__text sync-dialog__text--alarm" role="alert">
@@ -105,7 +115,7 @@ function onDecline(): void {
         <Button variant="ghost" :disabled="state.isBusy" @click="onDecline">
           {{ words.decline }}
         </Button>
-        <Button :disabled="state.isBusy" @click="onAllow">{{ words.approve }}</Button>
+        <Button :disabled="state.isBusy || !isConfirmed" @click="onAllow">{{ words.approve }}</Button>
       </template>
       <template v-else>
         <template v-if="state.isLinkAlive">

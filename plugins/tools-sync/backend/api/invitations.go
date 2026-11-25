@@ -59,9 +59,11 @@ type ListShareRequestsResponse struct {
 	Requests []ShareRequest `json:"requests"`
 }
 
-// ApproveShareRequestRequest lets a person read the folder.
+// ApproveShareRequestRequest lets a person read the folder. Fingerprint is the fingerprint of the person that the sharer confirmed with
+// the person; any other fingerprint refuses the request.
 type ApproveShareRequestRequest struct {
-	RequestID string `json:"requestId"`
+	RequestID   string `json:"requestId"`
+	Fingerprint string `json:"fingerprint"`
 }
 
 // ApproveShareRequestResponse is the answer to a request that was approved: the person is a reader of the folder.

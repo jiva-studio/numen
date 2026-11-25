@@ -32,6 +32,7 @@ const stages = computed(() => getRestoreStages(props.slots, props.isBusy, props.
   <IdentityDialog
     :title="words.identityRestoreSheets"
     :hint="words.restoreSheetsHint"
+    :caution="words.restoreUnverifiedNote"
     @cancel="emit('cancel')"
   >
     <QrScanner
