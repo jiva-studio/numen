@@ -190,7 +190,7 @@ func (r *pullRun) followLog(ctx context.Context) error {
 	r.keys = position.Keys
 	received.ServerVersion, received.HeadID, received.Epoch, received.Name = position.Version, position.HeadID[:], position.Epoch, position.Name
 	received.OwnerChain, received.IsEnded = chain, position.IsEnded
-	if err := r.deps.Links.WriteLink(ctx, r.id, r.link); err != nil {
+	if err := r.writeLink(ctx); err != nil {
 		return err
 	}
 	if position.IsEnded {
@@ -214,7 +214,7 @@ func (r *pullRun) sealKeys(ctx context.Context, keys domainshare.Keys) error {
 
 func (r *pullRun) end(ctx context.Context, version uint64) error {
 	r.link.Received.IsEnded = true
-	if err := r.deps.Links.WriteLink(ctx, r.id, r.link); err != nil {
+	if err := r.writeLink(ctx); err != nil {
 		return err
 	}
 	return fmt.Errorf("%w at version %d", domainshare.ErrEnded, version)
@@ -235,7 +235,7 @@ func (r *pullRun) save(ctx context.Context, next uint64) error {
 	if r.isHeld {
 		r.link.ServerSeq = r.holdSeq
 	}
-	return r.deps.Links.WriteLink(ctx, r.id, r.link)
+	return r.writeLink(ctx)
 }
 
 func (r *pullRun) hold(seq uint64) {
@@ -463,4 +463,11 @@ func refuseShorterChain(stored, served []byte) error {
 		return errChainRolledBack
 	}
 	return nil
+}
+
+func (r *pullRun) writeLink(ctx context.Context) error {
+	return r.deps.Links.UpdateLink(ctx, r.id, func(fresh *vaultlink.Link) error {
+		fresh.Received, fresh.ServerSeq = r.link.Received, r.link.ServerSeq
+		return nil
+	})
 }

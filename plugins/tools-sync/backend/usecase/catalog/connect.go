@@ -49,8 +49,18 @@ func NewConnectVault(deps Deps) *ConnectVault {
 	return &ConnectVault{reader: reader{deps: deps}, mu: sync.Mutex{}}
 }
 
-// Execute connects the vault; one call at a time runs the check and the write. It refuses a copy of a connected vault with ErrCopyOfConnectedVault.
+// Execute connects the vault while it holds the lock of the vault, so no pass writes the link meanwhile. It waits for a pass over the vault that runs.
 func (u *ConnectVault) Execute(ctx context.Context, in ConnectInput) error {
+	unlock, err := u.reader.deps.Locker.LockVault(ctx, in.VaultID)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return u.ExecuteHeld(ctx, in)
+}
+
+// ExecuteHeld connects the vault for a caller that holds the lock of the vault; one call at a time runs the check and the write. It refuses a copy of a connected vault with ErrCopyOfConnectedVault.
+func (u *ConnectVault) ExecuteHeld(ctx context.Context, in ConnectInput) error {
 	if in.Mode != ModeNew && in.Mode != ModeExisting {
 		return errUnknownMode
 	}

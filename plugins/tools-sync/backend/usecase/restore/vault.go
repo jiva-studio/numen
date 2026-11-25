@@ -34,6 +34,7 @@ type recovery struct {
 	link    vaultlink.Link
 	records []transfer.FileRecord
 	hashes  map[string]string
+	removed []vaultlink.RemovedFile
 }
 
 // Execute runs the recovery of the vault, continuing what an earlier run left in the link. The content of this
@@ -66,7 +67,7 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if err := u.markMissingBlobs(ctx, remote, found, records); err != nil {
 		return err
 	}
-	run := &recovery{deps: u.deps, id: id, vault: vault, link: link, records: records, hashes: nil}
+	run := &recovery{deps: u.deps, id: id, vault: vault, link: link, records: records, hashes: nil, removed: nil}
 	if run.hashes, err = run.readHashes(ctx, found); err != nil {
 		return err
 	}
@@ -74,8 +75,10 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if err := run.execute(ctx, work); err != nil {
 		return err
 	}
-	run.link.RestoreEpochID, run.link.Recovery, run.link.ServerSeq = found.epochID, nil, 0
-	return u.deps.State.WriteLink(ctx, id, run.link)
+	return u.deps.State.UpdateLink(ctx, id, func(fresh *vaultlink.Link) error {
+		fresh.RestoreEpochID, fresh.Recovery, fresh.ServerSeq = found.epochID, nil, 0
+		return nil
+	})
 }
 
 func (r *recovery) readHashes(ctx context.Context, found heads) (map[string]string, error) {
@@ -123,7 +126,11 @@ func (r *recovery) execute(ctx context.Context, work []domainrestore.Action) err
 			pending[i] = action.FileID
 		}
 		r.link.Recovery = &vaultlink.RecoveryProgress{Pending: pending}
-		if err := r.deps.State.WriteLink(ctx, r.id, r.link); err != nil {
+		err := r.deps.State.UpdateLink(ctx, r.id, func(fresh *vaultlink.Link) error {
+			fresh.Recovery = &vaultlink.RecoveryProgress{Pending: slices.Clone(pending)}
+			return nil
+		})
+		if err != nil {
 			return err
 		}
 	}
@@ -143,10 +150,21 @@ func (r *recovery) finish(ctx context.Context, batch []domainrestore.Action) err
 	if err := r.deps.State.WriteRecords(ctx, r.id, r.records); err != nil {
 		return err
 	}
-	r.link.Recovery.Pending = slices.DeleteFunc(r.link.Recovery.Pending, func(id []byte) bool {
+	isDone := func(id []byte) bool {
 		return slices.ContainsFunc(batch, func(action domainrestore.Action) bool { return bytes.Equal(action.FileID, id) })
+	}
+	r.link.Recovery.Pending = slices.DeleteFunc(r.link.Recovery.Pending, isDone)
+	removed := r.removed
+	r.removed = nil
+	return r.deps.State.UpdateLink(ctx, r.id, func(fresh *vaultlink.Link) error {
+		if fresh.Recovery != nil {
+			fresh.Recovery.Pending = slices.DeleteFunc(fresh.Recovery.Pending, isDone)
+		}
+		for _, one := range removed {
+			fresh.AddRemoved(one)
+		}
+		return nil
 	})
-	return r.deps.State.WriteLink(ctx, r.id, r.link)
 }
 
 func (r *recovery) executeBatch(ctx context.Context, batch []domainrestore.Action) error {
@@ -227,7 +245,9 @@ func (r *recovery) remove(ctx context.Context, removals []transfer.FileRecord) e
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
 			r.records = slices.DeleteFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
-			r.link.AddRemoved(vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1})
+			gone := vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1}
+			r.link.AddRemoved(gone)
+			r.removed = append(r.removed, gone)
 		}
 	}
 	return nil

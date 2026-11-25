@@ -2,6 +2,7 @@ package restore_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 
@@ -9,6 +10,9 @@ import (
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	usecase "github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/restore"
 )
@@ -235,4 +239,48 @@ func isSameEntry(t *testing.T, a, b *syncv1.CatalogEntry) bool {
 		t.Fatal(err)
 	}
 	return bytes.Equal(left, right)
+}
+
+type renamingCommitter struct {
+	usecase.Committer
+	rename func()
+}
+
+func (r renamingCommitter) Execute(ctx context.Context, in ports.CommitInput) ([]transfer.Outcome, error) {
+	r.rename()
+	return r.Committer.Execute(ctx, in)
+}
+
+func TestRecoverVault_KeepsAChangeOfTheLinkMadeWhileItRuns(t *testing.T) {
+	t.Parallel()
+	p := newFirst(t)
+	p.a.Connect(t, source)
+	kept, err := p.server.Fake.Snapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.a.WriteNote(source, "Shopping list.md", "milk")
+	if err := p.a.Sync(t.Context(), source); err != nil {
+		t.Fatal(err)
+	}
+	p.restoreAndAnnounce(t, kept)
+	deps := p.a.RestoreDeps()
+	deps.Commit = renamingCommitter{Committer: deps.Commit, rename: func() {
+		err := p.a.State.UpdateLink(t.Context(), source, func(link *vaultlink.Link) error {
+			link.CatalogName = "Renamed"
+			return nil
+		})
+		if err != nil {
+			t.Error(err)
+		}
+	}}
+
+	if err := usecase.NewRecoverVault(deps).Execute(t.Context(), source); err != nil {
+		t.Fatal(err)
+	}
+
+	link := p.a.Link(t, source)
+	if link.CatalogName != "Renamed" || len(link.RestoreEpochID) == 0 {
+		t.Errorf("link = name %q epoch %x, want the name Renamed and the epoch id of the recovery", link.CatalogName, link.RestoreEpochID)
+	}
 }

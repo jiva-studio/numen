@@ -63,14 +63,14 @@ func New(deps syncvault.Deps, heads ports.Heads) *Vaults {
 	catalogDeps := catalog.Deps{
 		Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
 		Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health,
-		Random: deps.Random,
+		Random: deps.Random, Locker: deps.Locker,
 	}
 	deleting := catalog.NewDeleteCloudVault(catalogDeps, share.NewCloseShares(sharewire.NewShareDeps(deps)))
 	return &Vaults{
 		Listing:     &Listing{deps: deps, pending: nil, resolve: nil},
 		Connections: &Connections{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads},
 		Removals: &Removals{
-			stop:   unlink.NewStopSyncing(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: deleting}),
+			stop:   unlink.NewStopSyncing(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: deleting, Locker: deps.Locker}),
 			delete: deleting,
 		},
 	}

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -416,5 +417,28 @@ func TestConnectVault_NamesMissingFolder(t *testing.T) {
 	var missing vaultlink.FolderMissingError
 	if !errors.As(err, &missing) || missing.Name != "Test" {
 		t.Errorf("error = %v, want FolderMissingError for the vault Test", err)
+	}
+}
+
+func TestConnectVault_WaitsForTheLockOfTheVault(t *testing.T) {
+	w := newWorld(t)
+	unlock, err := w.first.State.LockVault(t.Context(), "Test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		done <- catalog.NewConnectVault(w.first.CatalogDeps()).Execute(t.Context(), catalog.ConnectInput{VaultID: "Test", Mode: catalog.ModeNew, RemoteID: ""})
+	}()
+
+	select {
+	case err := <-done:
+		t.Fatalf("connect ended while another holder had the vault: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	unlock()
+
+	if err := <-done; err != nil {
+		t.Fatal(err)
 	}
 }

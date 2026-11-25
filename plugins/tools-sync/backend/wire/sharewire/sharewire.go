@@ -28,7 +28,7 @@ func NewShareDeps(deps syncvault.Deps) share.Deps {
 func NewReceiveDeps(deps syncvault.Deps) receive.Deps {
 	return receive.Deps{
 		Shares: deps.Shares, Blobs: deps.Blobs, Crypto: deps.Crypto, Box: deps.Box, Identity: deps.Identity, Host: deps.Host,
-		Notes: deps.Notes, Links: deps.State, Records: deps.State, Statuses: deps.Progress, Vaults: deps.Vaults, Folders: deps.Folders, Clock: deps.Clock,
+		Notes: deps.Notes, Links: deps.State, Records: deps.State, Statuses: deps.Progress, Vaults: deps.Vaults, Folders: deps.Folders, Clock: deps.Clock, Locker: deps.Locker,
 	}
 }
 
@@ -61,7 +61,7 @@ type Received struct {
 func NewReceived(deps syncvault.Deps) *Received {
 	receiving := NewReceiveDeps(deps)
 	return &Received{
-		listing: receive.NewListReceived(receiving), leave: unlink.NewLeave(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: nil}),
+		listing: receive.NewListReceived(receiving), leave: unlink.NewLeave(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: nil, Locker: deps.Locker}),
 	}
 }
 

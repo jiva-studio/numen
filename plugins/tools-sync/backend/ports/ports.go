@@ -121,6 +121,7 @@ type Host interface {
 // Links keeps the link of each vault.
 type Links interface {
 	ReadLink(ctx context.Context, id domain.VaultID) (vaultlink.Link, error)
+	// WriteLink replaces the whole link; the caller holds the lock of the vault.
 	WriteLink(ctx context.Context, id domain.VaultID, link vaultlink.Link) error
 	UpdateLink(ctx context.Context, id domain.VaultID, change func(*vaultlink.Link) error) error
 }

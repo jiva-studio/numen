@@ -45,6 +45,7 @@ type Deps struct {
 	Forget   ports.Forgetter
 	Health   ports.Health
 	Random   io.Reader
+	Locker   ports.VaultLocker
 }
 
 type remote struct {

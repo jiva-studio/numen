@@ -179,7 +179,7 @@ func (u *AcceptInvitation) Execute(ctx context.Context, text string) (Accepted, 
 		return Accepted{}, err
 	}
 	if isReceived {
-		return u.joinAgain(ctx, vaultID, link, o, read)
+		return u.joinAgain(ctx, vaultID, o, read)
 	}
 	return u.receive(ctx, o, read)
 }
@@ -206,7 +206,12 @@ func (u *AcceptInvitation) receive(ctx context.Context, o opened, read followed)
 	if err != nil {
 		return Accepted{}, err
 	}
-	if err := u.writeLink(ctx, vault.ID, o, read, nil); err != nil {
+	unlock, err := u.deps.Locker.LockVault(ctx, vault.ID)
+	if err != nil {
+		return Accepted{}, err
+	}
+	defer unlock()
+	if err := u.writeLink(ctx, vault.ID, o, read); err != nil {
 		return Accepted{}, err
 	}
 	if err := u.runFirstPass(ctx, vault.ID); err != nil {
@@ -215,8 +220,25 @@ func (u *AcceptInvitation) receive(ctx context.Context, o opened, read followed)
 	return Accepted{VaultID: vault.ID, Name: vault.Name}, nil
 }
 
-func (u *AcceptInvitation) joinAgain(ctx context.Context, id domain.VaultID, link vaultlink.Link, o opened, read followed) (Accepted, error) {
-	if err := u.writeLink(ctx, id, o, read, link.Received.Seen); err != nil {
+func (u *AcceptInvitation) joinAgain(ctx context.Context, id domain.VaultID, o opened, read followed) (Accepted, error) {
+	unlock, err := u.deps.Locker.LockVault(ctx, id)
+	if err != nil {
+		return Accepted{}, err
+	}
+	defer unlock()
+	err = u.deps.Links.UpdateLink(ctx, id, func(fresh *vaultlink.Link) error {
+		var seen map[string][][]byte
+		if fresh.Received != nil {
+			seen = fresh.Received.Seen
+		}
+		received, err := u.getReceived(ctx, o, read, seen)
+		if err != nil {
+			return err
+		}
+		fresh.Received, fresh.CatalogName, fresh.ServerSeq = &received, read.position.Name, 0
+		return nil
+	})
+	if err != nil {
 		return Accepted{}, err
 	}
 	if err := u.runFirstPass(ctx, id); err != nil {
@@ -233,19 +255,26 @@ func (u *AcceptInvitation) runFirstPass(ctx context.Context, id domain.VaultID) 
 	return u.deps.Statuses.WriteStatus(ctx, id, getStatus(result, u.deps.Clock.Now()))
 }
 
-func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o opened, read followed, seen map[string][][]byte) error {
+func (u *AcceptInvitation) getReceived(ctx context.Context, o opened, read followed, seen map[string][][]byte) (vaultlink.Received, error) {
 	keys, err := read.position.Keys.Encode()
 	if err != nil {
-		return err
+		return vaultlink.Received{}, err
 	}
 	sealed, err := u.deps.Crypto.SealData(ctx, vaultlink.GetStateKeyContext(o.invitation.ShareRootID), keys)
 	if err != nil {
-		return fmt.Errorf("seal the keys of the share: %w", err)
+		return vaultlink.Received{}, fmt.Errorf("seal the keys of the share: %w", err)
 	}
-	received := vaultlink.Received{
+	return vaultlink.Received{
 		ShareRootID: hex.EncodeToString(o.invitation.ShareRootID), OwnerRoot: o.ownerChain.Root().Sign, OwnerChain: read.ownerChain,
 		SealedKeys: sealed, ServerVersion: read.position.Version, HeadID: read.position.HeadID[:], VaultID: read.position.VaultID,
 		Epoch: read.position.Epoch, Name: read.position.Name, IsEnded: false, Seen: seen,
+	}, nil
+}
+
+func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o opened, read followed) error {
+	received, err := u.getReceived(ctx, o, read, nil)
+	if err != nil {
+		return err
 	}
 	link := vaultlink.Link{
 		RemoteVaultID: "", SealedKey: nil, LaterKeys: nil, CatalogName: read.position.Name, ServerSeq: 0, FeedCursor: host.FileChangeCursor{FeedID: "", Seq: 0},

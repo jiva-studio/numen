@@ -211,7 +211,7 @@ func (c *Computer) NewHealth() *health.Client { return health.NewClient(c.health
 func (c *Computer) CatalogDeps() catalog.Deps {
 	return catalog.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Journals: c.State,
-		Cloud: c.Cloud, Forget: c.State, Health: c.NewHealth(), Random: rand.Reader,
+		Cloud: c.Cloud, Forget: c.State, Health: c.NewHealth(), Random: rand.Reader, Locker: c.State,
 	}
 }
 
@@ -385,7 +385,7 @@ func (c *Computer) ShareDeps() share.Deps {
 func (c *Computer) ReceiveDeps() receive.Deps {
 	return receive.Deps{
 		Shares: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Box: c.Account, Identity: c.Account, Host: c.Host, Notes: c.Notes, Links: c.State,
-		Records: c.State, Statuses: c.State, Vaults: c.Vaults, Folders: c.Folders, Clock: c.Clock,
+		Records: c.State, Statuses: c.State, Vaults: c.Vaults, Folders: c.Folders, Clock: c.Clock, Locker: c.State,
 	}
 }
 

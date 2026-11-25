@@ -17,6 +17,7 @@ type Deps struct {
 	Forget ports.Forgetter
 	Vaults ports.VaultList
 	Cloud  CloudDeleter
+	Locker ports.VaultLocker
 }
 
 // CloudDeleter deletes a synced vault from the cloud and forgets the links of this device to it.
@@ -60,6 +61,11 @@ func NewLeave(deps Deps) *Leave { return &Leave{deps: deps} }
 // an ordinary folder. The files stay. The owner is not told: the share log has no entry a reader may sign, so the owner
 // goes on listing this account as a reader until it removes it.
 func (u *Leave) Execute(ctx context.Context, id domain.VaultID) error {
+	unlock, err := u.deps.Locker.LockVault(ctx, id)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	link, err := u.deps.Links.ReadLink(ctx, id)
 	if err != nil && !errors.Is(err, vaultlink.ErrNotConnected) {
 		return err

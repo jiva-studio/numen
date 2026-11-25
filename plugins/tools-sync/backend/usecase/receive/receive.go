@@ -37,6 +37,7 @@ type Deps struct {
 	Vaults   ports.VaultList
 	Folders  ports.Folders
 	Clock    ports.Clock
+	Locker   ports.VaultLocker
 }
 
 type base struct{ deps Deps }

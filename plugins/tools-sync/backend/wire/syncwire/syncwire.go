@@ -82,11 +82,11 @@ func NewSyncVaultReading(deps Deps, shares syncvault.SharesReader) *syncvault.Sy
 	return syncvault.NewSyncVault(deps.Deps, syncvault.Steps{
 		Register: registerAgain{connect: catalog.NewConnectVault(catalog.Deps{
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health, Random: deps.Random,
+			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health, Random: deps.Random, Locker: deps.Locker,
 		})},
 		Rename: catalog.NewRenameRemoteVault(catalog.Deps{
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health, Random: deps.Random,
+			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health, Random: deps.Random, Locker: deps.Locker,
 		}),
 		Sweep: downloads,
 		Pull: pull.NewPullChanges(pull.Deps{
@@ -113,5 +113,5 @@ func NewSyncVaultReading(deps Deps, shares syncvault.SharesReader) *syncvault.Sy
 type registerAgain struct{ connect *catalog.ConnectVault }
 
 func (r registerAgain) Execute(ctx context.Context, id domain.VaultID) error {
-	return r.connect.Execute(ctx, catalog.ConnectInput{VaultID: id, Mode: catalog.ModeNew, RemoteID: ""})
+	return r.connect.ExecuteHeld(ctx, catalog.ConnectInput{VaultID: id, Mode: catalog.ModeNew, RemoteID: ""})
 }

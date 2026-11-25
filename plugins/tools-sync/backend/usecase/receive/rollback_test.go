@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
@@ -199,4 +200,42 @@ func TestPullShare_RefusesAnOwnerChainOlderThanTheOneStored(t *testing.T) {
 		t.Error("a pass over an owner chain shorter than the stored one succeeded, want a refusal")
 	}
 	wantNoNote(t, reader, received.VaultID, "Bread.md")
+}
+
+// renamingShares renames the vault in the link while the pull reads the changes of the share.
+type renamingShares struct {
+	ports.Shares
+	rename func()
+}
+
+func (r renamingShares) GetShareChanges(ctx context.Context, id []byte, since uint64, limit uint32) (*syncv1.GetShareChangesResponse, error) {
+	r.rename()
+	return r.Shares.GetShareChanges(ctx, id, since, limit)
+}
+
+func TestPullShare_KeepsAChangeOfTheLinkMadeWhileItRuns(t *testing.T) {
+	w := newWorld(t)
+	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
+	w.syncOwner(t)
+	received := w.receive(t, w.reader, w.shareWith(t, w.reader, "Anna"))
+	w.owner.WriteNote(owned, "Food/Stew.md", "beef")
+	w.syncOwner(t)
+	shares := renamingShares{Shares: w.reader.Cloud, rename: func() {
+		err := w.reader.State.UpdateLink(t.Context(), received.VaultID, func(link *vaultlink.Link) error {
+			link.CatalogName = "Renamed"
+			return nil
+		})
+		if err != nil {
+			t.Error(err)
+		}
+	}}
+
+	if err := w.pullWith(t, received.VaultID, shares); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := w.reader.Link(t, received.VaultID).CatalogName; got != "Renamed" {
+		t.Errorf("catalog name = %q, want Renamed", got)
+	}
+	wantNote(t, w.reader, received.VaultID, "Stew.md", "beef")
 }
