@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createIdentityStore, type DeviceInfo } from '@/entities/identity'
-import { click, dispose, findButton, findMenuItem, findText } from '@/testing/dom'
+import { click, dispose, findButton, findMenuItem, findText, getScreen } from '@/testing/dom'
 import {
   createDeviceInfo,
   createIdentityClient,
@@ -76,16 +76,13 @@ describe('the devices section', () => {
     expect(rows[1]?.attributes('tabindex')).toBe('0')
   })
 
-
   it('revokes a device only after the person confirms the question', async () => {
     const revokeDevice = vi.fn(() => Promise.resolve({ ok: true as const, value: undefined }))
     await mountSection([THIS, OTHER], { revokeDevice })
     await openMenu(1)
     await click(findMenuItem(/^Remove$/))
     expect(
-      findText(
-        `Phone (${OTHER.fingerprint}) will lose access. The files on the device stay.`,
-      ),
+      findText(`Phone (${OTHER.fingerprint}) will lose access. The files on the device stay.`),
     ).not.toBeNull()
     expect(revokeDevice).not.toHaveBeenCalled()
     await click(findButton(/^Remove$/))
@@ -135,13 +132,13 @@ describe('the devices section', () => {
   })
 
   it('draws the link dialog when isLinking is set', async () => {
-    const section = await mountSection([THIS], {}, true)
-    expect(section.get('[role="dialog"] h2').text()).toBe('Link a device')
+    await mountSection([THIS], {}, true)
+    expect(getScreen().get('[role="dialog"] h2').text()).toBe('Link a device')
   })
 
   it('draws no link dialog and no link button of its own', async () => {
     const section = await mountSection([THIS])
-    expect(section.find('[role="dialog"]').exists()).toBe(false)
+    expect(getScreen().find('[role="dialog"]').exists()).toBe(false)
     expect(section.text()).not.toContain('Link a new device')
   })
 })
@@ -160,7 +157,7 @@ describe('devices with the same name', () => {
     })
     await openMenu(2)
     await click(findMenuItem(/^Remove$/))
-    expect(findText(twin.fingerprint)).not.toBeNull()
+    expect(findText(new RegExp(twin.fingerprint))).not.toBeNull()
     await click(findButton(/^Remove$/))
     await flushPromises()
     expect(revokeDevice).toHaveBeenCalledWith(twin.fingerprint)

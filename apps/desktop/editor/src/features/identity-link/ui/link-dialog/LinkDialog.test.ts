@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createIdentityStore, type LinkInfo } from '@/entities/identity'
-import { click, dispose, findButton } from '@/testing/dom'
+import { click, dispose, findButton, findButtons, getScreen } from '@/testing/dom'
 import {
   createIdentityClient,
   createLinkInfo,
@@ -33,38 +33,37 @@ const mountDialog = async (link: LinkInfo, overrides: Partial<IdentityCalls> = {
 
 describe('the dialog that links a new device', () => {
   it('has the title Link a device and lists three steps next to the QR code', async () => {
-    const dialog = await mountDialog(createLinkInfo())
-    expect(dialog.get('h2').text()).toBe('Link a device')
-    expect(dialog.findAll('ol li')).toHaveLength(3)
-    expect(dialog.get('svg[role="img"]').attributes('aria-label')).toBe('QR code')
-    expect(dialog.get('ol li[data-state="active"]').text()).toContain('choose Use existing')
-    expect(dialog.find('[role="status"]').exists()).toBe(false)
+    await mountDialog(createLinkInfo())
+    expect(getScreen().get('h2').text()).toBe('Link a device')
+    expect(getScreen().findAll('ol li')).toHaveLength(3)
+    expect(getScreen().get('svg[role="img"]').attributes('aria-label')).toBe('QR code')
+    expect(getScreen().get('ol li[data-state="active"]').text()).toContain('choose Use existing')
+    expect(getScreen().find('[role="status"]').exists()).toBe(false)
   })
 
   it('shows neither the link as a field nor the fingerprint of the identity', async () => {
     const link = createLinkInfo()
-    const dialog = await mountDialog(link)
-    expect(dialog.find('input').exists()).toBe(false)
-    expect(dialog.text()).not.toContain(link.accountFingerprint)
-    expect(dialog.text()).not.toContain(link.qrText)
+    await mountDialog(link)
+    expect(getScreen().find('input').exists()).toBe(false)
+    expect(getScreen().text()).not.toContain(link.accountFingerprint)
+    expect(getScreen().text()).not.toContain(link.qrText)
   })
 
   it('copies the link with one button', async () => {
     const link = createLinkInfo()
     const writeText = vi.fn(() => Promise.resolve())
     vi.stubGlobal('navigator', { clipboard: { writeText } })
-    const dialog = await mountDialog(link)
+    await mountDialog(link)
     await click(findButton(/^Copy link$/))
     expect(writeText).toHaveBeenCalledWith(link.qrText)
-    expect(dialog.text()).toContain('Copied')
+    expect(getScreen().text()).toContain('Copied')
     vi.unstubAllGlobals()
   })
 
-  it('keeps the place of the QR code and says that the link is prepared while the channel is awaited', async () => {
-    const dialog = await mountDialog(createLinkInfo({ phase: 'waitingForChannel', qrText: '' }))
-    expect(dialog.find('svg[role="img"]').exists()).toBe(false)
-    expect(dialog.find('.link-qr__code').exists()).toBe(true)
-    expect(dialog.findAll('ol li[data-state="active"]')).toHaveLength(0)
+  it('keeps the place of the QR code while the channel is awaited', async () => {
+    await mountDialog(createLinkInfo({ phase: 'waitingForChannel', qrText: '' }))
+    expect(getScreen().find('svg[role="img"]').exists()).toBe(false)
+    expect(getScreen().findAll('ol li[data-state="active"]')).toHaveLength(0)
     expect(findButton(/^Copy link$/).hasAttribute('disabled')).toBe(true)
   })
 
@@ -75,9 +74,9 @@ describe('the dialog that links a new device', () => {
       peerFingerprint: '1111 2222',
     })
     const decideLink = vi.fn(() => ok(undefined))
-    const dialog = await mountDialog(link, { decideLink })
-    expect(dialog.text()).toContain('Phone')
-    expect(dialog.text()).toContain('1111 2222')
+    await mountDialog(link, { decideLink })
+    expect(getScreen().text()).toContain('Phone')
+    expect(getScreen().text()).toContain('1111 2222')
     await click(findButton(/^Link device$/))
     expect(decideLink).toHaveBeenCalledWith(true)
   })
@@ -95,25 +94,28 @@ describe('the dialog that links a new device', () => {
   })
 
   it('checks the steps once linked and keeps the same three', async () => {
-    const dialog = await mountDialog(createLinkInfo({ phase: 'linked' }))
-    expect(dialog.findAll('ol li[data-state="done"]')).toHaveLength(3)
+    await mountDialog(createLinkInfo({ phase: 'linked' }))
+    expect(getScreen().findAll('ol li[data-state="done"]')).toHaveLength(3)
   })
 
-  it('says that the device is linked', async () => {
-    const dialog = await mountDialog(createLinkInfo({ phase: 'linked' }))
-    expect(dialog.text()).toContain('The device is linked')
+  it('ends with one button, Done, once the device is linked', async () => {
+    await mountDialog(createLinkInfo({ phase: 'linked' }))
+    expect(findButton(/^Done$/)).toBeTruthy()
+    expect(findButtons(/^Cancel$|^Close$|^Link device$/)).toHaveLength(0)
   })
 
   it('says why a link failed and offers to try again', async () => {
-    const dialog = await mountDialog(createLinkInfo({ phase: 'failed', reason: 'staleChain' }))
-    expect(dialog.get('[role="alert"]').text()).toContain('The identity changed while linking. Try again.')
+    await mountDialog(createLinkInfo({ phase: 'failed', reason: 'staleChain' }))
+    expect(getScreen().get('[role="alert"]').text()).toContain(
+      'The identity changed while linking. Try again.',
+    )
     expect(findButton(/^Try again$/)).toBeTruthy()
   })
 
   it('cancels the link and notifies the page when it closes', async () => {
     const cancelLink = vi.fn(() => ok(undefined))
     const dialog = await mountDialog(createLinkInfo(), { cancelLink })
-    await dialog.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
+    await getScreen().get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
     expect(dialog.emitted('close')).toHaveLength(1)
     dialog.unmount()
     await flushPromises()

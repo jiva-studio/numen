@@ -50,12 +50,14 @@ const peer = (overrides: Parameters<typeof createInfo>[0] = {}) =>
 export const ShowingQr: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(
-      await canvas.findByRole('dialog', { name: 'Link a device' }),
-    ).toBeVisible()
+    await expect(await canvas.findByRole('dialog', { name: 'Link a device' })).toBeVisible()
     await expect(canvas.getByRole('img', { name: 'QR code' })).toBeVisible()
-    await expect(canvas.getByText('On the other device, choose Use existing and scan this code.')).toBeVisible()
-    await expect(canvas.getByRole('listitem', { current: 'step' })).toHaveTextContent('choose Use existing')
+    await expect(
+      canvas.getByText('On the other device, choose Use existing and scan this code.'),
+    ).toBeVisible()
+    await expect(canvas.getByRole('listitem', { current: 'step' })).toHaveTextContent(
+      'choose Use existing',
+    )
     await expect(canvas.getByRole('button', { name: 'Copy link' })).toBeVisible()
   },
 }
@@ -94,7 +96,6 @@ export const Refused: Story = {
   },
 }
 
-
 /** The new device is asked about with its name, its fingerprint to approve. */
 export const NewDeviceAsked: Story = {
   args: { calls: createCalls(peer()) },
@@ -132,6 +133,8 @@ export const Failed: Story = {
   args: { calls: createCalls(createInfo({ phase: 'failed', reason: 'staleChain' })) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('alert')).toHaveTextContent('The identity changed while linking.')
+    await expect(await canvas.findByRole('alert')).toHaveTextContent(
+      'The identity changed while linking.',
+    )
   },
 }
