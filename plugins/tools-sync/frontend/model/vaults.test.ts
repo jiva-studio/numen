@@ -99,9 +99,7 @@ describe('useVaults', () => {
   })
 
   it('counts the notes changed on two devices as a problem', async () => {
-    const model = createModel(
-      createClient([createVault({ state: 'connected', conflictCount: 2 })]),
-    )
+    const model = createModel(createClient([createVault({ state: 'connected', conflictCount: 2 })]))
 
     await model.actions.load()
 
@@ -215,7 +213,7 @@ describe('useVaults', () => {
 
     it('asks before it connects and keeps the dialog open', async () => {
       const { client, model } = differ(2)
-  
+
       await model.actions.connectExisting('Test', 'aa11')
 
       expect(model.state.pendingConfirm.value?.text).toBe(

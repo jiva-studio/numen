@@ -8,6 +8,7 @@ import {
   useSlotLoading,
   type HostServices,
   type PluginContext,
+  formatErrorMessage,
 } from '@numen/plugin-sdk'
 import { readSettings } from './model/settings'
 import { createNotesReader } from './model/notesReader'
@@ -55,8 +56,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     )
   }
   const settings = readSettings(plugin)
-  const reportFailure = (error: unknown) =>
-    notices.show(error instanceof Error ? error.message : String(error), 'error')
+  const reportFailure = (error: unknown) => notices.show(formatErrorMessage(error), 'error')
   const reader = createNotesReader({ notes, events: host.events, reportFailure })
   plugin.identity.subscriptions.push({ dispose: reader.dispose })
   const source: NamesSource = {

@@ -15,7 +15,9 @@ const props = defineProps<{ view: AcceptanceView }>()
 
 /* --------------------------------- State ---------------------------------- */
 const isLink = computed(() => props.view.phase === 'link')
-const isWaiting = computed(() => props.view.phase === 'connecting' || props.view.phase === 'waiting')
+const isWaiting = computed(
+  () => props.view.phase === 'connecting' || props.view.phase === 'waiting',
+)
 const canAccept = computed(() => isLink.value && props.view.preview !== undefined)
 const endText = computed(() => {
   switch (props.view.phase) {
@@ -65,7 +67,9 @@ function onAccept(): void {
       />
     </label>
     <p v-if="view.preview" class="sync-dialog__text" role="status">
-      {{ words.invitedYou(getShortFingerprint(view.preview.ownerFingerprint), view.preview.folder) }}
+      {{
+        words.invitedYou(getShortFingerprint(view.preview.ownerFingerprint), view.preview.folder)
+      }}
     </p>
     <p v-if="view.phase === 'connecting'" class="sync-dialog__text" role="status">
       <Spinner class="sync-dialog__spinner" />

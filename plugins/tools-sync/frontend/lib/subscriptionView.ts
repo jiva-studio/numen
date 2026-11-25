@@ -45,10 +45,7 @@ export function formatDate(time: string): string {
   return Number.isNaN(at) ? '' : LONG_DATE.format(at)
 }
 
-const getPhaseView = (
-  phase: SubscriptionPhase,
-  dates: SubscriptionDates,
-): SubscriptionView => {
+const getPhaseView = (phase: SubscriptionPhase, dates: SubscriptionDates): SubscriptionView => {
   const periodEnd = formatDate(dates.periodEnd)
   switch (phase) {
     case 'none':
@@ -146,11 +143,7 @@ export function formatPrice(cents: number, currency: string): string {
  */
 export function getPlanLine(plan: PlanSize): string {
   const price = formatPrice(plan.priceCents, plan.currency)
-  return [
-    plan.name,
-    formatSize(plan.quotaBytes),
-    price === '' ? '' : words.pricePerMonth(price),
-  ]
+  return [plan.name, formatSize(plan.quotaBytes), price === '' ? '' : words.pricePerMonth(price)]
     .filter((part) => part !== '')
     .join(', ')
 }

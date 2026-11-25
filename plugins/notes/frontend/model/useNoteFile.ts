@@ -1,7 +1,7 @@
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { ref } from 'vue'
 import type { VaultNotes } from '@numen/plugin-sdk'
-const getErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error)
+const getErrorMessage = (error: unknown): string => formatErrorMessage(error)
 
 /** Each save starts from the last version read or successfully written by this editor. */
 export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'write'>) {

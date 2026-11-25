@@ -25,6 +25,8 @@ import {
   view,
 } from './testing/entries'
 
+const reported = (text: string): Error => Object.assign(new Error(text), { name: 'ReportedError' })
+
 const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
 ) as {
@@ -202,7 +204,7 @@ describe('the commands of the slots', () => {
     mounted.push(bar)
     host.ui.slots.setEntries(SLOT.titleBarCommands, [buildCommand('chart.open')])
     await nextTick()
-    vi.spyOn(host.ui.commands, 'run').mockRejectedValueOnce(new Error('the chart is gone'))
+    vi.spyOn(host.ui.commands, 'run').mockRejectedValueOnce(reported('the chart is gone'))
 
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
     await flushPromises()

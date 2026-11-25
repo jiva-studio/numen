@@ -4,7 +4,12 @@
  */
 import { defineComponent, h, shallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
+import {
+  definePlugin,
+  type HostServices,
+  type PluginContext,
+  formatErrorMessage,
+} from '@numen/plugin-sdk'
 import {
   BUTTONS_SETTING,
   HIDE_IN_FULLSCREEN_SETTING,
@@ -39,7 +44,7 @@ export function createTitleBarView(
     hideInFullscreen.value = readHideInFullscreenSetting(value)
   })
   const reportError = (error: unknown): void =>
-    host.ui.notices.show(error instanceof Error ? error.message : String(error), 'error')
+    host.ui.notices.show(formatErrorMessage(error), 'error')
   return defineComponent({
     name: 'TitleBarView',
     setup: () => {

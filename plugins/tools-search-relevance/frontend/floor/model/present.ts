@@ -1,6 +1,7 @@
 /**
  * Pure projections of a floor state into the words and numbers the panel draws.
  */
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { SLIDER_MAX, SLIDER_MIN, WORDS } from '../lib/words'
 import { FLOOR_SOURCE } from './codes'
 import type { FloorSource } from '../api/relevance'
@@ -71,5 +72,5 @@ export function describeProbe(bestSimilarity: number, doesPass: boolean): string
 }
 
 export function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  return formatErrorMessage(error)
 }

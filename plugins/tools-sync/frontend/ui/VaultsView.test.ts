@@ -29,7 +29,9 @@ const createClient = (setup: Setup = {}) => ({
   ),
   listRemoteVaults: vi.fn<VaultsClient['listRemoteVaults']>(() =>
     Promise.resolve({
-      vaults: setup.remote ?? [{ remoteId: 'aa11', name: 'Work', isConnected: false, sizeBytes: 3_670_016 }],
+      vaults: setup.remote ?? [
+        { remoteId: 'aa11', name: 'Work', isConnected: false, sizeBytes: 3_670_016 },
+      ],
     }),
   ),
   getConnectPreview: vi.fn<VaultsClient['getConnectPreview']>(() =>

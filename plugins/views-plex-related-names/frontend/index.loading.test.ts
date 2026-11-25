@@ -20,6 +20,8 @@ import {
 } from '@numen/plugin-sdk/testing'
 import { activate } from './index'
 
+const reported = (text: string): Error => Object.assign(new Error(text), { name: 'ReportedError' })
+
 const PEAR = 'notes/Pear rows.md'
 const QUINCE = 'notes/Quince.md'
 const ADVANCE_MS = 5000
@@ -203,7 +205,7 @@ describe('the views when the read of the notes fails', () => {
     show('related', PEAR)
 
     await flushPromises()
-    getReads(PEAR)[0]?.reject(new Error('the vault is closed'))
+    getReads(PEAR)[0]?.reject(reported('the vault is closed'))
     await flushPromises()
 
     expect(loading.isReady.value).toBe(true)
@@ -215,7 +217,7 @@ describe('the views when the read of the notes fails', () => {
     show('related', PEAR)
 
     await flushPromises()
-    getReads(PEAR)[0]?.reject(new Error('the vault is closed'))
+    getReads(PEAR)[0]?.reject(reported('the vault is closed'))
     await flushPromises()
 
     expect(notices.getShown()).toStrictEqual([{ text: 'the vault is closed', severity: 'error' }])
@@ -227,7 +229,7 @@ describe('the views when the read of the notes fails', () => {
     show('related', PEAR)
 
     await flushPromises()
-    getReads(PEAR)[0]?.reject(new Error('the vault is closed'))
+    getReads(PEAR)[0]?.reject(reported('the vault is closed'))
     await flushPromises()
 
     expect(loading.isReady.value).toBe(true)

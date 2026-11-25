@@ -3,6 +3,14 @@ import { CALIBRATION_OUTCOME, FLOOR_SOURCE } from './codes'
 import { createFakeClient, createState } from './fixtures'
 import { useFloor } from './useFloor'
 
+const reported = (text: string): Error => Object.assign(new Error(text), { name: 'ReportedError' })
+const unavailable = (): Error =>
+  Object.assign(new Error('unavailable'), {
+    name: 'ConnectError',
+    code: 14,
+    rawMessage: 'no embedder',
+  })
+
 function createGate() {
   const pendingResolvers: Array<() => void> = []
   return {
@@ -27,11 +35,11 @@ describe('useFloor', () => {
 
   it('keeps an unavailable embedder as an error state with its message', async () => {
     const client = createFakeClient()
-    client.getFloor.mockRejectedValueOnce(new Error('[unavailable] embedder is not running'))
+    client.getFloor.mockRejectedValueOnce(unavailable())
     const floor = useFloor({ client })
     await floor.actions.load()
     expect(floor.progress.status.value).toBe('error')
-    expect(floor.progress.loadError.value).toContain('unavailable')
+    expect(floor.progress.loadError.value).toBe('no embedder')
     await floor.actions.load()
     expect(floor.progress.status.value).toBe('ready')
     expect(floor.progress.loadError.value).toBe('')
@@ -41,7 +49,7 @@ describe('useFloor', () => {
     const client = createFakeClient()
     const floor = useFloor({ client })
     await floor.actions.load()
-    client.getFloor.mockRejectedValueOnce(new Error('boom'))
+    client.getFloor.mockRejectedValueOnce(reported('boom'))
     await floor.actions.load()
     expect(floor.progress.status.value).toBe('error')
     expect(floor.threshold.state.value).not.toBeNull()
@@ -87,7 +95,7 @@ describe('useFloor', () => {
 
   it('shows a calibration error inline and leaves the busy state', async () => {
     const client = createFakeClient()
-    client.calibrateFloor.mockRejectedValueOnce(new Error('[unavailable] no embedder'))
+    client.calibrateFloor.mockRejectedValueOnce(unavailable())
     const floor = useFloor({ client })
     await floor.actions.load()
     await floor.actions.calibrate()
@@ -173,7 +181,7 @@ describe('useFloor', () => {
 
   it('shows a write error inline', async () => {
     const client = createFakeClient()
-    client.setFloor.mockRejectedValueOnce(new Error('invalid floor'))
+    client.setFloor.mockRejectedValueOnce(reported('invalid floor'))
     const floor = useFloor({ client })
     await floor.actions.load()
     await floor.actions.setMode(true)
@@ -201,10 +209,10 @@ describe('useFloor', () => {
     const client = createFakeClient()
     const floor = useFloor({ client })
     await floor.actions.probe('love')
-    client.probeFloor.mockRejectedValueOnce(new Error('[unavailable] no embedder'))
+    client.probeFloor.mockRejectedValueOnce(unavailable())
     await floor.actions.probe('peace')
     expect(floor.probing.probeResult.value).toBeNull()
-    expect(floor.probing.probeError.value).toContain('unavailable')
+    expect(floor.probing.probeError.value).toBe('no embedder')
   })
 
   it('ignores answers that arrive after the scope ended', async () => {

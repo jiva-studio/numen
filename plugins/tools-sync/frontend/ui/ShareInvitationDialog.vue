@@ -42,11 +42,7 @@ function onDecline(): void {
 </script>
 
 <template>
-  <Dialog
-    :label="words.shareDialogTitle"
-    :step="step"
-    @cancel="state.close"
-  >
+  <Dialog :label="words.shareDialogTitle" :step="step" @cancel="state.close">
     <p v-if="state.isStarting" class="sync-dialog__text" role="status">
       <Spinner class="sync-dialog__spinner" />
       {{ words.preparing }}

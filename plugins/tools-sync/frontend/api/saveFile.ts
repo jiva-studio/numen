@@ -1,3 +1,4 @@
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { DialogHost } from '@numen/plugin-sdk'
 import { WORDS as words } from '../words'
 
@@ -20,9 +21,14 @@ export function createSaveFile(dialogs: DialogHost | undefined): SaveFile {
       })
       return saved?.path
     } catch (failure) {
-      throw new Error(words.exportFailed(failure instanceof Error ? failure.message : String(failure)), {
-        cause: failure,
-      })
+      throw new Error(
+        words.exportFailed(
+          failure instanceof Error ? failure.message : formatErrorMessage(failure),
+        ),
+        {
+          cause: failure,
+        },
+      )
     }
   }
 }

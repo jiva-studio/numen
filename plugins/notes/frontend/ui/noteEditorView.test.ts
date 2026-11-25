@@ -7,6 +7,8 @@ import { createNoteEditorView } from './noteEditorView'
 import { activate } from '../index'
 import { createEditorSettingsContext } from '../testing/editorSettings'
 
+const reported = (text: string): Error => Object.assign(new Error(text), { name: 'ReportedError' })
+
 const loadEditorSettings = () =>
   activate(createEditorSettingsContext({ lineNumbers: false, softWrap: true }).context, {
     vault: {},
@@ -72,7 +74,7 @@ describe('createNoteEditorView', () => {
     let disk = 'original'
     const notes = createNotes(disk)
     notes.write.mockImplementation(async (_path, text, observed) => {
-      if (observed.body !== disk) throw new Error('The note changed on disk.')
+      if (observed.body !== disk) throw reported('The note changed on disk.')
       disk = text
       return 'next'
     })

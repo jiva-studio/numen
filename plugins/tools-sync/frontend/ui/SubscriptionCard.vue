@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatErrorMessage } from '@numen/plugin-sdk'
 /**
  * The card of the subscription of the identity on the page "Identity and licenses", an island card with
  * a row per plan that buys it on a click when there is no subscription, and the
@@ -107,7 +108,7 @@ function onExport(): void {
 }
 
 function onFailure(failure: unknown): void {
-  problem.value = failure instanceof Error ? failure.message : String(failure)
+  problem.value = failure instanceof Error ? failure.message : formatErrorMessage(failure)
 }
 </script>
 

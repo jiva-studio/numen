@@ -170,7 +170,8 @@ export const WORDS = {
   linkField: 'Invitation link',
   join: 'Join',
   accept: 'Accept',
-  invitedYou: (owner: string, folder: string): string => `${owner} invited you to ${folder}. Read only.`,
+  invitedYou: (owner: string, folder: string): string =>
+    `${owner} invited you to ${folder}. Read only.`,
   fromOwner: (fingerprint: string): string => `Owner ${fingerprint}`,
   connecting: 'Connecting to the owner…',
   waitingForOwner: 'Waiting for the owner to allow',

@@ -20,8 +20,7 @@ export type AcceptPhase = 'link' | RequestPhase
 
 const ENDED: readonly RequestPhase[] = ['received', 'declined', 'used', 'expired', 'failed']
 
-const isEnded = (phase: AcceptPhase): boolean =>
-  phase !== 'link' && ENDED.includes(phase)
+const isEnded = (phase: AcceptPhase): boolean => phase !== 'link' && ENDED.includes(phase)
 
 /** What the dialog "Accept a shared folder" holds: the link pasted, what it offers and how the request stands. */
 export function createAcceptanceView(options: AcceptanceViewOptions) {

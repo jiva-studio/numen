@@ -17,7 +17,13 @@ const work: Vault = {
   remoteId: 'aa11',
 }
 
-const home: Vault = { ...work, id: 'home', name: 'Home', remoteId: 'cc33', lastSyncedAt: '2026-11-23T11:59:50Z' }
+const home: Vault = {
+  ...work,
+  id: 'home',
+  name: 'Home',
+  remoteId: 'cc33',
+  lastSyncedAt: '2026-11-23T11:59:50Z',
+}
 
 const plain: Vault = {
   id: 'plain',

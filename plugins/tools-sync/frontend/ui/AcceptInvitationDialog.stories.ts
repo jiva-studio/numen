@@ -25,7 +25,11 @@ const createClient = (setup: Setup): AcceptInvitationClient => ({
       ? Promise.resolve(PREVIEW)
       : Promise.reject(new Error(setup.previewFailure)),
   acceptShareInvitation: () =>
-    Promise.resolve({ requestId: 'r1', folder: 'Recipes', ownerFingerprint: PREVIEW.ownerFingerprint }),
+    Promise.resolve({
+      requestId: 'r1',
+      folder: 'Recipes',
+      ownerFingerprint: PREVIEW.ownerFingerprint,
+    }),
   getShareInvitationStatus: () =>
     Promise.resolve({
       phase: 'connecting',
@@ -116,7 +120,9 @@ export const WaitingForOwner: Story = {
 export const Received: Story = {
   args: { view: createView({ status: { phase: 'received' } }, 'accepted') },
   play: async ({ canvasElement }) => {
-    await expect(await body(canvasElement).findByText(/The folder is shared with you/)).toBeVisible()
+    await expect(
+      await body(canvasElement).findByText(/The folder is shared with you/),
+    ).toBeVisible()
   },
 }
 
@@ -137,7 +143,9 @@ export const Expired: Story = {
 export const Used: Story = {
   args: { view: createView({ status: { phase: 'used' } }, 'accepted') },
   play: async ({ canvasElement }) => {
-    await expect(await body(canvasElement).findByText(/Someone used this link before/)).toBeVisible()
+    await expect(
+      await body(canvasElement).findByText(/Someone used this link before/),
+    ).toBeVisible()
   },
 }
 

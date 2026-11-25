@@ -32,7 +32,11 @@ const createInvitations = (setup: Setup): ShareInvitationClient => ({
   startShareInvitation: () => {
     if (setup.isPending === true) return new Promise(() => undefined)
     if (setup.failure !== undefined) return Promise.reject(new Error(setup.failure))
-    return Promise.resolve({ id: 'i1', link: 'numen-share:eyJ2IjoxfQ', expiresAt: '2026-11-25T12:00:00Z' })
+    return Promise.resolve({
+      id: 'i1',
+      link: 'numen-share:eyJ2IjoxfQ',
+      expiresAt: '2026-11-25T12:00:00Z',
+    })
   },
   listShareInvitations: () =>
     Promise.resolve(

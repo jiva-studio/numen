@@ -113,7 +113,10 @@ describe('createSyncState', () => {
 describe('createSyncState when the server does not answer', () => {
   it('shows waiting, like the rows of the vaults, and synced again once it answers', async () => {
     let status = createStatus({ isReachable: false })
-    const state = createSyncState(createClient(() => Promise.resolve(status)), 1000)
+    const state = createSyncState(
+      createClient(() => Promise.resolve(status)),
+      1000,
+    )
 
     state.start()
     await vi.advanceTimersByTimeAsync(0)
@@ -130,7 +133,9 @@ describe('createSyncState when the status cannot be read', () => {
   it('stops showing the spinner, and shows the state again once the status can be read', async () => {
     let isFailing = true
     const state = createSyncState(
-      createClient(() => (isFailing ? Promise.reject(new Error('internal')) : Promise.resolve(createStatus()))),
+      createClient(() =>
+        isFailing ? Promise.reject(new Error('internal')) : Promise.resolve(createStatus()),
+      ),
       1000,
     )
 

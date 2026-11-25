@@ -1,3 +1,4 @@
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { ref, type Ref } from 'vue'
 import type { PlanResponse, SubscriptionResponse } from '../api/subscription'
 import type {
@@ -21,7 +22,7 @@ export interface SubscriptionAccount {
 }
 
 export const getMessage = (failure: unknown): string =>
-  failure instanceof Error ? failure.message : String(failure)
+  failure instanceof Error ? failure.message : formatErrorMessage(failure)
 
 export function createAccount(): SubscriptionAccount {
   return {

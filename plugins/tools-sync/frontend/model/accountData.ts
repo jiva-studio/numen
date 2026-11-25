@@ -1,3 +1,4 @@
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { computed, onScopeDispose, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { AccountClient } from '../api/account'
@@ -13,7 +14,7 @@ export interface AccountDataOptions {
 }
 
 const getMessage = (failure: unknown): string =>
-  failure instanceof Error ? failure.message : String(failure)
+  failure instanceof Error ? failure.message : formatErrorMessage(failure)
 
 /**
  * The deletion of the identity as the sign-in of this device knows it, kept up to date; the deletion of the cloud

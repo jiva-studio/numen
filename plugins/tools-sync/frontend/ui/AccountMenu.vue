@@ -54,7 +54,12 @@ const planActions = computed<readonly MenuItem[]>(() => [
 const accountActions = computed<readonly MenuItem[]>(() =>
   props.hasAccountActions === true
     ? [
-        { id: 'export', text: words.exportAccountData, group: 'safe', isDisabled: props.isExporting === true },
+        {
+          id: 'export',
+          text: words.exportAccountData,
+          group: 'safe',
+          isDisabled: props.isExporting === true,
+        },
         { id: 'delete', text: words.deleteCloudData, group: 'danger', component: DANGER },
       ]
     : [],

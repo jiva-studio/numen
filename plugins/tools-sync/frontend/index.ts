@@ -3,6 +3,7 @@ import {
   SETTINGS_OPEN_COMMAND,
   type HostServices,
   type PluginContext,
+  formatErrorMessage,
 } from '@numen/plugin-sdk'
 import {
   acceptInvitationClient,
@@ -47,7 +48,12 @@ const createSettingsOpener = (
   return () => {
     commands
       .run(SETTINGS_OPEN_COMMAND, undefined, undefined, { plugin: plugin.identity.id })
-      .catch((error: unknown) => host.ui.notices.show(String(error), 'error'))
+      .catch((error: unknown) =>
+        host.ui.notices.show(
+          error instanceof Error ? error.message : formatErrorMessage(error),
+          'error',
+        ),
+      )
   }
 }
 
@@ -113,7 +119,7 @@ const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
 }
 
 const getFailureText = (failure: unknown): string => {
-  const text = failure instanceof Error ? failure.message : String(failure)
+  const text = failure instanceof Error ? failure.message : formatErrorMessage(failure)
   return text.trim() === '' ? words.syncFailed : text
 }
 
@@ -125,8 +131,7 @@ const registerSync = (
   host: HostServices,
   refreshFlags: () => Promise<void>,
 ): void => {
-  const show = (failure: unknown): void =>
-    host.ui.notices.show(getFailureText(failure), 'error')
+  const show = (failure: unknown): void => host.ui.notices.show(getFailureText(failure), 'error')
   const choose = (vaultId: string, name: string, remoteId: string): void => {
     const dialogs = host.ui.dialogs
     if (dialogs === undefined) return
@@ -155,7 +160,11 @@ const registerSync = (
       const vaultId = getCurrentVault(host)
       try {
         host.work.logs
-          ?.write({ level: 'debug', message: 'Sync this vault was chosen', properties: { vault: vaultId } })
+          ?.write({
+            level: 'debug',
+            message: 'Sync this vault was chosen',
+            properties: { vault: vaultId },
+          })
           .catch(() => undefined)
         const outcome = await startSync(vaultsClient, vaultId)
         if (outcome.kind === 'choose') choose(vaultId, outcome.name, outcome.remoteId)

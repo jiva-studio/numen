@@ -12,7 +12,9 @@ const ACCOUNT = '0123456789abcdef0123456789abcdef'
 const DELETE_AT = '2026-11-30T12:00:00Z'
 const EXPORT_DOCUMENT = '{"account":"0123456789abcdef0123456789abcdef","vaults":[]}'
 
-const PLANS = [{ id: 'plus', name: 'Plus', quotaBytes: 100 * 2 ** 30, priceCents: 1500, currency: 'USD' }]
+const PLANS = [
+  { id: 'plus', name: 'Plus', quotaBytes: 100 * 2 ** 30, priceCents: 1500, currency: 'USD' },
+]
 
 const ACTIVE: SubscriptionResponse = {
   hasIdentity: true,
@@ -115,7 +117,6 @@ const pressInDialog = async (text: string) => {
   await flushPromises()
 }
 
-
 const getDialogText = (): string =>
   document.body.querySelector('[role="alertdialog"]')?.textContent ?? ''
 
@@ -172,7 +173,6 @@ describe('SubscriptionCard account actions', () => {
 
     expect(getDialogText()).not.toContain('Your subscription is cancelled now')
   })
-
 
   it('deletes the cloud data when the person confirms and shows the deleting state with the date', async () => {
     const { wrapper, accountClient } = await render(createState())

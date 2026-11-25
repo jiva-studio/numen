@@ -24,7 +24,15 @@ export interface SharePerson {
 
 /** What the dialog "Share..." holds: the link to send, the device that asks to read, and the devices that read. */
 export function createInvitationView(options: InvitationViewOptions) {
-  const { invitations, shares, target, close, now, vaultName = '', refreshMs = REFRESH_MS } = options
+  const {
+    invitations,
+    shares,
+    target,
+    close,
+    now,
+    vaultName = '',
+    refreshMs = REFRESH_MS,
+  } = options
   const name = target.folder.split('/').at(-1) || vaultName
   const id = ref('')
   const link = ref('')

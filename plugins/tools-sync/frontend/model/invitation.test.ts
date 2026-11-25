@@ -19,7 +19,11 @@ interface World {
   shared: SharedFolder[]
 }
 
-const createWorld = (): { world: World; invitations: ShareInvitationClient; shares: FolderSharesClient } => {
+const createWorld = (): {
+  world: World
+  invitations: ShareInvitationClient
+  shares: FolderSharesClient
+} => {
   const world: World = { alive: true, requests: [], shared: [] }
   return {
     world,
@@ -154,7 +158,11 @@ describe('the dialog of a folder shared by a link', () => {
 
     await view.start()
 
-    expect([view.error, view.isStarting, view.isLinkAlive]).toStrictEqual(['No identity', false, false])
+    expect([view.error, view.isStarting, view.isLinkAlive]).toStrictEqual([
+      'No identity',
+      false,
+      false,
+    ])
   })
 
   it('asks again while the link works, and no more once it is stopped', async () => {

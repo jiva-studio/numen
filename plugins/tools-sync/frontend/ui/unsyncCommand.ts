@@ -1,3 +1,4 @@
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { HostServices, PluginContext } from '@numen/plugin-sdk'
 import { shareInboxClient, vaultsClient } from '../api/wire'
 import { WORDS as words } from '../words'
@@ -12,7 +13,10 @@ const getCurrentVault = (host: HostServices): string =>
  */
 export const registerUnsync = (plugin: PluginContext, host: HostServices): void => {
   const show = (failure: unknown): void =>
-    host.ui.notices.show(failure instanceof Error ? failure.message : String(failure), 'error')
+    host.ui.notices.show(
+      failure instanceof Error ? failure.message : formatErrorMessage(failure),
+      'error',
+    )
   const ask = (kind: 'stop' | 'leave', vaultId: string, name: string): void => {
     const dialogs = host.ui.dialogs
     if (dialogs === undefined) return

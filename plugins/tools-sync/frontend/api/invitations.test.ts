@@ -21,7 +21,11 @@ const createClients = (respond: () => Response) => {
       return respond()
     },
   })
-  return { owner: createShareInvitationClient(api), reader: createAcceptInvitationClient(api), sent }
+  return {
+    owner: createShareInvitationClient(api),
+    reader: createAcceptInvitationClient(api),
+    sent,
+  }
 }
 
 describe('the client of the owner of a folder', () => {
@@ -67,7 +71,10 @@ describe('the client of the owner of a folder', () => {
 
   it('throws the message of a refusal', async () => {
     const { owner } = createClients(() =>
-      Response.json({ code: 'failed_precondition', message: 'The vault is not synced' }, { status: 400 }),
+      Response.json(
+        { code: 'failed_precondition', message: 'The vault is not synced' },
+        { status: 400 },
+      ),
     )
 
     await expect(owner.listShareInvitations()).rejects.toThrow('The vault is not synced')

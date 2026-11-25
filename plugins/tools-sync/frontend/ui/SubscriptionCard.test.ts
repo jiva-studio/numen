@@ -271,7 +271,9 @@ describe('SubscriptionCard', () => {
   })
 
   it('says nothing more than that when the failure of the server has no known cause', async () => {
-    const client = createClient(() => Promise.reject(new Error('Something went wrong in Numen Sync.')))
+    const client = createClient(() =>
+      Promise.reject(new Error('Something went wrong in Numen Sync.')),
+    )
     const wrapper = mountCard({
       client,
       openExternal: vi.fn(() => Promise.resolve(asValue(null))),

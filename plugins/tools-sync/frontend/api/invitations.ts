@@ -52,13 +52,7 @@ interface SentRequest {
 }
 
 export type RequestPhase =
-  | 'connecting'
-  | 'waiting'
-  | 'received'
-  | 'declined'
-  | 'used'
-  | 'expired'
-  | 'failed'
+  'connecting' | 'waiting' | 'received' | 'declined' | 'used' | 'expired' | 'failed'
 
 export interface RequestStatus {
   readonly phase: RequestPhase

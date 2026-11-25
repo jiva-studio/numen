@@ -13,6 +13,8 @@ import {
 } from '@numen/plugin-sdk/testing'
 import { activate } from './index'
 
+const reported = (text: string): Error => Object.assign(new Error(text), { name: 'ReportedError' })
+
 const SETTLE_MS = 5000
 
 const getTitle = (path: string) => path.replace(/^.*\//, '').replace(/\.md$/, '')
@@ -290,7 +292,7 @@ describe('the views of a node while the vault changes', () => {
 describe('the views when the read of a note fails', () => {
   it('shows one error for the two views of the node', async () => {
     const { show, fail, notices } = setupRig()
-    fail(new Error('the vault is closed'))
+    fail(reported('the vault is closed'))
 
     show('parents', LEAVES[0]!)
     show('related', LEAVES[0]!)
@@ -301,7 +303,7 @@ describe('the views when the read of a note fails', () => {
 
   it('shows one error for the nodes of the plex', async () => {
     const { show, fail, notices } = setupRig()
-    fail(new Error('the vault is closed'))
+    fail(reported('the vault is closed'))
 
     LEAVES.forEach((one) => {
       show('parents', one)
@@ -314,7 +316,7 @@ describe('the views when the read of a note fails', () => {
 
   it('reads the note again for a view that mounts after the failure', async () => {
     const { show, fail, getReads } = setupRig()
-    fail(new Error('the vault is closed'))
+    fail(reported('the vault is closed'))
     show('parents', LEAVES[0]!)
     await flushPromises()
 
