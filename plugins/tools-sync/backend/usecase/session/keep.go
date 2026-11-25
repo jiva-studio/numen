@@ -98,9 +98,11 @@ func newSignInFailedConcern() concern {
 // Keep signs in with the identity of this device, signs in again before the session ends, and tries
 // again at a fixed interval where it cannot.
 type Keep struct {
-	deps    Deps
-	raised  string
-	isClean bool
+	deps Deps
+
+	reportMu sync.Mutex
+	raised   string
+	isClean  bool
 
 	mu         sync.Mutex
 	token      string
@@ -110,7 +112,7 @@ type Keep struct {
 
 // NewKeep returns the use case over the dependencies.
 func NewKeep(deps Deps) *Keep {
-	return &Keep{deps: deps, raised: "", isClean: false, mu: sync.Mutex{}, token: "", deleteAt: time.Time{}, isDeleting: false}
+	return &Keep{deps: deps, reportMu: sync.Mutex{}, raised: "", isClean: false, mu: sync.Mutex{}, token: "", deleteAt: time.Time{}, isDeleting: false}
 }
 
 // Execute runs until ctx ends and returns its error.
@@ -131,7 +133,7 @@ func (u *Keep) signIn(ctx context.Context) time.Duration {
 	if err != nil {
 		return u.raise(ctx, err)
 	}
-	u.clear(ctx)
+	u.clearItems(ctx)
 	return max(current.ExpiresAt.Sub(u.deps.Clock.Now())-renewBeforeExpiry, shortestRenewal)
 }
 
@@ -146,7 +148,7 @@ func (u *Keep) Restore(ctx context.Context) error {
 	if _, err := u.open(ctx, true); err != nil {
 		return err
 	}
-	u.clear(ctx)
+	u.clearItems(ctx)
 	return nil
 }
 
@@ -208,6 +210,8 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 	if ctx.Err() != nil {
 		return 0
 	}
+	u.reportMu.Lock()
+	defer u.reportMu.Unlock()
 	what := newSignInFailedConcern()
 	revoked, isRevoked := errors.AsType[domain.DeviceRevokedError](cause)
 	isDeleting := errors.Is(cause, domain.AccountDeletingError{DeleteAt: time.Time{}})
@@ -238,6 +242,12 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 		u.raised = what.key
 	}
 	return what.retry
+}
+
+func (u *Keep) clearItems(ctx context.Context) {
+	u.reportMu.Lock()
+	defer u.reportMu.Unlock()
+	u.clear(ctx)
 }
 
 func (u *Keep) clear(ctx context.Context) {
