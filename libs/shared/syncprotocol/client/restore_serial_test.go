@@ -12,7 +12,17 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
-type memorySerials struct{ highest uint64 }
+type memorySerials struct {
+	highest  uint64
+	issuedAt int64
+}
+
+func (m *memorySerials) ReadIssuedAt(context.Context) (int64, error) { return m.issuedAt, nil }
+
+func (m *memorySerials) WriteIssuedAt(_ context.Context, issuedAt int64) error {
+	m.issuedAt = issuedAt
+	return nil
+}
 
 func (m *memorySerials) ReadSerial(context.Context) (uint64, error) { return m.highest, nil }
 
@@ -23,6 +33,11 @@ func (m *memorySerials) WriteSerial(_ context.Context, serial uint64) error {
 
 func newResponseOfSerial(tb testing.TB, serial uint64) *syncv1.GetRestoreEpochResponse {
 	tb.Helper()
+	return newResponseIssuedAt(tb, serial, 1_800_000_000)
+}
+
+func newResponseIssuedAt(tb testing.TB, serial uint64, issuedAt int64) *syncv1.GetRestoreEpochResponse {
+	tb.Helper()
 	root, _ := newRoot(tb, 1)
 	private, public := newRoot(tb, 2)
 	cert, err := epochtrust.SignCert(root, public, serial, getTestNow().Add(-time.Hour), getTestNow().Add(time.Hour))
@@ -32,7 +47,7 @@ func newResponseOfSerial(tb testing.TB, serial uint64) *syncv1.GetRestoreEpochRe
 	id := []byte("0123456789abcdef")
 	return &syncv1.GetRestoreEpochResponse{
 		EpochSignKey: public, EpochSerial: cert.Serial, EpochNotBefore: cert.NotBefore, EpochNotAfter: cert.NotAfter, RootSignature: cert.RootSignature,
-		Epoch: &syncv1.RestoreEpoch{Id: id, IssuedAt: 1_800_000_000, Signature: ed25519.Sign(private, syncprotocol.GetRestoreEpochMessage(id, 1_800_000_000))},
+		Epoch: &syncv1.RestoreEpoch{Id: id, IssuedAt: issuedAt, Signature: ed25519.Sign(private, syncprotocol.GetRestoreEpochMessage(id, issuedAt))},
 	}
 }
 
