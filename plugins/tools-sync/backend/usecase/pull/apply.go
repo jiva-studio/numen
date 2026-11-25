@@ -152,7 +152,7 @@ func (r *run) checkSharedRevision(stored *syncv1.StoredRevision) (note.Meta, err
 	if !isFound {
 		return note.Meta{}, errUnknownShare
 	}
-	if err := note.CheckRevision(stored, r.in.IsAuthor); err != nil || rev.GetDeleted() {
+	if err := note.CheckRevision(stored, r.remote, r.in.IsAuthor); err != nil || rev.GetDeleted() {
 		return note.Meta{}, err
 	}
 	key, isKnown := root.Keys.Get(rev.GetEpoch())
@@ -167,7 +167,7 @@ func (r *run) checkSharedRevision(stored *syncv1.StoredRevision) (note.Meta, err
 	if _, isUnder := share.GetRelativePath(root.Folder, meta.Path); !isUnder {
 		return note.Meta{}, note.ErrUnverified
 	}
-	if meta.Path, err = note.NormalizePath(meta.Path); err != nil {
+	if meta.Path, err = note.NormalizePath(meta.Path); err != nil || note.CheckRemotePath(meta.Path) != nil {
 		return note.Meta{}, note.ErrUnverified
 	}
 	return meta, nil
@@ -182,7 +182,7 @@ func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 	if !isKnown && !rev.GetDeleted() {
 		return note.Meta{}, errUnknownEpoch
 	}
-	return note.OpenRevision(key, stored, r.in.IsAuthor)
+	return note.OpenRevision(key, stored, r.remote, r.in.IsAuthor)
 }
 
 func (r *run) readLocal(ctx context.Context, path string) (hash string, stat domain.FileStat, isListed bool, err error) {

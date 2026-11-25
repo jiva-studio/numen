@@ -111,7 +111,7 @@ func (u *Endorse) listHeads(ctx context.Context, remote []byte, revoked [][]byte
 			return nil, err
 		}
 		for _, stored := range page.GetChanges() {
-			if note.CheckRevision(stored, isRevoked) == nil {
+			if note.CheckRevision(stored, remote, isRevoked) == nil {
 				found = append(found, stored)
 			}
 		}

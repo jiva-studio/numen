@@ -13,10 +13,10 @@ import (
 // with the vault key.
 var ErrUnverified = errors.New("the revision does not verify")
 
-// OpenRevision checks the id and the signature of a stored revision and that isTrusted names its author, and opens the
+// OpenRevision checks the id and the signature of a stored revision, that it belongs to the remote vault, and that isTrusted names its author, and opens the
 // metadata of a live revision with the vault key. A removal has no metadata and gives an empty Meta.
-func OpenRevision(vaultKey [32]byte, stored *syncv1.StoredRevision, isTrusted func(deviceSignKey []byte) bool) (Meta, error) {
-	if err := CheckRevision(stored, isTrusted); err != nil {
+func OpenRevision(vaultKey [32]byte, stored *syncv1.StoredRevision, remoteID []byte, isTrusted func(deviceSignKey []byte) bool) (Meta, error) {
+	if err := CheckRevision(stored, remoteID, isTrusted); err != nil {
 		return Meta{}, err
 	}
 	rev := stored.GetRevision()
@@ -36,11 +36,11 @@ func OpenRevision(vaultKey [32]byte, stored *syncv1.StoredRevision, isTrusted fu
 	return meta, nil
 }
 
-// CheckRevision checks the id and the signature of a stored revision and that isTrusted names its author.
-func CheckRevision(stored *syncv1.StoredRevision, isTrusted func(deviceSignKey []byte) bool) error {
+// CheckRevision checks the id and the signature of a stored revision, that it belongs to the remote vault, and that isTrusted names its author.
+func CheckRevision(stored *syncv1.StoredRevision, remoteID []byte, isTrusted func(deviceSignKey []byte) bool) error {
 	rev := stored.GetRevision()
 	id := syncprotocol.GetRevisionID(rev)
-	if syncprotocol.CheckRevision(rev) != nil || rev.GetFileVersion() < 1 || !bytes.Equal(stored.GetRevId(), id[:]) || len(rev.GetSignature()) != 64 ||
+	if !bytes.Equal(rev.GetVaultId(), remoteID) || syncprotocol.CheckRevision(rev) != nil || rev.GetFileVersion() < 1 || !bytes.Equal(stored.GetRevId(), id[:]) || len(rev.GetSignature()) != 64 ||
 		!identity.VerifyForPlugin(rev.GetAuthorDeviceSignKey(), syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessage(rev), [64]byte(rev.GetSignature())) ||
 		!isTrusted(rev.GetAuthorDeviceSignKey()) {
 		return ErrUnverified

@@ -1,10 +1,13 @@
 package pull_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
@@ -114,5 +117,30 @@ func TestPullChanges_AppliesRevisionThatContinuesFile(t *testing.T) {
 	}
 	if p.b.HasItemKey(pull.KeyRollback) {
 		t.Error("a revision that continues the file was reported as older")
+	}
+}
+
+func TestPullChanges_KeepsTheNoteWhenTheServerServesARemovalOfAnotherVault(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, "Draft.md", "draft", nil)
+	p.pull(t, trustAll)
+	public, err := p.a.Account.GetPublicIdentity(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	removal := &syncv1.Revision{
+		VaultId: bytes.Repeat([]byte{7}, len(p.vault.ID)), FileId: first.FileID, ParentRev: first.RevID, Deleted: true,
+		FileVersion: first.Record.Version + 1, PathHash: note.HashPath(p.vault.Key, "Draft.md"), AuthorDeviceSignKey: public.DeviceSignKey,
+	}
+	if removal.Signature, err = p.a.Account.SignAsDevice(t.Context(), syncprotocol.GetRevisionMessage(removal)); err != nil {
+		t.Fatal(err)
+	}
+	id := syncprotocol.GetRevisionID(removal)
+	head := p.a.ReadChanges(t, p.vault.ID)[0].GetSeq()
+
+	p.pullServing(t, &syncv1.StoredRevision{Seq: head + 1, RevId: id[:], Revision: removal})
+
+	if text, _ := p.b.ReadNote(target, "Draft.md"); text != "draft" {
+		t.Errorf("note = %q, want draft kept: the removal belongs to another vault", text)
 	}
 }

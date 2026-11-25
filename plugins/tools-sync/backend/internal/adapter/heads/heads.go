@@ -55,7 +55,7 @@ func (h *Heads) ListHeads(ctx context.Context, remoteID string) ([]ports.Head, e
 		if err != nil {
 			return nil, err
 		}
-		listed = appendHeads(listed, page.GetChanges(), keys, authors)
+		listed = appendHeads(listed, page.GetChanges(), vaultID, keys, authors)
 		if !page.GetHasMore() {
 			return listed, nil
 		}
@@ -63,7 +63,7 @@ func (h *Heads) ListHeads(ctx context.Context, remoteID string) ([]ports.Head, e
 	}
 }
 
-func appendHeads(listed []ports.Head, changes []*syncv1.StoredRevision, keys map[uint32][keySize]byte, authors trust.Authors) []ports.Head {
+func appendHeads(listed []ports.Head, changes []*syncv1.StoredRevision, vaultID []byte, keys map[uint32][keySize]byte, authors trust.Authors) []ports.Head {
 	for _, stored := range changes {
 		if stored.GetRevision().GetDeleted() {
 			continue
@@ -72,7 +72,7 @@ func appendHeads(listed []ports.Head, changes []*syncv1.StoredRevision, keys map
 		if !isKnown {
 			continue
 		}
-		meta, err := note.OpenRevision(key, stored, authors.IsTrusted)
+		meta, err := note.OpenRevision(key, stored, vaultID, authors.IsTrusted)
 		if err != nil {
 			continue
 		}
