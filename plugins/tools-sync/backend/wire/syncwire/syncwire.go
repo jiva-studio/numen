@@ -37,6 +37,7 @@ type Deps struct {
 	Conflicts       ports.ConflictResolver
 	LazyHeavy       bool
 	Downloads       *download.DownloadFile
+	Retries         *pull.Retries
 }
 
 // NewResolveDeletions returns the use case that takes the answer of the person to a pause.
@@ -96,7 +97,7 @@ func NewSyncVaultReading(deps Deps, shares syncvault.SharesReader) *syncvault.Sy
 		Pull: pull.NewPullChanges(pull.Deps{
 			Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host, State: deps.State,
 			Downloads: downloads, Guard: guard, Health: deps.Health,
-			Conflicts: deps.Conflicts, Clock: deps.Clock, LazyHeavy: deps.LazyHeavy,
+			Conflicts: deps.Conflicts, Clock: deps.Clock, LazyHeavy: deps.LazyHeavy, Retries: deps.Retries,
 		}),
 		Scan:           localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.Progress, Clock: deps.Clock}),
 		Detect:         localchanges.NewDetectMoves(localchanges.DetectDeps{Host: deps.Host, State: deps.Absences, Clock: deps.Clock, Delay: deps.RemovalDelay}),

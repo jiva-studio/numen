@@ -46,6 +46,8 @@ type run struct {
 	isListing  bool
 	rolledBack []string
 	failures   []error
+	unsaved    []string
+	retries    *Retries
 }
 
 func (r *run) applyPage(ctx context.Context, page []*syncv1.StoredRevision) error {
@@ -53,16 +55,25 @@ func (r *run) applyPage(ctx context.Context, page []*syncv1.StoredRevision) erro
 		return err
 	}
 	for _, stored := range page {
-		if err := r.apply(ctx, stored); err != nil {
-			if !isBlobFailure(err) {
-				return err
-			}
-			if err := checkRoom(len(r.failures)); err != nil {
-				return err
-			}
-			r.hold(stored.GetSeq())
-			r.failures = append(r.failures, err)
+		err := r.apply(ctx, stored)
+		if err == nil {
+			continue
 		}
+		if refusal, isRefused := getRefusal(ctx, err); isRefused {
+			if err := checkRoom(len(r.unsaved)); err != nil {
+				return err
+			}
+			r.skipFile(stored, refusal)
+			continue
+		}
+		if !isBlobFailure(err) {
+			return err
+		}
+		if err := checkRoom(len(r.failures)); err != nil {
+			return err
+		}
+		r.hold(stored.GetSeq())
+		r.failures = append(r.failures, err)
 	}
 	return nil
 }
@@ -83,7 +94,15 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 	if rev.GetDeleted() {
 		return r.applyDeletion(ctx, stored, record, isKnown)
 	}
-	return r.applyContent(ctx, stored, meta, record, isKnown)
+	if r.isWaiting(stored) {
+		r.keepUnsaved(stored, meta.Path)
+		return nil
+	}
+	if err := r.applyContent(ctx, stored, meta, record, isKnown); err != nil {
+		return err
+	}
+	r.retries.succeed(r.getRetryKey(stored))
+	return nil
 }
 
 func (r *run) applyContent(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, record transfer.FileRecord, isKnown bool) error {
@@ -260,11 +279,20 @@ func (r *run) download(ctx context.Context, stored *syncv1.StoredRevision, meta 
 		return err
 	}
 	if err := write(ctx, baseline); err != nil {
-		return r.settleFailure(ctx, stored, meta, err)
+		return r.settleWrite(ctx, stored, meta, err)
 	}
 	r.setRecord(record)
 	r.result.Applied = append(r.result.Applied, meta.Path)
 	return r.deps.Downloads.Forget(ctx, r.in.VaultID, rev.GetFileId())
+}
+
+// settleWrite is settleFailure for the write of a file, where the host refusing the file stops that file only.
+func (r *run) settleWrite(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, err error) error {
+	settled := r.settleFailure(ctx, stored, meta, err)
+	if settled != nil && errors.Is(settled, err) && ctx.Err() == nil {
+		return &fileError{path: meta.Path, cause: err}
+	}
+	return settled
 }
 
 func (r *run) settleFailure(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, err error) error {

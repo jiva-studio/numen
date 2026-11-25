@@ -142,7 +142,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		Deps: deps, Uploads: cloud.NewUploader(cloudSide, p.clock.Now), UploadEntries: p.state, DownloadBlobs: cloud.NewBlobs(cloudSide),
 		DownloadEntries: p.state, Pending: p.state, Approvals: p.state, Absences: p.state, RemovalDelay: r.removal.Get,
 		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}), LazyHeavy: r.isOnDemand.IsOn(),
-		Downloads: nil,
+		Downloads: nil, Retries: nil,
 	}
 	wired.Downloads = syncwire.NewDownloads(wired)
 	pass := syncwire.NewSyncVault(wired)

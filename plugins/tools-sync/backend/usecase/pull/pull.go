@@ -57,13 +57,25 @@ type Deps struct {
 	Clock     ports.Clock
 	Health    ports.Health
 	LazyHeavy bool
+	// Retries holds when a file the host refused is tried again. It is optional: a pull without it keeps its own, so a
+	// pass built anew for each run forgets the waits.
+	Retries *Retries
 }
 
 // PullChanges reads the changes after the position of the vault and applies them.
-type PullChanges struct{ deps Deps }
+type PullChanges struct {
+	deps    Deps
+	retries *Retries
+}
 
 // NewPullChanges returns the use case over the dependencies.
-func NewPullChanges(deps Deps) *PullChanges { return &PullChanges{deps: deps} }
+func NewPullChanges(deps Deps) *PullChanges {
+	retries := deps.Retries
+	if retries == nil {
+		retries = NewRetries()
+	}
+	return &PullChanges{deps: deps, retries: retries}
+}
 
 // Execute applies every change after the position kept in the link, unless the server announced a restore this device
 // has not run or went back to an earlier state: then it applies nothing and the result says which. The position stops before the first file
@@ -90,7 +102,7 @@ func (u *PullChanges) Execute(ctx context.Context, in ports.PullInput) (restore.
 		keys: keys, link: link, records: records,
 		result:  restore.PullResult{Verdict: restore.Same, EpochID: nil, Applied: nil, Conflicts: nil, Unverified: 0, Resolved: nil},
 		holdSeq: 0, isHeld: false, next: 0,
-		listed: nil, removals: nil, removalSeq: 0, isListing: false, rolledBack: nil, failures: nil,
+		listed: nil, removals: nil, removalSeq: 0, isListing: false, rolledBack: nil, failures: nil, unsaved: nil, retries: u.retries,
 	}
 	if err = r.execute(ctx); err == nil && r.result.Verdict == restore.Same {
 		err = r.reportRollbacks(ctx)
@@ -142,6 +154,9 @@ func (r *run) takePage(ctx context.Context, page *syncv1.GetChangesResponse) err
 
 func (r *run) finish(ctx context.Context) error {
 	if err := r.settleRemovals(ctx); err != nil {
+		return err
+	}
+	if err := r.reportUnsaved(ctx); err != nil {
 		return err
 	}
 	return errors.Join(r.failures...)

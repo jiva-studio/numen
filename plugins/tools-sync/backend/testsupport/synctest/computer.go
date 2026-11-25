@@ -119,6 +119,7 @@ type Computer struct {
 	token          atomic.Value
 	downloadsOnce  sync.Once
 	downloads      *download.DownloadFile
+	retries        *pull.Retries
 }
 
 // NewWords makes recovery words that identify one account.
@@ -198,7 +199,7 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: host, Notes: host,
 		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil,
-		LazyHeavy: false, Folders: folders.NewReceivedFolders(func() string { return receivedRoot }), token: atomic.Value{}, network: network, downloadsOnce: sync.Once{}, downloads: nil,
+		LazyHeavy: false, Folders: folders.NewReceivedFolders(func() string { return receivedRoot }), token: atomic.Value{}, network: network, downloadsOnce: sync.Once{}, downloads: nil, retries: pull.NewRetries(),
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,
@@ -270,7 +271,7 @@ func (c *Computer) WireDeps() syncwire.Deps {
 		Deps: c.SyncDeps(), Uploads: uploader, UploadEntries: c.State, DownloadBlobs: cloud.NewBlobs(c.Cloud), DownloadEntries: c.State,
 		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return RemovalDelay }, Digests: digest.Sha256{},
 		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), LazyHeavy: c.LazyHeavy,
-		Downloads: nil,
+		Downloads: nil, Retries: c.retries,
 	}
 	c.downloadsOnce.Do(func() { c.downloads = syncwire.NewDownloads(wired) })
 	wired.Downloads = c.downloads
@@ -292,7 +293,7 @@ func (c *Computer) PullDeps() pull.Deps {
 	return pull.Deps{
 		Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Downloads: wired.Downloads,
 		Guard: syncwire.NewGuard(wired), Health: c.NewHealth(),
-		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), Clock: c.Clock, LazyHeavy: c.LazyHeavy,
+		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), Clock: c.Clock, LazyHeavy: c.LazyHeavy, Retries: c.retries,
 	}
 }
 
