@@ -263,8 +263,8 @@ func (l *Link) AddRetired(one RetiredFile) {
 	l.Retired = append(l.Retired, one)
 }
 
-// FloorRetention is how long a device keeps the version at which a file was removed. It is longer than a device stays
-// offline in practice, so an old signed revision of a removed file is refused for as long as one could still come back.
+// FloorRetention is how long a device keeps the version at which a file was removed. It exceeds any realistic time
+// offline, so an old signed revision of a removed file stays refused for that long.
 const FloorRetention = 2 * 365 * 24 * time.Hour
 
 // PruneFloors dates the floors that have no date as of now and drops the ones older than FloorRetention. Nothing else

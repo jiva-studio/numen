@@ -118,7 +118,7 @@ func TestPullChanges_AcceptsAGapOfAFewThousandVersionsAfterARestoredServer(t *te
 	}
 }
 
-func TestPullChanges_AcceptsTheRevisionOfAFileThatWasRemovedAndWrittenAgain(t *testing.T) {
+func TestPullChanges_AppliesARevisionThatContinuesARemovedFile(t *testing.T) {
 	p := newPair(t)
 	first := p.push(t, "Plan.md", "tea", nil)
 	p.pull(t, trustAll)

@@ -299,8 +299,6 @@ func (r *recovery) getRecord(fileID []byte) transfer.FileRecord {
 	return transfer.NewEmptyRecord()
 }
 
-// checkEpoch requires that the epoch id the changes carry is the one of the signed announcement, so the link never
-// stores an id nobody signed.
 func (u *RecoverVault) checkEpoch(ctx context.Context, claimed []byte) error {
 	if len(claimed) == 0 {
 		return nil

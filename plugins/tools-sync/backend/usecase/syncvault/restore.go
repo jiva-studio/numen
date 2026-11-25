@@ -24,8 +24,6 @@ func (p *pass) pullOrRecover(ctx context.Context) (bool, error) {
 	return true, p.use.reports.clearRestore(ctx, p.id)
 }
 
-// recoverIfAnnounced runs the recovery only when the signed announcement of the server names the epoch id the changes carry:
-// the id in the changes is not signed, so a server could claim a restore that never happened.
 func (p *pass) recoverIfAnnounced(ctx context.Context) (bool, error) {
 	epoch, _, err := p.use.deps.Restore.Epochs.GetRestoreEpoch(ctx)
 	if err != nil || (epoch != nil && bytes.Equal(epoch.GetId(), p.epochID)) {
