@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
@@ -56,6 +57,9 @@ func (r *run) applyPage(ctx context.Context, page []*syncv1.StoredRevision) erro
 			if !isBlobFailure(err) {
 				return err
 			}
+			if err := checkRoom(len(r.failures)); err != nil {
+				return err
+			}
 			r.hold(stored.GetSeq())
 			r.failures = append(r.failures, err)
 		}
@@ -74,8 +78,7 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 		return nil
 	}
 	if (isKnown || !rev.GetDeleted()) && r.isRegressed(rev, record, isKnown) {
-		r.recordRollback(meta, rev)
-		return nil
+		return r.recordRollback(meta, rev)
 	}
 	if rev.GetDeleted() {
 		return r.applyDeletion(ctx, stored, record, isKnown)
@@ -340,12 +343,24 @@ func (r *run) isRegressed(rev *syncv1.Revision, record transfer.FileRecord, isKn
 	return rev.GetFileVersion() <= floor
 }
 
-func (r *run) recordRollback(meta note.Meta, rev *syncv1.Revision) {
+func (r *run) recordRollback(meta note.Meta, rev *syncv1.Revision) error {
+	if err := checkRoom(len(r.rolledBack)); err != nil {
+		return err
+	}
 	text := meta.Path
 	if rev.GetDeleted() {
 		text = fmt.Sprintf("%x", rev.GetFileId())
 	}
 	r.rolledBack = append(r.rolledBack, text)
+	return nil
+}
+
+// checkRoom returns syncprotocol.ErrTooManyPages when a list that a pull keeps already holds syncprotocol.MaxCatalogEntries items.
+func checkRoom(held int) error {
+	if held >= syncprotocol.MaxCatalogEntries {
+		return syncprotocol.ErrTooManyPages
+	}
+	return nil
 }
 
 func (r *run) reportRollbacks(ctx context.Context) error {

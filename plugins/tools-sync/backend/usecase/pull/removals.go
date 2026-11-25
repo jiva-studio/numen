@@ -47,7 +47,7 @@ func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, 
 		record.HeadRev, record.Version = stored.GetRevId(), version
 		r.setRecord(record)
 	default:
-		r.queueRemoval(removal{record: record, stat: stat, revID: stored.GetRevId(), version: version, isListed: isListed}, stored.GetSeq())
+		return r.queueRemoval(removal{record: record, stat: stat, revID: stored.GetRevId(), version: version, isListed: isListed}, stored.GetSeq())
 	}
 	return nil
 }
@@ -95,9 +95,13 @@ func (r *run) settleRemoval(ctx context.Context, one removal, isKept bool) error
 	return nil
 }
 
-func (r *run) queueRemoval(one removal, seq uint64) {
+func (r *run) queueRemoval(one removal, seq uint64) error {
+	if err := checkRoom(len(r.removals)); err != nil {
+		return err
+	}
 	if len(r.removals) == 0 || seq < r.removalSeq {
 		r.removalSeq = seq
 	}
 	r.removals = append(r.removals, one)
+	return nil
 }

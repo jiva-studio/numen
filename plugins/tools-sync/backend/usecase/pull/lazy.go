@@ -29,6 +29,9 @@ func (r *run) getListedHash(ctx context.Context, filePath string) (string, error
 		if err != nil {
 			return "", err
 		}
+		if err := checkRoom(len(files) - 1); err != nil {
+			return "", err
+		}
 		r.listed = make(map[string]string, len(files))
 		for _, file := range files {
 			r.listed[file.Path] = file.Hash
