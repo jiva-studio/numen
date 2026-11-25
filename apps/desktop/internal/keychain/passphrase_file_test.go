@@ -1,6 +1,4 @@
-	if after := readCredentialsBytes(t, dir); string(after) != string(before) {
-		t.Errorf("the file changed after refused calls: %q, want %q", after, before)
-	}package keychain
+package keychain
 
 import (
 	"context"
@@ -289,9 +287,8 @@ func TestAPlaintextFileIsRefusedInPassphraseMode(t *testing.T) {
 			t.Errorf("%s = %v, want ErrPlaintextCredentials", name, got)
 		}
 	}
-	after, err := os.ReadFile(credentialsPath(dir))
-	if err != nil || string(after) != string(before) {
-		t.Errorf("the file changed after refused calls: %v", err)
+	if after := readCredentialsBytes(t, dir); string(after) != string(before) {
+		t.Errorf("the file changed after refused calls: %q, want %q", after, before)
 	}
 }
 
