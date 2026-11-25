@@ -20,6 +20,7 @@ import {
 } from './rules.js'
 import type { EnvironmentSetting } from './environment.js'
 import { Palette } from './components/Palette.js'
+import type { IdentityComputer } from './identity-seed.js'
 import { Server } from './server.js'
 import { World } from './world.js'
 
@@ -45,6 +46,7 @@ export class Scenario {
   private readonly programs: string[] = []
   private readonly pluginSettings: Record<string, Record<string, string>> = {}
   private actionCount = 0
+  private identity: IdentityComputer | undefined
 
   constructor(
     firstPage: Page,
@@ -90,6 +92,13 @@ export class Scenario {
     if (this.server !== undefined)
       throw new Error(`set the setting "${key}" of ${pluginId} before the application starts`)
     this.pluginSettings[pluginId] = { ...this.pluginSettings[pluginId], [key]: value }
+  }
+
+  /** Gives the application the keys of a computer of the test identities, from the start of it. */
+  setIdentity(computer: IdentityComputer): void {
+    if (this.server !== undefined)
+      throw new Error('give the identity before the application starts')
+    this.identity = computer
   }
 
   getServer(): Server {
@@ -139,6 +148,7 @@ export class Scenario {
         environment: this.environment,
         programs: this.programs,
         pluginSettings: this.pluginSettings,
+        identity: this.identity,
         isLive: this.isLive,
       })
       this.application = application

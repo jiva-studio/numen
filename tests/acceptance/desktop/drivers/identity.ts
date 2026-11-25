@@ -17,6 +17,7 @@ import {
   SHEETS_IN_KIT,
   WORDS_ON_SHEET,
 } from './identity-kit.js'
+import { getSeedFingerprint, getSeedWords, type IdentityComputer } from './identity-seed.js'
 import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
 
@@ -32,6 +33,7 @@ export class IdentityDriver {
   private sheets: readonly (readonly string[])[] = []
   private downloads = 0
   private kitFile = ''
+  private isSeeded = false
 
   constructor(
     private readonly scenario: Scenario,
@@ -52,6 +54,19 @@ export class IdentityDriver {
       .locator('.settings__value')
     await expect(value).toBeVisible()
     return (await value.innerText()).trim()
+  }
+
+  /** Gives this computer the keys of the test identities: the application finds them at its start and treats the person as one who set the identity up. */
+  give(computer: IdentityComputer): void {
+    this.scenario.setIdentity(computer)
+    this.words = getSeedWords()
+    this.account = getSeedFingerprint()
+    this.isSeeded = true
+  }
+
+  /** Whether the identity of the person came from the test identities. */
+  hasGivenIdentity(): boolean {
+    return this.isSeeded
   }
 
   async start(): Promise<void> {

@@ -21,6 +21,7 @@ export default defineConfig({
   ...base,
   testDir,
   testMatch: undefined,
+  globalSetup: './support/global-setup.ts',
   fullyParallel: true,
   workers: 2,
   ...(isLive && { timeout: 240_000 }),
