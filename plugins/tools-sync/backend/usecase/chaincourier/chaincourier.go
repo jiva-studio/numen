@@ -101,11 +101,13 @@ type Adopt struct {
 	isClean  bool
 	seen     map[string]int64
 	isFresh  bool
+	// isUnsaved says the last write of the sightings failed, so the next look writes them again.
+	isUnsaved bool
 }
 
 // NewAdopt returns the use case over the dependencies.
 func NewAdopt(deps Deps) *Adopt {
-	return &Adopt{deps: deps, mu: sync.Mutex{}, isRaised: false, isClean: false, seen: nil, isFresh: false}
+	return &Adopt{deps: deps, mu: sync.Mutex{}, isRaised: false, isClean: false, seen: nil, isFresh: false, isUnsaved: false}
 }
 
 // Execute returns whether the core took a chain.
@@ -165,7 +167,7 @@ func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now t
 			u.seen = map[string]int64{}
 		}
 	}
-	isChanged := u.isFresh
+	isChanged := u.isFresh || u.isUnsaved
 	for id, signed := range listEntries(chain) {
 		if _, isKnown := u.seen[id]; isKnown {
 			continue
@@ -178,7 +180,7 @@ func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now t
 	}
 	u.isFresh = false
 	if isChanged {
-		_ = u.deps.Sightings.WriteEntrySightings(ctx, maps.Clone(u.seen))
+		u.isUnsaved = u.deps.Sightings.WriteEntrySightings(ctx, maps.Clone(u.seen)) != nil
 	}
 	return u.seen
 }
