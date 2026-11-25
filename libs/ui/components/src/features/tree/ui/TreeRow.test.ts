@@ -127,4 +127,16 @@ describe('a row status', () => {
     expect(row.get('[data-status="loading"]').attributes('aria-label')).toBe('Coming')
     expect(row.find('[data-status="cloud"]').exists()).toBe(false)
   })
+
+  it('draws the one progress ring for a loading row, filled where the progress is known', async () => {
+    const row = mountRow({ row: { ...ROW, status: { kind: 'loading', label: 'Coming' } } })
+    expect(row.get('[data-status="loading"] .progress-ring').attributes('data-known')).toBe('false')
+
+    await row.setProps({
+      row: { ...ROW, status: { kind: 'loading', label: 'Coming', progress: 0.4 } },
+    })
+    const ring = row.get('[data-status="loading"] .progress-ring')
+    expect(ring.attributes('data-known')).toBe('true')
+    expect(ring.get('.progress-ring__arc').attributes('stroke-dasharray')).toBe('40 100')
+  })
 })

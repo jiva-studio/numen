@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef, type VNode } from 'vue'
-import { Cloud, RefreshCw } from '@lucide/vue'
+import { Cloud } from '@lucide/vue'
+import { ProgressRing } from '@/shared/ui/progress-ring'
 import { useRenameFocus } from '../model/useRenameFocus'
 import type { RowId } from '../lib/row'
 import type { TreeRowProps } from './TreeRow.types'
@@ -71,7 +72,7 @@ useRenameFocus(() => props.isRenaming, field)
       :aria-label="row.status.label"
       :data-status="row.status.kind"
     >
-      <RefreshCw v-if="row.status.kind === 'loading'" class="tree__sync" aria-hidden="true" />
+      <ProgressRing v-if="row.status.kind === 'loading'" :value="row.status.progress" />
       <Cloud v-else class="tree__cloud" aria-hidden="true" />
     </span>
 
@@ -158,26 +159,9 @@ useRenameFocus(() => props.isRenaming, field)
   color: var(--numen-accent-ink);
 }
 
-.tree__cloud,
-.tree__sync {
+.tree__cloud {
   inline-size: var(--status);
   block-size: var(--status);
-}
-
-.tree__sync {
-  animation: tree-sync-turn var(--numen-wait-spin) linear infinite;
-}
-
-@keyframes tree-sync-turn {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tree__sync {
-    animation: none;
-  }
 }
 
 .tree__icon {

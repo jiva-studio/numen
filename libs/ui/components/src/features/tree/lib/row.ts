@@ -17,6 +17,8 @@ export type RowId = string
 export interface RowStatus {
   readonly kind: 'cloud' | 'loading'
   readonly label: string
+  /** From 0 to 1 for a loading row whose progress is known. */
+  readonly progress?: number
 }
 
 export interface Row {
