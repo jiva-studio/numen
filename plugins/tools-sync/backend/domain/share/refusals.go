@@ -38,6 +38,8 @@ var (
 var (
 	// ErrUnknownReader means the folder has no reader with the fingerprint.
 	ErrUnknownReader = errors.New("this person does not read the folder")
+	// ErrStaleReaderCode means the code holds a chain that is not newer than the one the share has of the reader.
+	ErrStaleReaderCode = errors.New("this code is not newer than the one the folder has of this person")
 	// ErrUnknownShare means the server has no such share for this account.
 	ErrUnknownShare = errors.New("this share does not exist or is not meant for you")
 	// ErrLogBusy means other devices of the owner changed the share log first, every time.

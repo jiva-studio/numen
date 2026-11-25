@@ -139,6 +139,21 @@ func NewSecondComputer(t *testing.T, server *Server, clock *Clock, vault string,
 	return c
 }
 
+// NewRestoredComputer makes a computer that restores the identity of the words as the core does: every other device of the account is
+// revoked and the keys move to a new epoch. It joins the account on the server, has a vault of the name, and signs in.
+func NewRestoredComputer(t *testing.T, server *Server, clock *Clock, vault string, words []string) *Computer {
+	t.Helper()
+	c := newComputer(t, server, clock, vault)
+	c.Fake.StartRestoreAsCore(words)
+	if _, err := join.NewJoin(c.JoinDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.SignIn(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
 func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Computer {
 	t.Helper()
 	fake := accounttest.NewFake(t, syncprotocol.SignInPluginID)

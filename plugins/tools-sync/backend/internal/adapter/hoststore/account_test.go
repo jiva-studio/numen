@@ -104,3 +104,27 @@ func TestWritePin_ConcurrentWrites(t *testing.T) {
 		}
 	}
 }
+
+func TestReadEntrySightings_AreNilBeforeAnyWrite(t *testing.T) {
+	state := newState(hosttest.CreateOnDisk(t, "first", nil))
+
+	got, err := state.ReadEntrySightings(t.Context())
+
+	if err != nil || got != nil {
+		t.Fatalf("got %v, %v, want nil and no error", got, err)
+	}
+}
+
+func TestEntrySightings_ReturnWhatWasWritten(t *testing.T) {
+	state := newState(hosttest.CreateOnDisk(t, "first", nil), hosttest.CreateOnDisk(t, "second", nil))
+	want := map[string]int64{"a": 200, "b": 50}
+	if err := state.WriteEntrySightings(t.Context(), want); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := state.ReadEntrySightings(t.Context())
+
+	if err != nil || len(got) != 2 || got["a"] != 200 || got["b"] != 50 {
+		t.Errorf("got %v, %v, want %v", got, err, want)
+	}
+}

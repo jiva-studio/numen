@@ -309,3 +309,76 @@ func TestLoop_DoesNothingWhileIdleAndWorksAgainWhenNotIdle(t *testing.T) {
 	current.Clock.Advance(time.Second)
 	synctest.WaitUntil(t, "the failed publish", func() bool { return len(current.Health.List()) == 1 })
 }
+
+func newBackdatedAddition(t *testing.T) (observer *synctest.Computer, clock *synctest.Clock) {
+	t.Helper()
+	clock = synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	words := synctest.NewWords(t)
+	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
+	observer = synctest.NewSecondComputer(t, server, clock, "Tablet", words)
+	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(30 * 24 * time.Hour)
+	stranger, err := identity.NewDeviceKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Fake.AddDeviceAt(stranger.Public(), "Stranger", synctest.GetStart()); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(first.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the addition published", published, err)
+	}
+	return observer, clock
+}
+
+func TestAdopt_RaisesTheNoticeOfAnAdditionThatTheSignerDatedLongAgo(t *testing.T) {
+	t.Parallel()
+	observer, _ := newBackdatedAddition(t)
+
+	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	items := observer.Health.List()
+	if len(items) != 1 || !strings.Contains(items[0].Text, "added another device") {
+		t.Errorf("health items = %+v, want the notice of the addition, which this device saw just now", items)
+	}
+}
+
+func TestAdopt_ClearsTheNoticeOfABackdatedAdditionAfterTheCoolingOffFromTheFirstSighting(t *testing.T) {
+	t.Parallel()
+	observer, clock := newBackdatedAddition(t)
+	adopt := chaincourier.NewAdopt(observer.ChainDeps())
+	if _, err := adopt.Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	clock.Advance(identity.CoolingOff + time.Hour)
+	if _, err := adopt.Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	if items := observer.Health.List(); len(items) != 0 {
+		t.Errorf("health items = %+v, want none 72 hours after the first sighting", items)
+	}
+}
+
+func TestAdopt_KeepsTheFirstSightingAcrossARestartOfThePlugin(t *testing.T) {
+	t.Parallel()
+	observer, clock := newBackdatedAddition(t)
+	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	clock.Advance(identity.CoolingOff + time.Hour)
+	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	if items := observer.Health.List(); len(items) != 0 {
+		t.Errorf("health items = %+v, want none: the new use case read the first sighting that the old one stored", items)
+	}
+}
