@@ -67,8 +67,8 @@ func (u *GetReaderCode) Execute(ctx context.Context) (ReaderCode, error) {
 	return ReaderCode{Code: domainshare.NewReaderCode(own.Chain), Fingerprint: chain.Root().Fingerprint().String()}, nil
 }
 
-// Received is a share this computer received: its vault, the owner and how its last pass ended.
-type Received struct {
+// ReceivedShare is a share this computer received: its vault, the owner and how its last pass ended.
+type ReceivedShare struct {
 	VaultID          domain.VaultID
 	Name             string
 	OwnerFingerprint string
@@ -77,19 +77,19 @@ type Received struct {
 	ConflictCount    int
 }
 
-// ListReceived lists the shares this computer received.
-type ListReceived struct{ base }
+// ListReceivedShares lists the shares this computer received.
+type ListReceivedShares struct{ base }
 
-// NewListReceived returns the use case over the dependencies.
-func NewListReceived(deps Deps) *ListReceived { return &ListReceived{base: base{deps: deps}} }
+// NewListReceivedShares returns the use case over the dependencies.
+func NewListReceivedShares(deps Deps) *ListReceivedShares { return &ListReceivedShares{base: base{deps: deps}} }
 
 // Execute returns the received shares in the order of the vault list.
-func (u *ListReceived) Execute(ctx context.Context) ([]Received, error) {
+func (u *ListReceivedShares) Execute(ctx context.Context) ([]ReceivedShare, error) {
 	vaults, err := u.deps.Host.GetVaults(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var listed []Received
+	var listed []ReceivedShare
 	for _, vault := range vaults {
 		link, isReceived, err := u.readReceivedLink(ctx, vault.ID)
 		if err != nil {
@@ -107,10 +107,10 @@ func (u *ListReceived) Execute(ctx context.Context) ([]Received, error) {
 	return listed, nil
 }
 
-func (u *ListReceived) describe(ctx context.Context, vault domain.Vault, link vaultlink.Link) (Received, error) {
+func (u *ListReceivedShares) describe(ctx context.Context, vault domain.Vault, link vaultlink.Link) (ReceivedShare, error) {
 	status, err := u.deps.Statuses.ReadStatus(ctx, vault.ID)
 	if err != nil {
-		return Received{}, err
+		return ReceivedShare{}, err
 	}
 	state := StateReady
 	switch {
@@ -121,9 +121,9 @@ func (u *ListReceived) describe(ctx context.Context, vault domain.Vault, link va
 	}
 	chain, err := identity.ParseChain(link.Received.OwnerChain)
 	if err != nil {
-		return Received{}, err
+		return ReceivedShare{}, err
 	}
-	return Received{
+	return ReceivedShare{
 		VaultID: vault.ID, Name: vault.Name, OwnerFingerprint: chain.Root().Fingerprint().String(), State: state, LastSyncedAt: status.LastSyncedAt,
 		ConflictCount: status.ConflictCount,
 	}, nil

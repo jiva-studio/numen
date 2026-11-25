@@ -33,7 +33,7 @@ type Fake struct {
 	pluginID string
 
 	mu          sync.Mutex
-	record      *held
+	record      *fakeIdentity
 	link        *fakeLink
 	failure     error
 	signed      int
@@ -164,23 +164,23 @@ func (s *service) GetPublicIdentity(_ context.Context, _ *connect.Request[v1.Get
 	}), nil
 }
 
-func (f *Fake) read() (held, error) {
+func (f *Fake) read() (fakeIdentity, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.failure != nil {
-		return held{}, connect.NewError(connect.CodeInternal, f.failure)
+		return fakeIdentity{}, connect.NewError(connect.CodeInternal, f.failure)
 	}
 	if f.record == nil {
 		failure := connect.NewError(connect.CodeFailedPrecondition, account.ErrNoIdentity)
 		if detail, err := connect.NewErrorDetail(&errdetails.ErrorInfo{Reason: "NO_IDENTITY"}); err == nil {
 			failure.AddDetail(detail)
 		}
-		return held{}, failure
+		return fakeIdentity{}, failure
 	}
 	return *f.record, nil
 }
 
-func toPublicIdentity(record held) account.PublicIdentity {
+func toPublicIdentity(record fakeIdentity) account.PublicIdentity {
 	device := record.Device.Public()
 	return account.PublicIdentity{
 		AccountFingerprint: record.Chain.Root().Fingerprint().String(),
@@ -193,7 +193,7 @@ func toPublicIdentity(record held) account.PublicIdentity {
 	}
 }
 
-func newRecord(t *testing.T) held {
+func newRecord(t *testing.T) fakeIdentity {
 	t.Helper()
 	words, err := identity.NewRecoveryWords(rand.Reader)
 	if err != nil {
@@ -219,7 +219,7 @@ func newRecord(t *testing.T) held {
 	return joinChain(t, chain, root, keys, device, now)
 }
 
-func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, keys identity.AccountKeys, device identity.DeviceKey, now time.Time) held {
+func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, keys identity.AccountKeys, device identity.DeviceKey, now time.Time) fakeIdentity {
 	t.Helper()
 	chain, err := chain.AppendDevice(root, device.Public(), "Test device", now)
 	if err != nil {
@@ -229,18 +229,18 @@ func joinChain(t *testing.T, chain identity.Chain, root identity.RecoveryKey, ke
 	if err != nil {
 		t.Fatal(err)
 	}
-	return held{Record: identity.Record{Device: device, Wrapped: wrapped}, Chain: chain, root: root, keys: keys}
+	return fakeIdentity{Record: identity.Record{Device: device, Wrapped: wrapped}, Chain: chain, root: root, keys: keys}
 }
 
-// held is the identity of the fake: the record, the chain and the keys that make a revoke possible.
-type held struct {
+// fakeIdentity is the identity of the fake: the record, the chain and the keys that make a revoke possible.
+type fakeIdentity struct {
 	identity.Record
 	Chain identity.Chain
 	root  identity.RecoveryKey
 	keys  identity.AccountKeys
 }
 
-func isRevoked(record held) bool {
+func isRevoked(record fakeIdentity) bool {
 	return slices.ContainsFunc(record.Chain.ListRevokedDevices(), func(device identity.Device) bool {
 		return bytes.Equal(device.Public.Sign, record.Device.SignerKey())
 	})

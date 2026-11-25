@@ -5,7 +5,7 @@ import { GetDownloadProgressResponseSchema } from '@numen/protocol'
 import { createDownloadClient } from './downloads'
 
 describe('getDownloadProgress', () => {
-  it('returns the bytes that came and the size of the file of the path it asked about', async () => {
+  it('returns the bytes done and the size of the file for the requested path', async () => {
     const asked: string[] = []
     const client = createDownloadClient({
       getDownloadProgress: (request) => {

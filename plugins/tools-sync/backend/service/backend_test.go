@@ -359,7 +359,7 @@ func TestListVaults_ReportsAbsentFilesAsOnDemandAndNotAsPendingWork(t *testing.T
 	}
 }
 
-func TestListVaults_ReportsAVaultAsSyncingWhileAPassHoldsIt(t *testing.T) {
+func TestListVaults_MarksVaultSyncingDuringPass(t *testing.T) {
 	w := newWorld(t)
 	w.c.Connect(t, "Test")
 	backend := service.NewBackend(w.c.SyncDeps())

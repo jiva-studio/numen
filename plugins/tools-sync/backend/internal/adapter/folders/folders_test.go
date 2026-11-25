@@ -10,7 +10,7 @@ import (
 
 func TestReceived_MakesTheFolderOfTheNameAndNumbersANameThatIsTaken(t *testing.T) {
 	root := filepath.Join(t.TempDir(), "Shared")
-	received := folders.NewReceived(func() string { return root })
+	received := folders.NewReceivedFolders(func() string { return root })
 
 	first, err := received.MakeReceivedFolder(t.Context(), "Food")
 	if err != nil {
@@ -38,7 +38,7 @@ func TestReceived_UsesNumenSharedInTheHomeFolderWhenTheSettingIsEmpty(t *testing
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
-	received := folders.NewReceived(func() string { return "" })
+	received := folders.NewReceivedFolders(func() string { return "" })
 
 	made, err := received.MakeReceivedFolder(t.Context(), "Plans")
 	if err != nil {

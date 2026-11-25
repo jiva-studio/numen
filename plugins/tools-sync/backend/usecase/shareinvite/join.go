@@ -87,8 +87,8 @@ func checkLink(deps Deps, text string) (domainshare.LinkInvitation, error) {
 	return invitation, nil
 }
 
-// Joined is a request that was sent: its id is the one Status takes.
-type Joined struct {
+// JoinRequest is a request that was sent: its id is the one Status takes.
+type JoinRequest struct {
 	ID               string
 	Folder           string
 	OwnerFingerprint string
@@ -102,32 +102,32 @@ func NewJoin(deps Deps) *Join { return &Join{deps: deps} }
 
 // Execute checks the link, sends the first message of the handshake and returns; the rest runs in the courier of the
 // plugin. A link of this account itself is ErrOwnIdentity.
-func (u *Join) Execute(ctx context.Context, text, deviceName string) (Joined, error) {
+func (u *Join) Execute(ctx context.Context, text, deviceName string) (JoinRequest, error) {
 	invitation, err := checkLink(u.deps, text)
 	if err != nil {
-		return Joined{}, err
+		return JoinRequest{}, err
 	}
 	own, err := u.deps.Identity.GetPublicIdentity(ctx)
 	if err != nil {
-		return Joined{}, err
+		return JoinRequest{}, err
 	}
 	chain, err := identity.ParseChain(own.Chain)
 	if err != nil {
-		return Joined{}, err
+		return JoinRequest{}, err
 	}
 	if chain.Root().Fingerprint().String() == invitation.Fingerprint {
-		return Joined{}, domainshare.ErrOwnIdentity
+		return JoinRequest{}, domainshare.ErrOwnIdentity
 	}
 	scanner, first, err := identity.NewLinkScanner(u.deps.Random, invitation.Payload)
 	if err != nil {
-		return Joined{}, domainshare.ErrBadLink
+		return JoinRequest{}, domainshare.ErrBadLink
 	}
 	id := bytes.Clone(invitation.Payload.Channel[:])
 	if _, err := u.deps.Relay.SendMessage(ctx, id, ports.LinkSideDisplayer, first); err != nil {
 		if errors.Is(err, syncprotocol.ErrChannelGone) {
-			return Joined{}, domainshare.ErrLinkExpired
+			return JoinRequest{}, domainshare.ErrLinkExpired
 		}
-		return Joined{}, err
+		return JoinRequest{}, err
 	}
 	mine := &join{
 		id: id, invitation: invitation, scanner: scanner, channel: nil, chain: own.Chain, name: domainshare.CleanDeviceName(getDeviceName(u.deps, deviceName)),
@@ -138,9 +138,9 @@ func (u *Join) Execute(ctx context.Context, text, deviceName string) (Joined, er
 	u.deps.Hub.joins[key] = mine
 	u.deps.Hub.mu.Unlock()
 	if err := u.deps.Hub.add(ctx, func(run context.Context) { watchJoin(run, u.deps, mine) }); err != nil {
-		return Joined{}, err
+		return JoinRequest{}, err
 	}
-	return Joined{ID: key, Folder: invitation.Folder, OwnerFingerprint: invitation.Fingerprint}, nil
+	return JoinRequest{ID: key, Folder: invitation.Folder, OwnerFingerprint: invitation.Fingerprint}, nil
 }
 
 // Status is how a request stands.

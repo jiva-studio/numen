@@ -24,8 +24,8 @@ func New(dir string) *Store {
 	return &Store{dir: dir, held: map[string][]byte{}}
 }
 
-// Staged is a body that was received but is not yet kept under a name.
-type Staged struct {
+// StagedBody is a body that was received but is not yet kept under a name.
+type StagedBody struct {
 	Size  int64
 	store *Store
 	file  string
@@ -33,10 +33,10 @@ type Staged struct {
 }
 
 // Stage reads the body from the reader into a temporary file, at most limit bytes, without holding it in memory.
-func (b *Store) Stage(from io.Reader, limit int64) (*Staged, error) {
+func (b *Store) Stage(from io.Reader, limit int64) (*StagedBody, error) {
 	if b.dir == "" {
 		body, err := io.ReadAll(io.LimitReader(from, limit))
-		return &Staged{Size: int64(len(body)), store: b, body: body}, err
+		return &StagedBody{Size: int64(len(body)), store: b, body: body}, err
 	}
 	if err := os.MkdirAll(b.dir, 0o750); err != nil {
 		return nil, fmt.Errorf("make the body folder: %w", err)
@@ -47,7 +47,7 @@ func (b *Store) Stage(from io.Reader, limit int64) (*Staged, error) {
 	}
 	size, copyErr := io.Copy(file, io.LimitReader(from, limit))
 	closeErr := file.Close()
-	staged := &Staged{Size: size, store: b, file: file.Name()}
+	staged := &StagedBody{Size: size, store: b, file: file.Name()}
 	if err := errors.Join(copyErr, closeErr); err != nil {
 		staged.Discard()
 		return nil, err
@@ -56,7 +56,7 @@ func (b *Store) Stage(from io.Reader, limit int64) (*Staged, error) {
 }
 
 // Commit keeps the staged body under the name.
-func (s *Staged) Commit(name string) error {
+func (s *StagedBody) Commit(name string) error {
 	if s.store.dir == "" {
 		s.store.held[name] = s.body
 		return nil
@@ -69,7 +69,7 @@ func (s *Staged) Commit(name string) error {
 }
 
 // Discard drops the staged body.
-func (s *Staged) Discard() {
+func (s *StagedBody) Discard() {
 	if s.file != "" {
 		if err := os.Remove(s.file); err != nil {
 			slog.Warn("remove a staged body", "error", err)

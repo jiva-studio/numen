@@ -123,7 +123,7 @@ func (c *Computer) AcceptInvitation(ctx context.Context, text string) (ReceivedS
 }
 
 func (c *Computer) ListReceived(ctx context.Context) ([]ReceivedShare, error) {
-	listed, err := receive.NewListReceived(c.ReceiveDeps()).Execute(ctx)
+	listed, err := receive.NewListReceivedShares(c.ReceiveDeps()).Execute(ctx)
 	shares := make([]ReceivedShare, len(listed))
 	for i, one := range listed {
 		shares[i] = ReceivedShare{

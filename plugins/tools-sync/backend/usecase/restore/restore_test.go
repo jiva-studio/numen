@@ -315,7 +315,7 @@ func TestRecoverAccount_DropsTheCachedCatalogOfAnotherIdentityAndSendsNothing(t 
 	}
 }
 
-func TestRecoverVault_TakesNoNoteFromARevisionWithABadSignature(t *testing.T) {
+func TestRecoverVault_SkipsRevisionWithBadSignature(t *testing.T) {
 	t.Parallel()
 	p := newFirst(t)
 	p.a.Connect(t, source)

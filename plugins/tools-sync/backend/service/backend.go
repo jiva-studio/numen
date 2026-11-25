@@ -23,7 +23,7 @@ type Backend struct {
 	*vaultwire.Vaults
 	*downloadwire.Downloads
 	*sharewire.Shares
-	*sharewire.Received
+	*sharewire.ReceivedShares
 	*invitewire.Invites
 	*subscriptionwire.Subscription
 	*accountwire.Account
@@ -36,7 +36,7 @@ func NewBackend(deps syncvault.Deps) *Backend {
 		life: nil, Downloads: nil, Invites: nil,
 		Vaults:       vaultwire.New(deps, heads.New(headsDeps)),
 		Shares:       sharewire.New(deps),
-		Received:     sharewire.NewReceived(deps),
+		ReceivedShares:     sharewire.NewReceivedShares(deps),
 		Subscription: subscriptionwire.New(deps),
 		Account:      accountwire.New(),
 	}

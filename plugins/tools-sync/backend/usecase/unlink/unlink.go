@@ -25,16 +25,16 @@ type CloudDeleter interface {
 	ExecuteHeld(ctx context.Context, remoteID string, held domain.VaultID) error
 }
 
-// StopSyncing ends the sync of a vault of this account on this device.
-type StopSyncing struct{ deps Deps }
+// StopSync ends the sync of a vault of this account on this device.
+type StopSync struct{ deps Deps }
 
-// NewStopSyncing returns the use case over the dependencies.
-func NewStopSyncing(deps Deps) *StopSyncing { return &StopSyncing{deps: deps} }
+// NewStopSync returns the use case over the dependencies.
+func NewStopSync(deps Deps) *StopSync { return &StopSync{deps: deps} }
 
 // Execute forgets the link and what the sync kept of the vault, so the vault is not synced any more. The files stay, and
 // so does the synced vault on the server, unless isDeleting is set: then the cloud copy is deleted first, and the vault
 // stays linked when that fails.
-func (u *StopSyncing) Execute(ctx context.Context, id domain.VaultID, isDeleting bool) error {
+func (u *StopSync) Execute(ctx context.Context, id domain.VaultID, isDeleting bool) error {
 	unlock, err := u.deps.Locker.LockVault(ctx, id)
 	if err != nil {
 		return err

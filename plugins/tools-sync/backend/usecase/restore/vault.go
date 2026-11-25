@@ -262,16 +262,16 @@ func (r *recovery) setRecord(record transfer.FileRecord) {
 	r.records[at] = record
 }
 
-func (r *recovery) getKnownFiles() []domainrestore.Known {
-	known := make([]domainrestore.Known, len(r.records), len(r.records)+len(r.link.Removed))
+func (r *recovery) getKnownFiles() []domainrestore.SyncedFile {
+	known := make([]domainrestore.SyncedFile, len(r.records), len(r.records)+len(r.link.Removed))
 	for i, record := range r.records {
-		known[i] = domainrestore.Known{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, HeadRev: record.HeadRev, Version: record.Version}
+		known[i] = domainrestore.SyncedFile{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, HeadRev: record.HeadRev, Version: record.Version}
 	}
 	for _, gone := range r.link.Removed {
 		_, isLocal := r.hashes[gone.Path]
 		isKnown := slices.ContainsFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, gone.FileID) })
 		if !isLocal && !isKnown {
-			known = append(known, domainrestore.Known{FileID: gone.FileID, Path: gone.Path, BaseHash: "", HeadRev: gone.HeadRev, Version: gone.Version})
+			known = append(known, domainrestore.SyncedFile{FileID: gone.FileID, Path: gone.Path, BaseHash: "", HeadRev: gone.HeadRev, Version: gone.Version})
 		}
 	}
 	return known

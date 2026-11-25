@@ -106,7 +106,7 @@ function createFileTabs(
   pluginStarts: ReturnType<typeof createTabPluginStarts>,
 ) {
   const { api, writeMessage } = deps
-  const downloads = createDownloadTabs(
+  const downloadPart = createDownloadTabs(
     DownloadPane,
     windowTabs,
     (path, title) =>
@@ -115,12 +115,12 @@ function createFileTabs(
       ),
     api.vault.downloads.getProgress,
   )
-  windowTabs.kinds.registerKind(downloads.kind)
+  windowTabs.kinds.registerKind(downloadPart.kind)
   const tabOpeners = createFileOpeners({
     readFileKinds: api.vault.file.getFileKinds,
     isFileAbsent: api.vault.file.isFileAbsent,
     fetchFile: api.vault.downloads.fetch,
-    downloadTabs: downloads.tabs,
+    downloadTabs: downloadPart.tabs,
     reconcileTab: windowTabs.panes.reconcileTab,
     startTabKind: pluginStarts.startTabKind,
     startExtensionReader: pluginStarts.startExtensionReader,

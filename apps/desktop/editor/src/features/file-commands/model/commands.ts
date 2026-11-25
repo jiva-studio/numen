@@ -10,7 +10,7 @@ import {
   type CommandInvocation,
   type Notes,
 } from '@/shared/model/command'
-import type { Downloads, FileApi } from '@/entities/file'
+import type { DownloadRegistry, FileApi } from '@/entities/file'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { formatError } from '@/shared/api/errors'
 import { generateUniqueName } from '@/shared/lib/paths'
@@ -19,7 +19,7 @@ import { FILE_WORDS } from '../words'
 /** What the commands over files use of the window. */
 export interface FileCommandsDeps {
   readonly files: Pick<FileApi, 'createFolder' | 'dropDownload' | 'listFiles' | 'moveFile'>
-  readonly downloads: Pick<Downloads, 'fetch'>
+  readonly downloads: Pick<DownloadRegistry, 'fetch'>
   readonly notes: Notes
   readonly writeMessage: MessageWriter
 }

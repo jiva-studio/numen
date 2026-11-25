@@ -89,7 +89,7 @@ type Computer struct {
 	Account   *accountadapter.Account
 	Sessions  *serveradapter.Server
 	State     *hoststore.State
-	Folders   *folders.Received
+	Folders   *folders.ReceivedFolders
 	LazyHeavy bool
 
 	network        *link
@@ -159,7 +159,7 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	receivedRoot := t.TempDir()
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root}, Notes: Host{Root: root},
-		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil, LazyHeavy: false, Folders: folders.NewReceived(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
+		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil, LazyHeavy: false, Folders: folders.NewReceivedFolders(func() string { return receivedRoot }), token: atomic.Value{}, network: network,
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,

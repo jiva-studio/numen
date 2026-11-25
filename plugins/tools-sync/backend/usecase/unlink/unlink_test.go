@@ -26,7 +26,7 @@ func TestStopSyncing_WaitsForTheHolderOfTheVaultBeforeForgettingIt(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	stop := unlink.NewStopSyncing(unlink.Deps{Links: state, Forget: state, Vaults: nil, Cloud: nil, Locker: state})
+	stop := unlink.NewStopSync(unlink.Deps{Links: state, Forget: state, Vaults: nil, Cloud: nil, Locker: state})
 	done := make(chan error, 1)
 	go func() { done <- stop.Execute(t.Context(), id, false) }()
 

@@ -15,40 +15,40 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
-// opened is an invitation that is for this account, with the chain of the owner it names, verified.
-type opened struct {
+// openedInvitation is an invitation that is for this account, with the chain of the owner it names, verified.
+type openedInvitation struct {
 	invitation domainshare.Invitation
 	ownerChain identity.Chain
 	reader     identity.Chain
 }
 
-// followed is the share log of an invitation, verified, and the chain of the owner the server stores.
-type followed struct {
+// followedLog is the share log of an invitation, verified, and the chain of the owner the server stores.
+type followedLog struct {
 	position   domainshare.Position
 	ownerChain []byte
 }
 
-func (b base) open(ctx context.Context, text string) (opened, error) {
+func (b base) open(ctx context.Context, text string) (openedInvitation, error) {
 	invitation, err := domainshare.ParseInvitation(text)
 	if err != nil {
-		return opened{}, err
+		return openedInvitation{}, err
 	}
 	own, err := b.deps.Identity.GetPublicIdentity(ctx)
 	if err != nil {
-		return opened{}, err
+		return openedInvitation{}, err
 	}
 	reader, err := identity.ParseChain(own.Chain)
 	if err != nil {
-		return opened{}, err
+		return openedInvitation{}, err
 	}
 	if reader.Root().Fingerprint() != invitation.ReaderFingerprint {
-		return opened{}, domainshare.ErrNotForThisAccount
+		return openedInvitation{}, domainshare.ErrNotForThisAccount
 	}
 	ownerChain, err := identity.ParseChain(invitation.OwnerChain)
 	if err != nil {
-		return opened{}, fmt.Errorf("%w: %w", domainshare.ErrBadCode, err)
+		return openedInvitation{}, fmt.Errorf("%w: %w", domainshare.ErrBadCode, err)
 	}
-	return opened{invitation: invitation, ownerChain: ownerChain, reader: reader}, nil
+	return openedInvitation{invitation: invitation, ownerChain: ownerChain, reader: reader}, nil
 }
 
 func (b base) findReceivedLink(ctx context.Context, shareID []byte) (domain.VaultID, vaultlink.Link, bool, error) {
@@ -68,36 +68,36 @@ func (b base) findReceivedLink(ctx context.Context, shareID []byte) (domain.Vaul
 	return "", vaultlink.Link{}, false, nil
 }
 
-func (b base) follow(ctx context.Context, o opened) (followed, error) {
+func (b base) follow(ctx context.Context, o openedInvitation) (followedLog, error) {
 	entries, chain, err := b.deps.Shares.GetShareLog(ctx, o.invitation.ShareRootID, 0)
 	if errors.Is(err, syncprotocol.ErrNoShare) {
-		return followed{}, domainshare.ErrUnknownShare
+		return followedLog{}, domainshare.ErrUnknownShare
 	}
 	if err != nil {
-		return followed{}, err
+		return followedLog{}, err
 	}
 	if err := refuseShorterChain(o.invitation.OwnerChain, chain); err != nil {
-		return followed{}, err
+		return followedLog{}, err
 	}
 	authors, err := trust.NewAuthors(o.invitation.OwnerChain, chain)
 	if err != nil {
-		return followed{}, err
+		return followedLog{}, err
 	}
 	rules := domainshare.Rules{ShareRootID: o.invitation.ShareRootID, Reader: o.reader.Root().Sign, Authors: authors, Open: b.deps.Box.OpenBox}
 	follower := domainshare.NewFollower(rules, domainshare.Position{
 		VaultID: nil, Version: 0, HeadID: [32]byte{}, Epoch: 0, Keys: nil, Name: "", IsActive: false, IsEnded: false,
 	})
 	if err := follower.Follow(ctx, entries); err != nil {
-		return followed{}, err
+		return followedLog{}, err
 	}
 	position := follower.GetPosition()
 	if position.IsEnded {
-		return followed{}, domainshare.ErrEnded
+		return followedLog{}, domainshare.ErrEnded
 	}
 	if !position.IsActive {
-		return followed{}, domainshare.ErrUnknownShare
+		return followedLog{}, domainshare.ErrUnknownShare
 	}
-	return followed{position: position, ownerChain: chain}, nil
+	return followedLog{position: position, ownerChain: chain}, nil
 }
 
 // Preview is what a reader sees of an invitation before it accepts.
@@ -142,8 +142,8 @@ func (u *ReadInvitation) Execute(ctx context.Context, text string) (Preview, err
 	}, nil
 }
 
-// Accepted is the vault a share was received into.
-type Accepted struct {
+// AcceptedShare is the vault a share was received into.
+type AcceptedShare struct {
 	VaultID domain.VaultID
 	Name    string
 }
@@ -164,21 +164,21 @@ func NewAcceptInvitation(deps Deps) *AcceptInvitation {
 // and so is an invitation for the same share with another owner root. A share the owner ended, to which the owner
 // added this reader again, is received into the vault it had: the reader keeps its files and the keys of the epochs
 // it held, and reads the log again from its first entry.
-func (u *AcceptInvitation) Execute(ctx context.Context, text string) (Accepted, error) {
+func (u *AcceptInvitation) Execute(ctx context.Context, text string) (AcceptedShare, error) {
 	o, err := u.open(ctx, text)
 	if err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
 	vaultID, link, isReceived, err := u.findReceivedLink(ctx, o.invitation.ShareRootID)
 	if err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
 	if err := checkReceivedLink(link, isReceived, o); err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
 	read, err := u.follow(ctx, o)
 	if err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
 	if isReceived {
 		return u.joinAgain(ctx, vaultID, o, read)
@@ -186,7 +186,7 @@ func (u *AcceptInvitation) Execute(ctx context.Context, text string) (Accepted, 
 	return u.receive(ctx, o, read)
 }
 
-func checkReceivedLink(link vaultlink.Link, isReceived bool, o opened) error {
+func checkReceivedLink(link vaultlink.Link, isReceived bool, o openedInvitation) error {
 	if !isReceived {
 		return nil
 	}
@@ -199,27 +199,27 @@ func checkReceivedLink(link vaultlink.Link, isReceived bool, o opened) error {
 	return nil
 }
 
-func (u *AcceptInvitation) receive(ctx context.Context, o opened, read followed) (Accepted, error) {
+func (u *AcceptInvitation) receive(ctx context.Context, o openedInvitation, read followedLog) (AcceptedShare, error) {
 	folder, err := u.deps.Folders.MakeReceivedFolder(ctx, domainshare.CleanName(read.position.Name))
 	if err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
 	vault, err := u.deps.Vaults.AddManagedVault(ctx, folder.Path, folder.Name, syncprotocol.SignInPluginID)
 	if err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
 	unlock, err := u.deps.Locker.LockVault(ctx, vault.ID)
 	if err != nil {
-		return Accepted{}, u.dropVault(ctx, vault.ID, err)
+		return AcceptedShare{}, u.dropVault(ctx, vault.ID, err)
 	}
 	defer unlock()
 	if err := u.writeLink(ctx, vault.ID, o, read); err != nil {
-		return Accepted{}, u.dropVault(ctx, vault.ID, err)
+		return AcceptedShare{}, u.dropVault(ctx, vault.ID, err)
 	}
 	if err := u.runFirstPass(ctx, vault.ID); err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
-	return Accepted{VaultID: vault.ID, Name: vault.Name}, nil
+	return AcceptedShare{VaultID: vault.ID, Name: vault.Name}, nil
 }
 
 func (u *AcceptInvitation) dropVault(ctx context.Context, id domain.VaultID, cause error) error {
@@ -229,10 +229,10 @@ func (u *AcceptInvitation) dropVault(ctx context.Context, id domain.VaultID, cau
 	return cause
 }
 
-func (u *AcceptInvitation) joinAgain(ctx context.Context, id domain.VaultID, o opened, read followed) (Accepted, error) {
+func (u *AcceptInvitation) joinAgain(ctx context.Context, id domain.VaultID, o openedInvitation, read followedLog) (AcceptedShare, error) {
 	unlock, err := u.deps.Locker.LockVault(ctx, id)
 	if err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
 	defer unlock()
 	err = u.deps.Links.UpdateLink(ctx, id, func(fresh *vaultlink.Link) error {
@@ -248,12 +248,12 @@ func (u *AcceptInvitation) joinAgain(ctx context.Context, id domain.VaultID, o o
 		return nil
 	})
 	if err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
 	if err := u.runFirstPass(ctx, id); err != nil {
-		return Accepted{}, err
+		return AcceptedShare{}, err
 	}
-	return Accepted{VaultID: id, Name: domainshare.CleanName(read.position.Name)}, nil
+	return AcceptedShare{VaultID: id, Name: domainshare.CleanName(read.position.Name)}, nil
 }
 
 func (u *AcceptInvitation) runFirstPass(ctx context.Context, id domain.VaultID) error {
@@ -264,23 +264,23 @@ func (u *AcceptInvitation) runFirstPass(ctx context.Context, id domain.VaultID) 
 	return u.deps.Statuses.WriteStatus(ctx, id, getStatus(result, u.deps.Clock.Now()))
 }
 
-func (u *AcceptInvitation) buildReceivedRecord(ctx context.Context, o opened, read followed, seen map[string]vaultlink.SeenRevision) (vaultlink.Received, error) {
+func (u *AcceptInvitation) buildReceivedRecord(ctx context.Context, o openedInvitation, read followedLog, seen map[string]vaultlink.SeenRevision) (vaultlink.ShareRecord, error) {
 	keys, err := read.position.Keys.Encode()
 	if err != nil {
-		return vaultlink.Received{}, err
+		return vaultlink.ShareRecord{}, err
 	}
 	sealed, err := u.deps.Crypto.SealData(ctx, vaultlink.GetStateKeyContext(o.invitation.ShareRootID), keys)
 	if err != nil {
-		return vaultlink.Received{}, fmt.Errorf("seal the keys of the share: %w", err)
+		return vaultlink.ShareRecord{}, fmt.Errorf("seal the keys of the share: %w", err)
 	}
-	return vaultlink.Received{
+	return vaultlink.ShareRecord{
 		ShareRootID: hex.EncodeToString(o.invitation.ShareRootID), OwnerRoot: o.ownerChain.Root().Sign, OwnerChain: read.ownerChain,
 		SealedKeys: sealed, ServerVersion: read.position.Version, HeadID: read.position.HeadID[:], VaultID: read.position.VaultID,
 		Epoch: read.position.Epoch, Name: read.position.Name, IsEnded: false, Seen: seen,
 	}, nil
 }
 
-func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o opened, read followed) error {
+func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o openedInvitation, read followedLog) error {
 	received, err := u.buildReceivedRecord(ctx, o, read, nil)
 	if err != nil {
 		return err

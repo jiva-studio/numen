@@ -21,18 +21,18 @@ const (
 // ErrNoFreeFolder means every numbered folder of a name is taken.
 var ErrNoFreeFolder = errors.New("no free folder for the received share")
 
-// Received makes the folders of received shares in the folder of the setting, or in Numen Shared in the home folder
+// ReceivedFolders makes the folders of received shares in the folder of the setting, or in Numen Shared in the home folder
 // of the person.
-type Received struct {
+type ReceivedFolders struct {
 	setting func() string
 }
 
-// NewReceived returns the folders in the folder setting returns.
-func NewReceived(setting func() string) *Received { return &Received{setting: setting} }
+// NewReceivedFolders returns the folders in the folder setting returns.
+func NewReceivedFolders(setting func() string) *ReceivedFolders { return &ReceivedFolders{setting: setting} }
 
 // MakeReceivedFolder makes a folder of the name, with a number appended when the name is taken, and returns its path
 // and the name of the vault it holds.
-func (r *Received) MakeReceivedFolder(_ context.Context, name string) (ports.ReceivedFolder, error) {
+func (r *ReceivedFolders) MakeReceivedFolder(_ context.Context, name string) (ports.ReceivedFolder, error) {
 	root, err := r.getRoot()
 	if err != nil {
 		return ports.ReceivedFolder{}, err
@@ -57,7 +57,7 @@ func (r *Received) MakeReceivedFolder(_ context.Context, name string) (ports.Rec
 	return ports.ReceivedFolder{}, ErrNoFreeFolder
 }
 
-func (r *Received) getRoot() (string, error) {
+func (r *ReceivedFolders) getRoot() (string, error) {
 	if configured := r.setting(); configured != "" {
 		return configured, nil
 	}

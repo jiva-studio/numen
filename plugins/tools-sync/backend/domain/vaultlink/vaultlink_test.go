@@ -62,7 +62,7 @@ func TestLink_ReadsBackWhatItWrote(t *testing.T) {
 
 func TestReceived_IsRegressed_RefusesAnyVersionBelowTheNewestAndAnotherRevisionOfTheSameVersion(t *testing.T) {
 	t.Parallel()
-	received := vaultlink.Received{}
+	received := vaultlink.ShareRecord{}
 	file := []byte{1}
 	for version := uint64(1); version <= 20; version++ {
 		received.RecordRevision(file, []byte{byte(version)}, version)

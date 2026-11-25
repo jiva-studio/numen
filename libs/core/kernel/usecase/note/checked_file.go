@@ -77,20 +77,20 @@ type FileMove interface {
 	Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, bool, error)
 }
 
-// MoveChecked moves a file, or a folder with everything under it, once the file matches the baseline the caller
+// MoveCheckedFile moves a file, or a folder with everything under it, once the file matches the baseline the caller
 // read, and counts the files that moved.
-type MoveChecked struct {
+type MoveCheckedFile struct {
 	move    FileMove
 	readers vaultport.VaultReaders
 }
 
-func NewMoveChecked(move FileMove, readers vaultport.VaultReaders) MoveChecked {
-	return MoveChecked{move: move, readers: readers}
+func NewMoveChecked(move FileMove, readers vaultport.VaultReaders) MoveCheckedFile {
+	return MoveCheckedFile{move: move, readers: readers}
 }
 
 // Execute returns edit.ErrStale for a file that changed since the baseline, and edit.ErrNotExist for a path with
 // no file.
-func (u MoveChecked) Execute(ctx context.Context, v domain.Vault, from, to string, baseline *domain.FileStat) (int, error) {
+func (u MoveCheckedFile) Execute(ctx context.Context, v domain.Vault, from, to string, baseline *domain.FileStat) (int, error) {
 	count, err := countMatchingFiles(ctx, u.readers, v, from, baseline)
 	if err != nil {
 		return 0, err
@@ -105,20 +105,20 @@ func (u MoveChecked) Execute(ctx context.Context, v domain.Vault, from, to strin
 	return count, nil
 }
 
-// RemoveChecked moves a file, or a folder with everything under it, to the trash once the file matches the
+// RemoveCheckedFile moves a file, or a folder with everything under it, to the trash once the file matches the
 // baseline the caller read, and counts the files that went.
-type RemoveChecked struct {
+type RemoveCheckedFile struct {
 	remove  RemoveFile
 	readers vaultport.VaultReaders
 }
 
-func NewRemoveChecked(remove RemoveFile, readers vaultport.VaultReaders) RemoveChecked {
-	return RemoveChecked{remove: remove, readers: readers}
+func NewRemoveChecked(remove RemoveFile, readers vaultport.VaultReaders) RemoveCheckedFile {
+	return RemoveCheckedFile{remove: remove, readers: readers}
 }
 
 // Execute returns edit.ErrStale for a file that changed since the baseline, and edit.ErrNotExist for a path with
 // no file.
-func (u RemoveChecked) Execute(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (int, error) {
+func (u RemoveCheckedFile) Execute(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (int, error) {
 	count, err := countMatchingFiles(ctx, u.readers, v, path, baseline)
 	if err != nil {
 		return 0, err

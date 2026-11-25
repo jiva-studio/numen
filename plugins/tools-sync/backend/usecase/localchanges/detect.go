@@ -100,7 +100,7 @@ func (u *DetectMoves) isGone(ctx context.Context, in transfer.ScanInput, record 
 	return false, err
 }
 
-func (u *DetectMoves) split(seen map[string]note.Seen, records []transfer.FileRecord) (gone []transfer.FileRecord, fresh map[string]note.Seen) {
+func (u *DetectMoves) split(seen map[string]note.FileSnapshot, records []transfer.FileRecord) (gone []transfer.FileRecord, fresh map[string]note.FileSnapshot) {
 	byPath := map[string]bool{}
 	for _, record := range records {
 		byPath[record.Path] = true
@@ -108,7 +108,7 @@ func (u *DetectMoves) split(seen map[string]note.Seen, records []transfer.FileRe
 			gone = append(gone, record)
 		}
 	}
-	fresh = map[string]note.Seen{}
+	fresh = map[string]note.FileSnapshot{}
 	now := u.deps.Clock.Now()
 	for path, one := range seen {
 		if !byPath[path] && note.IsSyncable(path) && now.Sub(time.Unix(0, one.ModifiedAt)) >= settleTime {
@@ -118,7 +118,7 @@ func (u *DetectMoves) split(seen map[string]note.Seen, records []transfer.FileRe
 	return gone, fresh
 }
 
-func matchMoves(gone []transfer.FileRecord, fresh map[string]note.Seen) []transfer.Move {
+func matchMoves(gone []transfer.FileRecord, fresh map[string]note.FileSnapshot) []transfer.Move {
 	goneCount, freshCount := map[key]int{}, map[key]int{}
 	for _, record := range gone {
 		goneCount[key{record.BaseHash, record.Size}]++

@@ -71,7 +71,7 @@ func (d *linkDevice) work() *identity.GetLinkWork        { return identity.NewGe
 func (d *linkDevice) channel() *identity.SetLinkChannel  { return identity.NewSetLinkChannel(d.deps) }
 func (d *linkDevice) inbound() *identity.PutLinkInbound  { return identity.NewPutLinkInbound(d.deps) }
 func (d *linkDevice) publish() *identity.GetChainPublish { return identity.NewGetChainPublish(d.deps) }
-func (d *linkDevice) answered() *identity.PutChainPublished {
+func (d *linkDevice) answered() *identity.PutPublishedChain {
 	return identity.NewPutChainPublished(d.deps)
 }
 func (d *linkDevice) adopt() *identity.AdoptChain { return identity.NewAdoptChain(d.deps) }

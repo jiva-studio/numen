@@ -275,7 +275,7 @@ func (f brokenStatFiles) StatFile(ctx context.Context, path string) (domain.File
 
 type failingSightings struct{ ports.Sightings }
 
-func (failingSightings) WriteSightings(context.Context, domain.VaultID, map[string]note.Seen) error {
+func (failingSightings) WriteSightings(context.Context, domain.VaultID, map[string]note.FileSnapshot) error {
 	return errors.New("disk full")
 }
 

@@ -80,7 +80,7 @@ type Resources struct {
 	Chunks        *note.ChunkTokens
 	TextReaders   textport.Readers
 
-	vault         vaultShared
+	vault         sharedVault
 	settingFiles  *settingsadapter.Files
 	settingEvents *settingevents.Events
 	subscriptions settingsusecase.Subscriptions
@@ -89,8 +89,8 @@ type Resources struct {
 	absentFiles   vaultport.AbsentFiles
 }
 
-// vaultShared holds what every vault of one installation shares: the write locks and the watches.
-type vaultShared struct {
+// sharedVault holds what every vault of one installation shares: the write locks and the watches.
+type sharedVault struct {
 	locks   *vaultwriter.Locks
 	watches *vaultwatch.Hub
 }
@@ -98,7 +98,7 @@ type vaultShared struct {
 func NewResources() *Resources {
 	return &Resources{
 		Chunks:        &note.ChunkTokens{},
-		vault:         vaultShared{locks: vaultwriter.NewLocks(), watches: vaultwatch.NewHub()},
+		vault:         sharedVault{locks: vaultwriter.NewLocks(), watches: vaultwatch.NewHub()},
 		settingFiles:  settingsadapter.NewFiles(),
 		settingEvents: settingevents.New(),
 		subscriptions: settingsusecase.Subscriptions{Changes: settingsusecase.PluginChanges{}, Hosts: settingsusecase.HostSubscriptions{}},

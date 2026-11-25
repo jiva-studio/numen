@@ -87,7 +87,7 @@ type statusDocument struct {
 }
 
 type sightingsDocument struct {
-	Notes map[string]note.Seen `json:"notes"`
+	Notes map[string]note.FileSnapshot `json:"notes"`
 }
 
 type sharesDocument struct {
@@ -205,19 +205,19 @@ func (s *State) WriteStatus(ctx context.Context, id domain.VaultID, status ports
 }
 
 // ReadSightings returns the notes of the vault as the last look found them.
-func (s *State) ReadSightings(ctx context.Context, id domain.VaultID) (map[string]note.Seen, error) {
+func (s *State) ReadSightings(ctx context.Context, id domain.VaultID) (map[string]note.FileSnapshot, error) {
 	var document sightingsDocument
 	if _, err := s.read(ctx, id, sightingsFile, &document); err != nil {
 		return nil, err
 	}
 	if document.Notes == nil {
-		return map[string]note.Seen{}, nil
+		return map[string]note.FileSnapshot{}, nil
 	}
 	return document.Notes, nil
 }
 
 // WriteSightings replaces the notes of the vault as the last look found them.
-func (s *State) WriteSightings(ctx context.Context, id domain.VaultID, seen map[string]note.Seen) error {
+func (s *State) WriteSightings(ctx context.Context, id domain.VaultID, seen map[string]note.FileSnapshot) error {
 	return s.write(ctx, id, sightingsFile, sightingsDocument{Notes: seen})
 }
 

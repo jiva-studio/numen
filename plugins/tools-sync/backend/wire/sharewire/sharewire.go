@@ -51,17 +51,17 @@ func New(deps syncvault.Deps) *Shares {
 	}
 }
 
-// Received answers the methods of the settings view about the folders other people share with this account.
-type Received struct {
-	listing *receive.ListReceived
+// ReceivedShares answers the methods of the settings view about the folders other people share with this account.
+type ReceivedShares struct {
+	listing *receive.ListReceivedShares
 	leave   *unlink.Leave
 }
 
-// NewReceived returns the methods over the dependencies of a pass.
-func NewReceived(deps syncvault.Deps) *Received {
+// NewReceivedShares returns the methods over the dependencies of a pass.
+func NewReceivedShares(deps syncvault.Deps) *ReceivedShares {
 	receiving := NewReceiveDeps(deps)
-	return &Received{
-		listing: receive.NewListReceived(receiving), leave: unlink.NewLeave(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: nil, Locker: deps.Locker}),
+	return &ReceivedShares{
+		listing: receive.NewListReceivedShares(receiving), leave: unlink.NewLeave(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: nil, Locker: deps.Locker}),
 	}
 }
 
@@ -84,11 +84,11 @@ func (s *Shares) StopShare(ctx context.Context, request api.StopShareRequest) (a
 }
 
 // LeaveShare stops pulling a received share and forgets it on this device; its files stay.
-func (s *Received) LeaveShare(ctx context.Context, request api.LeaveShareRequest) (api.LeaveShareResponse, error) {
+func (s *ReceivedShares) LeaveShare(ctx context.Context, request api.LeaveShareRequest) (api.LeaveShareResponse, error) {
 	return api.LeaveShareResponse{}, s.leave.Execute(ctx, domain.VaultID(request.VaultID))
 }
 
-func (s *Received) ListReceived(ctx context.Context, _ api.ListReceivedRequest) (api.ListReceivedResponse, error) {
+func (s *ReceivedShares) ListReceived(ctx context.Context, _ api.ListReceivedRequest) (api.ListReceivedResponse, error) {
 	received, err := s.listing.Execute(ctx)
 	if err != nil {
 		return api.ListReceivedResponse{}, err

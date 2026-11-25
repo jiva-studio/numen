@@ -56,7 +56,7 @@ func (u *ScanLocalChanges) Execute(ctx context.Context, in transfer.ScanInput) (
 	return found, u.deps.State.WriteSightings(ctx, in.VaultID, seen)
 }
 
-func (u *ScanLocalChanges) follow(ctx context.Context, id domain.VaultID, files ports.Files, seen map[string]note.Seen) (map[string]note.Seen, error) {
+func (u *ScanLocalChanges) follow(ctx context.Context, id domain.VaultID, files ports.Files, seen map[string]note.FileSnapshot) (map[string]note.FileSnapshot, error) {
 	events := []string{host.EventFileAdded, host.EventFileChanged, host.EventFileMoved, host.EventFileRemoved}
 	from := changes.Source{Feed: files, Store: u.deps.Host.Store(id), CursorFile: cursorFile}
 	apply := func(ctx context.Context, batch []host.FileChange) error {
@@ -73,7 +73,7 @@ func (u *ScanLocalChanges) follow(ctx context.Context, id domain.VaultID, files 
 	return seen, changes.Follow(ctx, from, events, apply, review)
 }
 
-func readAddedFiles(ctx context.Context, files ports.Files, seen map[string]note.Seen) error {
+func readAddedFiles(ctx context.Context, files ports.Files, seen map[string]note.FileSnapshot) error {
 	added := []string{host.EventFileAdded}
 	head, err := files.ListFileChanges(ctx, host.FileChangeQuery{Since: host.FileChangeCursor{FeedID: "", Seq: 0}, Events: added, Limit: 0})
 	if err != nil {
@@ -96,7 +96,7 @@ func readAddedFiles(ctx context.Context, files ports.Files, seen map[string]note
 	}
 }
 
-func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map[string]note.Seen, bases map[string]string) ([]transfer.Change, error) {
+func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map[string]note.FileSnapshot, bases map[string]string) ([]transfer.Change, error) {
 	paths := make([]string, 0, len(seen))
 	for path := range seen {
 		paths = append(paths, path)
@@ -121,7 +121,7 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 		if err != nil {
 			continue
 		}
-		seen[path] = note.Seen{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano(), SourceID: seen[path].SourceID}
+		seen[path] = note.FileSnapshot{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano(), SourceID: seen[path].SourceID}
 		if stat.Hash != bases[path] && u.deps.Clock.Now().Sub(stat.ModTime) >= settleTime {
 			found = append(found, transfer.Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()})
 		}
@@ -131,7 +131,7 @@ func (u *ScanLocalChanges) list(ctx context.Context, files ports.Files, seen map
 
 var errFeedReset = errors.New("the file change feed reset while the notes were read")
 
-func applyChanges(seen map[string]note.Seen, batch []host.FileChange) {
+func applyChanges(seen map[string]note.FileSnapshot, batch []host.FileChange) {
 	bySource := map[int64]string{}
 	for path, one := range seen {
 		bySource[one.SourceID] = path
@@ -148,6 +148,6 @@ func applyChanges(seen map[string]note.Seen, batch []host.FileChange) {
 			delete(seen, old)
 		}
 		bySource[change.SourceID] = change.Path
-		seen[change.Path] = note.Seen{Hash: change.Hash, Size: change.Size, ModifiedAt: change.ModifiedAt, SourceID: change.SourceID}
+		seen[change.Path] = note.FileSnapshot{Hash: change.Hash, Size: change.Size, ModifiedAt: change.ModifiedAt, SourceID: change.SourceID}
 	}
 }

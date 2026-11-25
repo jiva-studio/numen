@@ -14,16 +14,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// PlaceStaged puts a staged file in the vault at a path: the content goes to a temporary file next to the target and
+// PlaceStagedFile puts a staged file in the vault at a path: the content goes to a temporary file next to the target and
 // is renamed over it, so no reader sees a file that is not whole.
-type PlaceStaged struct {
+type PlaceStagedFile struct {
 	stat    *HashFile
 	scan    ScanFiles
 	writers vaultport.FolderWriters
 }
 
-func NewPlaceStaged(stat *HashFile, scan ScanFiles, writers vaultport.FolderWriters) *PlaceStaged {
-	return &PlaceStaged{stat: stat, scan: scan, writers: writers}
+func NewPlaceStaged(stat *HashFile, scan ScanFiles, writers vaultport.FolderWriters) *PlaceStagedFile {
+	return &PlaceStagedFile{stat: stat, scan: scan, writers: writers}
 }
 
 // PlaceInput is the file to place: its content, the hash the content must have, the path it goes to, and the file
@@ -37,7 +37,7 @@ type PlaceInput struct {
 
 // Execute returns plugin.ErrHashMismatch for a content that does not have the expected hash, edit.ErrStale for a
 // file that changed since the baseline, and vault.ErrAlreadyExists for a path that is not free.
-func (u *PlaceStaged) Execute(ctx context.Context, v domain.Vault, in PlaceInput) (domain.FileStat, error) {
+func (u *PlaceStagedFile) Execute(ctx context.Context, v domain.Vault, in PlaceInput) (domain.FileStat, error) {
 	if err := verifyStagedHash(in.Staged, in.ExpectedHash); err != nil {
 		return domain.FileStat{}, err
 	}
@@ -74,7 +74,7 @@ func verifyStagedHash(staged io.ReadSeeker, expectedHash string) error {
 	return err
 }
 
-func (u *PlaceStaged) checkTarget(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) error {
+func (u *PlaceStagedFile) checkTarget(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) error {
 	now, err := u.stat.Execute(ctx, v, path)
 	switch {
 	case baseline == nil && err == nil:

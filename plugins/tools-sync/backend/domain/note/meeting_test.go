@@ -10,7 +10,7 @@ func TestMeet_SortsAPairByTheSideThatHasTheNoteAndByItsText(t *testing.T) {
 	milk, bread := note.Hash([]byte("milk")), note.Hash([]byte("bread"))
 	tests := map[string]struct {
 		local, head string
-		want        note.Meeting
+		want        note.PathRelation
 	}{
 		"equal texts":               {local: milk, head: milk, want: note.Same},
 		"a note of the folder":      {local: milk, head: "", want: note.LocalOnly},

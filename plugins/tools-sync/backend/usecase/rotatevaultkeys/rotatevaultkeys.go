@@ -96,19 +96,19 @@ func (u *RotateVaultKeys) rotate(ctx context.Context, id domain.VaultID, own ses
 	return false, ErrCatalogBusy
 }
 
-func (u *RotateVaultKeys) readTarget(ctx context.Context, id domain.VaultID) (connected, error) {
+func (u *RotateVaultKeys) readTarget(ctx context.Context, id domain.VaultID) (connectedVault, error) {
 	link, err := u.deps.State.ReadLink(ctx, id)
 	if err != nil {
-		return connected{}, err
+		return connectedVault{}, err
 	}
 	remote, err := hex.DecodeString(link.RemoteVaultID)
 	if err != nil {
-		return connected{}, fmt.Errorf("read the remote id of the link: %w", err)
+		return connectedVault{}, fmt.Errorf("read the remote id of the link: %w", err)
 	}
-	return connected{id: id, remote: remote, link: link}, nil
+	return connectedVault{id: id, remote: remote, link: link}, nil
 }
 
-func (u *RotateVaultKeys) tryRotate(ctx context.Context, target *connected, own session.Identity) (isRotated, isDone bool, err error) {
+func (u *RotateVaultKeys) tryRotate(ctx context.Context, target *connectedVault, own session.Identity) (isRotated, isDone bool, err error) {
 	entries, err := u.readEntries(ctx, own)
 	if err != nil {
 		return false, true, err
@@ -159,14 +159,14 @@ func (u *RotateVaultKeys) readEntries(ctx context.Context, own session.Identity)
 	return entries, nil
 }
 
-// connected is a connected vault with the link it keeps.
-type connected struct {
+// connectedVault is a connected vault with the link it keeps.
+type connectedVault struct {
 	id     domain.VaultID
 	remote []byte
 	link   vaultlink.Link
 }
 
-func (u *RotateVaultKeys) store(ctx context.Context, target *connected, keys []vaultlink.VaultKey) error {
+func (u *RotateVaultKeys) store(ctx context.Context, target *connectedVault, keys []vaultlink.VaultKey) error {
 	known := uint32(0)
 	if len(target.link.LaterKeys) > 0 {
 		known = target.link.LaterKeys[len(target.link.LaterKeys)-1].Epoch

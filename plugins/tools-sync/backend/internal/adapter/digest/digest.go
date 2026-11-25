@@ -15,18 +15,18 @@ import (
 type Sha256 struct{}
 
 // Create returns an empty digest.
-func (Sha256) Create() ports.Digest { return &running{hasher: sha256.New()} }
+func (Sha256) Create() ports.Digest { return &streamDigest{hasher: sha256.New()} }
 
-type running struct{ hasher hash.Hash }
+type streamDigest struct{ hasher hash.Hash }
 
 // Write adds p to the hash.
-func (d *running) Write(p []byte) (int, error) { return d.hasher.Write(p) }
+func (d *streamDigest) Write(p []byte) (int, error) { return d.hasher.Write(p) }
 
 // Sum returns the hash of the bytes written so far.
-func (d *running) Sum() []byte { return d.hasher.Sum(nil) }
+func (d *streamDigest) Sum() []byte { return d.hasher.Sum(nil) }
 
 // Save returns the state of the hash.
-func (d *running) Save() ([]byte, error) {
+func (d *streamDigest) Save() ([]byte, error) {
 	marshaler, ok := d.hasher.(encoding.BinaryMarshaler)
 	if !ok {
 		return nil, errors.New("the hash cannot be saved")
@@ -39,7 +39,7 @@ func (d *running) Save() ([]byte, error) {
 }
 
 // Restore sets the hash to a state Save returned.
-func (d *running) Restore(state []byte) error {
+func (d *streamDigest) Restore(state []byte) error {
 	unmarshaler, ok := d.hasher.(encoding.BinaryUnmarshaler)
 	if !ok {
 		return errors.New("the hash cannot be restored")

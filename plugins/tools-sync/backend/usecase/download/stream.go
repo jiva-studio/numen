@@ -25,16 +25,16 @@ type position struct {
 	state  []byte
 }
 
-// counted counts the bytes a body gave and notes that it ended, to tell a body that ended early from a body that
+// byteCounter counts the bytes a body gave and notes that it ended, to tell a body that ended early from a body that
 // does not open.
-type counted struct {
+type byteCounter struct {
 	source  io.Reader
 	count   int64
 	want    int64
 	isEnded bool
 }
 
-func (c *counted) Read(p []byte) (int, error) {
+func (c *byteCounter) Read(p []byte) (int, error) {
 	n, err := c.source.Read(p)
 	c.count += int64(n)
 	c.isEnded = c.isEnded || err != nil
@@ -51,7 +51,7 @@ func (r *run) stageStream(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = r.stageBody(ctx, &counted{source: body, count: 0, want: int64(r.in.BlobSize) - offset, isEnded: false}, at)
+	err = r.stageBody(ctx, &byteCounter{source: body, count: 0, want: int64(r.in.BlobSize) - offset, isEnded: false}, at)
 	return errors.Join(err, body.Close())
 }
 
@@ -112,7 +112,7 @@ func (r *run) restore(ctx context.Context, kept transfer.DownloadEntry) (*positi
 	return &position{header: [56]byte(kept.Header), next: kept.NextChunk, hasher: hasher, state: kept.StoredHashState}, true, nil
 }
 
-func (r *run) stageBody(ctx context.Context, body *counted, at *position) error {
+func (r *run) stageBody(ctx context.Context, body *byteCounter, at *position) error {
 	var plain *blobcipher.PlainReader
 	var err error
 	if at.next == 0 {
@@ -133,7 +133,7 @@ func (r *run) stageBody(ctx context.Context, body *counted, at *position) error 
 	return r.copyChunks(ctx, plain, at, body)
 }
 
-func (r *run) copyChunks(ctx context.Context, plain *blobcipher.PlainReader, at *position, body *counted) error {
+func (r *run) copyChunks(ctx context.Context, plain *blobcipher.PlainReader, at *position, body *byteCounter) error {
 	buffer := make([]byte, 1<<20+lengthPrefix)
 	total := int64(0)
 	if at.next > 0 {
@@ -159,7 +159,7 @@ func (r *run) copyChunks(ctx context.Context, plain *blobcipher.PlainReader, at 
 	}
 }
 
-func (r *run) settleReadFailure(ctx context.Context, err error, at *position, body *counted) error {
+func (r *run) settleReadFailure(ctx context.Context, err error, at *position, body *byteCounter) error {
 	failure := r.getReadFailure(err, body)
 	if errors.Is(failure, ErrIntegrity) {
 		return failure
@@ -167,7 +167,7 @@ func (r *run) settleReadFailure(ctx context.Context, err error, at *position, bo
 	return errors.Join(failure, r.keepStarted(ctx, at))
 }
 
-func (r *run) getReadFailure(err error, body *counted) error {
+func (r *run) getReadFailure(err error, body *byteCounter) error {
 	if !errors.Is(err, blobcipher.ErrCannotOpen) {
 		return err
 	}

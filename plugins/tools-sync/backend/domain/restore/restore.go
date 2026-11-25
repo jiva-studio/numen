@@ -162,8 +162,8 @@ type Action struct {
 	ParentVersion uint64
 }
 
-// Known is what a device records of a synced file: the head the file had on the server when it was last in step.
-type Known struct {
+// SyncedFile is what a device records of a synced file: the head the file had on the server when it was last in step.
+type SyncedFile struct {
 	FileID   []byte
 	Path     string
 	BaseHash string
@@ -175,7 +175,7 @@ type Known struct {
 // are the heads the server holds by file id, and local is the hash of each local note by path. The content of the
 // device is the truth: a note on the device is never replaced by the server's, and only a note this device never
 // knew is read from the server.
-func PlanRecovery(records []Known, heads map[string]Head, local map[string]string) []Action {
+func PlanRecovery(records []SyncedFile, heads map[string]Head, local map[string]string) []Action {
 	actions := make([]Action, 0, len(records)+len(heads))
 	known := make(map[string]bool, len(records))
 	for _, record := range records {
@@ -192,7 +192,7 @@ func PlanRecovery(records []Known, heads map[string]Head, local map[string]strin
 	return actions
 }
 
-func planRecord(record Known, head Head, isFound bool, hash string, isLocal bool) Action {
+func planRecord(record SyncedFile, head Head, isFound bool, hash string, isLocal bool) Action {
 	action := Action{Kind: Keep, FileID: record.FileID, Path: record.Path, ParentRev: nil, ParentVersion: 0}
 	isUsable := isFound && !head.IsBlobMissing
 	if isUsable && isHeadKept(head, record, isLocal) {
@@ -201,7 +201,7 @@ func planRecord(record Known, head Head, isFound bool, hash string, isLocal bool
 	return planChange(action, head, record, isFound, hash, isLocal)
 }
 
-func planChange(action Action, head Head, record Known, isFound bool, hash string, isLocal bool) Action {
+func planChange(action Action, head Head, record SyncedFile, isFound bool, hash string, isLocal bool) Action {
 	isUsable := isFound && !head.IsBlobMissing
 	action.ParentVersion = max(head.Version, record.Version)
 	switch {
@@ -219,11 +219,11 @@ func planChange(action Action, head Head, record Known, isFound bool, hash strin
 	return action
 }
 
-func isNewer(head Head, record Known) bool {
+func isNewer(head Head, record SyncedFile) bool {
 	return head.Version > record.Version || (len(head.ParentRev) > 0 && bytes.Equal(head.ParentRev, record.HeadRev))
 }
 
-func isHeadKept(head Head, record Known, isLocal bool) bool {
+func isHeadKept(head Head, record SyncedFile, isLocal bool) bool {
 	if len(head.ParentRev) > 0 && bytes.Equal(head.ParentRev, record.HeadRev) {
 		return true
 	}

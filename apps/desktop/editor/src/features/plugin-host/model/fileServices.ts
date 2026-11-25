@@ -4,7 +4,7 @@
  */
 import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceIcons } from '@numen/plugin-loader'
-import type { DownloadBytes, Downloads, Entry, FileApi } from '@/entities/file'
+import type { DownloadBytes, DownloadRegistry, Entry, FileApi } from '@/entities/file'
 import { COMMAND, findIcon, type CommandTarget } from '@/shared/model/command'
 import type { NoteCreator } from '@/entities/note'
 import { getEntryIcon } from './window/entryIcon'
@@ -12,7 +12,7 @@ import { getEntryIcon } from './window/entryIcon'
 /** What the files of the vault are listed, made and moved through. */
 export interface VaultFilesDeps {
   readonly listFiles: FileApi['listFiles']
-  readonly downloads: Downloads
+  readonly downloads: DownloadRegistry
   readonly making: NoteCreator
   readonly getTarget: () => CommandTarget
   readonly runCommand: (id: string, target: CommandTarget, name: string) => Promise<void>

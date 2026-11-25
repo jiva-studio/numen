@@ -48,7 +48,7 @@ func (w *world) newReader(t *testing.T, vault string) (*synctest.Computer, share
 	return reader, reader.StartInviteCourier(t)
 }
 
-func (w *world) start(t *testing.T) shareinvite.Started {
+func (w *world) start(t *testing.T) shareinvite.SharedLink {
 	t.Helper()
 	started, err := shareinvite.NewStart(w.sharer).Execute(t.Context(), owned, folder)
 	if err != nil {

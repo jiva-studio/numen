@@ -11,7 +11,7 @@ import (
 func TestPlanRecovery_AdoptsAHeadWhoseContentIsTheLocalNoteInsteadOfSendingItAgain(t *testing.T) {
 	t.Parallel()
 	bread := note.Hash([]byte("bread"))
-	records := []restore.Known{record(1, "a.md", bread, 8)}
+	records := []restore.SyncedFile{record(1, "a.md", bread, 8)}
 	same := head(1, "a.md", 9)
 	same.Hash = bread
 
@@ -26,7 +26,7 @@ func TestPlanRecovery_AdoptsAHeadWhoseContentIsTheLocalNoteInsteadOfSendingItAga
 func TestPlanRecovery_PullsAHeadAnotherComputerCommittedOnTopOfTheRecordedOne(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []restore.Known{record(1, "a.md", milk, 7)}
+	records := []restore.SyncedFile{record(1, "a.md", milk, 7)}
 	newer := head(1, "a.md", 9)
 	newer.ParentRev = bytes.Repeat([]byte{7}, 32)
 	newer.Hash = note.Hash([]byte("tea"))
@@ -39,7 +39,7 @@ func TestPlanRecovery_PullsAHeadAnotherComputerCommittedOnTopOfTheRecordedOne(t 
 func TestPlanRecovery_SendsAHeadOnTopOfTheRecordedOneWhenItsBodyIsMissing(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []restore.Known{record(1, "a.md", milk, 7)}
+	records := []restore.SyncedFile{record(1, "a.md", milk, 7)}
 	lost := head(1, "a.md", 9)
 	lost.ParentRev, lost.IsBlobMissing = bytes.Repeat([]byte{7}, 32), true
 
@@ -51,7 +51,7 @@ func TestPlanRecovery_SendsAHeadOnTopOfTheRecordedOneWhenItsBodyIsMissing(t *tes
 func TestPlanRecovery_SkipsHeadWithHigherVersionEvenWhenLocalNoteWasEdited(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []restore.Known{record(1, "a.md", milk, 7)}
+	records := []restore.SyncedFile{record(1, "a.md", milk, 7)}
 	records[0].Version = 3
 	newer := head(1, "a.md", 9)
 	newer.Version = 5
@@ -64,7 +64,7 @@ func TestPlanRecovery_SkipsHeadWithHigherVersionEvenWhenLocalNoteWasEdited(t *te
 
 func TestPlanRecovery_SkipsHeadWithHigherVersionWhenNoteIsRemovedLocally(t *testing.T) {
 	t.Parallel()
-	records := []restore.Known{record(1, "a.md", note.Hash([]byte("milk")), 7)}
+	records := []restore.SyncedFile{record(1, "a.md", note.Hash([]byte("milk")), 7)}
 	records[0].Version = 3
 	newer := head(1, "a.md", 9)
 	newer.Version = 4
@@ -77,7 +77,7 @@ func TestPlanRecovery_SkipsHeadWithHigherVersionWhenNoteIsRemovedLocally(t *test
 func TestPlanRecovery_SendsTheLocalNoteOverAnOlderHeadFromTheHighestVersionKnown(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
-	records := []restore.Known{record(1, "a.md", milk, 7)}
+	records := []restore.SyncedFile{record(1, "a.md", milk, 7)}
 	records[0].Version = 6
 	older := head(1, "a.md", 5)
 	older.Version = 4
@@ -93,7 +93,7 @@ func TestPlanRecovery_SendsTheLocalNoteOverAnOlderHeadFromTheHighestVersionKnown
 func TestPlanRecovery_AdoptsTheVersionOfTheHead(t *testing.T) {
 	t.Parallel()
 	bread := note.Hash([]byte("bread"))
-	records := []restore.Known{record(1, "a.md", bread, 8)}
+	records := []restore.SyncedFile{record(1, "a.md", bread, 8)}
 	records[0].Version = 9
 	same := head(1, "a.md", 9)
 	same.Hash, same.Version = bread, 4

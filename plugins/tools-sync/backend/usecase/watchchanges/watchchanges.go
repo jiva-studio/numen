@@ -68,7 +68,7 @@ func (u *WatchChanges) runOnce(ctx context.Context) (isOpened bool, closeErr err
 	return true, nil
 }
 
-type received struct {
+type hintResult struct {
 	event ports.HintEvent
 	err   error
 }
@@ -80,7 +80,7 @@ func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) {
 		stop()
 		group.Wait()
 	}()
-	events := make(chan received)
+	events := make(chan hintResult)
 	group.Go(func() { forwardEvents(readCtx, watch, events) })
 	// Only the clock of the plugin can tell a silence of silenceBeats heartbeats from a quiet but healthy stream.
 	beat := silenceBeats * max(watch.GetHeartbeat(), minHeartbeat)
@@ -102,11 +102,11 @@ func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) {
 	}
 }
 
-func forwardEvents(ctx context.Context, watch ports.Watch, events chan<- received) {
+func forwardEvents(ctx context.Context, watch ports.Watch, events chan<- hintResult) {
 	for {
 		event, err := watch.Receive(ctx)
 		select {
-		case events <- received{event: event, err: err}:
+		case events <- hintResult{event: event, err: err}:
 		case <-ctx.Done():
 			return
 		}

@@ -10,7 +10,7 @@ import {
   type WindowControls,
   type WindowHost,
 } from '@numen/plugin-loader'
-import type { Downloads, FileApi } from '@/entities/file'
+import type { DownloadRegistry, FileApi } from '@/entities/file'
 import { getNoteInFocus, type WindowTabs } from '@/entities/tab'
 import { formatError } from '@/shared/api/errors'
 import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
@@ -69,7 +69,7 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps): PluginServic
 export interface VaultAccessDeps {
   readonly notes: VaultNotesDeps['notes']
   readonly files: Pick<FileApi, 'getFileKinds' | 'listFiles'>
-  readonly downloads: Downloads
+  readonly downloads: DownloadRegistry
   readonly relations: VaultRelations
   readonly search: VaultNotesDeps['search']
   readonly making: VaultNotesDeps['making']

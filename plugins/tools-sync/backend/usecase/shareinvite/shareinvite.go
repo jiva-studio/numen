@@ -30,8 +30,8 @@ type Deps struct {
 	Clock     ports.Clock
 	Identity  ports.Identity
 	Device    ports.Device
-	Sharing   ports.FolderSharing
-	Receiving ports.InvitationReceiving
+	Sharing   ports.FolderSharer
+	Receiving ports.InvitationReceiver
 	Random    io.Reader
 	Server    string
 	Hub       *Hub

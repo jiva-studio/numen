@@ -15,11 +15,11 @@ type transfers struct {
 }
 
 // SetTransfers gives the methods the unfinished downloads and uploads of the vaults.
-func (v *Listing) SetTransfers(downloads ports.DownloadEntries, uploads ports.UploadEntries) {
+func (v *VaultList) SetTransfers(downloads ports.DownloadEntries, uploads ports.UploadEntries) {
 	v.moving = transfers{downloads: downloads, uploads: uploads}
 }
 
-func (v *Listing) setProgress(ctx context.Context, id domain.VaultID, one *api.Vault) error {
+func (v *VaultList) setProgress(ctx context.Context, id domain.VaultID, one *api.Vault) error {
 	absent, err := v.deps.Host.GetAbsent(id).ListAbsentFiles(ctx)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (v *Listing) setProgress(ctx context.Context, id domain.VaultID, one *api.V
 
 // setCloudTotals raises the total of each syncing vault to its size in the cloud. The call to the server is made only
 // when a vault syncs, and a server that does not answer leaves the totals as the local files give them.
-func (v *Listing) setCloudTotals(ctx context.Context, listed []api.Vault) {
+func (v *VaultList) setCloudTotals(ctx context.Context, listed []api.Vault) {
 	if v.deps.Cloud == nil {
 		return
 	}

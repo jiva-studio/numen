@@ -22,8 +22,8 @@ type AddReaderInput struct {
 	IsConfirmed bool
 }
 
-// Invited is what the owner sends a reader: the text of the invitation and the account fingerprint of the reader.
-type Invited struct {
+// ReaderInvitation is what the owner sends a reader: the text of the invitation and the account fingerprint of the reader.
+type ReaderInvitation struct {
 	Text        string
 	Fingerprint string
 }
@@ -36,33 +36,33 @@ func NewAddReader(deps Deps) *AddReader { return &AddReader{base: base{deps: dep
 // Execute seals the key of the share to the account of the reader and appends the entry that makes it a reader. It
 // waits for a share whose files are not all rewrapped (ErrNotReady), and refuses the owner itself, a reader the
 // folder has and a label of another person that is not confirmed.
-func (u *AddReader) Execute(ctx context.Context, in AddReaderInput) (Invited, error) {
+func (u *AddReader) Execute(ctx context.Context, in AddReaderInput) (ReaderInvitation, error) {
 	chain, err := domainshare.ParseReaderCode(in.Code)
 	if err != nil {
-		return Invited{}, err
+		return ReaderInvitation{}, err
 	}
 	own, err := u.deps.Identity.GetPublicIdentity(ctx)
 	if err != nil {
-		return Invited{}, err
+		return ReaderInvitation{}, err
 	}
 	ownChain, err := identity.ParseChain(own.Chain)
 	if err != nil {
-		return Invited{}, err
+		return ReaderInvitation{}, err
 	}
 	if bytes.Equal(ownChain.Root().Sign, chain.Root().Sign) {
-		return Invited{}, domainshare.ErrOwnIdentity
+		return ReaderInvitation{}, domainshare.ErrOwnIdentity
 	}
 	at := ref{vault: in.VaultID, folder: in.Folder, missing: domainshare.ErrNotReady}
 	root, err := u.change(ctx, at, func(root domainshare.Root) (draft, error) { return u.prepareAdd(root, chain, in) })
 	if err != nil {
-		return Invited{}, err
+		return ReaderInvitation{}, err
 	}
 	if err := u.setPhase(ctx, in.VaultID, root.ID, domainshare.PhaseActive); err != nil {
-		return Invited{}, err
+		return ReaderInvitation{}, err
 	}
 	fingerprint := chain.Root().Fingerprint()
 	text := domainshare.NewInvitation(domainshare.Invitation{ShareRootID: root.ID, ReaderFingerprint: fingerprint, OwnerChain: own.Chain})
-	return Invited{Text: text, Fingerprint: fingerprint.String()}, nil
+	return ReaderInvitation{Text: text, Fingerprint: fingerprint.String()}, nil
 }
 
 func (u *AddReader) prepareAdd(root domainshare.Root, chain identity.Chain, in AddReaderInput) (draft, error) {
@@ -183,14 +183,14 @@ type ShareFolder struct{ deps Deps }
 // NewShareFolder returns the use case over the dependencies.
 func NewShareFolder(deps Deps) *ShareFolder { return &ShareFolder{deps: deps} }
 
-func (u *ShareFolder) Execute(ctx context.Context, in AddReaderInput) (Invited, error) {
+func (u *ShareFolder) Execute(ctx context.Context, in AddReaderInput) (ReaderInvitation, error) {
 	overview, err := NewGetShare(u.deps).Execute(ctx, in.VaultID, in.Folder)
 	if err != nil {
-		return Invited{}, err
+		return ReaderInvitation{}, err
 	}
 	if overview.State == domainshare.StateNotShared {
 		if err := NewCreateShare(u.deps).Execute(ctx, in.VaultID, in.Folder); err != nil {
-			return Invited{}, err
+			return ReaderInvitation{}, err
 		}
 	}
 	return NewAddReader(u.deps).Execute(ctx, in)

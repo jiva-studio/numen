@@ -29,8 +29,8 @@ type sealedMeta struct {
 	epoch   uint32
 }
 
-// prepared is a note sealed and signed, ready to commit.
-type prepared struct {
+// sealedNote is a note sealed and signed, ready to commit.
+type sealedNote struct {
 	index    int
 	blob     []byte
 	revision *syncv1.Revision
@@ -39,7 +39,7 @@ type prepared struct {
 
 func (r *batchRun) execute(ctx context.Context, files []transfer.File) ([]transfer.Outcome, error) {
 	outcomes := make([]transfer.Outcome, len(files))
-	var items []*prepared
+	var items []*sealedNote
 	for i, file := range files {
 		item, err := r.seal(ctx, file, i)
 		if errors.Is(err, blobcipher.ErrTooLarge) {
@@ -63,7 +63,7 @@ func (r *batchRun) execute(ctx context.Context, files []transfer.File) ([]transf
 	return outcomes, nil
 }
 
-func (r *batchRun) seal(ctx context.Context, file transfer.File, index int) (*prepared, error) {
+func (r *batchRun) seal(ctx context.Context, file transfer.File, index int) (*sealedNote, error) {
 	path, err := note.NormalizePath(file.Path)
 	if err != nil {
 		return nil, fmt.Errorf("commit %s: %w", file.Path, err)
@@ -102,10 +102,10 @@ func (r *batchRun) seal(ctx context.Context, file transfer.File, index int) (*pr
 		FileID: fileID, Path: path, BaseHash: meta.Hash, HeadRev: nil, Size: meta.Size, ModifiedAt: meta.MTime, Kind: kind,
 		BlobID: nil, BlobHash: hash[:], BlobSize: uint64(len(blob)), SealedKey: sealedKey, Version: revision.GetFileVersion(),
 	}
-	return &prepared{index: index, blob: blob, revision: revision, record: record}, nil
+	return &sealedNote{index: index, blob: blob, revision: revision, record: record}, nil
 }
 
-func (r *batchRun) upload(ctx context.Context, items []*prepared) error {
+func (r *batchRun) upload(ctx context.Context, items []*sealedNote) error {
 	sizes := make([]uint64, len(items))
 	for i, item := range items {
 		sizes[i] = uint64(len(item.blob))
@@ -131,7 +131,7 @@ func (r *batchRun) upload(ctx context.Context, items []*prepared) error {
 	return nil
 }
 
-func (r *batchRun) commit(ctx context.Context, items []*prepared, files []transfer.File, outcomes []transfer.Outcome) error {
+func (r *batchRun) commit(ctx context.Context, items []*sealedNote, files []transfer.File, outcomes []transfer.Outcome) error {
 	for len(items) > 0 {
 		revisions := make([]*syncv1.Revision, len(items))
 		for i, item := range items {
@@ -148,7 +148,7 @@ func (r *batchRun) commit(ctx context.Context, items []*prepared, files []transf
 			r.recordCommitted(items, files, outcomes, response.GetRevisions())
 			return nil
 		}
-		var rest []*prepared
+		var rest []*sealedNote
 		rest, err = r.recordConflicts(items, files, outcomes, response.GetConflicts())
 		if err != nil {
 			return err
@@ -161,7 +161,7 @@ func (r *batchRun) commit(ctx context.Context, items []*prepared, files []transf
 	return nil
 }
 
-func (r *batchRun) recordCommitted(items []*prepared, files []transfer.File, outcomes []transfer.Outcome, stored []*syncv1.StoredRevision) {
+func (r *batchRun) recordCommitted(items []*sealedNote, files []transfer.File, outcomes []transfer.Outcome, stored []*syncv1.StoredRevision) {
 	for i, item := range items {
 		item.record.HeadRev, item.record.BlobID = stored[i].GetRevId(), item.revision.GetBlobId()
 		outcomes[item.index] = transfer.Outcome{
@@ -171,11 +171,11 @@ func (r *batchRun) recordCommitted(items []*prepared, files []transfer.File, out
 	}
 }
 
-func (r *batchRun) recordConflicts(items []*prepared, files []transfer.File, outcomes []transfer.Outcome, conflicts []*syncv1.Conflict) ([]*prepared, error) {
+func (r *batchRun) recordConflicts(items []*sealedNote, files []transfer.File, outcomes []transfer.Outcome, conflicts []*syncv1.Conflict) ([]*sealedNote, error) {
 	if len(conflicts) == 0 {
 		return nil, errUnexpectedAnswer
 	}
-	var rest []*prepared
+	var rest []*sealedNote
 	for _, item := range items {
 		conflict := findConflict(conflicts, item.revision.GetFileId())
 		if conflict == nil {

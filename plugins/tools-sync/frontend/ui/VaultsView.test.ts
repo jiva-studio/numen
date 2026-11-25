@@ -247,7 +247,7 @@ describe('VaultsView', () => {
     await flushPromises()
 
     const block = wrapper.get('.empty-block')
-    expect(block.get('.empty-block__title').text()).toBe('Something went wrong')
+    expect(block.get('.empty-block__title').text()).toBe('The vaults did not load')
     expect(block.get('.empty-block__text').text()).toBe('boom')
     expect(block.findAll('button').map((one) => one.text())).toEqual(['Try again'])
 

@@ -153,8 +153,8 @@ type Statuses interface {
 
 // Sightings keeps the notes of each vault as the last look found them.
 type Sightings interface {
-	ReadSightings(ctx context.Context, id domain.VaultID) (map[string]note.Seen, error)
-	WriteSightings(ctx context.Context, id domain.VaultID, seen map[string]note.Seen) error
+	ReadSightings(ctx context.Context, id domain.VaultID) (map[string]note.FileSnapshot, error)
+	WriteSightings(ctx context.Context, id domain.VaultID, seen map[string]note.FileSnapshot) error
 }
 
 // Absences keeps when each synced file of a vault that is gone from it was first missed, by path, in nanoseconds since

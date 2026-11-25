@@ -150,39 +150,39 @@ func (s *service) CompleteRestore(_ context.Context, req *connect.Request[v1.Com
 	return connect.NewResponse(&v1.CompleteRestoreResponse{}), nil
 }
 
-func joinRestore(restore *pendingRestore, chainBytes []byte, now time.Time) (held, error) {
+func joinRestore(restore *pendingRestore, chainBytes []byte, now time.Time) (fakeIdentity, error) {
 	if len(chainBytes) == 0 {
 		keys, err := identity.NewAccountKeys(rand.Reader)
 		if err != nil {
-			return held{}, connect.NewError(connect.CodeInternal, err)
+			return fakeIdentity{}, connect.NewError(connect.CodeInternal, err)
 		}
 		chain, err := identity.NewChain(restore.recovery, keys, now)
 		if err != nil {
-			return held{}, connect.NewError(connect.CodeInternal, err)
+			return fakeIdentity{}, connect.NewError(connect.CodeInternal, err)
 		}
 		return appendDevice(restore, chain, keys, now)
 	}
 	chain, err := identity.ParseChain(chainBytes)
 	if err != nil || !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
-		return held{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
+		return fakeIdentity{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
 	keys, err := restore.recovery.UnwrapAccountKeys(chain.WrappedForRecovery())
 	if err != nil {
-		return held{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
+		return fakeIdentity{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
 	return appendDevice(restore, chain, keys, now)
 }
 
-func appendDevice(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (held, error) {
+func appendDevice(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (fakeIdentity, error) {
 	chain, err := chain.AppendDevice(restore.recovery, restore.device.Public(), "Test device", now)
 	if err != nil {
-		return held{}, connect.NewError(connect.CodeInternal, err)
+		return fakeIdentity{}, connect.NewError(connect.CodeInternal, err)
 	}
 	wrapped, err := keys.WrapForDevice(restore.device.Public())
 	if err != nil {
-		return held{}, connect.NewError(connect.CodeInternal, err)
+		return fakeIdentity{}, connect.NewError(connect.CodeInternal, err)
 	}
-	return held{Record: identity.Record{Device: restore.device, Wrapped: wrapped}, Chain: chain, root: restore.recovery, keys: keys}, nil
+	return fakeIdentity{Record: identity.Record{Device: restore.device, Wrapped: wrapped}, Chain: chain, root: restore.recovery, keys: keys}, nil
 }
 
 func (s *service) OpenSealedBox(_ context.Context, req *connect.Request[v1.OpenSealedBoxRequest]) (*connect.Response[v1.OpenSealedBoxResponse], error) {

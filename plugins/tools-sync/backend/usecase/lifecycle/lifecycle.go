@@ -48,20 +48,20 @@ type Lifecycle struct {
 	deps Deps
 
 	mu        sync.Mutex
-	running   *running
+	running   *activeLoop
 	isFlushed bool
 	isClosed  bool
 }
 
-// running is the loop and the stream while the application is on the screen.
-type running struct {
+// activeLoop is the loop and the stream while the application is on the screen.
+type activeLoop struct {
 	stop   context.CancelFunc
 	done   sync.WaitGroup
 	mu     sync.Mutex
 	failed []error
 }
 
-func (r *running) record(err error) {
+func (r *activeLoop) record(err error) {
 	if isIgnored(err) {
 		return
 	}
@@ -84,7 +84,7 @@ func (u *Lifecycle) Resume(ctx context.Context) error {
 		return nil
 	}
 	runCtx, stop := context.WithCancel(context.WithoutCancel(ctx))
-	started := &running{stop: stop, done: sync.WaitGroup{}, mu: sync.Mutex{}, failed: nil}
+	started := &activeLoop{stop: stop, done: sync.WaitGroup{}, mu: sync.Mutex{}, failed: nil}
 	started.done.Add(2)
 	go func() {
 		defer started.done.Done()

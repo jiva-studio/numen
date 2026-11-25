@@ -102,7 +102,7 @@ func (r *run) applyContent(ctx context.Context, stored *syncv1.StoredRevision, m
 		return r.adopt(ctx, stored, meta, record, isKnown)
 	case note.Download:
 		if r.isLazy(meta, isListed) {
-			return r.list(ctx, listing{stored: stored, meta: meta, previous: record, local: local, isListed: isListed, isKnown: isKnown})
+			return r.list(ctx, listEntry{stored: stored, meta: meta, previous: record, local: local, isListed: isListed, isKnown: isKnown})
 		}
 		return r.download(ctx, stored, meta, stat, local == "")
 	case note.Conflict:

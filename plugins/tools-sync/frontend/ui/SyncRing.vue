@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * The ring of a transfer, drawn over the box of its parent: an arc by the share done, or, when the total is unknown, an arc that orbits. The glyph
- * in the slot sits inside the ring.
+ * in the slot is drawn inside the ring.
  */
 import { computed } from 'vue'
 

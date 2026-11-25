@@ -44,7 +44,7 @@ func (r *run) getListedHash(ctx context.Context, filePath string) (string, error
 	return hash, nil
 }
 
-type listing struct {
+type listEntry struct {
 	stored   *syncv1.StoredRevision
 	meta     note.Meta
 	previous transfer.FileRecord
@@ -53,7 +53,7 @@ type listing struct {
 	isKnown  bool
 }
 
-func (r *run) list(ctx context.Context, item listing) error {
+func (r *run) list(ctx context.Context, item listEntry) error {
 	stored, meta, previous, local, isListed, isKnown := item.stored, item.meta, item.previous, item.local, item.isListed, item.isKnown
 	absent := r.deps.Host.GetAbsent(r.in.VaultID)
 	if local != "" && !isListed {

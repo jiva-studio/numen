@@ -8,8 +8,8 @@ export interface DownloadBytes {
   readonly bytesTotal: number
 }
 
-/** The downloads of files the window has running: which paths are being brought, and who is told when that changes. */
-export interface Downloads {
+/** The downloads of files the window runs: which paths are downloading, and the handlers it calls when that changes. */
+export interface DownloadRegistry {
   /** Brings the bytes of the file; a download of the path already running is joined, not started twice. */
   fetch: (path: string) => Promise<void>
   isRunning(path: string): boolean
@@ -37,7 +37,7 @@ export function createDownloads(
   fetchFile: (path: string) => Promise<void>,
   readProgress: (path: string) => Promise<Result<DownloadAnswer>>,
   ports: DownloadPorts = browserDownloadPorts,
-): Downloads {
+): DownloadRegistry {
   const running = new Map<string, Promise<void>>()
   const progress = reactive(new Map<string, DownloadBytes>())
   const handlers = new Set<(path: string) => void>()
@@ -62,7 +62,6 @@ export function createDownloads(
         isReading = false
       }
     }
-    // A failed read leaves the last progress shown; the download reports its own failure.
     // A failed read leaves the last progress shown; the download reports its own failure.
     const stop = ports.every(() => {
       read().catch(() => undefined)

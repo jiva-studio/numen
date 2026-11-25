@@ -89,7 +89,7 @@ const downloadFile = async (
 }
 
 /** Opens a downloaded file, then removes the tab that stood for it; a failure to open it is shown in that tab. */
-const openDownloaded = async (
+const openDownloadedFile = async (
   vault: FileOpenerDeps,
   path: string,
   open: () => Promise<void>,
@@ -184,7 +184,7 @@ export function createFileOpeners(vault: FileOpenerDeps) {
   ): Promise<void> => {
     const placement = typeof options === 'string' ? { where: options } : options
     if (!(await downloadFile(vault, path, title))) return
-    await openDownloaded(vault, path, async () => {
+    await openDownloadedFile(vault, path, async () => {
       const kind = await fetchFileKind(vault, path)
       if (kind && (await openNote(path, kind, title, placement))) return
       await readFile(path, placement?.selector ?? null)
@@ -194,7 +194,7 @@ export function createFileOpeners(vault: FileOpenerDeps) {
   /** Opens a file at ranges of its text: a note in its editor, whole, any other file in its reader. */
   const openFileAt = async (path: string, spans: readonly TextRange[]): Promise<void> => {
     if (!(await downloadFile(vault, path, ''))) return
-    await openDownloaded(vault, path, async () => {
+    await openDownloadedFile(vault, path, async () => {
       const kind = await fetchFileKind(vault, path)
       if (kind && (await openNote(path, kind, ''))) return
       await readFile(path, null, spans)

@@ -36,10 +36,10 @@ const createTimers = () => {
   }
 }
 
-const readUnknown: Reader = () =>
+const readNoProgress: Reader = () =>
   Promise.resolve(asValue({ isKnown: false, bytesDone: 0, bytesTotal: 0 }))
 
-const create = (readProgress: Reader = readUnknown) => {
+const create = (readProgress: Reader = readNoProgress) => {
   const core = createFetch()
   const timers = createTimers()
   return {
@@ -50,7 +50,7 @@ const create = (readProgress: Reader = readUnknown) => {
 }
 
 describe('the downloads of the window', () => {
-  it('has a path running from the call until the bytes arrive, and tells both changes', async () => {
+  it('marks a path as running from the call until the bytes arrive, and notifies the handler of both changes', async () => {
     const { core, downloads } = create()
     const told: string[] = []
     downloads.watch((path) => told.push(`${path} ${downloads.isRunning(path)}`))

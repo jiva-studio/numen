@@ -95,7 +95,7 @@ export const WORDS = {
       ? '1 note differs from the vault in the cloud. Get it anyway?'
       : `${count} notes differ from the vault in the cloud. Get it anyway?`,
   loading: 'Loading…',
-  loadFailedTitle: 'Something went wrong',
+  loadFailedTitle: 'The vaults did not load',
   loadFailed: 'The vaults could not be loaded.',
   tryAgain: 'Try again',
   noIdentity: 'No identity on this device',

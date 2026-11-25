@@ -42,7 +42,7 @@ type Link struct {
 	Removed        []RemovedFile     `json:"removed,omitempty"`
 	Retired        []RetiredFile     `json:"retired,omitempty"`
 	Kind           string            `json:"kind,omitempty"`
-	Received       *Received         `json:"received,omitempty"`
+	Received       *ShareRecord         `json:"received,omitempty"`
 }
 
 // RemoteVault is a synced vault of the account, with its last name.
@@ -212,9 +212,9 @@ const (
 	KindReceived = "received"
 )
 
-// Received is what a received vault knows of its share: the share, the pinned root of the owner, the sealed keys and
+// ShareRecord is what a received vault knows of its share: the share, the pinned root of the owner, the sealed keys and
 // the last entry of the share log it verified.
-type Received struct {
+type ShareRecord struct {
 	ShareRootID   string                  `json:"shareRootId"`
 	OwnerRoot     []byte                  `json:"ownerRoot"`
 	OwnerChain    []byte                  `json:"ownerChain"`
@@ -236,7 +236,7 @@ type SeenRevision struct {
 
 // IsRegressed reports whether the revision is older than the newest one the share served for the file: a lower
 // version, or the same version with another id.
-func (r *Received) IsRegressed(fileID, revID []byte, version uint64) bool {
+func (r *ShareRecord) IsRegressed(fileID, revID []byte, version uint64) bool {
 	seen, isSeen := r.Seen[hex.EncodeToString(fileID)]
 	if !isSeen {
 		return false
@@ -245,7 +245,7 @@ func (r *Received) IsRegressed(fileID, revID []byte, version uint64) bool {
 }
 
 // RecordRevision remembers that the share served the revision as the newest of the file.
-func (r *Received) RecordRevision(fileID, revID []byte, version uint64) {
+func (r *ShareRecord) RecordRevision(fileID, revID []byte, version uint64) {
 	if r.Seen == nil {
 		r.Seen = map[string]SeenRevision{}
 	}
