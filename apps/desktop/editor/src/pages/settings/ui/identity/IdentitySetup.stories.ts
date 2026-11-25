@@ -12,8 +12,9 @@ const onBack = fn()
 const onCancel = fn()
 const onKeep = fn()
 
-const WORDS =
-  'amber basil cedar delta ember fjord grove harbor ivory jungle kernel lantern'.split(' ')
+const WORDS = 'amber basil cedar delta ember fjord grove harbor ivory jungle kernel lantern'.split(
+  ' ',
+)
 
 const meta: Meta<IdentitySetupProps> = {
   title: 'Window/Identity/Create words',
@@ -60,7 +61,9 @@ export const Words: Story = {
 /** Cancel closes the dialog. */
 export const Cancelled: Story = {
   play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Cancel' }))
+    await userEvent.click(
+      within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Cancel' }),
+    )
     await expect(onCancel).toHaveBeenCalled()
   },
 }

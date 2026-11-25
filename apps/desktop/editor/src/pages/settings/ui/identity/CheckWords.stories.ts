@@ -50,15 +50,23 @@ export const Empty: Story = {
 export const Filled: Story = {
   args: { entered: { 2: 'basil', 5: 'fjord', 9: 'ivory' }, isComplete: true },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Continue' })).toBeEnabled()
+    await expect(
+      within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Continue' }),
+    ).toBeEnabled()
   },
 }
 
 /** A refusal of the core stays in the dialog. */
 export const Mistaken: Story = {
-  args: { entered: { 2: 'basil', 5: 'wrong', 9: 'ivory' }, wrong: [5], problem: 'Check the words.' },
+  args: {
+    entered: { 2: 'basil', 5: 'wrong', 9: 'ivory' },
+    wrong: [5],
+    problem: 'Check the words.',
+  },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent('Check the words.')
+    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent(
+      'Check the words.',
+    )
   },
 }
 

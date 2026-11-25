@@ -69,7 +69,9 @@ export const Filled: Story = {
 export const Refused: Story = {
   args: { problem: 'These words do not belong to this identity.' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent('do not belong')
+    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent(
+      'do not belong',
+    )
   },
 }
 
@@ -77,6 +79,8 @@ export const Refused: Story = {
 export const Busy: Story = {
   args: { isBusy: true },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Saving…' })).toBeDisabled()
+    await expect(
+      within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Saving…' }),
+    ).toBeDisabled()
   },
 }

@@ -191,7 +191,9 @@ export const EmptyPageWithoutTypes: Story = {
 }
 
 const openDialog = async (canvasElement: HTMLElement) => {
-  await userEvent.click(within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Add connection' }))
+  await userEvent.click(
+    within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Add connection' }),
+  )
   const dialog = within(document.body).getByRole('dialog', { name: 'Add connection' })
   await expect(dialog).toBeVisible()
   return within(dialog)

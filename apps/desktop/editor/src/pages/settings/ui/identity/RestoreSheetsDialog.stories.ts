@@ -57,7 +57,9 @@ export const OneScanned: Story = {
 export const Refused: Story = {
   args: { slots: [3, undefined], note: 'Sheet 3 is scanned already. Scan another sheet.' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent('scanned already')
+    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent(
+      'scanned already',
+    )
   },
 }
 

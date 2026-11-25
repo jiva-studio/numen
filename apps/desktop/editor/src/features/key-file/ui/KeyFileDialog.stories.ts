@@ -27,7 +27,8 @@ const frame = (body: string, components: Record<string, Component>) => ({
   template: `<div class="numen" style="${FRAME}">${body}</div>`,
 })
 
-const CHOOSE = '<KeyFileDialog :problem="\'\'" :is-busy="false" @choose="onChoose" @cancel="onCancel" />'
+const CHOOSE =
+  '<KeyFileDialog :problem="\'\'" :is-busy="false" @choose="onChoose" @cancel="onCancel" />'
 
 /** The passphrase is chosen first and Continue waits for a repeated passphrase. */
 export const ChoosePassphrase: Story = {
@@ -75,7 +76,9 @@ export const ChooseRefused: Story = {
       { KeyFileDialog },
     ),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement.ownerDocument.body).getByText(/could not be saved/)).toBeVisible()
+    await expect(
+      within(canvasElement.ownerDocument.body).getByText(/could not be saved/),
+    ).toBeVisible()
   },
 }
 
@@ -102,7 +105,9 @@ export const UnlockWrongPassphrase: Story = {
       { KeyFileUnlockDialog },
     ),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent('does not open')
+    await expect(within(canvasElement.ownerDocument.body).getByRole('alert')).toHaveTextContent(
+      'does not open',
+    )
   },
 }
 
