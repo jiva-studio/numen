@@ -115,7 +115,7 @@ func TestReadEntrySightings_AreNilBeforeAnyWrite(t *testing.T) {
 	}
 }
 
-func TestEntrySightings_ReturnWhatWasWritten(t *testing.T) {
+func TestReadEntrySightings_ReturnsWhatWriteEntrySightingsStored(t *testing.T) {
 	state := newState(hosttest.CreateOnDisk(t, "first", nil), hosttest.CreateOnDisk(t, "second", nil))
 	want := map[string]int64{"a": 200, "b": 50}
 	if err := state.WriteEntrySightings(t.Context(), want); err != nil {
