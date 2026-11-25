@@ -42,7 +42,8 @@ const everyFieldManifest = `{
 		{"key": "folders", "type": "list", "title": "Folders", "default": ["templates", "archive/old"]}
 	],
 	"services": ["numen.v1.Full"],
-	"settingsViews": [{"id": "v", "title": "V", "page": "identity"}],
+	"settingsTabs": [{"id": "t", "title": "T"}],
+	"settingsViews": [{"id": "v", "title": "V", "page": "identity", "tab": "t"}],
 	"settingGroups": [{"id": "g", "title": "G"}],
 	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play",
 		"when": "target.contentType.startsWith('audio/')",
