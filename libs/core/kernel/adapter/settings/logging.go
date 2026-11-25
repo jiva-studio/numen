@@ -6,12 +6,10 @@ type Logging struct {
 	Level string `json:"level"`
 }
 
-func DefaultLogging() Logging { return Logging{Level: getAppString(keyLogLevel)} }
-
 // LogLevel returns the application logging threshold.
 func (f *File) LogLevel() logs.Level {
 	if f == nil {
 		return logs.DefaultLevel
 	}
-	return logs.ResolveLevel(f.Logging.Level)
+	return logs.ResolveLevel(f.Texts[keyLogLevel])
 }

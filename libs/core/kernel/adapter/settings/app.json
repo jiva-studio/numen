@@ -316,7 +316,7 @@
       "key": "vaults.folder",
       "type": "string",
       "title": "Folder for new vaults",
-      "description": "Where the folders of new vaults are made; empty means the Documents folder of the system.",
+      "description": "Where new vaults get their folders; empty means Documents.",
       "details": "A vault opened from the cloud gets a folder in it, named after the vault. Empty means the Documents folder of the system: the folder Documents in your home folder on macOS, the folder the system names for documents on Linux and the Documents known folder on Windows.",
       "default": ""
     },

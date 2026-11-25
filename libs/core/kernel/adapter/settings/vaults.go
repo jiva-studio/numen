@@ -6,8 +6,15 @@ type Vaults struct {
 	Folder string `json:"folder"`
 }
 
-// DefaultVaults is the section of an unconfigured installation.
-func DefaultVaults() Vaults { return Vaults{Folder: getAppString(keyVaultsFolder)} }
+// Texts holds the string settings of the shell that stand alone in their section of the file, by their
+// declared key: logging.level, keys.credentialsFile and vaults.folder.
+type Texts map[string]string
 
-// GetNewVaultsFolder returns the folder set for new vaults, and an empty text when none is set.
-func (f *File) GetNewVaultsFolder() string { return f.Vaults.Folder }
+// DefaultTexts returns the texts the declaration of the shell gives.
+func DefaultTexts() Texts {
+	return Texts{
+		keyLogLevel:        getAppString(keyLogLevel),
+		keyCredentialsFile: getAppString(keyCredentialsFile),
+		keyVaultsFolder:    getAppString(keyVaultsFolder),
+	}
+}

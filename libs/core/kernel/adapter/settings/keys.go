@@ -22,9 +22,6 @@ type Keys struct {
 	CredentialsFile string `json:"credentialsFile"`
 }
 
-// DefaultKeys is the section of an unconfigured installation.
-func DefaultKeys() Keys { return Keys{CredentialsFile: getAppString(keyCredentialsFile)} }
-
 // ReadCredentialsFile reads keys.credentialsFile from the settings file at path without writing
 // anything. A file that is not there, cannot be read or holds another value gives CredentialsFileUnset.
 func ReadCredentialsFile(path string) string {
@@ -35,7 +32,7 @@ func ReadCredentialsFile(path string) string {
 	if err != nil {
 		return CredentialsFileUnset
 	}
-	value := file.Keys.CredentialsFile
+	value := file.Texts[keyCredentialsFile]
 	if !slices.Contains([]string{CredentialsFilePassphrase, CredentialsFilePlaintext}, value) {
 		return CredentialsFileUnset
 	}

@@ -23,9 +23,7 @@ type File struct {
 	Editor      Editor      `json:"editor"`
 	Performance Performance `json:"performance"`
 	Search      Search      `json:"search"`
-	Logging     Logging     `json:"logging"`
-	Keys        Keys        `json:"keys"`
-	Vaults      Vaults      `json:"vaults"`
+	Texts       Texts
 	Plugins     map[string]map[string]any
 	Connections []connection.Connection
 }
@@ -87,7 +85,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Header.Version},
-		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &f.Logging, &f.Keys, &f.Vaults}},
+		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &Logging{f.Texts[keyLogLevel]}, &Keys{f.Texts[keyCredentialsFile]}, &Vaults{f.Texts[keyVaultsFolder]}}},
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {
@@ -181,8 +179,11 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search, &f.Logging, &f.Keys, &f.Vaults}
-	return hasInterfaceScale, json.Unmarshal(content, &sections)
+	logging, keys, vaults := Logging{f.Texts[keyLogLevel]}, Keys{f.Texts[keyCredentialsFile]}, Vaults{f.Texts[keyVaultsFolder]}
+	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search, &logging, &keys, &vaults}
+	err = json.Unmarshal(content, &sections)
+	f.Texts = Texts{keyLogLevel: logging.Level, keyCredentialsFile: keys.CredentialsFile, keyVaultsFolder: vaults.Folder}
+	return hasInterfaceScale, err
 }
 
 func decodeObject(raw json.RawMessage) (map[string]any, bool) {
@@ -279,9 +280,7 @@ func DefaultFile() File {
 		Editor:      DefaultEditor(),
 		Performance: DefaultPerformance(),
 		Search:      DefaultSearch(),
-		Logging:     DefaultLogging(),
-		Keys:        DefaultKeys(),
-		Vaults:      DefaultVaults(),
+		Texts:       DefaultTexts(),
 		Plugins:     map[string]map[string]any{},
 	}
 }

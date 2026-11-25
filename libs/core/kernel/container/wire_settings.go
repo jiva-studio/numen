@@ -132,7 +132,9 @@ func getNewVaultsFolder(c settingsWiring) vaultusecase.NewVaultsFolder {
 		if err != nil {
 			c.HandleError(fmt.Errorf("read settings: %w", err))
 		}
-		return target.GetNewVaultsFolder()
+		folder, _ := target.GetValue(settingsdomain.AppOwner, "vaults", "folder")
+		text, _ := folder.(string)
+		return text
 	}
 }
 
