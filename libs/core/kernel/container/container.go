@@ -25,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -74,7 +75,7 @@ type Resources struct {
 	KeyFile       keyfileusecase.File
 	Stores        identity.Stores
 	ErrorHandler  window.ErrorHandler
-	Now           identity.Clock
+	Now           machineport.InstallationClock
 	Chunks        *note.ChunkTokens
 	TextReaders   textport.Readers
 
@@ -158,7 +159,7 @@ func getRunningExecution(exec *PluginExecution, safeMode bool) *PluginExecution 
 }
 
 // GetClock returns the clock every use case assembled here is handed.
-func GetClock(res *Resources) identity.Clock {
+func GetClock(res *Resources) machineport.InstallationClock {
 	if res.Now != nil {
 		return res.Now
 	}

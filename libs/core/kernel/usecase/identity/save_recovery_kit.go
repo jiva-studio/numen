@@ -8,6 +8,7 @@ import (
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
@@ -24,7 +25,7 @@ type KitSaver interface {
 type SaveRecoveryKit struct {
 	records records
 	random  io.Reader
-	clock   Clock
+	clock   machineport.InstallationClock
 	saver   KitSaver
 }
 

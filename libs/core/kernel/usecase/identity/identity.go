@@ -8,7 +8,6 @@ import (
 	"errors"
 	"io"
 	"strings"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -23,18 +22,12 @@ const (
 	maxDeviceName = 64
 )
 
-// Clock is the time source of the identity use cases: the time now and a signal after a delay.
-type Clock interface {
-	machineport.Clock
-	After(d time.Duration) <-chan time.Time
-}
-
 // Deps groups the collaborators the identity use cases are made from; each use case keeps the ones it calls. Copies
 // of one Deps share one Progress.
 type Deps struct {
 	records  records
 	names    DeviceName
-	clock    Clock
+	clock    machineport.InstallationClock
 	random   io.Reader
 	progress *Progress
 
@@ -55,7 +48,7 @@ type SharedKeys struct {
 }
 
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
-func NewDeps(keys pluginport.KeyStore, names DeviceName, clock Clock) Deps {
+func NewDeps(keys pluginport.KeyStore, names DeviceName, clock machineport.InstallationClock) Deps {
 	progress := NewProgress()
 	return Deps{records: records{keys: keys}, names: names, clock: clock, random: rand.Reader, progress: progress, createLock: progress.gate}
 }

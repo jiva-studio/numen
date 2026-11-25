@@ -4,12 +4,13 @@ import (
 	"context"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // GetLink shows the link in progress.
 type GetLink struct {
 	links linkHold
-	clock Clock
+	clock machineport.InstallationClock
 }
 
 // NewGetLink returns the use case that shows the link in progress.

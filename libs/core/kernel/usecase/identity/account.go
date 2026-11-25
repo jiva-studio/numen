@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -15,13 +16,13 @@ var errNoKeyStore = errors.New("this installation has no key store")
 type Account struct {
 	keys     func() pluginport.KeyStore
 	names    DeviceName
-	clock    Clock
+	clock    machineport.InstallationClock
 	chains   ChainStore
 	progress *Progress
 }
 
 // NewAccount returns the operations over the key store that keys returns at each call, the chain file and what is in progress.
-func NewAccount(keys func() pluginport.KeyStore, names DeviceName, clock Clock, progress *Progress, chains ChainStore) *Account {
+func NewAccount(keys func() pluginport.KeyStore, names DeviceName, clock machineport.InstallationClock, progress *Progress, chains ChainStore) *Account {
 	if progress == nil {
 		progress = NewProgress()
 	}

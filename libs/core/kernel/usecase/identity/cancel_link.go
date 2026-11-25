@@ -4,12 +4,13 @@ import (
 	"context"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // CancelLink ends the link at the person's request.
 type CancelLink struct {
 	links linkHold
-	clock Clock
+	clock machineport.InstallationClock
 }
 
 // NewCancelLink returns the use case that cancels the link.

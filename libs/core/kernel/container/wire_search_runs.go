@@ -6,8 +6,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -33,7 +33,7 @@ type windowSearch struct {
 
 func newSearchRuns(
 	tasks *run.Tasks, generations *indexgeneration.Generations, find *queryusecase.FindSearchResults,
-	resolver pluginResolver, manifests pluginmanifest.Manifests, clock identity.Clock,
+	resolver pluginResolver, manifests pluginmanifest.Manifests, clock machineport.InstallationClock,
 ) *queryusecase.SearchRuns {
 	runs := queryusecase.NewSearchRuns(queryusecase.Deps{
 		Store:       searchstore.New(),

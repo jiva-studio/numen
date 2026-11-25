@@ -4,12 +4,13 @@ import (
 	"context"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // GetChainPublish tells the courier which chain the server must hold.
 type GetChainPublish struct {
 	links linkHold
-	clock Clock
+	clock machineport.InstallationClock
 }
 
 // NewGetChainPublish returns the use case that tells the courier which chain to publish.

@@ -6,13 +6,14 @@ import (
 	"io"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
 // SetLinkChannel gives the link the channel the courier made on the relay.
 type SetLinkChannel struct {
 	links  linkHold
-	clock  Clock
+	clock  machineport.InstallationClock
 	random io.Reader
 }
 

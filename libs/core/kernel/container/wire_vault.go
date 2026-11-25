@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
@@ -54,7 +53,7 @@ type vaultWiring struct {
 	Readers      vaultport.VaultReaders
 	Writers      vaultwriter.VaultWriters
 	Watcher      vaultwatch.Watcher
-	Clock        identity.Clock
+	Clock        machineport.InstallationClock
 	TextVersions *textVersions
 	SyncSetting  naming.SyncSetting
 	CutNotes     chunking.CutNotes
@@ -63,7 +62,7 @@ type vaultWiring struct {
 	AbsentFiles  vaultport.AbsentFiles
 }
 
-func openVaultAccess(paths Paths, timer identity.Clock, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultWiring {
+func openVaultAccess(paths Paths, timer machineport.InstallationClock, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultWiring {
 	options := vaultconfig.Options{ServiceDir: paths.ServiceDir}
 	return vaultWiring{
 		IndexPath:    paths.IndexPath,

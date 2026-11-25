@@ -4,12 +4,13 @@ import (
 	"context"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // PutLinkInbound hands the core a blob the other side posted to the relay.
 type PutLinkInbound struct {
 	links linkHold
-	clock Clock
+	clock machineport.InstallationClock
 	host  linkHost
 }
 

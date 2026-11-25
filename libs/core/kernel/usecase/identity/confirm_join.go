@@ -4,13 +4,14 @@ import (
 	"context"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
 // ConfirmJoin is the answer of the person on the new device to the account the host offers.
 type ConfirmJoin struct {
 	links   linkHold
-	clock   Clock
+	clock   machineport.InstallationClock
 	records records
 }
 

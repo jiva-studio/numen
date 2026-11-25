@@ -5,12 +5,13 @@ import (
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // GetLinkWork tells the courier what to carry.
 type GetLinkWork struct {
 	links linkHold
-	clock Clock
+	clock machineport.InstallationClock
 }
 
 // NewGetLinkWork returns the use case that tells the courier what to carry.

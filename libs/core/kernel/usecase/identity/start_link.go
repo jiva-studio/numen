@@ -7,6 +7,7 @@ import (
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
@@ -15,7 +16,7 @@ type StartLink struct {
 	links   linkHold
 	records records
 	names   DeviceName
-	clock   Clock
+	clock   machineport.InstallationClock
 	random  io.Reader
 }
 
