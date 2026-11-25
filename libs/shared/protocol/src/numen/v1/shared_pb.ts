@@ -333,7 +333,7 @@ export enum ErrorCode {
   VAULT_CURRENT = 27,
 
   /**
-   * This machine has no trash, so the folder stays where it is.
+   * This machine has no trash.
    *
    * @generated from enum value: ERROR_CODE_NO_TRASH = 28;
    */

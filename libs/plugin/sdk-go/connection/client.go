@@ -204,6 +204,7 @@ func readFailure(failure *v1.CallFailure) error {
 		}
 		return stopped
 	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
+	default:
 	}
 	return fmt.Errorf("connection: unknown error code %d: %s", failure.GetError(), failure.GetDetail())
 }

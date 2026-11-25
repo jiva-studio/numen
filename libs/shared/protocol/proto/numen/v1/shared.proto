@@ -105,7 +105,7 @@ enum ErrorCode {
   // The vault is the one the window currently shows.
   ERROR_CODE_VAULT_CURRENT = 27;
 
-  // This machine has no trash, so the folder stays where it is.
+  // This machine has no trash.
   ERROR_CODE_NO_TRASH = 28;
 
   // A tab has unsaved changes.

@@ -321,7 +321,7 @@ func TestAFolderJoinsTheListBelowANameAnotherVaultHas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.Error != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if out.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the folder failed: %v", out.Msg.GetError())
 	}
 	if got := out.Msg.GetVault().GetName(); got != "one 2" {
@@ -360,7 +360,7 @@ func TestAVaultIsCalledWhatThePersonCallsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.Error != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if out.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the vault was not renamed: %v", out.Msg.GetError())
 	}
 	if got := out.Msg.GetVault().GetName(); got != "journal" {
@@ -416,7 +416,7 @@ func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if removed.Msg.Error != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if removed.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the second vault was not removed: %v", removed.Msg.GetError())
 	}
 
@@ -480,7 +480,7 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.Error != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if out.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the vault was not removed: %v", out.Msg.GetError())
 	}
 	if got := f.bin.getTrashedPaths(); len(got) != 1 || got[0] != f.second.Path {
@@ -523,7 +523,7 @@ func TestAnotherVaultIsInsertInTheWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Msg.Error != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if out.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the vault was not current: %v", out.Msg.GetError())
 	}
 	if visibleVaults := f.getShownVaults(); len(visibleVaults) != 1 || visibleVaults[0].ID != f.second.ID {

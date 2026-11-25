@@ -97,7 +97,7 @@ const (
 	ErrorCode_ERROR_CODE_LAST_VAULT ErrorCode = 26
 	// The vault is the one the window currently shows.
 	ErrorCode_ERROR_CODE_VAULT_CURRENT ErrorCode = 27
-	// This machine has no trash, so the folder stays where it is.
+	// This machine has no trash.
 	ErrorCode_ERROR_CODE_NO_TRASH ErrorCode = 28
 	// A tab has unsaved changes.
 	ErrorCode_ERROR_CODE_UNSAVED ErrorCode = 29

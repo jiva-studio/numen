@@ -287,7 +287,8 @@ func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 	if err := transport.ConvertEventRefusal(v1.ErrorCode_ERROR_CODE_UNSPECIFIED, "the index is closed"); err != nil {
 		t.Fatalf("ConvertEventRefusal(UNSPECIFIED) = %v, want nil", err)
 	}
-	if err := transport.ConvertEventRefusal(v1.ErrorCode_ERROR_CODE_INTERNAL, "the index is closed"); !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "the index is closed") || strings.Contains(err.Error(), "unknown code") {
+	err := transport.ConvertEventRefusal(v1.ErrorCode_ERROR_CODE_INTERNAL, "the index is closed")
+	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "the index is closed") || strings.Contains(err.Error(), "unknown code") {
 		t.Fatalf("ConvertEventRefusal(INTERNAL) = %v, want event refusal with detail", err)
 	}
 	if err := transport.ConvertEventRefusal(v1.ErrorCode(99), "why"); !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
