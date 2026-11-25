@@ -206,7 +206,7 @@ export const Timeout: Story = {
     const canvas = within(canvasElement)
     await submitText(canvas, QR_TEXT)
     await expect(
-      await canvas.findByText(/Numen Sync cannot reach the server/, undefined, { timeout: 8000 }),
+      await canvas.findByText(/The sync server cannot be reached/, undefined, { timeout: 8000 }),
     ).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Try again' }))
     await waitFor(() => expect(args.calls.start).toHaveBeenCalledTimes(2))

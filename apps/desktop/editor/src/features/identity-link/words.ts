@@ -33,10 +33,9 @@ export const WORDS = {
   linkCheckingCamera: 'Checking the camera',
   linkCheckingCameraDetail: 'Numen asks the system for the camera. Allow it if you are asked.',
   linkPreparingTitle: 'Preparing the link',
-  linkPreparingDetail: 'Waiting for the Numen Sync server. This takes a few seconds.',
+  linkPreparingDetail: 'Waiting for the sync server. This takes a few seconds.',
   linkStalledTitle: 'The link did not start',
-  linkStalled:
-    'Numen Sync cannot reach the server. Check the server address in the settings of Numen Sync.',
+  linkStalled: 'The sync server cannot be reached. Check the server address in the sync settings.',
   linkRefusedTitle: 'The link did not start',
   linkWaitingTitle: 'Waiting for the other device',
   linkWaitingDetail: 'Keep this window open until the other device answers.',
