@@ -290,13 +290,13 @@ describe('the parts of the window wired together', () => {
       ]),
     )
     await decl.declared.load()
-    expect(decl.hostParts[1]?.commands?.getHandlerDeclarations?.()).toStrictEqual([
+    expect(decl.hostParts[2]?.commands?.getHandlerDeclarations?.()).toStrictEqual([
       { pluginId: 'p1', command: 'cards:review', title: 'Review cards', hasItems: false },
     ])
-    expect(decl.hostParts[2]?.commands?.getCommandDeclarations?.()).toStrictEqual([
+    expect(decl.hostParts[3]?.commands?.getCommandDeclarations?.()).toStrictEqual([
       { pluginId: 'p1', id: 'cmd1', title: 'Cmd 1' },
     ])
-    await decl.hostParts[1]?.commands?.runBackendHandler?.({
+    await decl.hostParts[2]?.commands?.runBackendHandler?.({
       pluginId: 'p1',
       command: 'cards:review',
       target: { path: 'notes/a.md', title: 'A', isFolder: false, others: [], tab: '' },
