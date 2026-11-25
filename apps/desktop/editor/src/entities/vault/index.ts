@@ -16,3 +16,4 @@ export {
 } from './lib/cloudVault'
 export { createRemoteVaults, type RemoteVaults } from './api/remoteVaults'
 export { useCloudVaults, type CloudVaults } from './model/useCloudVaults'
+export { watchCloudVaults } from './model/watchCloudVaults'
