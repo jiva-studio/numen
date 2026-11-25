@@ -9,8 +9,14 @@ const SAME_CODE_PAUSE_MS = 2000
 /** How long the camera may take to open before the scanner reports it unavailable. */
 const CAMERA_OPEN_MS = 10_000
 
-function openInTime(open: ScannerCamera): Promise<MediaStream> {
-  return new Promise((resolve, reject) => {
+interface OpeningCamera {
+  stream: Promise<MediaStream>
+  cancel: () => void
+}
+
+function openInTime(open: ScannerCamera): OpeningCamera {
+  let cancel = (): void => undefined
+  const stream = new Promise<MediaStream>((resolve, reject) => {
     let isLate = false
     const timer = setTimeout(() => {
       isLate = true
@@ -19,6 +25,10 @@ function openInTime(open: ScannerCamera): Promise<MediaStream> {
     const fail = (cause: unknown): void => {
       clearTimeout(timer)
       reject(cause)
+    }
+    cancel = () => {
+      isLate = true
+      fail(new Error('The scanner closed before the camera opened.'))
     }
     try {
       open().then((opened) => {
@@ -30,12 +40,14 @@ function openInTime(open: ScannerCamera): Promise<MediaStream> {
       fail(cause)
     }
   })
+  return { stream, cancel: () => cancel() }
 }
 
 export interface QrScannerSource {
   camera: ScannerCamera
   isAccepted: (text: string) => boolean
   isContinuous: boolean
+  rejectedMessage: string
 }
 
 export interface QrScannerEvents {
@@ -59,6 +71,7 @@ export function useQrScanner(
   let stream: MediaStream | undefined
   let timer: ReturnType<typeof setInterval> | undefined
   let isDisposed = false
+  let cancelOpening: (() => void) | undefined
   let rejected = ''
   let lastText = ''
   let lastAt = 0
@@ -78,7 +91,7 @@ export function useQrScanner(
     if (!source.isAccepted(found)) {
       if (found === rejected) return
       rejected = found
-      problem.value = 'This code is not a link of Numen.'
+      problem.value = source.rejectedMessage
       emit('failed', problem.value)
       return
     }
@@ -103,16 +116,23 @@ export function useQrScanner(
   function stop(): void {
     if (timer !== undefined) clearInterval(timer)
     timer = undefined
+    cancelOpening?.()
+    cancelOpening = undefined
     if (stream !== undefined) stopStream(stream)
     stream = undefined
+    if (video.value !== null) video.value.srcObject = null
   }
 
   async function start(): Promise<void> {
     status.value = 'waiting'
     problem.value = ''
     try {
-      stream = await openInTime(source.camera)
+      const opening = openInTime(source.camera)
+      cancelOpening = opening.cancel
+      stream = await opening.stream
+      cancelOpening = undefined
     } catch (cause) {
+      if (isGone()) return
       status.value = 'failed'
       problem.value = describeCameraFailure(cause)
       emit('unavailable', problem.value)

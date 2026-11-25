@@ -32,6 +32,7 @@ const emit = defineEmits<{
     <QrScanner
       v-else-if="phase === 'camera'"
       :key="attempt"
+      :rejected-message="words.linkRejectedCode"
       v-bind="camera === undefined ? {} : { camera }"
       @scanned="emit('scanned', $event)"
       @unavailable="emit('unavailable', $event)"

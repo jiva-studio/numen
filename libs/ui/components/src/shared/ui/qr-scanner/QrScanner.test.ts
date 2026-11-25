@@ -149,6 +149,31 @@ describe('a QR scanner', () => {
     }
   })
 
+  it('arms no timer and reports nothing when it unmounts before the camera opens', async () => {
+    vi.useFakeTimers()
+    try {
+      const scanner = mount(QrScanner, {
+        props: { camera: () => new Promise<MediaStream>(() => undefined) },
+      })
+      scanner.unmount()
+      await vi.advanceTimersByTimeAsync(10_500)
+      expect(vi.getTimerCount()).toBe(0)
+      expect(scanner.emitted('unavailable')).toBeUndefined()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('detaches the stream from the video when it unmounts', async () => {
+    const { stream } = makeStream()
+    const scanner = mount(QrScanner, { props: { camera: () => Promise.resolve(stream) } })
+    await flushPromises()
+    const video = scanner.get('video').element as HTMLVideoElement
+    expect(video.srcObject).toBe(stream)
+    scanner.unmount()
+    expect(video.srcObject).toBeNull()
+  })
+
   it('draws a video that plays on its own, muted and inline', () => {
     const scanner = mount(QrScanner, {
       props: { camera: () => new Promise<MediaStream>(() => undefined) },

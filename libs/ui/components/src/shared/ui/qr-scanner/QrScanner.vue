@@ -18,11 +18,13 @@ const props = withDefaults(
     camera?: ScannerCamera
     isAccepted?: (text: string) => boolean
     isContinuous?: boolean
+    rejectedMessage?: string
   }>(),
   {
     camera: openMachineCamera,
     isAccepted: () => true,
     isContinuous: false,
+    rejectedMessage: 'This code is not accepted.',
   },
 )
 
@@ -76,6 +78,8 @@ const { status, problem } = useQrScanner(video, props, emit)
 
 .qr-scanner__problem {
   padding: 1rem;
+  color: var(--numen-ink);
+  background: color-mix(in srgb, var(--numen-surface) 88%, transparent);
   text-align: center;
   font-size: var(--numen-text-2);
 }

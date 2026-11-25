@@ -30,6 +30,7 @@ export const WORDS = {
     'On the other device, choose Use existing and scan this code.',
     'Approve the other device here.',
   ],
+  linkRejectedCode: 'This code is not a link of Numen.',
   linkCheckingCamera: 'Checking the camera',
   linkCheckingCameraDetail: 'Numen asks the system for the camera. Allow it if you are asked.',
   linkPreparingTitle: 'Preparing the link',

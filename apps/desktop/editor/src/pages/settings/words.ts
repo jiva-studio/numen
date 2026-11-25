@@ -104,6 +104,7 @@ export const WORDS = {
   identityRestoreTypeDetail: 'Type the words of two sheets',
   identityRestoreWords: 'Recovery words',
   identityRestoreSheets: 'Recovery kit: scan',
+  identityRestoreRejectedCode: 'This code is not a sheet of the recovery kit.',
   identityJoin: 'Use existing',
   identityLinkDevice: 'Link a new device',
   identitySetupTitle: 'Recovery words',

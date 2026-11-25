@@ -109,8 +109,8 @@ export const ShowsAnInvalidCode: Story = {
   },
   play: async ({ args, canvasElement }) => {
     const alert = await within(canvasElement).findByRole('alert', undefined, { timeout: 10_000 })
-    await expect(alert).toHaveTextContent('This code is not a link of Numen.')
-    await expect(args.onFailed).toHaveBeenCalledWith('This code is not a link of Numen.')
+    await expect(alert).toHaveTextContent('This code is not accepted.')
+    await expect(args.onFailed).toHaveBeenCalledWith('This code is not accepted.')
     await expect(args.onScanned).not.toHaveBeenCalled()
   },
 }

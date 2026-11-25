@@ -36,6 +36,7 @@ const stages = computed(() => getRestoreStages(props.slots, props.isBusy, props.
   >
     <QrScanner
       is-continuous
+      :rejected-message="words.identityRestoreRejectedCode"
       v-bind="camera === undefined ? {} : { camera }"
       @scanned="emit('scanned', $event)"
       @unavailable="emit('unavailable')"
