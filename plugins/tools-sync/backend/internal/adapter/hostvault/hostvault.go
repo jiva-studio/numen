@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/vaultnames"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
@@ -13,11 +14,12 @@ import (
 type Vaults struct {
 	client *host.Client
 	store  *host.StoreClient
+	names  *vaultnames.Edge
 }
 
 // New returns the vaults served by the clients of the host.
 func New(client *host.Client, store *host.StoreClient) *Vaults {
-	return &Vaults{client: client, store: store}
+	return &Vaults{client: client, store: store, names: vaultnames.New()}
 }
 
 // GetVaults lists every vault of the installation.
@@ -25,18 +27,26 @@ func (v *Vaults) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 	return v.client.GetVaults(ctx)
 }
 
-func (v *Vaults) GetFiles(id domain.VaultID) ports.Files { return v.client.With(id) }
+func (v *Vaults) GetFiles(id domain.VaultID) ports.Files {
+	return v.names.Files(id, v.client.With(id))
+}
 
-func (v *Vaults) GetNotes(id domain.VaultID) ports.Notes { return v.client.With(id) }
+func (v *Vaults) GetNotes(id domain.VaultID) ports.Notes {
+	return v.names.Notes(id, v.client.With(id), v.client.With(id))
+}
 
 // Store returns the store folder of the plugin in the vault.
 func (v *Vaults) Store(id domain.VaultID) ports.Store { return v.store.With(id) }
 
 // GetAbsent returns the files of the vault that the device lists and does not hold.
-func (v *Vaults) GetAbsent(id domain.VaultID) ports.Absent { return v.client.With(id) }
+func (v *Vaults) GetAbsent(id domain.VaultID) ports.Absent {
+	return v.names.Absent(id, v.client.With(id), v.client.With(id))
+}
 
 // GetTransfers returns what the host does with the bytes of the files of the vault.
-func (v *Vaults) GetTransfers(id domain.VaultID) ports.Transfers { return v.client.With(id) }
+func (v *Vaults) GetTransfers(id domain.VaultID) ports.Transfers {
+	return v.names.Transfers(id, v.client.With(id), v.client.With(id))
+}
 
 // AddManagedVault adds the folder as a vault that only the plugin with the id managedBy writes.
 func (v *Vaults) AddManagedVault(ctx context.Context, path, name, managedBy string) (domain.Vault, error) {
