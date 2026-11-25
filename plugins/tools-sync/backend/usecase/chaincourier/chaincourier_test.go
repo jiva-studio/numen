@@ -320,7 +320,10 @@ func newBackdatedAddition(t *testing.T) (observer *synctest.Computer, clock *syn
 	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	clock.Advance(30 * 24 * time.Hour)
+	clock.Advance(4 * 24 * time.Hour)
+	if err := first.SignIn(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	stranger, err := identity.NewDeviceKey(rand.Reader)
 	if err != nil {
 		t.Fatal(err)

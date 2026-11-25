@@ -1,11 +1,4 @@
-	openedBySecond, err := second.open.Execute(t.Context(), syncPlugin, []byte(sealContext), sealedByFirst)
-	if err != nil || string(openedBySecond) != "catalog of the first" {
-		t.Errorf("the second device opened %q with error %v, want the text of the first", openedBySecond, err)
-	}
-	if openedByFirst, err := first.open.Execute(t.Context(), syncPlugin, []byte(sealContext), sealedBySecond); err == nil {
-		t.Errorf("the revoked first device opened %q of the second", openedByFirst)
-	}if !chain.IsExtensionOf(firstChain) || len(devices) != 1 || !bytes.Equal(devices[0].Public.Sign, pending.DeviceSignKey) {
-		t.Errorf("devices = %d, want the chain of the first device extended by the pending device, which is the only active one", len(devices))package identity_test
+package identity_test
 
 import (
 	"bytes"
@@ -284,8 +277,8 @@ func TestCompleteRestore_JoinsTheAccountOfAnotherDeviceAndKeepsItsKeys(t *testin
 		t.Fatal(err)
 	}
 	devices := chain.ListDevices()
-	if !chain.IsExtensionOf(firstChain) || len(devices) != 2 || !bytes.Equal(devices[1].Public.Sign, pending.DeviceSignKey) {
-		t.Errorf("devices = %d, want the chain of the first device extended by the pending device", len(devices))
+	if !chain.IsExtensionOf(firstChain) || len(devices) != 1 || !bytes.Equal(devices[0].Public.Sign, pending.DeviceSignKey) {
+		t.Errorf("devices = %d, want the chain of the first device extended by the pending device, which is the only active one", len(devices))
 	}
 	if after, err := second.pending.Execute(t.Context()); err != nil || after.IsPending {
 		t.Errorf("pending = %+v, error = %v, want nothing pending", after, err)
@@ -322,9 +315,8 @@ func TestCompleteRestore_TheRestoredDeviceOpensWhatTheRevokedDeviceSealedAndNotT
 	if err != nil || string(openedBySecond) != "catalog of the first" {
 		t.Errorf("the second device opened %q with error %v, want the text of the first", openedBySecond, err)
 	}
-	openedByFirst, err := first.open.Execute(t.Context(), syncPlugin, []byte(sealContext), sealedBySecond)
-	if err != nil || string(openedByFirst) != "catalog of the second" {
-		t.Errorf("the first device opened %q with error %v, want the text of the second", openedByFirst, err)
+	if openedByFirst, err := first.open.Execute(t.Context(), syncPlugin, []byte(sealContext), sealedBySecond); err == nil {
+		t.Errorf("the revoked first device opened %q of the second", openedByFirst)
 	}
 }
 
