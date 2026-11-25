@@ -1,4 +1,4 @@
-import { createFollower } from '@numen/core-client'
+import { createStreamReader } from '@numen/core-client'
 import type { SlotLayout } from '@numen/plugin-loader'
 import type { WindowClients } from '@/shared/api/clients'
 
@@ -42,7 +42,7 @@ export function createSettingsFollower(
 ) {
   const abortController = new AbortController()
   let isOpen = true
-  const follow = createFollower({ isOpen: () => isOpen, setLost: () => undefined, wait })
+  const follow = createStreamReader({ isOpen: () => isOpen, setLost: () => undefined, wait })
   return {
     start: () =>
       follow(() => settings.watchSettings({}, { signal: abortController.signal }), refresh),

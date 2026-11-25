@@ -54,17 +54,16 @@ export interface ThemeSource {
 }
 
 /** What a follower reads of the window it follows for. */
-interface FollowerDeps {
+interface StreamReaderDeps {
   isOpen(): boolean
   setLost(message: string): void
   wait(ms: number): Promise<void>
 }
 
 /** Follows a stream for as long as the window is open, resuming it after a loss. */
-export type CreateFollower = (deps: FollowerDeps) => <T>(
-  stream: () => AsyncIterable<T>,
-  each: (item: T) => void | Promise<void>,
-) => Promise<void>
+export type CreateStreamReader = (
+  deps: StreamReaderDeps,
+) => <T>(stream: () => AsyncIterable<T>, each: (item: T) => void | Promise<void>) => Promise<void>
 
 /** The modes, in the order they are offered. */
 export const MODES: readonly Mode[] = ['system', 'light', 'dark']

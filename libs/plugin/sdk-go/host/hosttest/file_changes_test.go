@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 )
 
@@ -60,8 +61,16 @@ func TestAMovedNoteKeepsItsSourceAndARemovalDropsTheOtherEvents(t *testing.T) {
 	}
 	v.Remove("b.md")
 
+	moved, err := v.StatFile(t.Context(), "lakes/a.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	changes := readFeed(t, v, cursor).Changes
-	if len(changes) != 2 || changes[0] != (host.FileChange{SourceID: id, Path: "lakes/a.md", Event: host.EventFileMoved, Seq: cursor.Seq + 1}) ||
+	wantMoved := host.FileChange{
+		SourceID: id, Path: "lakes/a.md", Event: host.EventFileMoved, Seq: cursor.Seq + 1,
+		Hash: moved.Hash, Size: moved.Size, ModifiedAt: moved.ModTime.UnixNano(),
+	}
+	if len(changes) != 2 || changes[0] != wantMoved ||
 		changes[1].Event != host.EventFileRemoved || changes[1].Path != "b.md" {
 		t.Errorf("after the move and the removal the feed holds %+v", changes)
 	}
@@ -99,5 +108,76 @@ func TestTheStartOfTheFeedListsTheFilesAfterTrimmedRemovals(t *testing.T) {
 	page := readFeed(t, v, host.FileChangeCursor{FeedID: head.FeedID})
 	if page.IsReset || !slices.Equal(describe(page.Changes), []string{"b.md file.added"}) {
 		t.Errorf("the start of the feed answered %+v", page)
+	}
+}
+
+func TestAChangeHasTheHashSizeAndModificationTimeOfTheFile(t *testing.T) {
+	v := hosttest.New("garden")
+	start := readFeed(t, v, host.FileChangeCursor{}).Next
+	v.WriteFile("a.md", "A\n")
+	stat, err := v.StatFile(t.Context(), "a.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	changes := readFeed(t, v, start).Changes
+
+	if len(changes) != 1 {
+		t.Fatalf("the feed holds %+v, want one change", changes)
+	}
+	if got := changes[0]; got.Hash != domain.HashContent([]byte("A\n")) || got.Size != int64(len("A\n")) || got.ModifiedAt != stat.ModTime.UnixNano() {
+		t.Errorf("the change has hash %q, size %d, modified at %d, want those of the file: %q, %d, %d",
+			got.Hash, got.Size, got.ModifiedAt, domain.HashContent([]byte("A\n")), len("A\n"), stat.ModTime.UnixNano())
+	}
+}
+
+func TestAChangeAfterARewriteHasTheLatestContent(t *testing.T) {
+	v := hosttest.New("garden")
+	v.WriteFile("a.md", "A\n")
+	start := readFeed(t, v, host.FileChangeCursor{}).Next
+	v.WriteFile("a.md", "A, longer\n")
+	stat, err := v.StatFile(t.Context(), "a.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	changes := readFeed(t, v, start).Changes
+
+	if len(changes) != 1 || changes[0].Event != host.EventFileChanged {
+		t.Fatalf("the feed holds %+v, want one file.changed", changes)
+	}
+	if got := changes[0]; got.Hash != domain.HashContent([]byte("A, longer\n")) || got.Size != int64(len("A, longer\n")) || got.ModifiedAt != stat.ModTime.UnixNano() {
+		t.Errorf("the change has hash %q, size %d, modified at %d, want the latest content", got.Hash, got.Size, got.ModifiedAt)
+	}
+}
+
+func TestAnEarlierChangeHasTheLatestContentOfItsFile(t *testing.T) {
+	v := hosttest.New("garden")
+	start := readFeed(t, v, host.FileChangeCursor{}).Next
+	v.WriteFile("a.md", "A\n")
+	v.WriteFile("a.md", "A, longer\n")
+
+	changes := readFeed(t, v, start).Changes
+
+	if len(changes) != 2 {
+		t.Fatalf("the feed holds %+v, want two changes", changes)
+	}
+	for _, one := range changes {
+		if one.Hash != domain.HashContent([]byte("A, longer\n")) || one.Size != int64(len("A, longer\n")) {
+			t.Errorf("%s of %s has hash %q, size %d, want the latest content", one.Event, one.Path, one.Hash, one.Size)
+		}
+	}
+}
+
+func TestARemovalHasEmptyHashSizeAndModificationTime(t *testing.T) {
+	v := hosttest.New("garden")
+	v.WriteFile("a.md", "A\n")
+	start := readFeed(t, v, host.FileChangeCursor{}).Next
+	v.Remove("a.md")
+
+	changes := readFeed(t, v, start).Changes
+
+	if len(changes) != 1 || changes[0].Event != host.EventFileRemoved || changes[0].Hash != "" || changes[0].Size != 0 || changes[0].ModifiedAt != 0 {
+		t.Errorf("the feed holds %+v, want one removal with empty values", changes)
 	}
 }

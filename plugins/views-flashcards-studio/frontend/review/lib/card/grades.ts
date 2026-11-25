@@ -1,6 +1,6 @@
 /** How well a card was recalled, in this window's words and in the schema's. */
 import { Rating } from '../../../lib/wire/review'
-import { getNames } from '../../../lib/wire/names'
+import { getCodesByWord } from '../../../lib/wire/names'
 
 /** How well a card was recalled. The user picks one of the four. */
 export type Grade = 'again' | 'hard' | 'good' | 'easy'
@@ -29,6 +29,6 @@ const GRADE_BY_RATING: Readonly<Record<Rating, Grade | null>> = {
 }
 
 /** What the schema calls each of them, read off the words above. */
-export const RATING_BY_GRADE: Readonly<Record<Grade, Rating>> = getNames<Grade, Rating>(
+export const RATING_BY_GRADE: Readonly<Record<Grade, Rating>> = getCodesByWord<Grade, Rating>(
   GRADE_BY_RATING,
 )

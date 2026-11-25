@@ -2,7 +2,7 @@
  * Watches the tab links stream for this window, reports its linkable tabs,
  * opens tabs sent from other windows, and cancels the watch on close.
  */
-import { createFollower } from '@/shared/api/stream'
+import { createStreamReader } from '@/shared/api/stream'
 import type {
   WindowTabs,
   TabLinkGroup,
@@ -38,7 +38,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   let isOpen = true
   let isNewStream = false
 
-  const followStream = createFollower({
+  const followStream = createStreamReader({
     isOpen: () => isOpen,
     setLost: () => undefined,
     wait: deps.wait ?? wait,

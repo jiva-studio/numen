@@ -2,7 +2,7 @@
  * Background streaming subscriptions for the window.
  */
 import type { ShallowRef } from 'vue'
-import type { createFollower } from '@/shared/api/stream'
+import type { createStreamReader } from '@/shared/api/stream'
 import type { NoteApi, NoteEdit, useOpeningNote } from '@/entities/note'
 import type { FocusApi, Task, TaskApi } from '@/entities/window'
 import type { HealthApi, PluginHealthItem } from '@/entities/plugin'
@@ -16,7 +16,7 @@ export interface VaultScan {
 }
 
 /** Takes up a stream the same way each time it ends, or fails to open. */
-type Follows = ReturnType<typeof createFollower>
+type Follows = ReturnType<typeof createStreamReader>
 
 /** What the stream of the changes to the vault reaches. */
 export interface VaultStreamDeps {

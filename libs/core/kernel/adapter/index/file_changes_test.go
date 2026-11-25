@@ -119,7 +119,10 @@ func TestAMovedFileKeepsItsSourceAndHasOneMoveChange(t *testing.T) {
 	}
 
 	changes := listChanges(t, db, v, before)
-	want := []filechange.Change{{SourceID: id, Path: "science/Entropy.md", Event: manifest.EventFileMoved, Seq: before + 1, NoteTypes: []domain.NoteType{domain.TypeNote}}}
+	want := []filechange.Change{{
+		SourceID: id, Path: "science/Entropy.md", Event: manifest.EventFileMoved, Seq: before + 1,
+		NoteTypes: []domain.NoteType{domain.TypeNote}, Size: int64(len("Entropy")), ModifiedAt: getWalkedTime().UnixNano(),
+	}}
 	if !reflect.DeepEqual(changes, want) {
 		t.Errorf("the move recorded %+v, want %+v", changes, want)
 	}

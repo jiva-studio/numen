@@ -1,7 +1,7 @@
 /**
  * The plugins that run, as the frontends of the plugins watch them.
  */
-import { createFollower, createProcessClient } from '@numen/core-client'
+import { createStreamReader, createProcessClient } from '@numen/core-client'
 import type { ProcessHost } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import type { WindowClients } from '@/shared/api/clients'
@@ -19,7 +19,7 @@ export const createProcessHost = (
   return {
     watch: (handler) => {
       const listening = new AbortController()
-      const follower = createFollower({
+      const follower = createStreamReader({
         isOpen: () => !listening.signal.aborted,
         setLost: () => undefined,
         wait,

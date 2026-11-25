@@ -267,8 +267,11 @@ function onDismissLinkInspector() {
   stroke-width: 1.5;
 }
 
+/* The plus has room inside its own box, so the side before it takes less padding to look even with the
+   side after the text. */
 .plex__empty-create {
   margin-block-start: 0.75rem;
+  padding-inline-start: 0.625rem;
 }
 
 .plex__empty-title {
