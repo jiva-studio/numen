@@ -398,6 +398,13 @@ func (p *pass) readBody(ctx context.Context, file *transfer.File, size int64) (b
 	if err != nil {
 		return false, ignoreMissing(err)
 	}
+	if part.Stat.Size > note.SmallFileLimit {
+		file.Stat = &part.Stat
+		return true, nil
+	}
+	if int64(len(part.Content)) != part.Stat.Size {
+		return false, nil
+	}
 	file.Content = part.Content
 	return true, nil
 }
