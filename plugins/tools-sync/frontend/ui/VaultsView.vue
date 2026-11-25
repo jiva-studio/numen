@@ -10,7 +10,6 @@ import {
   ErrorState,
   getCurrentDate,
   IslandCard,
-  LoadingIndicator,
   type MenuItem,
 } from '@numen/ui'
 import type { VaultsClient } from '../api/vaults'
@@ -20,8 +19,8 @@ import DeleteCloudCopyDialog from './DeleteCloudCopyDialog.vue'
 import EndSyncDialog from './EndSyncDialog.vue'
 import EmptyBlock from './EmptyBlock.vue'
 import RowMenu from './RowMenu.vue'
-import SyncRow from './SyncRow.vue'
-import SyncStatus from './SyncStatus.vue'
+import VaultRow from './VaultRow.vue'
+import VaultRowSkeleton from './VaultRowSkeleton.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -88,9 +87,9 @@ function report(failure: unknown): void {
 
 <template>
   <IslandCard class="sync-card" :title="words.vaultsTitle" :aria-label="words.vaultsTitle">
-    <div v-if="status === 'loading'" class="sync-card__state">
-      <LoadingIndicator :label="words.loading" />
-    </div>
+    <ul v-if="status === 'loading'" class="sync-card__list" aria-busy="true">
+      <VaultRowSkeleton v-for="index in 2" :key="index" />
+    </ul>
     <div v-else-if="status === 'error'" class="sync-card__state">
       <ErrorState :message="error === '' ? words.loadFailed : error">
         <Button variant="outline" @click="onRetry">
@@ -111,10 +110,14 @@ function report(failure: unknown): void {
         :text="words.noVaultsText"
       />
       <ul v-else class="sync-card__list">
-        <SyncRow v-for="row in rows" :key="row.id" :name="row.name">
-          <SyncStatus :text="row.status" :tone="row.tone" />
-          <span v-if="row.size !== ''" class="sync-row__detail">{{ row.size }}</span>
-          <span v-if="row.detail !== ''" class="sync-row__detail">{{ row.detail }}</span>
+        <VaultRow
+          v-for="row in rows"
+          :key="row.id"
+          :name="row.name"
+          :kind="row.kind"
+          :status="row.status"
+          :details="[row.size, row.detail]"
+        >
           <template #actions>
             <template v-if="row.canResolve">
               <Button variant="outline" size="small" @click="onResolve(row.id, 'remove')">
@@ -137,7 +140,7 @@ function report(failure: unknown): void {
               @choose="askDelete(row)"
             />
           </template>
-        </SyncRow>
+        </VaultRow>
       </ul>
     </template>
     <EndSyncDialog

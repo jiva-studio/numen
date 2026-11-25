@@ -17,11 +17,14 @@ const REFRESH_MS = 15_000
 
 type RowTone = 'ok' | 'warning' | 'alarm'
 
+export type VaultRowKind = 'ok' | 'syncing' | 'off' | 'conflict'
+
 export interface VaultRow {
   readonly id: string
   readonly name: string
   readonly status: string
   readonly tone: RowTone
+  readonly kind: VaultRowKind
   readonly detail: string
   readonly canResolve: boolean
   readonly remoteId: string
@@ -82,6 +85,7 @@ const getCloudRow = (one: RemoteVault): VaultRow => ({
   name: one.name,
   status: words.notSyncing,
   tone: 'warning',
+  kind: 'off',
   detail: '',
   canResolve: false,
   remoteId: one.remoteId,
@@ -104,18 +108,20 @@ const getRow = (
   }
   const paused = getPausedLabel(vault.pausedDeletions)
   if (paused !== '') {
-    return { ...base, status: paused, tone: 'warning', detail: '', canResolve: true }
+    return { ...base, status: paused, tone: 'warning', kind: 'syncing', detail: '', canResolve: true }
   }
   const synced = getSyncedLabel(vault, now)
   if (vault.conflictCount > 0) {
     const detail = words.conflicts(vault.conflictCount)
-    return { ...base, status: words.statusProblem, tone: 'alarm', detail, canResolve: false }
+    const status = words.statusProblem
+    return { ...base, status, tone: 'alarm', kind: 'conflict', detail, canResolve: false }
   }
   if (!isReachable) {
     const status = words.statusWaiting
-    return { ...base, status, tone: 'warning', detail: synced, canResolve: false }
+    return { ...base, status, tone: 'warning', kind: 'syncing', detail: synced, canResolve: false }
   }
-  return { ...base, status: words.statusUpToDate, tone: 'ok', detail: synced, canResolve: false }
+  const status = words.statusUpToDate
+  return { ...base, status, tone: 'ok', kind: 'ok', detail: synced, canResolve: false }
 }
 
 export function useVaults(options: UseVaultsOptions) {

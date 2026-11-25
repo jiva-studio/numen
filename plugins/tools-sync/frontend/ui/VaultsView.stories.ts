@@ -87,6 +87,11 @@ type Story = StoryObj<typeof meta>
 
 export const Loading: Story = {
   args: { client: createClient({ isPending: true }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    const rows = within(canvasElement).getAllByRole('listitem')
+    await expect(rows).toHaveLength(2)
+    await expect(rows[0]).toHaveTextContent('')
+  },
 }
 
 export const LoadFailed: Story = {

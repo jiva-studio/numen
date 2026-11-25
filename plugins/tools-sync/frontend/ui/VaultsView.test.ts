@@ -122,6 +122,35 @@ describe('VaultsView', () => {
     expect(rows[1]).toContain('3.5 MB in the cloud')
   })
 
+  it('shows the state word and the size of a vault in one line', async () => {
+    const { wrapper } = await render({
+      vaults: [createVault({ id: 'b', name: 'Synced', state: 'connected', remoteId: 'bb22' })],
+      remote: [{ remoteId: 'bb22', name: 'Synced', isConnected: true, sizeBytes: 1_048_576 }],
+    })
+
+    const line = wrapper.get('li').get('[role="status"]').text()
+    expect(line.startsWith('Up to date')).toBe(true)
+    expect(line).toContain('1 MB in the cloud')
+  })
+
+  it('shows two placeholder rows without text while the vaults load, then the rows', async () => {
+    const client = createClient({
+      vaults: [createVault({ name: 'Synced', state: 'connected' })],
+      remote: [],
+    })
+    const wrapper = mount(VaultsView, { props: { client, now: () => NOW } })
+
+    expect(wrapper.findAll('li')).toHaveLength(2)
+    expect(wrapper.get('ul').attributes('aria-busy')).toBe('true')
+    expect(wrapper.get('ul').text()).toBe('')
+
+    await flushPromises()
+
+    expect(wrapper.findAll('li')).toHaveLength(1)
+    expect(wrapper.get('ul').attributes('aria-busy')).toBeUndefined()
+    expect(wrapper.text()).toContain('Synced')
+  })
+
   it('offers the removals that wait for an answer', async () => {
     const { wrapper, client } = await render({
       vaults: [

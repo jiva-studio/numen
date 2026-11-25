@@ -71,6 +71,7 @@ describe('useVaults', () => {
     expect(model.state.rows.value.at(0)).toMatchObject({
       status: 'Up to date',
       tone: 'ok',
+      kind: 'ok',
       detail: 'Last sync 5 minutes ago',
     })
   })
@@ -107,6 +108,7 @@ describe('useVaults', () => {
     expect(model.state.rows.value.at(0)).toMatchObject({
       status: 'Needs attention',
       tone: 'alarm',
+      kind: 'conflict',
       detail: '2 notes changed on two devices',
     })
   })
@@ -121,6 +123,7 @@ describe('useVaults', () => {
     expect(model.state.rows.value.at(0)).toMatchObject({
       status: 'Waiting for the server',
       tone: 'warning',
+      kind: 'syncing',
     })
     expect(model.state.canGetFromCloud.value).toBe(false)
   })
