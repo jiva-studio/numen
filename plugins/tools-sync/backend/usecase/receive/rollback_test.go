@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
@@ -258,6 +259,9 @@ func TestAcceptInvitation_RefusesAnOwnerChainShorterThanTheOneOfTheInvitation(t 
 		t.Fatal(err)
 	}
 	synctest.NewSecondComputer(t, server, clock, "Copy", words)
+	if adopted, err := chaincourier.NewAdopt(first.ChainDeps()).Execute(t.Context()); err != nil || !adopted {
+		t.Fatalf("adopted = %v, error = %v, want the chain of the second device adopted", adopted, err)
+	}
 	second := synctest.NewReaderComputer(t, server, clock, "Second")
 	invitation := w.shareWith(t, second, "Bo")
 	deps := second.ReceiveDeps()
