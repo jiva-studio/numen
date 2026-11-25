@@ -51,7 +51,7 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
     const before = account.status.value
     try {
       await read()
-    } catch (failure) {
+    } catch {
       account.status.value = 'unreachable'
       return
     }
@@ -134,5 +134,5 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
     followServer?.dispose()
   })
 
-  return { account, server, waiting, problem, plansProblem, load, readIfReachable, change, manage }
+  return { account, server, waiting, problem, plansProblem, load, readIfReachable, actions: { change, manage } }
 }

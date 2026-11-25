@@ -1,5 +1,5 @@
 /** How many runs in a row may fail before the poller gives up. */
-export const MAX_FAILURES = 5
+const MAX_FAILURES = 5
 
 /**
  * Runs a task again after a delay until it is stopped; the next run is set by the task itself. A task that

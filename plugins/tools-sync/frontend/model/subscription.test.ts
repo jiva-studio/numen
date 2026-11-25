@@ -636,7 +636,7 @@ describe('useSubscription change of the plan', () => {
     const { subscription, openExternal } = mountSubscription(client)
     await subscription.session.load()
 
-    await subscription.session.change('pro')
+    await subscription.session.actions.change('pro')
 
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
     expect(subscription.summary.planLine.value).toBe('Pro, 250 GB, $30 / month')
@@ -653,7 +653,7 @@ describe('useSubscription change of the plan', () => {
     const { subscription } = mountSubscription(client)
     await subscription.session.load()
 
-    await subscription.session.change('pro')
+    await subscription.session.actions.change('pro')
 
     expect(subscription.session.problem.value).toContain('Could not reach the sync server')
     expect(subscription.summary.planLine.value).toBe('Plus, 100 GB, $15 / month')
@@ -670,7 +670,7 @@ describe('useSubscription change of the plan', () => {
     const { subscription } = mountSubscription(client)
     await subscription.session.load()
 
-    await subscription.session.change('pro')
+    await subscription.session.actions.change('pro')
 
     expect(subscription.summary.planLine.value).toBe('Pro, 250 GB, $30 / month')
     expect(subscription.session.problem.value).toBe('the account has this plan already')
@@ -687,7 +687,7 @@ describe('useSubscription change of the plan', () => {
     const { subscription } = mountSubscription(client)
     await subscription.session.load()
 
-    await subscription.session.change('pro')
+    await subscription.session.actions.change('pro')
 
     expect(subscription.session.account.phase.value).toBe('grace')
     expect(subscription.offers.changeOffers.value).toStrictEqual([])
@@ -704,7 +704,7 @@ describe('useSubscription change of the plan', () => {
     const { subscription } = mountSubscription(client)
     await subscription.session.load()
 
-    await subscription.session.change('pro')
+    await subscription.session.actions.change('pro')
 
     expect(subscription.session.problem.value).toBe('the sync server does not sell subscriptions')
     expect(subscription.summary.planLine.value).toBe('Plus, 100 GB, $15 / month')
@@ -717,7 +717,7 @@ describe('useSubscription portal', () => {
     const { subscription, openExternal } = mountSubscription(client)
     await subscription.session.load()
 
-    await subscription.session.manage()
+    await subscription.session.actions.manage()
 
     expect(openExternal).toHaveBeenCalledExactlyOnceWith(PORTAL_URL)
     expect(subscription.session.problem.value).toBe('')
@@ -731,7 +731,7 @@ describe('useSubscription portal', () => {
     const { subscription, openExternal } = mountSubscription(client)
     await subscription.session.load()
 
-    await subscription.session.manage()
+    await subscription.session.actions.manage()
 
     expect(openExternal).not.toHaveBeenCalled()
     expect(subscription.session.problem.value).toBe(
@@ -749,7 +749,7 @@ describe('useSubscription portal', () => {
     const { subscription } = mountSubscription(client, openExternal)
     await subscription.session.load()
 
-    await subscription.session.manage()
+    await subscription.session.actions.manage()
 
     expect(subscription.session.problem.value).toBe('Numen Sync may not open the browser.')
   })

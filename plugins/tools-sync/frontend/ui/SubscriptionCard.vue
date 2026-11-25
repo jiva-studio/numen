@@ -32,7 +32,8 @@ const { session, payment, offers, summary, accountData, start } = useSubscriptio
   settings: props.settings,
   refreshMs: props.refreshMs,
 })
-const { problem, plansProblem, change, manage } = session
+const { problem, plansProblem } = session
+const { change, manage } = session.actions
 const { status } = session.account
 const { waiting, starting, startPurchase, cancel } = payment
 const { buyOffers, changeOffers, currentOffer, canManage } = offers
