@@ -16,8 +16,8 @@ const { rows, errorMessage, tap, dropDownload } = useFileTree((path) => emit('op
     <ul>
       <li v-for="row in rows" :key="row.path" data-testid="file-row" @click="tap(row)">
         <span>{{ row.name }}</span>
-        <span v-if="row.isDownloading"> Downloading</span>
-        <span v-else-if="row.isAbsent"> Not downloaded</span>
+        <span v-if="row.isDownloading">Downloading</span>
+        <span v-else-if="row.isAbsent">Not downloaded</span>
         <button
           v-if="!row.isFolder && !row.isAbsent && !row.isDownloading"
           type="button"

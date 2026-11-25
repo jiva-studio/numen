@@ -13,7 +13,12 @@ const start = vi.hoisted(() => ({ startCore: vi.fn() }))
 
 vi.mock('@/entities/core', () => start)
 
-const guide: FileRow = { path: 'Books/Guide.pdf', name: 'Guide.pdf', isFolder: false, isAbsent: true }
+const guide: FileRow = {
+  path: 'Books/Guide.pdf',
+  name: 'Guide.pdf',
+  isFolder: false,
+  isAbsent: true,
+}
 const list: FileRow = {
   path: 'Shopping list.md',
   name: 'Shopping list.md',
@@ -21,7 +26,10 @@ const list: FileRow = {
   isAbsent: false,
 }
 
-function coreWith(rows: FileRow[], answers: Partial<Pick<Core, 'fetchFile' | 'dropDownload'>> = {}) {
+function coreWith(
+  rows: FileRow[],
+  answers: Partial<Pick<Core, 'fetchFile' | 'dropDownload'>> = {},
+) {
   const core = {
     listFiles: vi.fn(async () => rows),
     fetchFile: vi.fn(async () => ({ ok: true as const, value: null })),
@@ -115,7 +123,10 @@ describe('tapping a file', () => {
 
   it('warns in words and opens nothing when the download fails', async () => {
     coreWith([guide], {
-      fetchFile: vi.fn(async () => ({ ok: false as const, error: 'Could not reach the sync server' })),
+      fetchFile: vi.fn(async () => ({
+        ok: false as const,
+        error: 'Could not reach the sync server',
+      })),
     })
     const page = await showFiles()
 
@@ -133,7 +144,9 @@ describe('removing the download of a file', () => {
     coreWith([list, guide])
     const page = await showFiles()
 
-    expect(rowOf(page, 'Shopping list.md')?.find('[data-testid="drop-download"]').exists()).toBe(true)
+    expect(rowOf(page, 'Shopping list.md')?.find('[data-testid="drop-download"]').exists()).toBe(
+      true,
+    )
     expect(rowOf(page, 'Guide.pdf')?.find('[data-testid="drop-download"]').exists()).toBe(false)
   })
 
@@ -165,5 +178,99 @@ describe('removing the download of a file', () => {
       'The file has changes that are not sent',
     )
     expect(rowOf(page, 'Shopping list.md')?.text()).not.toContain(NOT_DOWNLOADED)
+  })
+})
+
+describe('a failure that is thrown', () => {
+  it('stops showing a download that threw and shows why', async () => {
+    coreWith([guide], { fetchFile: vi.fn(() => Promise.reject(new Error('the link broke'))) })
+    const page = await showFiles()
+
+    await rowOf(page, 'Guide.pdf')?.trigger('click')
+    await flushPromises()
+
+    expect(rowOf(page, 'Guide.pdf')?.text()).not.toContain('Downloading')
+    expect(rowOf(page, 'Guide.pdf')?.text()).toContain(NOT_DOWNLOADED)
+    expect(page.find('[data-testid="error"]').exists()).toBe(true)
+    expect(page.emitted('open')).toBeUndefined()
+  })
+
+  it('shows why a removal of a download threw and keeps the row downloaded', async () => {
+    coreWith([list], { dropDownload: vi.fn(() => Promise.reject(new Error('the link broke'))) })
+    const page = await showFiles()
+
+    await rowOf(page, 'Shopping list.md')?.find('[data-testid="drop-download"]').trigger('click')
+    await flushPromises()
+
+    expect(page.find('[data-testid="error"]').exists()).toBe(true)
+    expect(rowOf(page, 'Shopping list.md')?.text()).not.toContain(NOT_DOWNLOADED)
+  })
+})
+
+describe('moving between folders', () => {
+  const books: FileRow = { path: 'Books', name: 'Books', isFolder: true, isAbsent: false }
+  const notes: FileRow = { path: 'Notes', name: 'Notes', isFolder: true, isAbsent: false }
+  const inBooks: FileRow = {
+    path: 'Books/Atlas.md',
+    name: 'Atlas.md',
+    isFolder: false,
+    isAbsent: false,
+  }
+  const inNotes: FileRow = {
+    path: 'Notes/Diary.md',
+    name: 'Diary.md',
+    isFolder: false,
+    isAbsent: false,
+  }
+
+  it('shows the folder the person tapped last when the answers come in the other order', async () => {
+    const answers = new Map<string, (rows: FileRow[]) => void>()
+    const core = coreWith([books, notes])
+    core.listFiles.mockImplementation((path: string) =>
+      path === ''
+        ? Promise.resolve([books, notes])
+        : new Promise<FileRow[]>((resolve) => answers.set(path, resolve)),
+    )
+    const page = await showFiles()
+
+    await rowOf(page, 'Books')?.trigger('click')
+    await rowOf(page, 'Notes')?.trigger('click')
+    answers.get('Notes')?.([inNotes])
+    await flushPromises()
+    answers.get('Books')?.([inBooks])
+    await flushPromises()
+
+    expect(
+      page.findAll('[data-testid="file-row"]').map((row) => row.get('span').text()),
+    ).toStrictEqual(['Diary.md'])
+  })
+
+  it('clears the warning when a folder shows', async () => {
+    const core = coreWith([books])
+    core.listFiles.mockImplementationOnce(() => Promise.resolve([books]))
+    core.listFiles.mockImplementationOnce(() => Promise.reject(new Error('the link broke')))
+    core.listFiles.mockImplementationOnce(() => Promise.resolve([inBooks]))
+    const page = await showFiles()
+
+    await rowOf(page, 'Books')?.trigger('click')
+    await flushPromises()
+    expect(page.find('[data-testid="error"]').exists()).toBe(true)
+
+    await rowOf(page, 'Books')?.trigger('click')
+    await flushPromises()
+    expect(page.find('[data-testid="error"]').exists()).toBe(false)
+  })
+
+  it('draws nothing from a list that arrives after the page is gone', async () => {
+    let answer: (rows: FileRow[]) => void = () => undefined
+    const core = coreWith([books])
+    core.listFiles.mockImplementation(() => new Promise<FileRow[]>((resolve) => (answer = resolve)))
+    const page = mount(FileTreePage)
+    await flushPromises()
+    page.unmount()
+    answer([inBooks])
+    await flushPromises()
+
+    expect(page.findAll('[data-testid="file-row"]')).toHaveLength(0)
   })
 })

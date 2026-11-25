@@ -1,4 +1,4 @@
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { startCore, type Core, type FileRow } from '@/entities/core'
 import { formatError } from '@/shared/api/errors'
 
@@ -18,14 +18,21 @@ export function useFileTree(open: (path: string) => void) {
   const rows = ref<TreeRow[]>([])
   const errorMessage = ref('')
 
+  let latestShow = 0
+  let isDisposed = false
+
   async function show(next: string): Promise<void> {
     if (!core.value) return
+    latestShow += 1
+    const mine = latestShow
+    errorMessage.value = ''
     try {
       const listed = await core.value.listFiles(next)
+      if (isDisposed || mine !== latestShow) return
       rows.value = listed.map((row) => ({ ...row, isDownloading: false }))
       folder.value = next
     } catch (why) {
-      errorMessage.value = formatError(why)
+      if (!isDisposed && mine === latestShow) errorMessage.value = formatError(why)
     }
   }
 
@@ -33,16 +40,25 @@ export function useFileTree(open: (path: string) => void) {
     rows.value = rows.value.map((row) => (row.path === path ? { ...row, ...changes } : row))
   }
 
-  async function download(row: TreeRow): Promise<void> {
-    if (!core.value) return
-    change(row.path, { isDownloading: true })
-    const answer = await core.value.fetchFile(row.path)
-    if (!answer.ok) {
-      change(row.path, { isDownloading: false })
-      errorMessage.value = answer.error
-      return
+  async function fetchRow(path: string): Promise<boolean> {
+    if (!core.value) return false
+    try {
+      const answer = await core.value.fetchFile(path)
+      if (!answer.ok) errorMessage.value = answer.error
+      return answer.ok
+    } catch (why) {
+      errorMessage.value = formatError(why)
+      return false
+    } finally {
+      change(path, { isDownloading: false })
     }
-    change(row.path, { isDownloading: false, isAbsent: false })
+  }
+
+  async function download(row: TreeRow): Promise<void> {
+    errorMessage.value = ''
+    change(row.path, { isDownloading: true })
+    if (!(await fetchRow(row.path)) || isDisposed) return
+    change(row.path, { isAbsent: false })
     open(row.path)
   }
 
@@ -55,12 +71,14 @@ export function useFileTree(open: (path: string) => void) {
 
   async function dropDownload(row: TreeRow): Promise<void> {
     if (!core.value) return
-    const answer = await core.value.dropDownload(row.path)
-    if (!answer.ok) {
-      errorMessage.value = answer.error
-      return
+    errorMessage.value = ''
+    try {
+      const answer = await core.value.dropDownload(row.path)
+      if (!answer.ok) errorMessage.value = answer.error
+      else change(row.path, { isAbsent: true })
+    } catch (why) {
+      errorMessage.value = formatError(why)
     }
-    change(row.path, { isAbsent: true })
   }
 
   onMounted(async () => {
@@ -70,6 +88,10 @@ export function useFileTree(open: (path: string) => void) {
     } catch (why) {
       errorMessage.value = formatError(why)
     }
+  })
+
+  onBeforeUnmount(() => {
+    isDisposed = true
   })
 
   return { folder, rows, errorMessage, tap, dropDownload, show }
