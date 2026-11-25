@@ -45,9 +45,3 @@ export const formatVaultSize = (bytes: number): string => {
   const shown = unit === 0 ? Math.round(value) : Number(value.toFixed(value >= 10 ? 0 : 1))
   return `${shown} ${UNITS[unit]}`
 }
-
-/** The path of a vault called `name` inside `folder`, written with the separator the folder uses. */
-export const joinFolder = (folder: string, name: string): string => {
-  const separator = folder.includes('\\') && !folder.includes('/') ? '\\' : '/'
-  return folder.endsWith(separator) ? `${folder}${name}` : `${folder}${separator}${name}`
-}

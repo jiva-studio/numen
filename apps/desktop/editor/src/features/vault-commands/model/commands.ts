@@ -27,7 +27,7 @@ import { openCloudVault } from './openCloudVault'
 import { openAfterSavingTabs, type TabsHold } from './leaveVault'
 
 /** What getting a cloud vault uses: the vaults known, the calls that get one, and the question of where. */
-export interface CloudVaultsDeps {
+interface CloudVaultsDeps {
   readonly known: Pick<CloudVaults, 'all' | 'refresh'>
   readonly remote: Pick<RemoteVaults, 'suggestPath' | 'open'>
   readonly ask: Pick<PickerHost, 'selectOption'>

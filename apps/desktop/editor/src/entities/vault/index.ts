@@ -10,9 +10,7 @@ export {
   findCloudRemoteId,
   formatVaultSize,
   getCloudRowId,
-  joinFolder,
   type CloudVault,
-  type VaultPlace,
 } from './lib/cloudVault'
 export { createRemoteVaults, type RemoteVaults } from './api/remoteVaults'
 export { useCloudVaults, type CloudVaults } from './model/useCloudVaults'

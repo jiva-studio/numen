@@ -3,7 +3,6 @@ import {
   findCloudRemoteId,
   formatVaultSize,
   getCloudRowId,
-  joinFolder,
   selectNewCloudVaults,
 } from './cloudVault'
 
@@ -37,15 +36,5 @@ describe('the cloud vaults on show', () => {
   it('give a row an id that no local vault has, and read the vault back from it', () => {
     expect(findCloudRemoteId(getCloudRowId('hare'))).toBe('hare')
     expect(findCloudRemoteId('3f2a-local-vault')).toBe('')
-  })
-})
-
-describe('a folder and a name', () => {
-  it.each([
-    ['/home/lena/Vaults', 'Hare', '/home/lena/Vaults/Hare'],
-    ['/home/lena/Vaults/', 'Hare', '/home/lena/Vaults/Hare'],
-    ['C:\\Users\\lena', 'Hare', 'C:\\Users\\lena\\Hare'],
-  ])('join %s and %s as %s', (folder, name, path) => {
-    expect(joinFolder(folder, name)).toBe(path)
   })
 })
