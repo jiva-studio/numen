@@ -186,7 +186,7 @@ func TestAPathThatIsNotValidIsAnInvalidPathError(t *testing.T) {
 	}
 }
 
-func TestAFailedConnectionTakesTheVaultOffTheListAndRemovesTheFolderTheCallMade(t *testing.T) {
+func TestOpenRemoteVault_ConnectFails_RemovesTheVaultAndTheCreatedFolder(t *testing.T) {
 	f := newRemoteFixture(t)
 	path := filepath.Join(f.parent, "Notes")
 	failure := errors.New("the server is down")
@@ -241,7 +241,7 @@ func TestAFailedConnectionKeepsAFileThatIsOlderThanTheCall(t *testing.T) {
 		if err := os.WriteFile(kept, []byte("x"), 0o600); err != nil {
 			t.Error(err)
 		}
-		old := time.Now().Add(-time.Hour)
+		old := testsupport.GetMachine().Now().Add(-time.Hour)
 		if err := os.Chtimes(kept, old, old); err != nil {
 			t.Error(err)
 		}
@@ -270,7 +270,7 @@ func TestRemoteVaultsAreListedFromTheProvider(t *testing.T) {
 	}
 }
 
-func TestAProviderThatFailsOrOffersNothingGivesAnEmptyList(t *testing.T) {
+func TestListRemoteVaults_ProviderFailsOrOffersNothing_ReturnsEmptyList(t *testing.T) {
 	cases := map[string]*fakeProvider{
 		"failure": {listFailure: errors.New("the plugin is not installed"), listed: []vaultdomain.RemoteVault{{RemoteID: "r-1"}}},
 		"nothing": {},

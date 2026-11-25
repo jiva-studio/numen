@@ -117,7 +117,7 @@ func TestListingRemoteVaultsCallsTheEnabledPluginThatProvidesVaults(t *testing.T
 	}
 }
 
-func TestConnectingARemoteVaultCallsThePluginAndKeepsItsRefusal(t *testing.T) {
+func TestConnectRemoteVault_PluginFailure_ReturnsTheError(t *testing.T) {
 	plugin := &cloud{err: connect.NewError(connect.CodeFailedPrecondition, errors.New("Sign in to connect the vault"))}
 	host := startHost(t, providerManifest, func(mux *http.ServeMux) {
 		mux.Handle(numenv1connect.NewVaultProviderServiceHandler(plugin))

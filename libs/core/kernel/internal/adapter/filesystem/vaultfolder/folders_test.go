@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfolder"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 func writeFile(t *testing.T, path string, modified time.Time) {
@@ -20,14 +21,15 @@ func writeFile(t *testing.T, path string, modified time.Time) {
 }
 
 func TestTheStateOfAPathTellsAbsentFileEmptyAndFilledFolder(t *testing.T) {
+	clock := testsupport.NewClock()
 	root := t.TempDir()
 	filled := filepath.Join(root, "filled")
 	if err := os.Mkdir(filled, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, filepath.Join(filled, "a.md"), time.Now())
+	writeFile(t, filepath.Join(filled, "a.md"), clock.Now())
 	file := filepath.Join(root, "file.md")
-	writeFile(t, file, time.Now())
+	writeFile(t, file, clock.Now())
 	var folders vaultfolder.Folders
 
 	absent, absentErr := folders.GetFolderState(filepath.Join(root, "none"))
@@ -72,8 +74,9 @@ func TestAFolderIsMadeEmpty(t *testing.T) {
 }
 
 func TestOnlyWhatWasMadeSinceTheCallIsRemoved(t *testing.T) {
+	clock := testsupport.NewClock()
 	path := t.TempDir()
-	since := time.Now()
+	since := clock.Now()
 	service := filepath.Join(path, ".numen")
 	if err := os.Mkdir(service, 0o755); err != nil {
 		t.Fatal(err)
@@ -94,9 +97,10 @@ func TestOnlyWhatWasMadeSinceTheCallIsRemoved(t *testing.T) {
 	}
 }
 
-func TestAFolderHoldingAFileOlderThanTheCallKeepsEverything(t *testing.T) {
+func TestRemoveCreated_FileOlderThanSince_KeepsAllEntries(t *testing.T) {
+	clock := testsupport.NewClock()
 	path := t.TempDir()
-	since := time.Now()
+	since := clock.Now()
 	writeFile(t, filepath.Join(path, "mine.md"), since.Add(-time.Hour))
 	writeFile(t, filepath.Join(path, "ours.md"), since)
 	var folders vaultfolder.Folders
@@ -115,6 +119,7 @@ func TestAFolderHoldingAFileOlderThanTheCallKeepsEverything(t *testing.T) {
 }
 
 func TestAFolderIsRemovedOnlyWhenItIsEmpty(t *testing.T) {
+	clock := testsupport.NewClock()
 	root := t.TempDir()
 	empty := filepath.Join(root, "empty")
 	filled := filepath.Join(root, "filled")
@@ -123,7 +128,7 @@ func TestAFolderIsRemovedOnlyWhenItIsEmpty(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	writeFile(t, filepath.Join(filled, "a.md"), time.Now())
+	writeFile(t, filepath.Join(filled, "a.md"), clock.Now())
 	var folders vaultfolder.Folders
 
 	if err := folders.RemoveEmptyFolder(empty); err != nil {

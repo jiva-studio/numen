@@ -167,7 +167,7 @@ func TestAMissingRemoteVaultIsAnInvalidArgument(t *testing.T) {
 	}
 }
 
-func TestTheRefusalOfTheProviderReachesTheWindowWithItsCodeAndMessage(t *testing.T) {
+func TestOpenRemoteVault_ProviderFailure_ReturnsItsCodeAndMessage(t *testing.T) {
 	f := newFixture(t)
 	f.provider.connectError = connect.NewError(connect.CodeFailedPrecondition, errors.New("Sign in to open the vault"))
 	path := filepath.Join(f.parent, "Notes")

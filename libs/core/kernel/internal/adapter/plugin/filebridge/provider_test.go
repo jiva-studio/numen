@@ -118,7 +118,7 @@ func TestFetchingAFileCallsTheEnabledPluginThatProvidesFiles(t *testing.T) {
 	}
 }
 
-func TestDropDownload_PluginRefusal_ReturnsRefusal(t *testing.T) {
+func TestDropDownload_PluginFailure_ReturnsTheError(t *testing.T) {
 	plugin := &storage{err: connect.NewError(connect.CodeFailedPrecondition, errors.New("The file has changes that are not sent"))}
 	host := startHost(t, providerManifest, func(mux *http.ServeMux) {
 		mux.Handle(numenv1connect.NewFileProviderServiceHandler(plugin))

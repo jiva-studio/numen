@@ -22,7 +22,7 @@ func TestTheFolderForNewVaultsIsReadFromTheFile(t *testing.T) {
 	}
 }
 
-func TestTheFolderForNewVaultsIsKeptWhenTheFileIsWrittenAgain(t *testing.T) {
+func TestNewVaultsFolder_AfterRewrite_IsUnchanged(t *testing.T) {
 	file := readFileWith(t, `{"app":{"vaults":{"folder":"/srv/vaults"}}}`)
 
 	written, err := file.WriteJSON()
