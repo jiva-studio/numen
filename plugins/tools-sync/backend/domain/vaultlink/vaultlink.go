@@ -11,8 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 )
 
 const (
@@ -25,20 +23,26 @@ var ErrNotConnected = errors.New("the vault is not connected to a synced vault")
 
 var errNoKeys = errors.New("the vault has no key")
 
+// FeedCursor is the place in the file change feed of the host that the vault was read up to.
+type FeedCursor struct {
+	FeedID string `json:"feedId"`
+	Seq    int64  `json:"seq"`
+}
+
 // Link is link.json of a connected vault.
 type Link struct {
-	RemoteVaultID  string                `json:"remoteVaultId"`
-	SealedKey      []byte                `json:"sealedKey"`
-	LaterKeys      []SealedKey           `json:"laterKeys,omitempty"`
-	CatalogName    string                `json:"catalogName"`
-	ServerSeq      uint64                `json:"serverSeq"`
-	FeedCursor     host.FileChangeCursor `json:"feedCursor"`
-	RestoreEpochID []byte                `json:"restoreEpochId,omitempty"`
-	Recovery       *RecoveryProgress     `json:"recovery,omitempty"`
-	Removed        []RemovedFile         `json:"removed,omitempty"`
-	Retired        []RetiredFile         `json:"retired,omitempty"`
-	Kind           string                `json:"kind,omitempty"`
-	Received       *Received             `json:"received,omitempty"`
+	RemoteVaultID  string            `json:"remoteVaultId"`
+	SealedKey      []byte            `json:"sealedKey"`
+	LaterKeys      []SealedKey       `json:"laterKeys,omitempty"`
+	CatalogName    string            `json:"catalogName"`
+	ServerSeq      uint64            `json:"serverSeq"`
+	FeedCursor     FeedCursor        `json:"feedCursor"`
+	RestoreEpochID []byte            `json:"restoreEpochId,omitempty"`
+	Recovery       *RecoveryProgress `json:"recovery,omitempty"`
+	Removed        []RemovedFile     `json:"removed,omitempty"`
+	Retired        []RetiredFile     `json:"retired,omitempty"`
+	Kind           string            `json:"kind,omitempty"`
+	Received       *Received         `json:"received,omitempty"`
 }
 
 // RemoteVault is a synced vault of the account, with its last name.

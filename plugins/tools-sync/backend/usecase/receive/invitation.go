@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -280,7 +279,7 @@ func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o o
 		return err
 	}
 	link := vaultlink.Link{
-		RemoteVaultID: "", SealedKey: nil, LaterKeys: nil, CatalogName: read.position.Name, ServerSeq: 0, FeedCursor: host.FileChangeCursor{FeedID: "", Seq: 0},
+		RemoteVaultID: "", SealedKey: nil, LaterKeys: nil, CatalogName: read.position.Name, ServerSeq: 0, FeedCursor: vaultlink.FeedCursor{FeedID: "", Seq: 0},
 		RestoreEpochID: nil, Recovery: nil, Removed: nil, Retired: nil,
 		Kind: vaultlink.KindReceived, Received: &received,
 	}

@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
 func TestLink_HasTheKeysOfLinkJSON(t *testing.T) {
 	link := vaultlink.Link{
 		RemoteVaultID: "0a0b0c", SealedKey: []byte{1, 2, 3}, CatalogName: "Test", ServerSeq: 7,
-		FeedCursor: host.FileChangeCursor{FeedID: "feed-1", Seq: 9},
+		FeedCursor: vaultlink.FeedCursor{FeedID: "feed-1", Seq: 9},
 	}
 
 	raw, err := json.Marshal(link)
@@ -43,7 +42,7 @@ func TestLink_HasTheKeysOfLinkJSON(t *testing.T) {
 func TestLink_ReadsBackWhatItWrote(t *testing.T) {
 	link := vaultlink.Link{
 		RemoteVaultID: "0a0b0c", SealedKey: []byte{1, 2, 3}, CatalogName: "Test", ServerSeq: 7,
-		FeedCursor: host.FileChangeCursor{FeedID: "feed-1", Seq: 9},
+		FeedCursor: vaultlink.FeedCursor{FeedID: "feed-1", Seq: 9},
 	}
 	raw, err := json.Marshal(link)
 	if err != nil {
