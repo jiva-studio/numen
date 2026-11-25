@@ -12,18 +12,33 @@ import (
 // ErrTransferStalled means a transfer of a blob moved no byte for the idle time of the client.
 var ErrTransferStalled = errors.New("the transfer of a blob stalled")
 
+// Timer is a started timer of a Timers.
+type Timer interface {
+	Reset(d time.Duration) bool
+	Stop() bool
+}
+
+// Timers starts the timers that end a transfer which moves no byte for the idle time.
+type Timers interface {
+	AfterFunc(d time.Duration, f func()) Timer
+}
+
+type systemTimers struct{}
+
+func (systemTimers) AfterFunc(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) }
+
 // progressTimer cancels a transfer that moves no byte for its idle time.
 type progressTimer struct {
 	idle   time.Duration
-	timer  *time.Timer
+	timer  Timer
 	cancel context.CancelCauseFunc
 	mu     sync.Mutex
 	isDone bool
 }
 
-func newProgressTimer(idle time.Duration, cancel context.CancelCauseFunc) *progressTimer {
+func newProgressTimer(timers Timers, idle time.Duration, cancel context.CancelCauseFunc) *progressTimer {
 	t := &progressTimer{idle: idle, cancel: cancel, mu: sync.Mutex{}, isDone: false, timer: nil}
-	t.timer = time.AfterFunc(idle, func() { cancel(ErrTransferStalled) })
+	t.timer = timers.AfterFunc(idle, func() { cancel(ErrTransferStalled) })
 	return t
 }
 
@@ -90,13 +105,14 @@ func (b *progressResponseBody) Close() error {
 }
 
 type progressTransport struct {
-	next http.RoundTripper
-	idle time.Duration
+	next   http.RoundTripper
+	idle   time.Duration
+	timers Timers
 }
 
 func (p progressTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	ctx, cancel := context.WithCancelCause(request.Context())
-	timer := newProgressTimer(p.idle, cancel)
+	timer := newProgressTimer(p.timers, p.idle, cancel)
 	request = request.WithContext(ctx)
 	if request.Body != nil && request.Body != http.NoBody {
 		request.Body = &progressRequestBody{source: request.Body, timer: timer}

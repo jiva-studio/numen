@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,11 +16,69 @@ import (
 const (
 	idle  = 150 * time.Millisecond
 	steps = 8
-	pause = 50 * time.Millisecond
+	pause = 100 * time.Millisecond
+	chunk = 1024
 )
 
-func serveSlowly(t *testing.T, stallAfter int) string {
+type fakeTimer struct {
+	owner    *fakeTimers
+	at       time.Duration
+	call     func()
+	isActive bool
+}
+
+func (f *fakeTimer) Reset(d time.Duration) bool {
+	f.owner.mu.Lock()
+	defer f.owner.mu.Unlock()
+	was := f.isActive
+	f.at, f.isActive = f.owner.now+d, true
+	return was
+}
+
+func (f *fakeTimer) Stop() bool {
+	f.owner.mu.Lock()
+	defer f.owner.mu.Unlock()
+	was := f.isActive
+	f.isActive = false
+	return was
+}
+
+// fakeTimers starts timers that fire when Advance moves its time past them.
+type fakeTimers struct {
+	mu     sync.Mutex
+	now    time.Duration
+	timers []*fakeTimer
+}
+
+func (f *fakeTimers) AfterFunc(d time.Duration, call func()) syncclient.Timer {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	timer := &fakeTimer{owner: f, at: f.now + d, call: call, isActive: true}
+	f.timers = append(f.timers, timer)
+	return timer
+}
+
+func (f *fakeTimers) Advance(d time.Duration) {
+	f.mu.Lock()
+	f.now += d
+	var due []func()
+	for _, timer := range f.timers {
+		if timer.isActive && timer.at <= f.now {
+			timer.isActive = false
+			due = append(due, timer.call)
+		}
+	}
+	f.mu.Unlock()
+	for _, call := range due {
+		call()
+	}
+}
+
+// serveByStep writes one chunk per signal of next and, after stallAfter chunks, waits until the request ends. The
+// channel it returns is closed when the handler reaches that wait.
+func serveByStep(t *testing.T, stallAfter int, next <-chan struct{}) (string, <-chan struct{}) {
 	t.Helper()
+	stalled := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPut {
 			if _, err := io.Copy(io.Discard, r.Body); err != nil {
@@ -31,61 +90,84 @@ func serveSlowly(t *testing.T, stallAfter int) string {
 		}
 		for i := range steps {
 			if i == stallAfter {
-				select {
-				case <-r.Context().Done():
-				case <-time.After(5 * time.Second):
-				}
+				close(stalled)
+				<-r.Context().Done()
 				return
 			}
-			if _, err := w.Write(bytes.Repeat([]byte{1}, 1024)); err != nil {
+			if _, err := w.Write(bytes.Repeat([]byte{1}, chunk)); err != nil {
 				return
 			}
 			w.(http.Flusher).Flush()
-			time.Sleep(pause)
+			if next != nil {
+				select {
+				case <-next:
+				case <-r.Context().Done():
+					return
+				}
+			}
 		}
 	}))
 	t.Cleanup(server.Close)
-	return server.URL
+	return server.URL, stalled
 }
 
-func TestGetBlob_ABodyThatKeepsArrivingIsNotCutByAnyTotalTime(t *testing.T) {
+func TestGetBlobRange_ABodyThatKeepsArrivingIsNotCutByAnyTotalTime(t *testing.T) {
 	t.Parallel()
-	address := serveSlowly(t, -1)
-	client := syncclient.NewBlobHTTPClient(address, idle)
-
-	body, err := syncclient.GetBlob(t.Context(), client, address+"/blob")
-
-	if err != nil || len(body) != steps*1024 {
-		t.Fatalf("got %d bytes and %v, want %d bytes: the body took %v, longer than the idle time %v", len(body), err, steps*1024, steps*pause, idle)
-	}
-}
-
-func TestGetBlob_ABodyThatStopsArrivingEndsAfterTheIdleTime(t *testing.T) {
-	t.Parallel()
-	address := serveSlowly(t, 3)
-	client := syncclient.NewBlobHTTPClient(address, idle)
-	started := time.Now()
-
-	_, err := syncclient.GetBlob(t.Context(), client, address+"/blob")
-
-	if !errors.Is(err, syncclient.ErrTransferStalled) {
-		t.Fatalf("error = %v, want ErrTransferStalled", err)
-	}
-	if took := time.Since(started); took > 3*time.Second {
-		t.Errorf("the stalled read took %v", took)
-	}
-}
-
-func TestGetBlobRange_ABodyThatStopsArrivingEndsTheReadOfItsBody(t *testing.T) {
-	t.Parallel()
-	address := serveSlowly(t, 2)
-	client := syncclient.NewBlobHTTPClient(address, idle)
+	next := make(chan struct{})
+	address, _ := serveByStep(t, -1, next)
+	timers := &fakeTimers{}
+	client := syncclient.NewBlobHTTPClientWithTimers(address, idle, timers)
 	body, err := syncclient.GetBlobRange(t.Context(), client, address+"/blob", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer body.Close()
 
+	for i := range steps {
+		if _, err := io.ReadFull(body, make([]byte, chunk)); err != nil {
+			t.Fatalf("read of chunk %d after %v of the clock: %v, want the chunk: each chunk came within the idle time %v", i, time.Duration(i)*pause, err, idle)
+		}
+		timers.Advance(pause)
+		next <- struct{}{}
+	}
+
+	if rest, err := io.ReadAll(body); err != nil || len(rest) != 0 {
+		t.Errorf("rest of the body = %d bytes and %v, want the end of the body", len(rest), err)
+	}
+}
+
+func TestGetBlob_ABodyThatStopsArrivingEndsAfterTheIdleTime(t *testing.T) {
+	t.Parallel()
+	address, stalled := serveByStep(t, 3, nil)
+	timers := &fakeTimers{}
+	client := syncclient.NewBlobHTTPClientWithTimers(address, idle, timers)
+	result := make(chan error, 1)
+	go func() {
+		_, err := syncclient.GetBlob(t.Context(), client, address+"/blob")
+		result <- err
+	}()
+	<-stalled
+
+	timers.Advance(idle)
+
+	if err := <-result; !errors.Is(err, syncclient.ErrTransferStalled) {
+		t.Fatalf("error = %v, want ErrTransferStalled", err)
+	}
+}
+
+func TestGetBlobRange_ABodyThatStopsArrivingEndsTheReadOfItsBody(t *testing.T) {
+	t.Parallel()
+	address, stalled := serveByStep(t, 2, nil)
+	timers := &fakeTimers{}
+	client := syncclient.NewBlobHTTPClientWithTimers(address, idle, timers)
+	body, err := syncclient.GetBlobRange(t.Context(), client, address+"/blob", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer body.Close()
+	<-stalled
+
+	timers.Advance(idle)
 	_, err = io.ReadAll(body)
 
 	if !errors.Is(err, syncclient.ErrTransferStalled) {
@@ -93,24 +175,27 @@ func TestGetBlobRange_ABodyThatStopsArrivingEndsTheReadOfItsBody(t *testing.T) {
 	}
 }
 
+// trickle is a request body that takes pause of the clock to produce each chunk.
 type trickle struct {
-	left int
+	left   int
+	timers *fakeTimers
 }
 
 func (t *trickle) Read(p []byte) (int, error) {
 	if t.left == 0 {
 		return 0, io.EOF
 	}
-	time.Sleep(pause)
+	t.timers.Advance(pause)
 	t.left--
-	return copy(p, bytes.Repeat([]byte{2}, 1024)), nil
+	return copy(p, bytes.Repeat([]byte{2}, chunk)), nil
 }
 
 func TestBlobClient_AnUploadThatTakesLongerThanTheIdleTimeButKeepsMovingIsSent(t *testing.T) {
 	t.Parallel()
-	address := serveSlowly(t, -1)
-	client := syncclient.NewBlobHTTPClient(address, idle)
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodPut, address+"/blob", io.NopCloser(&trickle{left: steps}))
+	address, _ := serveByStep(t, -1, nil)
+	timers := &fakeTimers{}
+	client := syncclient.NewBlobHTTPClientWithTimers(address, idle, timers)
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPut, address+"/blob", io.NopCloser(&trickle{left: steps, timers: timers}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -23,6 +23,11 @@ func getCarrierGradeNAT() netip.Prefix { return netip.MustParsePrefix("100.64.0.
 // is on a loopback host; and it follows no redirect. The dial check runs on the resolved address, so a name
 // that resolves to such an address is refused. A request through a proxy is checked by its address only.
 func NewBlobHTTPClient(serverAddress string, timeout time.Duration) *http.Client {
+	return NewBlobHTTPClientWithTimers(serverAddress, timeout, systemTimers{})
+}
+
+// NewBlobHTTPClientWithTimers is NewBlobHTTPClient with the timers that watch a transfer for standing still taken from timers.
+func NewBlobHTTPClientWithTimers(serverAddress string, timeout time.Duration, timers Timers) *http.Client {
 	isLocal := isLoopbackAddress(serverAddress)
 	dialer := &net.Dialer{Timeout: timeout, Control: func(_, address string, _ syscall.RawConn) error {
 		return checkDialAddress(address, isLocal)
@@ -35,7 +40,7 @@ func NewBlobHTTPClient(serverAddress string, timeout time.Duration) *http.Client
 		ResponseHeaderTimeout: timeout,
 	}
 	guarded := guardTransport{next: transport, isLocal: isLocal}
-	return &http.Client{Transport: progressTransport{next: guarded, idle: timeout}, CheckRedirect: refuseRedirect}
+	return &http.Client{Transport: progressTransport{next: guarded, idle: timeout, timers: timers}, CheckRedirect: refuseRedirect}
 }
 
 type guardTransport struct {
