@@ -23,6 +23,8 @@ import type { SettingsDriver } from './settings.js'
 const PAGE = 'Identity and licenses'
 /** A word of the list that makes no identity when it is written again and again. */
 const WRONG_WORD = 'abandon'
+/** A dialog that finishes its work closes within this time; one that is still open then waits for the person. */
+const DIALOG_CLOSES_MS = 3_000
 const CONFIRMATIONS = 3
 const ACCOUNT_FINGERPRINT = 'Identity fingerprint'
 const NO_IDENTITY = 'Your identity in Numen lives on your own computer'
@@ -43,8 +45,9 @@ export class IdentityDriver {
   /** Shows the page; a dialog that is open is closed first, as a person leaves it. */
   private async showPage(): Promise<Locator> {
     const dialog = this.scenario.page.getByRole('dialog')
-    if ((await dialog.count()) > 0) {
-      await this.scenario.page.keyboard.press('Escape')
+    const isClosed = await expect(dialog).toHaveCount(0, { timeout: DIALOG_CLOSES_MS }).then(() => true, () => false)
+    if (!isClosed) {
+      await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
       await expect(dialog).toHaveCount(0)
     }
     return this.settings.showPage(PAGE)
