@@ -7,7 +7,7 @@ import type { NoticeHost, NoticeTask } from '@numen/plugin-sdk'
 type NoticeListTask = Required<Omit<NoticeTask, 'done' | 'total'>> & Pick<NoticeTask, 'done' | 'total'>
 
 /** The window's one list of notices, each held under the name of the source that gave it. */
-export interface NoticeList {
+interface NoticeList {
   show(source: string, text: string, severity: 'info' | 'warning' | 'error'): void
   setTasks(source: string, tasks: readonly NoticeListTask[]): void
 }

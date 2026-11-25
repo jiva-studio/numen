@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { createPluginNotices, type NoticeList } from './pluginNotices'
+import { createPluginNotices } from './pluginNotices'
+
+type NoticeList = Parameters<typeof createPluginNotices>[0]
 
 type NoticeListTask = Parameters<NoticeList['setTasks']>[1][number]
 
