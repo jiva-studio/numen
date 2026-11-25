@@ -43,12 +43,13 @@ type SpyHost struct {
 	moves         []MoveCall
 	removes       []RemoveCall
 	maxRead       int64
+	readCalls     int
 	placeCallback func(PlaceCall)
 }
 
 // NewSpyHost returns the host over the inner host.
 func NewSpyHost(inner ports.Host, notes ports.NoteHost) *SpyHost {
-	return &SpyHost{inner: inner, notes: notes, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, placeCallback: nil}
+	return &SpyHost{inner: inner, notes: notes, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, readCalls: 0, placeCallback: nil}
 }
 
 // Serve makes the host read the file at the path of the source from the source, not from the vault.
@@ -77,6 +78,13 @@ func (h *SpyHost) GetRemoves() []RemoveCall {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return slices.Clone(h.removes)
+}
+
+// GetReadCalls returns how many ranged reads the host served.
+func (h *SpyHost) GetReadCalls() int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.readCalls
 }
 
 // GetMaxRead returns the most bytes one ranged read asked for.
@@ -112,6 +120,7 @@ type spyTransfers struct {
 func (t *spyTransfers) ReadBytes(ctx context.Context, path string, start, length int64) (host.ByteRange, error) {
 	t.spy.mu.Lock()
 	t.spy.maxRead = max(t.spy.maxRead, length)
+	t.spy.readCalls++
 	source := t.spy.sources[path]
 	t.spy.mu.Unlock()
 	if source != nil {

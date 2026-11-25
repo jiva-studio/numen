@@ -18,6 +18,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
+const (
+	maxBatchFiles = 200
+	maxBatchBytes = 16 << 20
+)
+
 type pass struct {
 	use          *SyncVault
 	id           domain.VaultID
@@ -210,6 +215,38 @@ func (p *pass) keepRemoved(ctx context.Context, outcomes []transfer.Outcome) err
 }
 
 func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []transfer.FileRecord, changes []transfer.Change) ([]transfer.FileRecord, bool, error) {
+	isRetry := false
+	for len(changes) > 0 {
+		batch, rest := takeBatch(changes)
+		changes = rest
+		sent, isAgain, err := p.sendBatch(ctx, vault, records, batch)
+		if err != nil {
+			return records, false, err
+		}
+		records, isRetry = sent, isRetry || isAgain
+		if err := p.use.deps.State.WriteRecords(ctx, p.id, records); err != nil {
+			return records, false, err
+		}
+	}
+	return records, isRetry, nil
+}
+
+// takeBatch splits off the changes whose files are read and committed together: at most maxBatchFiles files and about
+// maxBatchBytes bytes of content, and always at least one change.
+func takeBatch(changes []transfer.Change) (batch, rest []transfer.Change) {
+	total := int64(0)
+	for i, change := range changes {
+		if change.Size <= note.SmallFileLimit {
+			total += change.Size
+		}
+		if i >= maxBatchFiles || (i > 0 && total > maxBatchBytes) {
+			return changes[:i], changes[i:]
+		}
+	}
+	return changes, nil
+}
+
+func (p *pass) sendBatch(ctx context.Context, vault transfer.Vault, records []transfer.FileRecord, changes []transfer.Change) ([]transfer.FileRecord, bool, error) {
 	files, err := p.readFiles(ctx, records, changes)
 	if err != nil || len(files) == 0 {
 		return records, false, err
