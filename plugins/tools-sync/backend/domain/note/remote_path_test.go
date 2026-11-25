@@ -43,6 +43,10 @@ func TestCheckRemotePath_RefusesPathsThatLeaveOrBreakAVault(t *testing.T) {
 		"folder with a trailing dot": "notes./a.md",
 		"service folder":             ".numen/state.json",
 		"git folder":                 "x/.git/config",
+		"upper case git folder":      ".GIT/hooks/post-checkout",
+		"mixed case service folder":  ".Numen/config.json",
+		"nested mixed case git":      "notes/.Git/x",
+		"upper case trash folder":    ".TRASH/a.md",
 		"temporary file":             "a.tmp",
 	} {
 		if err := note.CheckRemotePath(path); !errors.Is(err, note.ErrInvalidPath) {

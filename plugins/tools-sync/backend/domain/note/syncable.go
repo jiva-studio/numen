@@ -64,7 +64,7 @@ func GetRecordKeyContext(remoteID, fileID []byte) []byte {
 func GetStoredName(fileID []byte) string { return hex.EncodeToString(fileID) + ".part" }
 
 func isSkippedFolder(name string) bool {
-	return slices.Contains([]string{".numen", ".git", ".trash"}, name)
+	return slices.Contains([]string{".numen", ".git", ".trash"}, strings.ToLower(name))
 }
 
 func isSkippedName(lower string) bool {
