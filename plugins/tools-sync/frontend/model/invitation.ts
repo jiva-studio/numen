@@ -67,8 +67,10 @@ export function createInvitationView(options: InvitationViewOptions) {
         .filter((one) => one.state === 'active')
         .map((one) => ({ deviceName: one.label, fingerprint: one.fingerprint }))
       error.value = ''
+      poller.countSuccess()
     } catch (failure) {
       fail(failure)
+      if (poller.countFailure()) return
     }
     if (isLinkAlive.value || request.value !== undefined) poller.runAgain(refresh)
   }

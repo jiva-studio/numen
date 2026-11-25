@@ -179,4 +179,19 @@ describe('the dialog of a folder shared by a link', () => {
     expect(vi.mocked(shares.listShares).mock.calls.length).toBe(asked)
     vi.useRealTimers()
   })
+
+  it('stops asking after the asks keep failing', async () => {
+    vi.useFakeTimers()
+    const { invitations, view } = create(1000)
+    await view.start()
+    vi.mocked(invitations.listShareInvitations).mockRejectedValue(new Error('No identity'))
+
+    await vi.advanceTimersByTimeAsync(30_000)
+    const asked = vi.mocked(invitations.listShareInvitations).mock.calls.length
+    await vi.advanceTimersByTimeAsync(30_000)
+
+    expect(vi.mocked(invitations.listShareInvitations).mock.calls.length).toBe(asked)
+    expect(asked).toBeLessThanOrEqual(10)
+    vi.useRealTimers()
+  })
 })

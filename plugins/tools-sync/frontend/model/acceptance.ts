@@ -64,8 +64,13 @@ export function createAcceptanceView(options: AcceptanceViewOptions) {
   async function follow(requestId: string): Promise<void> {
     try {
       take(await client.getShareInvitationStatus(requestId))
+      poller.countSuccess()
     } catch (failure) {
       fail(failure)
+      if (poller.countFailure()) {
+        phase.value = 'failed'
+        return
+      }
     }
     if (!isEnded(phase.value)) poller.runAgain(() => follow(requestId))
   }

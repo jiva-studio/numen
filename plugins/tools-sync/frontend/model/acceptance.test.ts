@@ -120,4 +120,22 @@ describe('the dialog that accepts a shared folder', () => {
 
     expect([view.phase, view.error]).toStrictEqual(['link', 'No identity'])
   })
+
+  it('stops asking about a request after the asks keep failing, and ends it as failed', async () => {
+    vi.useFakeTimers()
+    const client = createClient([])
+    vi.mocked(client.getShareInvitationStatus).mockRejectedValue(new Error('No identity'))
+    const view = create(client)
+    await view.setLink('numen-share:abc')
+
+    const accepting = view.accept()
+    await vi.advanceTimersByTimeAsync(30_000)
+    await accepting
+    const asked = vi.mocked(client.getShareInvitationStatus).mock.calls.length
+    await vi.advanceTimersByTimeAsync(30_000)
+
+    expect(vi.mocked(client.getShareInvitationStatus).mock.calls.length).toBe(asked)
+    expect(asked).toBeLessThanOrEqual(10)
+    expect(view.phase).toBe('failed')
+  })
 })
