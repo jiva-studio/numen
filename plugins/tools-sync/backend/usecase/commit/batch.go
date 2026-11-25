@@ -142,6 +142,9 @@ func (r *batchRun) commit(ctx context.Context, items []*prepared, files []transf
 			return err
 		}
 		if response.GetCommitted() {
+			if len(response.GetRevisions()) != len(items) {
+				return fmt.Errorf("%w: %d stored revisions for %d items", errUnexpectedAnswer, len(response.GetRevisions()), len(items))
+			}
 			r.recordCommitted(items, files, outcomes, response.GetRevisions())
 			return nil
 		}

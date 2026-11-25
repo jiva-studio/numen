@@ -119,6 +119,9 @@ func commitBatch(ctx context.Context, deps Deps, vault transfer.Vault, revisions
 	if err != nil {
 		return nil, err
 	}
+	if response.GetCommitted() && len(response.GetRevisions()) != len(revisions) {
+		return nil, fmt.Errorf("%w: %d stored revisions for %d items", errUnexpectedAnswer, len(response.GetRevisions()), len(revisions))
+	}
 	outcomes := make([]transfer.Outcome, len(revisions))
 	for i, revision := range revisions {
 		outcomes[i] = transfer.Outcome{

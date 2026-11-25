@@ -308,3 +308,39 @@ func TestCommitRevisions_StopsWhenTheConflictsNameNoFileOfTheBatch(t *testing.T)
 		t.Errorf("error = %v after %d commits, want an error after one", err, server.calls)
 	}
 }
+
+type shortAnswer struct{ ports.Revisions }
+
+func (s shortAnswer) CommitRevisions(ctx context.Context, vaultID []byte, revisions []*syncv1.Revision) (*syncv1.CommitRevisionsResponse, error) {
+	response, err := s.Revisions.CommitRevisions(ctx, vaultID, revisions)
+	if err != nil {
+		return nil, err
+	}
+	response.Revisions = nil
+	return response, nil
+}
+
+func TestCommitRevisions_RefusesACommitThatAnswersFewerRevisionsThanItems(t *testing.T) {
+	s := newSetup(t, fakeserver.Config{})
+	deps := s.c.CommitDeps()
+	deps.Revisions = shortAnswer{Revisions: deps.Revisions}
+
+	_, err := commit.NewCommitRevisions(deps).Execute(t.Context(), ports.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "A.md", Content: []byte("a"), ModifiedAt: 1_700_000_005_000_000_000}}})
+
+	if err == nil {
+		t.Error("error = nil, want an error for a commit with no stored revision for its item")
+	}
+}
+
+func TestCommitRemovals_RefusesACommitThatAnswersFewerRevisionsThanItems(t *testing.T) {
+	s := newSetup(t, fakeserver.Config{})
+	first := s.run(t, transfer.File{Path: "A.md", Content: []byte("a"), ModifiedAt: 1_700_000_005_000_000_000})[0]
+	deps := s.c.CommitDeps()
+	deps.Revisions = shortAnswer{Revisions: deps.Revisions}
+
+	_, err := commit.NewCommitRemovals(deps).Execute(t.Context(), transfer.RemoveInput{Vault: s.vault, Records: []transfer.FileRecord{first.Record}})
+
+	if err == nil {
+		t.Error("error = nil, want an error for a commit with no stored revision for its item")
+	}
+}
