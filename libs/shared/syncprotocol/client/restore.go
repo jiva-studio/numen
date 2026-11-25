@@ -59,5 +59,10 @@ func (c *RestoreClient) GetRestoreEpoch(ctx context.Context) (*syncv1.RestoreEpo
 	if err := epochtrust.VerifyAnnouncement(cert, epoch); err != nil {
 		return nil, nil, err
 	}
+	if c.serials != nil {
+		if err := epochtrust.CheckIssuedAt(ctx, c.serials, epoch); err != nil {
+			return nil, nil, err
+		}
+	}
 	return epoch, cert.EpochKey, nil
 }
