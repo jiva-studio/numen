@@ -126,9 +126,11 @@ type Links interface {
 	UpdateLink(ctx context.Context, id domain.VaultID, change func(*vaultlink.Link) error) error
 }
 
-// VaultLocker lets one pass at a time work on a vault. Lock waits for the vault and returns the function that releases it.
+// VaultLocker lets one pass at a time work on a vault. LockVault waits for the vault and returns the function that
+// releases it. IsLocked reports whether a holder has the vault now.
 type VaultLocker interface {
 	LockVault(ctx context.Context, id domain.VaultID) (func(), error)
+	IsLocked(id domain.VaultID) bool
 }
 
 // Records keeps what is known of the synced notes of each vault.

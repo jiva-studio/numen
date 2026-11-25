@@ -291,6 +291,8 @@ func (refusingLocker) LockVault(context.Context, domain.VaultID) (func(), error)
 	return nil, errors.New("the lock is refused")
 }
 
+func (refusingLocker) IsLocked(domain.VaultID) bool { return false }
+
 func TestAcceptInvitation_RemovesTheVaultItAddedWhenItCannotLockIt(t *testing.T) {
 	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")

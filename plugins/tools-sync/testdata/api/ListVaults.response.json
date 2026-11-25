@@ -8,6 +8,10 @@
       "lastSyncedAt": "2026-11-23T12:00:00Z",
       "conflictCount": 1,
       "remoteId": "00112233445566778899aabbccddeeff",
+      "syncing": true,
+      "syncedBytes": 1932735283,
+      "totalBytes": 2040109465,
+      "pendingFiles": 49,
       "pausedDeletions": { "count": 5, "tracked": 10, "direction": "send" }
     },
     {
@@ -18,6 +22,10 @@
       "lastSyncedAt": "",
       "conflictCount": 0,
       "remoteId": "",
+      "syncing": false,
+      "syncedBytes": 0,
+      "totalBytes": 0,
+      "pendingFiles": 0,
       "pausedDeletions": null
     },
     {
@@ -28,6 +36,10 @@
       "lastSyncedAt": "2026-11-23T12:00:00Z",
       "conflictCount": 0,
       "remoteId": "",
+      "syncing": false,
+      "syncedBytes": 0,
+      "totalBytes": 0,
+      "pendingFiles": 0,
       "pausedDeletions": null
     }
   ]

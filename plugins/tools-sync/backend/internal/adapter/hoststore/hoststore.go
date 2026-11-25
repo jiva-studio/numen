@@ -74,6 +74,9 @@ func (s *State) LockVault(ctx context.Context, id domain.VaultID) (func(), error
 	}
 }
 
+// IsLocked reports whether a holder has the vault now.
+func (s *State) IsLocked(id domain.VaultID) bool { return len(s.getVault(id).pass) > 0 }
+
 type recordsDocument struct {
 	Files []transfer.FileRecord `json:"files"`
 }

@@ -160,6 +160,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	backend := NewBackend(deps).
 		WithInvites(invitewire.New(invites)).
 		WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).
+		WithTransfers(p.state, p.state).
 		WithDownloads(downloadwire.New(fetching)).
 		WithAccountData(accountdata.Deps{Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep})
 	life = lifecycle.NewLifecycle(lifecycle.Deps{

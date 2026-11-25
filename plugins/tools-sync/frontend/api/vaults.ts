@@ -34,6 +34,10 @@ export interface Vault {
   readonly totalBytes?: number
   readonly pendingFiles?: number
   readonly remoteId: string
+  readonly syncing: boolean
+  readonly syncedBytes: number
+  readonly totalBytes: number
+  readonly pendingFiles: number
 }
 
 export interface RemoteVault {

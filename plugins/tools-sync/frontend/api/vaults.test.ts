@@ -92,6 +92,10 @@ describe('the fixtures of the vaults service', () => {
       conflictCount: 1,
       pausedDeletions: { count: 5, tracked: 10, direction: 'send' },
       remoteId: '00112233445566778899aabbccddeeff',
+      syncing: true,
+      syncedBytes: 1_932_735_283,
+      totalBytes: 2_040_109_465,
+      pendingFiles: 49,
     })
   })
 

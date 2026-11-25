@@ -54,6 +54,12 @@ func (b *Backend) WithDeletions(pending ports.PausedStore, resolve *deletions.Re
 	return b
 }
 
+// WithTransfers gives the backend the unfinished downloads and uploads of the vaults, which the list reads.
+func (b *Backend) WithTransfers(downloads ports.DownloadEntries, uploads ports.UploadEntries) *Backend {
+	b.SetTransfers(downloads, uploads)
+	return b
+}
+
 // WithDownloads gives the backend the methods of the downloads of absent files.
 func (b *Backend) WithDownloads(downloads *downloadwire.Downloads) *Backend {
 	b.Downloads = downloads

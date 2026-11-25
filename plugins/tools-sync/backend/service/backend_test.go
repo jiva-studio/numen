@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -295,5 +296,75 @@ func TestConnectVault_ConnectsOnlyOneFolderToAVaultWhenTwoRequestsRace(t *testin
 
 	if failed != 1 {
 		t.Errorf("%d of 2 racing requests failed, want exactly 1", failed)
+	}
+}
+
+func findVault(t *testing.T, vaults []api.Vault, id string) api.Vault {
+	t.Helper()
+	for _, one := range vaults {
+		if one.ID == id {
+			return one
+		}
+	}
+	t.Fatalf("no vault %q in %+v", id, vaults)
+	return api.Vault{}
+}
+
+func TestListVaults_ReportsAnIdleVaultWithEveryFileAtItsHeadAsNotSyncing(t *testing.T) {
+	w := newWorld(t)
+	w.c.Connect(t, "Test")
+	w.c.WriteNote("Test", "Soup.md", "carrots")
+	w.c.WriteNote("Test", "Bread.md", "flour and water")
+	if err := w.c.Sync(t.Context(), "Test"); err != nil {
+		t.Fatal(err)
+	}
+	backend := service.NewBackend(w.c.SyncDeps()).WithTransfers(w.c.State, w.c.State)
+
+	one := findVault(t, listVaults(t, backend), "Test")
+
+	if one.Syncing || one.PendingFiles != 0 {
+		t.Errorf("vault = %+v, want it idle with nothing pending", one)
+	}
+	if one.SyncedBytes == 0 || one.SyncedBytes != one.TotalBytes {
+		t.Errorf("synced = %d, total = %d, want both the same and above zero", one.SyncedBytes, one.TotalBytes)
+	}
+}
+
+func TestListVaults_ReportsAVaultWithAnAbsentFileAsSyncingWithLessSyncedThanTotal(t *testing.T) {
+	w := newWorld(t)
+	w.c.Connect(t, "Test")
+	w.c.WriteNote("Test", "Soup.md", "carrots")
+	if err := w.c.Sync(t.Context(), "Test"); err != nil {
+		t.Fatal(err)
+	}
+	absent := host.AbsentFile{Path: "Archive.pdf", Size: 5000, ModTime: time.Unix(0, 1), Hash: "00"}
+	if err := w.c.Host.GetAbsent("Test").PutAbsentFiles(t.Context(), []host.AbsentFile{absent}); err != nil {
+		t.Fatal(err)
+	}
+	backend := service.NewBackend(w.c.SyncDeps()).WithTransfers(w.c.State, w.c.State)
+
+	one := findVault(t, listVaults(t, backend), "Test")
+
+	if !one.Syncing || one.PendingFiles != 1 {
+		t.Errorf("vault = %+v, want it syncing with one file pending", one)
+	}
+	if one.SyncedBytes == 0 || one.SyncedBytes >= one.TotalBytes {
+		t.Errorf("synced = %d, total = %d, want synced above zero and below total", one.SyncedBytes, one.TotalBytes)
+	}
+}
+
+func TestListVaults_ReportsAVaultAsSyncingWhileAPassHoldsIt(t *testing.T) {
+	w := newWorld(t)
+	w.c.Connect(t, "Test")
+	backend := service.NewBackend(w.c.SyncDeps())
+	unlock, err := w.c.State.LockVault(t.Context(), "Test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	isSyncing := findVault(t, listVaults(t, backend), "Test").Syncing
+	unlock()
+
+	if !isSyncing || findVault(t, listVaults(t, backend), "Test").Syncing {
+		t.Errorf("syncing while locked = %v, want true, and false once released", isSyncing)
 	}
 }

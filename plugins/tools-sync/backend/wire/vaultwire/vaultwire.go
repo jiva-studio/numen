@@ -42,6 +42,7 @@ type Listing struct {
 	deps    syncvault.Deps
 	pending ports.PausedStore
 	resolve *deletions.ResolveDeletions
+	moving  transfers
 }
 
 // Connections answers the methods about connecting a vault to a synced vault.
@@ -67,7 +68,7 @@ func New(deps syncvault.Deps, heads ports.Heads) *Vaults {
 	}
 	deleting := catalog.NewDeleteCloudVault(catalogDeps, share.NewCloseShares(sharewire.NewShareDeps(deps)))
 	return &Vaults{
-		Listing:     &Listing{deps: deps, pending: nil, resolve: nil},
+		Listing:     &Listing{deps: deps, pending: nil, resolve: nil, moving: transfers{downloads: nil, uploads: nil}},
 		Connections: &Connections{deps: deps, catalog: catalogDeps, connect: catalog.NewConnectVault(catalogDeps), heads: heads},
 		Removals: &Removals{
 			stop:   unlink.NewStopSyncing(unlink.Deps{Links: deps.State, Forget: deps.Forget, Vaults: deps.Vaults, Cloud: deleting, Locker: deps.Locker}),
@@ -99,6 +100,7 @@ func (v *Listing) ListVaults(ctx context.Context, _ api.ListVaultsRequest) (api.
 		}
 		listed = append(listed, one)
 	}
+	v.setCloudTotals(ctx, listed)
 	return api.ListVaultsResponse{Vaults: listed}, nil
 }
 
@@ -133,6 +135,9 @@ func (v *Listing) getVault(ctx context.Context, vault domain.Vault, holders map[
 		one.LastSyncedAt = status.LastSyncedAt.UTC().Format(time.RFC3339)
 	}
 	one.ConflictCount = status.ConflictCount
+	if err = v.setProgress(ctx, vault.ID, &one); err != nil {
+		return one, err
+	}
 	one.PausedDeletions, err = v.getPausedRemovals(ctx, vault.ID)
 	return one, err
 }
