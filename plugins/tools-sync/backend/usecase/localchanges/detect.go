@@ -117,7 +117,7 @@ func (u *DetectMoves) split(seen map[string]note.FileSnapshot, records []transfe
 	fresh = map[string]note.FileSnapshot{}
 	now := u.deps.Clock.Now()
 	for path, one := range seen {
-		if !byPath[path] && note.IsSyncable(path) && now.Sub(time.Unix(0, one.ModifiedAt)) >= settleTime {
+		if !byPath[path] && note.IsSyncable(path) && one.IsSettled(now, settleTime) {
 			fresh[path] = one
 		}
 	}

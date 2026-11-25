@@ -136,11 +136,21 @@ func (u *ScanLocalChanges) scanFile(ctx context.Context, files ports.Files, path
 	if err != nil {
 		return nil, errUnreadable
 	}
-	seen[path] = note.FileSnapshot{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano(), SourceID: seen[path].SourceID}
-	if stat.Hash == bases[path] || u.deps.Clock.Now().Sub(stat.ModTime) < settleTime {
+	now := u.deps.Clock.Now()
+	seen[path] = getSighting(seen[path], stat, now)
+	if stat.Hash == bases[path] || !seen[path].IsSettled(now, settleTime) {
 		return nil, nil
 	}
 	return &transfer.Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()}, nil
+}
+
+// getSighting is the snapshot of the file as the stat found it, keeping the time of the first sight of the same content.
+func getSighting(before note.FileSnapshot, stat domain.FileStat, now time.Time) note.FileSnapshot {
+	seenAt := now.UnixNano()
+	if before.Hash == stat.Hash && before.ModifiedAt == stat.ModTime.UnixNano() && before.SeenAt != 0 {
+		seenAt = before.SeenAt
+	}
+	return note.FileSnapshot{Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano(), SourceID: before.SourceID, SeenAt: seenAt}
 }
 
 // errUnreadable is a file that could not be read now; the next scan reads it again.

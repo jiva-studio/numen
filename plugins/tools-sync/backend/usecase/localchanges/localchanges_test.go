@@ -331,3 +331,49 @@ func TestScanLocalChanges_ReturnsTheErrorOfTheContextWhenItEndsWhileTheNotesAreR
 		t.Errorf("error = %v, want context.Canceled", err)
 	}
 }
+
+func TestScanLocalChanges_ListsANoteWithATimeInTheFutureOnceItWasSeenForTenSeconds(t *testing.T) {
+	c := newComputer(t)
+	scan(t, c, nil)
+	c.WriteNote(vault, "Restored.md", "from an archive")
+	stat, err := c.Vaults.With(vault).StatFile(t.Context(), "Restored.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Clock.Set(stat.ModTime.Add(-24 * time.Hour))
+
+	first := scan(t, c, nil)
+	c.Clock.Advance(3 * time.Second)
+	soon := scan(t, c, nil)
+	c.Clock.Advance(10 * time.Second)
+	later := scan(t, c, nil)
+
+	if len(first) != 0 || len(soon) != 0 {
+		t.Errorf("changes at first sight = %+v and 3 seconds later = %+v, want none yet", first, soon)
+	}
+	if paths := getPaths(later); !slices.Equal(paths, []string{"Restored.md"}) {
+		t.Errorf("changes 13 seconds after the first sight = %v, want the note", paths)
+	}
+}
+
+func TestScanLocalChanges_WaitsAgainForANoteWithATimeInTheFutureThatChanged(t *testing.T) {
+	c := newComputer(t)
+	scan(t, c, nil)
+	c.WriteNote(vault, "Restored.md", "one")
+	stat, err := c.Vaults.With(vault).StatFile(t.Context(), "Restored.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Clock.Set(stat.ModTime.Add(-24 * time.Hour))
+	scan(t, c, nil)
+	c.Clock.Advance(8 * time.Second)
+	c.WriteNote(vault, "Restored.md", "two")
+
+	changed := scan(t, c, nil)
+	c.Clock.Advance(3 * time.Second)
+	soon := scan(t, c, nil)
+
+	if len(changed) != 0 || len(soon) != 0 {
+		t.Errorf("changes right after an edit = %+v and 3 seconds later = %+v, want none yet", changed, soon)
+	}
+}

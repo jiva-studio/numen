@@ -195,3 +195,25 @@ func TestDetectMoves_DoesNotListAFileThatIsInTheVaultAsRemoved(t *testing.T) {
 		t.Errorf("removals = %v, want none for a file the vault has", getRemovedPaths(found))
 	}
 }
+
+func TestDetectMoves_CallsAFileWithATimeInTheFutureAMoveOnceItWasSeenForTenSeconds(t *testing.T) {
+	c := newComputer(t)
+	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
+	c.WriteNote(vault, "Papers/Old report.pdf", "pdf bytes")
+	stat, err := c.Vaults.With(vault).StatFile(t.Context(), "Papers/Old report.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Clock.Set(stat.ModTime.Add(-24 * time.Hour))
+
+	first := detect(t, c, records)
+	c.Clock.Advance(10 * time.Second)
+	later := detect(t, c, records)
+
+	if len(first.Moves) != 0 {
+		t.Errorf("moves at first sight = %+v, want none yet", first.Moves)
+	}
+	if len(later.Moves) != 1 {
+		t.Errorf("moves 10 seconds after the first sight = %+v, want the move", later.Moves)
+	}
+}
