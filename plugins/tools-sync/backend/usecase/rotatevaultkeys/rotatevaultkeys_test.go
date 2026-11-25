@@ -2,14 +2,20 @@ package rotatevaultkeys_test
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
+	"github.com/jiva-studio/numen/tools/syncserver/wiretest"
 )
 
 const vault = "Test"
@@ -136,5 +142,58 @@ func TestExecute_AVaultAlreadyRotatedCostsNoCallToTheServer(t *testing.T) {
 
 	if got := c.Server.Fake.CountCalls(syncv1connect.CatalogServiceGetCatalogProcedure); got != reads {
 		t.Errorf("catalog reads %d -> %d, want none for a vault whose key is of the epoch of the account", reads, got)
+	}
+}
+
+type forgedCatalog struct {
+	*cloud.Cloud
+
+	forge func(entries []*syncv1.CatalogEntry) []*syncv1.CatalogEntry
+}
+
+func (f *forgedCatalog) GetCatalog(ctx context.Context, since uint64) ([]*syncv1.CatalogEntry, error) {
+	entries, err := f.Cloud.GetCatalog(ctx, since)
+	if err != nil {
+		return nil, err
+	}
+	cloned := make([]*syncv1.CatalogEntry, len(entries))
+	for i, entry := range entries {
+		cloned[i] = wiretest.CloneCatalogEntry(entry)
+	}
+	return f.forge(cloned), nil
+}
+
+func TestExecute_StoresNoKeyOfAnEntryASignerOutsideTheAccountForged(t *testing.T) {
+	t.Parallel()
+	c := newComputer(t)
+	if err := c.Fake.AdvanceEpoch(); err != nil {
+		t.Fatal(err)
+	}
+	outsider := synctest.NewFirstComputer(t, c.Server, synctest.NewClock(synctest.GetStart()), "Other", synctest.NewWords(t))
+	before := c.Link(t, vault)
+	deps := c.RotateDeps()
+	deps.Catalog = &forgedCatalog{Cloud: c.Cloud, forge: func(entries []*syncv1.CatalogEntry) []*syncv1.CatalogEntry {
+		last := entries[len(entries)-1]
+		plain, err := vaultlink.CatalogBody{LocalID: "x", Name: "x", Keys: []vaultlink.VaultKey{{Epoch: 1, Key: bytes.Repeat([]byte{7}, 32)}}}.Encode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		forged := &syncv1.CatalogEntry{Version: last.GetVersion() + 1, VaultId: last.GetVaultId()}
+		prev := syncprotocol.GetCatalogEntryID(last)
+		forged.PrevHash = prev[:]
+		if forged.EncBody, err = c.Account.SealData(t.Context(), synctest.GetCatalogContext(forged), plain); err != nil {
+			t.Fatal(err)
+		}
+		outsider.SignCatalogEntry(t, forged)
+		return append(entries, forged)
+	}}
+
+	rotated, err := rotatevaultkeys.NewRotateVaultKeys(deps).Execute(t.Context())
+
+	if !errors.Is(err, rotatevaultkeys.ErrInvalidCatalog) || rotated != 0 {
+		t.Errorf("rotated = %d, error = %v, want ErrInvalidCatalog", rotated, err)
+	}
+	if after := c.Link(t, vault); !bytes.Equal(after.SealedKey, before.SealedKey) || len(after.LaterKeys) != len(before.LaterKeys) {
+		t.Error("the link stores a key of the forged entry")
 	}
 }

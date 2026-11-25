@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
@@ -23,6 +24,12 @@ const (
 	maxTries = 3
 	keySize  = 32
 )
+
+// ErrInvalidCatalog means the catalog of the server is not a signed, unbroken log of the devices of the account.
+var ErrInvalidCatalog = vaultlink.ErrInvalidCatalog
+
+// ErrOlderKey means the newest key of a catalog entry is of an earlier epoch than the key the device stored.
+var ErrOlderKey = errors.New("the catalog offers a vault key older than the stored one")
 
 // ErrCatalogBusy means other devices appended to the catalog first, every time.
 var ErrCatalogBusy = errors.New("the catalog changed on another device again and again")
@@ -101,7 +108,7 @@ func (u *RotateVaultKeys) readTarget(ctx context.Context, id domain.VaultID) (co
 }
 
 func (u *RotateVaultKeys) tryRotate(ctx context.Context, target *connected, own session.Identity) (isRotated, isDone bool, err error) {
-	entries, err := u.deps.Catalog.GetCatalog(ctx, 0)
+	entries, err := u.readEntries(ctx, own)
 	if err != nil {
 		return false, true, err
 	}
@@ -132,6 +139,25 @@ func (u *RotateVaultKeys) tryRotate(ctx context.Context, target *connected, own 
 	return true, true, u.store(ctx, target, keys)
 }
 
+func (u *RotateVaultKeys) readEntries(ctx context.Context, own session.Identity) ([]*syncv1.CatalogEntry, error) {
+	stored, err := u.deps.Chain.GetAccountChain(ctx)
+	if err != nil {
+		return nil, err
+	}
+	authors, err := trust.NewAuthors(own.Chain, stored)
+	if err != nil {
+		return nil, err
+	}
+	entries, err := u.deps.Catalog.GetCatalog(ctx, 0)
+	if err != nil {
+		return nil, err
+	}
+	if err := vaultlink.CheckEntries(entries, authors); err != nil {
+		return nil, err
+	}
+	return entries, nil
+}
+
 // connected is a connected vault with the link it keeps.
 type connected struct {
 	id     domain.VaultID
@@ -144,7 +170,11 @@ func (u *RotateVaultKeys) store(ctx context.Context, target *connected, keys []v
 	if len(target.link.LaterKeys) > 0 {
 		known = target.link.LaterKeys[len(target.link.LaterKeys)-1].Epoch
 	}
-	if vaultlink.GetNewestEpoch(keys) <= known {
+	newest := vaultlink.GetNewestEpoch(keys)
+	if newest < known {
+		return fmt.Errorf("%w: epoch %d, stored %d", ErrOlderKey, newest, known)
+	}
+	if newest == known {
 		return nil
 	}
 	first, later, err := vaultlink.SealKeys(ctx, u.deps.Crypto, target.remote, keys)
