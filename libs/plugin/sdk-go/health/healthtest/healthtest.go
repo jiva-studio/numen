@@ -1,6 +1,6 @@
 // Package healthtest is a host that keeps the health items a plugin reports, for the tests of a plugin.
 // It keeps one list per test and checks the key of every item as the real host does
-// (libs/core/kernel/domain/plugin/health.go, CheckHealthKey), and nothing else.
+// (libs/core/kernel/domain/plugin/health.go, CheckHealthKey) and the limits of the text and the detail, and nothing else.
 package healthtest
 
 import (
@@ -12,6 +12,7 @@ import (
 	"slices"
 	"sync"
 	"testing"
+	"unicode/utf8"
 
 	"connectrpc.com/connect"
 
@@ -78,6 +79,9 @@ func (h *service) ReportHealth(
 	in := req.Msg.GetItem()
 	if err := checkKey(in.GetKey()); err != nil {
 		return nil, err
+	}
+	if utf8.RuneCountInString(in.GetText()) > health.MaxTextLength || utf8.RuneCountInString(in.GetDetail()) > health.MaxDetailLength {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid health item: the text of the item %q is longer than %d characters or its detail longer than %d", in.GetKey(), health.MaxTextLength, health.MaxDetailLength))
 	}
 	item := health.Item{Key: in.GetKey(), Severity: readSeverity(in.GetSeverity()), Text: in.GetText(), Detail: in.GetDetail()}
 	if action := in.GetAction(); action != nil {

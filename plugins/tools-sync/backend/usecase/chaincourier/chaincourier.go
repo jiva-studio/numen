@@ -132,12 +132,12 @@ func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) {
 	var text string
 	for _, revocation := range chain.ListDeviceRevocations() {
 		if !bytes.Equal(revocation.By, own) && now.Sub(revocation.At) < identity.CoolingOff {
-			text = fmt.Sprintf("A device removed another device from the account on %s. If it was not you, restore with the recovery words to override it", revocation.At.Format("2 Jan 2006"))
+			text = getRevokedNotice(revocation.At)
 		}
 	}
 	for _, addition := range chain.ListDeviceAdditions() {
 		if !bytes.Equal(addition.By, own) && now.Sub(addition.At) < identity.CoolingOff {
-			text = fmt.Sprintf("A device added another device to the account on %s. If it was not you, restore with the recovery words to override it", addition.At.Format("2 Jan 2006"))
+			text = getAddedNotice(addition.At)
 		}
 	}
 	switch {
@@ -216,4 +216,14 @@ func truncate(text string, limit int) string {
 		return string(runes[:limit])
 	}
 	return text
+}
+
+const noticeDate = "2 Jan 2006"
+
+func getRevokedNotice(at time.Time) string {
+	return fmt.Sprintf("A device removed another device from the identity on %s. If it was not you, restore with the recovery words", at.Format(noticeDate))
+}
+
+func getAddedNotice(at time.Time) string {
+	return fmt.Sprintf("A device added another device to the identity on %s. If it was not you, restore with the recovery words", at.Format(noticeDate))
 }
