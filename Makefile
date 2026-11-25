@@ -569,7 +569,10 @@ app_desktop_acceptance: lib_workbench_build app_desktop_editor_build app_desktop
 	cd $(TESTS)/acceptance/desktop && npm run acceptance:test
 
 .PHONY: app_desktop_acceptance_identity
-app_desktop_acceptance_identity: 
+app_desktop_acceptance_identity: ## make the test identities of the acceptance scenarios again
+	cd $(TESTS)/acceptance/desktop && npm run acceptance:identity
+
+.PHONY: app_desktop_acceptance_lint
 app_desktop_acceptance_lint: ## lint the acceptance scenarios, steps and driver
 	cd $(TESTS)/acceptance/desktop && npm run acceptance:lint
 
