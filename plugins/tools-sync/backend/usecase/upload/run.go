@@ -59,6 +59,9 @@ func (r *run) sendWhole(ctx context.Context, key [32]byte) (transfer.UploadResul
 	if err != nil {
 		return transfer.UploadResult{}, err
 	}
+	if err := r.plain.check(); err != nil {
+		return transfer.UploadResult{}, err
+	}
 	blob, err := blobcipher.Seal(r.deps.Random, key, [16]byte(r.in.FileID), whole, isText(r.in.Path))
 	if err != nil {
 		return transfer.UploadResult{}, err
@@ -234,6 +237,9 @@ func (r *run) sendRest(ctx context.Context, s *session) (transfer.UploadResult, 
 		if err := r.keep(ctx, s, number); err != nil {
 			return transfer.UploadResult{}, err
 		}
+	}
+	if err := r.plain.check(); err != nil {
+		return transfer.UploadResult{}, err
 	}
 	if err := r.deps.Uploads.Finish(ctx, s.up); err != nil {
 		return transfer.UploadResult{}, err

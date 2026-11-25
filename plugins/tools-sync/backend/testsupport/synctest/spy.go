@@ -45,11 +45,12 @@ type SpyHost struct {
 	maxRead       int64
 	readCalls     int
 	placeCallback func(PlaceCall)
+	readCallback  func(path string, start, length int64)
 }
 
 // NewSpyHost returns the host over the inner host.
 func NewSpyHost(inner ports.Host, notes ports.NoteHost) *SpyHost {
-	return &SpyHost{inner: inner, notes: notes, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, readCalls: 0, placeCallback: nil}
+	return &SpyHost{inner: inner, notes: notes, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, readCalls: 0, placeCallback: nil, readCallback: nil}
 }
 
 // Serve makes the host read the file at the path of the source from the source, not from the vault.
@@ -121,8 +122,11 @@ func (t *spyTransfers) ReadBytes(ctx context.Context, path string, start, length
 	t.spy.mu.Lock()
 	t.spy.maxRead = max(t.spy.maxRead, length)
 	t.spy.readCalls++
-	source := t.spy.sources[path]
+	source, after := t.spy.sources[path], t.spy.readCallback
 	t.spy.mu.Unlock()
+	if after != nil {
+		defer after(path, start, length)
+	}
 	if source != nil {
 		return source.ReadBytes(ctx, start, length)
 	}
@@ -153,6 +157,14 @@ func (t *spyTransfers) PlaceFile(ctx context.Context, name, path, expectedHash s
 		before(call)
 	}
 	return t.inner.PlaceFile(ctx, name, path, expectedHash, baseline)
+}
+
+// RunAfterRead runs the hook after every ranged read the host served, as a change of the file does that lands after the
+// stat of that read was taken.
+func (h *SpyHost) RunAfterRead(hook func(path string, start, length int64)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.readCallback = hook
 }
 
 // RunBeforePlace runs the hook in every call of PlaceFile before the host gets it, as a change of the vault does that

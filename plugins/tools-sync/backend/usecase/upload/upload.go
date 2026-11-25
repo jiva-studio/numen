@@ -66,7 +66,7 @@ func (r *plainReader) ReadAt(p []byte, off int64) (int, error) {
 		if err != nil {
 			return count, err
 		}
-		if got.Stat.Hash != r.stat.Hash || got.Stat.Size != r.stat.Size || !got.Stat.ModTime.Equal(r.stat.ModTime) {
+		if r.isChanged(got.Stat) {
 			return count, ErrFileChanged
 		}
 		if len(got.Content) == 0 {
@@ -78,6 +78,23 @@ func (r *plainReader) ReadAt(p []byte, off int64) (int, error) {
 		return count, io.EOF
 	}
 	return count, nil
+}
+
+func (r *plainReader) isChanged(now domain.FileStat) bool {
+	return now.Hash != r.stat.Hash || now.Size != r.stat.Size || !now.ModTime.Equal(r.stat.ModTime)
+}
+
+// check reads the stat of the file once more, after the last range was read: the host takes the stat before it reads the
+// bytes, so a write after the stat of the last range shows only here.
+func (r *plainReader) check() error {
+	got, err := r.read(0, 1)
+	if err != nil {
+		return err
+	}
+	if r.isChanged(got.Stat) {
+		return ErrFileChanged
+	}
+	return nil
 }
 
 func isBig(storedSize int64) bool { return storedSize > note.BigFileLimit }

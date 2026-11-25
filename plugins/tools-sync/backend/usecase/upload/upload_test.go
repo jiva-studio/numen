@@ -503,3 +503,43 @@ func TestUploadFile_StartsAgainWhenTheServerForgotTheReservation(t *testing.T) {
 		t.Error("the hash is not the hash of the file sent whole under the new reservation")
 	}
 }
+
+func TestUploadFile_FailsWhenTheBigFileChangesAfterItsLastRangeWasRead(t *testing.T) {
+	w := newWorld(t)
+	source := w.newSource("Videos/Trip.bin", 7)
+	fileID := newFileID(t)
+	w.spy.RunAfterRead(func(path string, start, length int64) {
+		if path == source.GetPath() && start+length >= bigSize {
+			w.spy.Serve(synctest.NewSource(path, bigSize, 8, synctest.GetStart()))
+		}
+	})
+
+	_, err := w.use.Execute(t.Context(), w.input(source.GetPath(), source.GetStat(), fileID))
+
+	if !errors.Is(err, upload.ErrFileChanged) {
+		t.Errorf("error = %v, want ErrFileChanged for a file written after its last range was read", err)
+	}
+	if got := w.countCalls(syncv1connect.BlobServiceCompleteMultipartBlobProcedure); got != 0 {
+		t.Errorf("completions = %d, want none for a blob of a file that changed", got)
+	}
+	if entries := w.readEntries(t); len(entries) != 0 {
+		t.Errorf("uploads.json holds %d entries, want none: the file is sent again from the start", len(entries))
+	}
+}
+
+func TestUploadFile_FailsWhenTheSmallFileChangesAfterItWasRead(t *testing.T) {
+	w := newWorld(t)
+	content := make([]byte, 9<<20)
+	stat := w.writeFile(t, "Videos/Clip.bin", content)
+	w.spy.RunAfterRead(func(path string, start, length int64) {
+		if start+length >= int64(len(content)) {
+			w.c.WriteNote(vaultID, path, string(content)+"more")
+		}
+	})
+
+	_, err := w.use.Execute(t.Context(), w.input("Videos/Clip.bin", stat, newFileID(t)))
+
+	if !errors.Is(err, upload.ErrFileChanged) {
+		t.Errorf("error = %v, want ErrFileChanged for a file written after it was read", err)
+	}
+}
