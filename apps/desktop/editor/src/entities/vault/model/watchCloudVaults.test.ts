@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { reportFailure, runInBackground } from '@numen/ui'
-import {
-  CLOUD_REFRESH_INTERVAL_MS,
-  watchCloudVaults,
-  type CloudWatchPorts,
-} from './watchCloudVaults'
+import { watchCloudVaults } from './watchCloudVaults'
 import { useCloudVaults } from './useCloudVaults'
+
+const CLOUD_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+type CloudWatchPorts = NonNullable<Parameters<typeof watchCloudVaults>[1]>
 
 function setup(visible = true) {
   const state = {

@@ -61,7 +61,6 @@ const showVault = async (id: string, deps: VaultCommandsDeps): Promise<void> => 
   deps.reload()
 }
 
-/** Shows a vault of the list, or gets the cloud vault the id names onto this device. */
 const openVault = async (id: string, deps: VaultCommandsDeps): Promise<void> => {
   const remoteId = findCloudRemoteId(id)
   if (!remoteId) return showVault(id, deps)

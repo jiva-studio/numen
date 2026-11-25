@@ -273,7 +273,6 @@ export function createChoiceGroups(state: ChoiceGroupsState) {
   }
 }
 
-/** The cloud vaults under the vaults of this device, and nothing where there is none to show. */
 function createCloudGroup(
   cloud: readonly CloudVault[],
   step: PendingStep,

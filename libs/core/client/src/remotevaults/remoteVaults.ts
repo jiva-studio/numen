@@ -11,7 +11,6 @@ export interface RemoteVault {
   readonly remoteId: string
   readonly name: string
   readonly sizeBytes: number
-  /** The vault of this device it is connected to; empty when it is connected to none. */
   readonly vaultId: string
 }
 
@@ -19,7 +18,6 @@ export interface RemoteVault {
 export interface VaultPathSuggestion {
   readonly folder: string
   readonly path: string
-  /** Whether the name alone is taken in the folder. */
   readonly isTaken: boolean
 }
 

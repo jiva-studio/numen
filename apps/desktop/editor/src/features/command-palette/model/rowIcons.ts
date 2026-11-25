@@ -13,7 +13,6 @@ export interface FileIcons {
   findFileIcon?(this: void, path: string): Component | undefined
 }
 
-/** The icon of a row that stands for a choice and not for a note, a file or a command. */
 const findMarkIcon = (id: string): Component | undefined => {
   if (id.endsWith(KEEP_SUFFIX)) return Undo2
   return findCloudRemoteId(id) ? Cloud : undefined

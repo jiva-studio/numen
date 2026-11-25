@@ -1,7 +1,6 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
-import { forgetKnownRows } from '../model/vaults'
 import VaultsView from './VaultsView.vue'
 import { ReportedError } from '@numen/plugin-sdk'
 
@@ -59,7 +58,10 @@ const findButton = (wrapper: VueWrapper, text: string) =>
   wrapper.findAll('button').find((one) => one.text() === text)
 
 describe('VaultsView', () => {
-  beforeEach(forgetKnownRows)
+  beforeEach(async () => {
+    const empty = await render({ vaults: [], remote: [] })
+    empty.wrapper.unmount()
+  })
 
   it('reads the vaults again while it stays open and stops when it closes', async () => {
     vi.useFakeTimers()

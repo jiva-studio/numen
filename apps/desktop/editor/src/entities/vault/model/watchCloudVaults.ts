@@ -4,10 +4,10 @@
  */
 import { win } from '@numen/ui'
 
-export const CLOUD_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+const CLOUD_REFRESH_INTERVAL_MS = 5 * 60 * 1000
 
 /** What watching the window uses of the browser. */
-export interface CloudWatchPorts {
+interface CloudWatchPorts {
   readonly isVisible: () => boolean
   /** Calls `listener` at every focus of the window and every change of its visibility; returns the stop. */
   readonly onWake: (listener: () => void) => () => void
@@ -15,7 +15,7 @@ export interface CloudWatchPorts {
   readonly every: (task: () => void, ms: number) => () => void
 }
 
-export const browserCloudWatchPorts: CloudWatchPorts = {
+const browserCloudWatchPorts: CloudWatchPorts = {
   isVisible: () => win.document.visibilityState === 'visible',
   onWake: (listener) => {
     win.addEventListener('focus', listener)

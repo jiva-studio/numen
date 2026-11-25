@@ -185,7 +185,7 @@ describe('showing another vault', () => {
 })
 
 describe('getting a cloud vault', () => {
-  it('puts it where the person said, opens the vault it became and draws the page again', async () => {
+  it('places the vault in the chosen folder, opens it and reloads the page', async () => {
     const one = createWindow()
 
     await one.carry(invoke('app:vault.open', withVault(getCloudRowId('r1'))))

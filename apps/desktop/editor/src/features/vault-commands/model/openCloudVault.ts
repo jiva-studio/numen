@@ -19,10 +19,6 @@ export interface CloudOpenDeps {
   readonly writeMessage: MessageWriter
 }
 
-/**
- * Asks where the vault goes until the person answers or leaves. The answer is the path to use, and
- * nothing where the person dismissed the question or the core refused the chosen folder.
- */
 const askPlace = async (vault: CloudVault, first: string, deps: CloudOpenDeps): Promise<string> => {
   let path = first
   for (;;) {

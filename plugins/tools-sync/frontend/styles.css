@@ -124,7 +124,7 @@
   justify-content: center;
   inline-size: var(--vault-row-icon);
   block-size: var(--vault-row-icon);
-  border-radius: var(--numen-radius-panel);
+  border-radius: var(--numen-chrome-radius);
   background-color: color-mix(in srgb, var(--vault-row-tint) 16%, transparent);
   color: var(--vault-row-tint);
 }

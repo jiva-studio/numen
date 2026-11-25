@@ -5,7 +5,6 @@ import { formatVaultSize, getCloudRowId, type CloudVault, type VaultList } from 
 
 interface WindowVaultsDeps {
   readonly vaultList: Readonly<Ref<VaultList>>
-  /** The cloud vaults that are not on this device. */
   readonly cloud?: Readonly<Ref<readonly CloudVault[]>> | undefined
   readonly openVault: (vault: VaultRef) => Promise<void>
 }

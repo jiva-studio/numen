@@ -1,4 +1,3 @@
-/** The check for a camera leaves no timer behind and sets no phase once the form is gone. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'

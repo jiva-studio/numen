@@ -18,11 +18,6 @@ const MAX_SKELETON_ROWS = 5
 
 const knownRowCount = ref(1)
 
-/** Forgets the rows of the last list, as a new session does. */
-export const forgetKnownRows = (): void => {
-  knownRowCount.value = 1
-}
-
 type RowTone = 'ok' | 'warning' | 'alarm'
 
 export type VaultRowKind = 'ok' | 'syncing' | 'off' | 'conflict'
