@@ -9,9 +9,9 @@ import (
 // Roots are the public keys that may sign the certificate of the epoch key of a server.
 type Roots []ed25519.PublicKey
 
-// GetRoots returns the root keys that vouch for the restore epochs of the server at address: the ones of the build, and
-// the key of the setting only for a server other than the default one. A setting that is not a key is the error, with
-// the keys of the build.
+// GetRoots returns the root keys that vouch for the restore epochs of the server at address: the one of the build for
+// the default server, only the key of the setting for any other server. A setting that is not a key is the error, with
+// no keys.
 func GetRoots(address, setting string) (Roots, error) {
 	return epochtrust.GetRoots(address, setting)
 }

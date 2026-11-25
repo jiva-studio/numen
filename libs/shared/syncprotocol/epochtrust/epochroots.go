@@ -11,22 +11,33 @@ import (
 // DefaultServer is the address of the server of the build, the only one the embedded roots are for.
 const DefaultServer = "https://sync.numen.md"
 
-func getEmbeddedRoots() []ed25519.PublicKey { return []ed25519.PublicKey{} }
+// EmbeddedRootHex is the public root key of the default server, Ed25519 in hex.
+const EmbeddedRootHex = "9eecd55a6ae5b10e7ec349adac737207155fb5e8970a4b565590bd80d1b17dac"
 
-// GetRoots returns the roots that count for the server at address: the embedded ones, and the root key of the
-// plugin setting (hex) when the person typed another server than the default one. A setting never adds a root
-// for the default server.
+func getEmbeddedRoots() []ed25519.PublicKey {
+	key, err := hex.DecodeString(EmbeddedRootHex)
+	if err != nil || len(key) != ed25519.PublicKeySize {
+		return nil
+	}
+	return []ed25519.PublicKey{key}
+}
+
+// GetRoots returns the roots that count for the server at address: the embedded one for the default server and
+// only the root key of the plugin setting (hex) for any other server. A setting never adds a root for the default
+// server and the embedded root never counts for another server.
 func GetRoots(address, settingRoot string) ([]ed25519.PublicKey, error) {
-	roots := getEmbeddedRoots()
+	if isDefaultServer(address) {
+		return getEmbeddedRoots(), nil
+	}
 	settingRoot = strings.TrimSpace(settingRoot)
-	if settingRoot == "" || isDefaultServer(address) {
-		return roots, nil
+	if settingRoot == "" {
+		return nil, nil
 	}
 	key, err := hex.DecodeString(settingRoot)
 	if err != nil || len(key) != ed25519.PublicKeySize {
-		return roots, fmt.Errorf("the epoch root key of the settings is not 32 bytes of hex")
+		return nil, fmt.Errorf("the epoch root key of the settings is not 32 bytes of hex")
 	}
-	return append(roots, key), nil
+	return []ed25519.PublicKey{key}, nil
 }
 
 func isDefaultServer(address string) bool {

@@ -128,13 +128,27 @@ func TestVerifyAnnouncement_RefusesTheAnnouncementOfAnotherKey(t *testing.T) {
 	}
 }
 
-func TestGetRoots_HasNoRootInABuildWithoutOne(t *testing.T) {
+func TestGetRoots_ReturnsTheEmbeddedRootForTheDefaultServer(t *testing.T) {
 	t.Parallel()
+	want, err := hex.DecodeString(epochtrust.EmbeddedRootHex)
+	if err != nil || len(want) != ed25519.PublicKeySize {
+		t.Fatalf("EmbeddedRootHex decodes to %d bytes, error %v, want 32", len(want), err)
+	}
 
 	roots, err := epochtrust.GetRoots("https://sync.numen.md", "")
 
+	if err != nil || len(roots) != 1 || !bytes.Equal(roots[0], want) {
+		t.Errorf("GetRoots = %x %v, want the embedded root", roots, err)
+	}
+}
+
+func TestGetRoots_HasNoRootForAnotherServerWithoutASetting(t *testing.T) {
+	t.Parallel()
+
+	roots, err := epochtrust.GetRoots("http://127.0.0.1:8080", "")
+
 	if err != nil || len(roots) != 0 {
-		t.Errorf("GetRoots = %v %v, want none", roots, err)
+		t.Errorf("GetRoots = %x %v, want none", roots, err)
 	}
 }
 
@@ -155,8 +169,8 @@ func TestGetRoots_NeverAddsTheRootOfTheSettingForTheDefaultServer(t *testing.T) 
 
 	for _, address := range []string{epochtrust.DefaultServer, epochtrust.DefaultServer + "/"} {
 		roots, err := epochtrust.GetRoots(address, hexOf(public))
-		if err != nil || len(roots) != 0 {
-			t.Errorf("%s: GetRoots = %x %v, want none", address, roots, err)
+		if err != nil || len(roots) != 1 || hexOf(roots[0]) != epochtrust.EmbeddedRootHex {
+			t.Errorf("%s: GetRoots = %x %v, want only the embedded root", address, roots, err)
 		}
 	}
 }
@@ -185,13 +199,13 @@ func TestGetRoots_IgnoresTheRootOfTheSettingForEverySpellingOfTheDefaultServer(t
 		"https://sync.numen.md/some/path",
 	} {
 		roots, err := epochtrust.GetRoots(address, hexOf(public))
-		if err != nil || len(roots) != 0 {
-			t.Errorf("GetRoots(%q) = %x %v, want none", address, roots, err)
+		if err != nil || len(roots) != 1 || hexOf(roots[0]) != epochtrust.EmbeddedRootHex {
+			t.Errorf("GetRoots(%q) = %x %v, want only the embedded root", address, roots, err)
 		}
 	}
 }
 
-func TestGetRoots_AddsTheRootOfTheSettingForAnotherServer(t *testing.T) {
+func TestGetRoots_ReturnsOnlyTheRootOfTheSettingForAnotherServer(t *testing.T) {
 	t.Parallel()
 	public, _ := newKey(t, 7)
 	for _, address := range []string{"https://sync.example.com", "https://sync.numen.md:8443", "http://sync.numen.md", "https://evilsync.numen.md"} {
