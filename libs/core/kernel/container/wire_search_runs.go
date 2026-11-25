@@ -39,7 +39,7 @@ func newSearchRuns(
 		Cancels:     searchcancel.NewSearches(clock),
 		Tasks:       tasks,
 		Clock:       clock,
-		CreateTimer: clock.After,
+		CreateTimer: clock.StartTimer,
 		Policy:      searchrundomain.DefaultPolicy(),
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: generations,

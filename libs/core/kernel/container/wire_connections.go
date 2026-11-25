@@ -85,7 +85,7 @@ func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps se
 			Rows:   connection.NewListRows(deps, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute,
 			Titles: install.OperationTitles,
 		},
-		openCallSource(install, exec, deps), vaultDeps.Clock, connection.NewWait(vaultDeps.Clock.After), notices,
+		openCallSource(install, exec, deps), vaultDeps.Clock, connection.NewWait(vaultDeps.Clock.StartTimer), notices,
 	)
 	lists := openRowLists(install, exec, settingsDeps, vaultDeps)
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) {

@@ -126,7 +126,7 @@ func newRunWorld(t *testing.T, policy searchrundomain.Policy) runWorld {
 	shown := &runTasks{shown: map[string]work.Task{}}
 	generations := indexgeneration.New("epoch")
 	runs := searchquery.NewSearchRuns(searchquery.Deps{
-		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: shown, Clock: clock, CreateTimer: clock.After, Policy: policy,
+		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: shown, Clock: clock, CreateTimer: clock.StartTimer, Policy: policy,
 		Slots: searchslot.New(policy.MaxRunning), Generations: generations, Run: x.run, Names: func(id string) string { return "Plugin " + id },
 		GetCatalog: searchquerydomain.GetBuiltinCatalog, MaxResults: 100,
 	})

@@ -275,7 +275,7 @@ func (s windowStartup) newIndexWorker(
 		IndexChanged: indexChanged,
 		Events:       windowsession.NewIndexEvents(runtime, tasks, s.opening.Out, vaultDeps.RecordLog),
 		Quiet:        indexing.QuietPeriod,
-		CreateTimer:  vaultDeps.Clock.After,
+		CreateTimer:  vaultDeps.Clock.StartTimer,
 	})
 }
 
@@ -369,7 +369,7 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps 
 			exec.Runtime.EmitFilesChanged(string(v.ID), types)
 		},
 		Quiet:       windowsession.FeedQuietPeriod,
-		CreateTimer: vaultDeps.Clock.After,
+		CreateTimer: vaultDeps.Clock.StartTimer,
 	}
 	return events.Start
 }

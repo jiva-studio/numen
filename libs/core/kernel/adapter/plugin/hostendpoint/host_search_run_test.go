@@ -59,7 +59,7 @@ func newRunCallers(t *testing.T) (*callers, queriedVaults) {
 func newCallersRunning(run searchqueryusecase.RunQuery) *callers {
 	clock := testsupport.NewClock()
 	runs := searchqueryusecase.NewSearchRuns(searchqueryusecase.Deps{
-		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: noTasks{}, Clock: clock, CreateTimer: clock.After,
+		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: noTasks{}, Clock: clock, CreateTimer: clock.StartTimer,
 		Policy: searchrun.DefaultPolicy(), Slots: searchslot.New(searchrun.DefaultPolicy().MaxRunning),
 		Generations: indexgeneration.New("epoch"), Run: run, Names: func(id string) string { return id },
 		GetCatalog: searchquery.GetBuiltinCatalog, MaxResults: 100,
