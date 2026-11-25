@@ -146,7 +146,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	fetching := downloadwire.Deps{
 		Fetch: fetchfile.Deps{
 			Stage: wired.Downloads, Revisions: cloudSide, Blobs: wired.DownloadBlobs, Crypto: p.identity, Host: p.vaults, State: p.state,
-			Shares: share.NewReadShares(sharewire.NewShareDeps(deps)),
+			Shares: share.NewReadShares(sharewire.NewShareDeps(deps)), Identity: p.identity, Chain: cloudSide,
 		},
 		Entries: p.state,
 	}

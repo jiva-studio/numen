@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
@@ -65,6 +66,8 @@ type Deps struct {
 	Host      ports.Host
 	State     State
 	Shares    SharesReader
+	Identity  ports.Identity
+	Chain     ports.Chain
 }
 
 // FetchFile downloads the blob of an absent file in ranges, keeps what came in the store folder of the plugin
@@ -200,6 +203,10 @@ func (u *FetchFile) open(ctx context.Context, id domain.VaultID, path string) (t
 }
 
 func (u *FetchFile) readHead(ctx context.Context, t target, keys []vaultlink.VaultKey) (*syncv1.Revision, note.Meta, error) {
+	authors, err := u.getAuthors(ctx)
+	if err != nil {
+		return nil, note.Meta{}, err
+	}
 	var since uint64
 	for pages := 1; ; pages++ {
 		page, err := u.deps.Revisions.GetChanges(ctx, t.remote, since, 0)
@@ -210,6 +217,9 @@ func (u *FetchFile) readHead(ctx context.Context, t target, keys []vaultlink.Vau
 			rev := stored.GetRevision()
 			if !bytes.Equal(rev.GetFileId(), t.record.FileID) || rev.GetDeleted() {
 				continue
+			}
+			if err := note.CheckRevision(stored, t.remote, authors.IsTrusted); err != nil {
+				return nil, note.Meta{}, fmt.Errorf("download %s: %w", t.path, err)
 			}
 			meta, isOpen, err := u.openMeta(ctx, t.id, keys, rev)
 			if err != nil {
@@ -228,6 +238,18 @@ func (u *FetchFile) readHead(ctx context.Context, t target, keys []vaultlink.Vau
 		}
 		since = page.GetNextSeq()
 	}
+}
+
+func (u *FetchFile) getAuthors(ctx context.Context) (trust.Authors, error) {
+	own, err := u.deps.Identity.GetPublicIdentity(ctx)
+	if err != nil {
+		return trust.Authors{}, err
+	}
+	stored, err := u.deps.Chain.GetAccountChain(ctx)
+	if err != nil {
+		return trust.Authors{}, err
+	}
+	return trust.NewAuthors(own.Chain, stored)
 }
 
 func (u *FetchFile) openMeta(ctx context.Context, id domain.VaultID, keys []vaultlink.VaultKey, rev *syncv1.Revision) (note.Meta, bool, error) {

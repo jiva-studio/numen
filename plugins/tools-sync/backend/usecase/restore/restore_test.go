@@ -314,3 +314,31 @@ func TestRecoverAccount_DropsTheCachedCatalogOfAnotherIdentityAndSendsNothing(t 
 		t.Errorf("server holds %d catalog entries, want none sent", got)
 	}
 }
+
+func TestRecoverVault_TakesNoNoteFromARevisionWithABadSignature(t *testing.T) {
+	t.Parallel()
+	p := newFirst(t)
+	p.a.Connect(t, source)
+	other := synctest.NewSecondComputer(t, p.server, p.clock, target, p.words)
+	other.ConnectExisting(t, target, p.a.Link(t, source).RemoteVaultID)
+	other.WriteNote(target, "Plan.md", "tea")
+	if err := other.Sync(t.Context(), target); err != nil {
+		t.Fatal(err)
+	}
+	forged := p.a.RestoreDeps()
+	forged.Revisions = synctest.ForgedSignatures{Revisions: forged.Revisions}
+
+	if err := usecase.NewRecoverVault(forged).Execute(t.Context(), source); err != nil {
+		t.Fatal(err)
+	}
+	if text, isThere := p.a.ReadNote(source, "Plan.md"); isThere {
+		t.Fatalf("note = %q, want none: its revision has a bad signature", text)
+	}
+
+	if err := usecase.NewRecoverVault(p.a.RestoreDeps()).Execute(t.Context(), source); err != nil {
+		t.Fatal(err)
+	}
+	if text, isThere := p.a.ReadNote(source, "Plan.md"); !isThere || text != "tea" {
+		t.Errorf("note = %q (there: %v), want tea from the honest server", text, isThere)
+	}
+}

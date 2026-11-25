@@ -339,7 +339,7 @@ func (c *Computer) PreviewDeps() preview.Deps {
 // RestoreDeps are the dependencies of the recovery after the server was restored.
 func (c *Computer) RestoreDeps() restore.Deps {
 	return restore.Deps{
-		Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State, Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud,
+		Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State, Catalog: c.Cloud, Chain: c.Cloud, Identity: c.Account, Revisions: c.Cloud,
 		Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Commit: commit.NewCommitRevisions(c.CommitDeps()),
 		Remove: commit.NewCommitRemovals(c.CommitDeps()),
 	}

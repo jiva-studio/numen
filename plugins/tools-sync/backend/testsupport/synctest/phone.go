@@ -32,7 +32,7 @@ func NewPhone(t *testing.T, server *Server, clock *Clock, vault string, words []
 func (c *Computer) FetchDeps() fetchfile.Deps {
 	return fetchfile.Deps{
 		Stage: c.WireDeps().Downloads, Revisions: c.Cloud, Blobs: cloud.NewBlobs(c.Cloud), Crypto: c.Account, Host: c.Host, State: c.State,
-		Shares: share.NewReadShares(c.ShareDeps()),
+		Shares: share.NewReadShares(c.ShareDeps()), Identity: c.Account, Chain: c.Cloud,
 	}
 }
 

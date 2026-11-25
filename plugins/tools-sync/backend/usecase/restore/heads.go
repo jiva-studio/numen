@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 )
 
 var errEpochMoved = errors.New("the sync server announced another restore while its notes were read")
@@ -23,6 +24,10 @@ type heads struct {
 }
 
 func (u *RecoverVault) readHeads(ctx context.Context, vault transfer.Vault) (heads, error) {
+	authors, err := u.getAuthors(ctx)
+	if err != nil {
+		return heads{}, err
+	}
 	remote := vault.ID
 	found := heads{byFile: map[string]domain.Head{}, blobs: map[string][]byte{}, epochID: nil}
 	var since uint64
@@ -36,7 +41,7 @@ func (u *RecoverVault) readHeads(ctx context.Context, vault transfer.Vault) (hea
 		} else if !bytes.Equal(found.epochID, page.GetRestoreEpochId()) {
 			return heads{}, errEpochMoved
 		}
-		found.add(vault, page.GetChanges())
+		found.add(vault, authors, page.GetChanges())
 		if err := syncprotocol.CheckPage(pages, since, page.GetNextSeq(), page.GetHasMore()); err != nil {
 			return heads{}, err
 		}
@@ -47,8 +52,13 @@ func (u *RecoverVault) readHeads(ctx context.Context, vault transfer.Vault) (hea
 	}
 }
 
-func (h heads) add(vault transfer.Vault, changes []*syncv1.StoredRevision) {
+func (h heads) add(vault transfer.Vault, authors trust.Authors, changes []*syncv1.StoredRevision) {
 	for _, stored := range changes {
+		if note.CheckRevision(stored, vault.ID, authors.IsTrusted) != nil {
+			delete(h.byFile, string(stored.GetRevision().GetFileId()))
+			delete(h.blobs, string(stored.GetRevision().GetFileId()))
+			continue
+		}
 		rev := stored.GetRevision()
 		head := domain.Head{
 			FileID: rev.GetFileId(), Rev: stored.GetRevId(), ParentRev: rev.GetParentRev(), Version: rev.GetFileVersion(), Hash: "", Path: "",
@@ -64,6 +74,18 @@ func (h heads) add(vault transfer.Vault, changes []*syncv1.StoredRevision) {
 			h.blobs[string(rev.GetFileId())] = rev.GetBlobId()
 		}
 	}
+}
+
+func (u *RecoverVault) getAuthors(ctx context.Context) (trust.Authors, error) {
+	own, err := u.deps.Identity.GetPublicIdentity(ctx)
+	if err != nil {
+		return trust.Authors{}, err
+	}
+	stored, err := u.deps.Chain.GetAccountChain(ctx)
+	if err != nil {
+		return trust.Authors{}, err
+	}
+	return trust.NewAuthors(own.Chain, stored)
 }
 
 func (u *RecoverVault) markMissingBlobs(ctx context.Context, remote []byte, found heads, records []transfer.FileRecord) error {

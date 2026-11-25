@@ -41,6 +41,7 @@ type Deps struct {
 	Mirror    ports.Mirror
 	Catalog   ports.Catalog
 	Chain     ports.Chain
+	Identity  ports.Identity
 	Revisions ports.Revisions
 	Blobs     ports.BlobDownloader
 	Crypto    ports.Crypto

@@ -213,9 +213,7 @@ func (r *rewrap) openMeta(rev *syncv1.Revision) (note.Meta, bool) {
 }
 
 func (r *rewrap) isVerified(head *syncv1.StoredRevision) bool {
-	rev := head.GetRevision()
-	id := syncprotocol.GetRevisionID(rev)
-	return syncprotocol.CheckRevision(rev) == nil && bytes.Equal(head.GetRevId(), id[:]) && r.authors.IsTrusted(rev.GetAuthorDeviceSignKey())
+	return note.CheckRevision(head, r.remote, r.authors.IsTrusted) == nil
 }
 
 func (r *rewrap) commit(ctx context.Context, batch []*syncv1.Revision) error {

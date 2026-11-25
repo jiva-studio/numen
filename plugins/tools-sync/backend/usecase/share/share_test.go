@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
+	usecase "github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
@@ -501,6 +502,24 @@ func TestCreateShare_AFileMovedInsideTheFolderStaysInTheShare(t *testing.T) {
 	for _, head := range heads {
 		if len(head.GetRevision().GetShareRootId()) == 0 {
 			t.Error("the file moved inside the shared folder left the share")
+		}
+	}
+}
+
+func TestCreateShare_SignsNoRewrapOfARevisionWithABadSignature(t *testing.T) {
+	w := newWorld(t)
+	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
+	w.syncOwner(t)
+	deps := w.owner.ShareDeps()
+	deps.Revisions = synctest.ForgedSignatures{Revisions: deps.Revisions}
+
+	if err := usecase.NewCreateShare(deps).Execute(t.Context(), owned, folder); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, head := range w.heads(t) {
+		if len(head.GetRevision().GetShareRootId()) > 0 {
+			t.Error("the owner signed a share revision over a revision with a bad signature")
 		}
 	}
 }

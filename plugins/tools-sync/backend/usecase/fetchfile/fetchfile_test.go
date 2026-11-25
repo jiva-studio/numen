@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
@@ -243,5 +244,21 @@ func TestFetchFile_PlacesAFileSealedAtALaterEpochOfTheVault(t *testing.T) {
 
 	if got, ok := phone.ReadNote(synctest.PhoneVault, guidePath); !ok || got != want {
 		t.Errorf("file of %d bytes (there: %v), want the 5 MiB of the computer", len(got), ok)
+	}
+}
+
+func TestFetchFile_RefusesAHeadWithABadSignature(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	w.WriteGuide(t, guidePath)
+	deps := w.Phone.FetchDeps()
+	deps.Revisions = synctest.ForgedSignatures{Revisions: deps.Revisions}
+
+	err := fetchfile.NewFetchFile(deps).Execute(t.Context(), synctest.PhoneVault, guidePath)
+
+	if !errors.Is(err, note.ErrUnverified) {
+		t.Errorf("error = %v, want ErrUnverified", err)
+	}
+	if _, ok := w.Phone.ReadNote(synctest.PhoneVault, guidePath); ok {
+		t.Error("a file was placed from a revision with a bad signature")
 	}
 }
