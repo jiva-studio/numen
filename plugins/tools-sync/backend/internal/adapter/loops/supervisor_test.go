@@ -78,3 +78,32 @@ func TestSupervisor_GetAnswersWhileTheSessionIsBeingBuilt(t *testing.T) {
 	<-configured
 	supervisor.Stop()
 }
+
+func TestSupervisor_GetReportsNoSessionWhileTheLoopsStop(t *testing.T) {
+	stopping := make(chan struct{})
+	release := make(chan struct{})
+	var once sync.Once
+	supervisor := loops.NewSupervisor(func(_ context.Context, address string) (string, map[string]func(context.Context) error) {
+		return address, map[string]func(context.Context) error{"slow": func(ctx context.Context) error {
+			<-ctx.Done()
+			once.Do(func() { close(stopping) })
+			<-release
+			return nil
+		}}
+	})
+	supervisor.Configure("first")
+	stopped := make(chan struct{})
+	go func() {
+		supervisor.Stop()
+		close(stopped)
+	}()
+	<-stopping
+
+	_, isStarted := supervisor.Get()
+
+	if isStarted {
+		t.Error("Get returned the session whose loops are being stopped")
+	}
+	close(release)
+	<-stopped
+}

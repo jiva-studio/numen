@@ -236,3 +236,20 @@ func TestIsResumed_FollowsResumeAndSuspend(t *testing.T) {
 		t.Error("resumed after Suspend")
 	}
 }
+
+func TestResume_StartsNothingAfterClose(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	s := &synctest.Stream{}
+	life := newLifecycle(w, s)
+	if err := life.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := life.Resume(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	if life.IsResumed() || s.CountOpened() != 0 {
+		t.Errorf("resumed = %v, streams opened = %d, want nothing started after Close", life.IsResumed(), s.CountOpened())
+	}
+}

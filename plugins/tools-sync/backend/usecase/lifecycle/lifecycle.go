@@ -50,6 +50,7 @@ type Lifecycle struct {
 	mu        sync.Mutex
 	running   *running
 	isFlushed bool
+	isClosed  bool
 }
 
 // running is the loop and the stream while the application is on the screen.
@@ -71,7 +72,7 @@ func (r *running) record(err error) {
 
 // NewLifecycle returns the use case over the dependencies.
 func NewLifecycle(deps Deps) *Lifecycle {
-	return &Lifecycle{deps: deps, mu: sync.Mutex{}, running: nil, isFlushed: false}
+	return &Lifecycle{deps: deps, mu: sync.Mutex{}, running: nil, isFlushed: false, isClosed: false}
 }
 
 // Resume starts the loop, which passes over every connected vault at once, and the stream. A second call
@@ -79,7 +80,7 @@ func NewLifecycle(deps Deps) *Lifecycle {
 func (u *Lifecycle) Resume(ctx context.Context) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	if u.running != nil {
+	if u.running != nil || u.isClosed {
 		return nil
 	}
 	runCtx, stop := context.WithCancel(context.WithoutCancel(ctx))
@@ -127,7 +128,7 @@ func (u *Lifecycle) IsResumed() bool {
 func (u *Lifecycle) Close() error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	u.isFlushed = true
+	u.isFlushed, u.isClosed = true, true
 	if u.running == nil {
 		return nil
 	}

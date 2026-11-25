@@ -142,16 +142,14 @@ func (s *Supervisor[T]) startLoops(address string) {
 func (s *Supervisor[T]) stopLoops() {
 	s.mu.Lock()
 	cancel, done := s.cancel, s.done
+	var none T
+	s.address, s.cancel, s.done, s.current, s.isStarted = "", nil, nil, none, false
 	s.mu.Unlock()
 	if cancel == nil {
 		return
 	}
 	cancel()
 	<-done
-	var none T
-	s.mu.Lock()
-	s.address, s.cancel, s.done, s.current, s.isStarted = "", nil, nil, none, false
-	s.mu.Unlock()
 }
 
 func report(ctx context.Context, name string, err error) {
