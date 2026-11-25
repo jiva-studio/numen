@@ -100,7 +100,7 @@ export const WORDS = {
   tryAgain: 'Try again',
   noIdentity: 'No identity on this device',
   statusUpToDate: 'Up to date',
-  statusWaiting: 'Waiting for the server',
+  statusWaiting: 'Connecting…',
   statusProblem: 'Needs attention',
   syncedJustNow: 'Last sync less than a minute ago',
   syncedMinutesAgo: (count: number): string =>

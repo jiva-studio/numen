@@ -25,7 +25,7 @@ import (
 const GenericText = "Something went wrong in sync. Try again; if it fails again, look at the log of the plugin."
 
 const (
-	textUnreachable = "The sync server cannot be reached. Check the server address in the settings."
+	textUnreachable = "Can't connect right now. Check your internet connection and try again."
 	textNoPlan      = "Your plan does not allow syncing: choose a plan."
 	textStalled     = "The sync server stopped sending. Try again."
 	textStorageFull = "The cloud storage is full: changes stay on this computer. Free some space or choose a bigger plan."

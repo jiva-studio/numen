@@ -36,7 +36,7 @@ export const WORDS = {
   linkPreparingTitle: 'Preparing the link',
   linkPreparingDetail: 'Waiting for the sync server. This takes a few seconds.',
   linkStalledTitle: 'The link did not start',
-  linkStalled: 'The sync server cannot be reached. Check the server address in the sync settings.',
+  linkStalled: "Can't connect right now. Check your internet connection and try again.",
   linkRefusedTitle: 'The link did not start',
   linkWaitingTitle: 'Waiting for the other device',
   linkWaitingDetail: 'Keep this window open until the other device answers.',

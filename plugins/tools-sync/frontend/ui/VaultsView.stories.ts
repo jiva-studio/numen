@@ -151,7 +151,7 @@ export const DeletionsPaused: Story = {
 export const ServerAway: Story = {
   args: { client: createClient({ vaults: [work], isReachable: false }), now: () => NOW },
   play: async ({ canvasElement }) => {
-    await expect(await within(canvasElement).findByText('Waiting for the server')).toBeVisible()
+    await expect(await within(canvasElement).findByText('Connecting…')).toBeVisible()
   },
 }
 
