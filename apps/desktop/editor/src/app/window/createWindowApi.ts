@@ -3,6 +3,7 @@
  * to the parts that make them, grouped by what they reach: the vault, the window, the tabs, the
  * plugins and the configuration.
  */
+import { createDownloadClient } from '@numen/core-client'
 import { createFrameRuntimeLoader } from '@numen/plugin-loader'
 import { createConnectionApi } from '@/entities/connection'
 import { createDownloads, createFileApi } from '@/entities/file'
@@ -56,13 +57,16 @@ export function createWindowApi(transports: WindowTransports) {
   const vaults = createVaults(vaultClients.vaultsService, vaultClients.folderDialog)
   const windowVaultApi = createShownVaultApi(workspaceClients.windowService)
   const file = createFileApi(vaultClients.files)
+  const downloadClient = createDownloadClient(vaultClients.files)
   return {
     vault: {
       note: createNoteApi(vaultClients.notes),
       links: linkApi,
       relations: createRelations(vaultClients.notes, linkApi.resolveLinks),
       file,
-      downloads: createDownloads(file.fetchFile),
+      downloads: createDownloads(file.fetchFile, (path) =>
+        downloadClient.getDownloadProgress(path),
+      ),
       vaults,
       remoteVaults: createRemoteVaults(vaultClients.remoteVaults),
       vaultState: createVaultStateApi(vaultClients.vault),

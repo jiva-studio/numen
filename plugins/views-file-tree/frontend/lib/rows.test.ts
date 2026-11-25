@@ -66,4 +66,19 @@ describe('the status of a row', () => {
       undefined,
     ])
   })
+
+  it('carries the progress of a download into its loading ring, and none where it is not known', () => {
+    const rows = getRows([
+      {
+        entry: { ...entry('a.mp4'), isAbsent: true, isDownloading: true, downloadProgress: 0.3 },
+        rows: [],
+      },
+      { entry: { ...entry('b.mp4'), isAbsent: true, isDownloading: true }, rows: [] },
+    ])
+
+    expect(rows.map((one) => one.status)).toStrictEqual([
+      { kind: 'loading', label: 'Downloading…', progress: 0.3 },
+      { kind: 'loading', label: 'Downloading…' },
+    ])
+  })
 })

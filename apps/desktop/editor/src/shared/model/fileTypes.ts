@@ -34,6 +34,8 @@ export interface Entry {
   readonly isAbsent?: boolean
   readonly provider?: string
   readonly isDownloading?: boolean
+  /** The share of the file brought, from 0 to 1; absent where the size is not known. */
+  readonly downloadProgress?: number
 }
 
 /** Where a note was filed, or why none was made. */

@@ -250,6 +250,8 @@ export interface VaultEntry {
   readonly provider?: string
   // Whether the window is bringing the bytes of the file now.
   readonly isDownloading?: boolean
+  // The share of the file brought, from 0 to 1; absent where the size is not known.
+  readonly downloadProgress?: number
 }
 
 // VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.

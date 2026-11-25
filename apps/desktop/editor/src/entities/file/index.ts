@@ -2,4 +2,4 @@
 export type { Entry, FileKind, NoteType } from './types'
 export { countNotes } from './lib/countNotes'
 export { createFileApi, type FileApi } from './api/files'
-export { createDownloads, type Downloads } from './model/createDownloads'
+export { createDownloads, type DownloadBytes, type Downloads } from './model/createDownloads'

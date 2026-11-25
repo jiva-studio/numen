@@ -7,6 +7,7 @@ import { createAnsweredApi } from '@/testing/coreAnswers'
 import { Folder, FolderOpen } from '@lucide/vue'
 import { COMMAND, findIcon } from '@/shared/model/command'
 import { createDownloads } from '@/entities/file'
+import { asValue } from '@numen/result'
 import { createIconHost, createVaultFiles } from './fileServices'
 
 const target = {
@@ -20,6 +21,8 @@ const target = {
   source: null,
 }
 
+const readUnknownProgress = async () => asValue({ isKnown: false, bytesDone: 0, bytesTotal: 0 })
+
 const api = createAnsweredApi({
   files: {
     listFiles: (request) => ({
@@ -31,7 +34,7 @@ const api = createAnsweredApi({
 })
 
 const setup = () => {
-  const downloads = createDownloads(async () => undefined)
+  const downloads = createDownloads(async () => undefined, readUnknownProgress)
   const createUntitledNote = vi.fn()
   const runCommand = vi.fn(() => Promise.resolve())
   const files = createVaultFiles({
@@ -130,7 +133,10 @@ describe('the files kept on demand', () => {
   }
   const here = { path: 'b.mp4', name: 'b.mp4', isFolder: false, isNote: false, type: 'note' }
   const folder = { path: 'dir', name: 'dir', isFolder: true, isNote: false, type: 'note' }
-  const createFiles = (entries: object[], downloads = createDownloads(async () => undefined)) => ({
+  const createFiles = (
+    entries: object[],
+    downloads = createDownloads(async () => undefined, readUnknownProgress),
+  ) => ({
     downloads,
     files: createVaultFiles({
       ...listed(entries),
@@ -158,7 +164,10 @@ describe('the files kept on demand', () => {
 
   it('list a download that is running as downloading, and tell the plugin when one starts or ends', async () => {
     let finish: () => void = () => undefined
-    const downloads = createDownloads(() => new Promise<void>((done) => (finish = done)))
+    const downloads = createDownloads(
+      () => new Promise<void>((done) => (finish = done)),
+      readUnknownProgress,
+    )
     const { files } = createFiles([absent], downloads)
     const told: (readonly string[])[] = []
     files.watchDownloads?.((paths) => told.push(paths))
@@ -170,5 +179,27 @@ describe('the files kept on demand', () => {
 
     expect((await files.list(''))[0]?.isDownloading).toBeUndefined()
     expect(told).toStrictEqual([['a.mp4'], ['a.mp4']])
+  })
+
+  it('give a download that runs the share of the file brought, once its size is known', async () => {
+    let finish: () => void = () => undefined
+    let tick: () => void = () => undefined
+    const downloads = createDownloads(
+      () => new Promise<void>((done) => (finish = done)),
+      async () => asValue({ isKnown: true, bytesDone: 12, bytesTotal: 48 }),
+      { every: (task) => ((tick = task), () => undefined) },
+    )
+    const { files } = createFiles([absent], downloads)
+    const told: (readonly string[])[] = []
+    files.watchDownloads?.((paths) => told.push(paths))
+
+    const download = downloads.fetch('a.mp4')
+    expect((await files.list(''))[0]?.downloadProgress).toBeUndefined()
+    tick()
+    await vi.waitFor(() => expect(told).toHaveLength(2))
+
+    expect((await files.list(''))[0]?.downloadProgress).toBe(0.25)
+    finish()
+    await download
   })
 })

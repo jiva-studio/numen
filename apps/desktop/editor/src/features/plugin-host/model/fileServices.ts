@@ -4,7 +4,7 @@
  */
 import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceIcons } from '@numen/plugin-loader'
-import type { Downloads, Entry, FileApi } from '@/entities/file'
+import type { DownloadBytes, Downloads, Entry, FileApi } from '@/entities/file'
 import { COMMAND, findIcon, type CommandTarget } from '@/shared/model/command'
 import type { NoteCreator } from '@/entities/note'
 import { getEntryIcon } from './window/entryIcon'
@@ -19,10 +19,18 @@ export interface VaultFilesDeps {
 }
 
 /** A file here carries the provider of the vault, which is what lets a person take its download off again. */
-const markEntry = (one: Entry, provider: string, isDownloading: boolean): Entry => ({
+const markEntry = (
+  one: Entry,
+  provider: string,
+  isDownloading: boolean,
+  progress: DownloadBytes | undefined,
+): Entry => ({
   ...one,
   ...(!one.isFolder && !one.isAbsent && provider ? { provider } : {}),
   ...(isDownloading ? { isDownloading: true } : {}),
+  ...(isDownloading && progress
+    ? { downloadProgress: progress.bytesDone / progress.bytesTotal }
+    : {}),
 })
 
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
@@ -33,7 +41,14 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
     list: async (folder) => {
       const listed = await deps.listFiles(folder)
       provider = listed.find((one) => one.isAbsent && one.provider)?.provider ?? provider
-      return listed.map((one) => markEntry(one, provider, deps.downloads.isRunning(one.path)))
+      return listed.map((one) =>
+        markEntry(
+          one,
+          provider,
+          deps.downloads.isRunning(one.path),
+          deps.downloads.getProgress(one.path),
+        ),
+      )
     },
     watchDownloads: (handler) => {
       const stop = deps.downloads.watch((path) => handler([path]))

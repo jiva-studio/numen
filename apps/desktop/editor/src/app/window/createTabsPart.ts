@@ -10,6 +10,7 @@ import {
   createTabPluginStarts,
   createTabSync,
   createWindowTabs,
+  type WindowTabs,
   createDownloadTabs,
   createFileOpeners,
   DownloadPane,
@@ -61,21 +62,7 @@ export function createTabsPart(deps: TabsPartDeps) {
     isMain,
     writeMessage,
   })
-  const downloads = createDownloadTabs(DownloadPane, windowTabs, (path, title) =>
-    runInBackground(tabOpeners.openFile(path, title), (error) =>
-      writeMessage(formatError(error), 'error'),
-    ),
-  )
-  windowTabs.kinds.registerKind(downloads.kind)
-  const tabOpeners = createFileOpeners({
-    readFileKinds: api.vault.file.getFileKinds,
-    isFileAbsent: api.vault.file.isFileAbsent,
-    fetchFile: api.vault.downloads.fetch,
-    downloadTabs: downloads.tabs,
-    reconcileTab: windowTabs.panes.reconcileTab,
-    startTabKind: pluginStarts.startTabKind,
-    startExtensionReader: pluginStarts.startExtensionReader,
-  })
+  const { tabOpeners } = createFileTabs(deps, windowTabs, pluginStarts)
   const tabSync = createTabSync({
     windowTabs,
     tabLinks,
@@ -110,4 +97,33 @@ export function createTabsPart(deps: TabsPartDeps) {
     openMovedTab,
     linkSession,
   }
+}
+
+/** The files the tabs open: a file not on this device opens in a tab that shows its download. */
+function createFileTabs(
+  deps: TabsPartDeps,
+  windowTabs: WindowTabs,
+  pluginStarts: ReturnType<typeof createTabPluginStarts>,
+) {
+  const { api, writeMessage } = deps
+  const downloads = createDownloadTabs(
+    DownloadPane,
+    windowTabs,
+    (path, title) =>
+      runInBackground(tabOpeners.openFile(path, title), (error) =>
+        writeMessage(formatError(error), 'error'),
+      ),
+    api.vault.downloads.getProgress,
+  )
+  windowTabs.kinds.registerKind(downloads.kind)
+  const tabOpeners = createFileOpeners({
+    readFileKinds: api.vault.file.getFileKinds,
+    isFileAbsent: api.vault.file.isFileAbsent,
+    fetchFile: api.vault.downloads.fetch,
+    downloadTabs: downloads.tabs,
+    reconcileTab: windowTabs.panes.reconcileTab,
+    startTabKind: pluginStarts.startTabKind,
+    startExtensionReader: pluginStarts.startExtensionReader,
+  })
+  return { tabOpeners }
 }
