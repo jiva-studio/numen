@@ -440,7 +440,7 @@ func TestSyncVault_TheRemovalOfManyFilesIsSentOnceThePersonConfirmsItOnEachCompu
 	for i := range 10 {
 		wantNoFile(t, p.b, target, fmt.Sprintf("Papers/File %d.pdf", i+1))
 	}
-	if p.a.HasItemKey(deletions.HealthKey) || p.b.HasItemKey(deletions.HealthKey) {
+	if p.a.HasItemKey(deletions.GetHealthKey(source)) || p.b.HasItemKey(deletions.GetHealthKey(target)) {
 		t.Error("the pause is still shown after the answers")
 	}
 }

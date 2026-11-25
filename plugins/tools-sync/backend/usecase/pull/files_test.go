@@ -304,7 +304,7 @@ func TestPullChanges_RemovesTheFilesOnceThePersonConfirmsTheRemoval(t *testing.T
 	if rows := p.b.ReadFileRows(t, target); len(rows) != 0 {
 		t.Errorf("records = %+v, want none", rows)
 	}
-	if p.b.HasItemKey(deletions.HealthKey) {
+	if p.b.HasItemKey(deletions.GetHealthKey(target)) {
 		t.Error("the pause is still shown after the answer")
 	}
 	if got := p.b.Link(t, target).ServerSeq; got != p.a.ReadChanges(t, p.vault.ID)[0].GetSeq() {

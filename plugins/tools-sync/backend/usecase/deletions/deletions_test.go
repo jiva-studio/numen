@@ -133,7 +133,7 @@ func TestGuardDeletions_KeepsTheFilesTheCountAndTheDirectionOfAPauseAndReportsTh
 	if state.Direction != transfer.DirectionSend || len(state.Files) != 6 || state.Tracked != 10 || !state.CreatedAt.Equal(s.now) {
 		t.Errorf("state = %+v, want a send of 6 files of 10 tracked at the time of the clock", state)
 	}
-	item := s.health.items[deletions.HealthKey]
+	item := s.health.items[deletions.GetHealthKey(vaultID)]
 	if item.Severity != health.Error || item.Text != "Sync is paused: 6 of 10 files are removed" {
 		t.Errorf("health item = %+v, want an error that reads %q", item, "Sync is paused: 6 of 10 files are removed")
 	}
@@ -148,7 +148,7 @@ func TestGuardDeletions_ReportsThatFilesWereRemovedOnAnotherComputerForAnApply(t
 	if verdict != transfer.Pause || s.store.states[vaultID].Direction != transfer.DirectionApply {
 		t.Fatalf("verdict = %d, state = %+v, want a pause of an apply", verdict, s.store.states[vaultID])
 	}
-	if text := s.health.items[deletions.HealthKey].Text; text != "Sync is paused: 6 of 10 files were removed on another computer" {
+	if text := s.health.items[deletions.GetHealthKey(vaultID)].Text; text != "Sync is paused: 6 of 10 files were removed on another computer" {
 		t.Errorf("text = %q, want the text of an apply", text)
 	}
 }
@@ -196,7 +196,7 @@ func TestResolveDeletions_ReturnsThePendingStateAndClearsItAndTheHealthItemForEi
 		if _, isPending := s.store.states[vaultID]; isPending {
 			t.Errorf("%s: the state is still pending", choice)
 		}
-		if _, isShown := s.health.items[deletions.HealthKey]; isShown {
+		if _, isShown := s.health.items[deletions.GetHealthKey(vaultID)]; isShown {
 			t.Errorf("%s: the health item is still shown", choice)
 		}
 	}
