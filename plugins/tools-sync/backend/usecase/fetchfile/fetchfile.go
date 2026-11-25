@@ -79,8 +79,10 @@ type FetchFile struct {
 }
 
 type download struct {
-	done chan struct{}
-	err  error
+	done    chan struct{}
+	err     error
+	waiters int
+	cancel  context.CancelFunc
 }
 
 // NewFetchFile returns the use case over the dependencies.
@@ -88,28 +90,63 @@ func NewFetchFile(deps Deps) *FetchFile {
 	return &FetchFile{deps: deps, mu: sync.Mutex{}, running: map[string]*download{}}
 }
 
-// Execute downloads the file at path. Two calls for one path run one download, and the other waits for it.
+// Execute downloads the file at path. Two calls for one path share one download, and each returns its result. The
+// download does not end when the call that began it ends; it ends when no call is left waiting for it, and a call
+// that comes then waits for that end and starts a download of its own.
 func (u *FetchFile) Execute(ctx context.Context, id domain.VaultID, path string) error {
 	key := string(id) + "\x00" + path
-	u.mu.Lock()
-	if running, isRunning := u.running[key]; isRunning {
-		u.mu.Unlock()
+	for {
+		own, isJoined := u.join(ctx, key, id, path)
+		if !isJoined {
+			select {
+			case <-own.done:
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
 		select {
-		case <-running.done:
-			return running.err
+		case <-own.done:
+			return own.err
 		case <-ctx.Done():
+			u.leave(own)
 			return ctx.Err()
 		}
 	}
-	own := &download{done: make(chan struct{}), err: nil}
-	u.running[key] = own
-	u.mu.Unlock()
+}
+
+func (u *FetchFile) join(ctx context.Context, key string, id domain.VaultID, path string) (*download, bool) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	own, isRunning := u.running[key]
+	if isRunning && own.waiters == 0 {
+		return own, false
+	}
+	if !isRunning {
+		runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+		own = &download{done: make(chan struct{}), err: nil, waiters: 0, cancel: cancel}
+		u.running[key] = own
+		go u.finish(runCtx, key, own, id, path)
+	}
+	own.waiters++
+	return own, true
+}
+
+func (u *FetchFile) finish(ctx context.Context, key string, own *download, id domain.VaultID, path string) {
 	own.err = u.run(ctx, id, path)
 	u.mu.Lock()
 	delete(u.running, key)
 	u.mu.Unlock()
+	own.cancel()
 	close(own.done)
-	return own.err
+}
+
+func (u *FetchFile) leave(own *download) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if own.waiters--; own.waiters == 0 {
+		own.cancel()
+	}
 }
 
 type target struct {
@@ -297,6 +334,9 @@ func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision
 	}
 	if int64(len(part)) > size {
 		part = nil
+		if err := store.Delete(ctx, name); err != nil {
+			return nil, err
+		}
 	}
 	for int64(len(part)) < size {
 		next, err := u.readRange(ctx, t, rev, int64(len(part)), min(RangeSize, size-int64(len(part))))
@@ -307,7 +347,7 @@ func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision
 			return nil, fmt.Errorf("download %s: the server ended the blob at %d of %d bytes: %w", t.path, len(part), size, note.ErrCorruptBlob)
 		}
 		part = append(part, next...)
-		if err := store.Write(ctx, name, part); err != nil {
+		if err := store.Append(ctx, name, next); err != nil {
 			return nil, err
 		}
 	}

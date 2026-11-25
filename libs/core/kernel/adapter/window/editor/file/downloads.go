@@ -54,12 +54,26 @@ func (h *Downloads) DropDownload(
 	return connect.NewResponse(&v1.DropDownloadResponse{}), nil
 }
 
+const interruptedText = "The download was interrupted. Try again."
+
+var errDownloadInterrupted = errors.New(interruptedText)
+
 func newDownloadError(err error) error {
 	if answered, ok := errors.AsType[*connect.Error](err); ok {
+		if isInterruption(answered.Code()) {
+			return connect.NewError(connect.CodeUnavailable, errDownloadInterrupted)
+		}
 		return answered
 	}
 	if _, ok := errors.AsType[*plugindomain.UnavailableError](err); ok {
 		return connect.NewError(connect.CodeFailedPrecondition, err)
 	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return connect.NewError(connect.CodeUnavailable, errDownloadInterrupted)
+	}
 	return wire.NewInternalError(err)
+}
+
+func isInterruption(code connect.Code) bool {
+	return code == connect.CodeUnknown || code == connect.CodeCanceled || code == connect.CodeDeadlineExceeded
 }

@@ -5,6 +5,7 @@ package errorwire
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -25,6 +27,7 @@ const GenericText = "Something went wrong in sync. Try again; if it fails again,
 const (
 	textUnreachable = "The sync server cannot be reached. Check the server address in the settings."
 	textNoPlan      = "Your plan does not allow syncing: choose a plan."
+	textStalled     = "The sync server stopped sending. Try again."
 	textStorageFull = "The cloud storage is full: changes stay on this computer. Free some space or choose a bigger plan."
 	textSignIn      = "The server did not accept the sign-in of this computer. Try again later."
 	textUpdate      = "The sync server needs a newer version of Numen. Update Numen."
@@ -120,6 +123,10 @@ type entry struct {
 func getEntries() []entry {
 	return []entry{
 		{syncprotocol.ErrUnreachable, server.CodeUnavailable, textUnreachable},
+		{syncclient.ErrTransferStalled, server.CodeUnavailable, textStalled},
+		{io.ErrUnexpectedEOF, server.CodeUnavailable, textStalled},
+		{context.Canceled, server.CodeUnavailable, "The transfer was cancelled."},
+		{context.DeadlineExceeded, server.CodeUnavailable, textStalled},
 		{sessiondomain.ErrUnreachable, server.CodeUnavailable, textUnreachable},
 		{sessiondomain.ErrNoServer, server.CodeUnavailable, "No sync server is set. Enter the server address in the settings."},
 		{syncprotocol.ErrInsecureAddress, server.CodeInvalidArgument, "The server address must start with https://, or be an http address on this computer. Check the server address in the settings."},

@@ -1,6 +1,7 @@
 package fetchfile_test
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"sync"
@@ -260,5 +261,45 @@ func TestFetchFile_RefusesAHeadWithABadSignature(t *testing.T) {
 	}
 	if _, ok := w.Phone.ReadNote(synctest.PhoneVault, guidePath); ok {
 		t.Error("a file was placed from a revision with a bad signature")
+	}
+}
+
+func TestFetchFile_SecondTapStillGetsTheFileWhenTheFirstTapIsCancelled(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	want := w.WriteGuide(t, guidePath)
+	before := w.Server.CountBlobGets()
+	first, cancelFirst := context.WithCancel(t.Context())
+	t.Cleanup(cancelFirst)
+	var wg sync.WaitGroup
+	wg.Go(func() { _ = w.Fetch(first, guidePath) })
+	for w.Server.CountBlobGets() == before {
+		time.Sleep(time.Millisecond)
+	}
+	second := make(chan error, 1)
+	wg.Go(func() { second <- w.Fetch(t.Context(), guidePath) })
+	cancelFirst()
+	wg.Wait()
+
+	if err := <-second; err != nil {
+		t.Errorf("the second tap failed with %v, want the file", err)
+	}
+	if got, ok := w.Phone.ReadNote(synctest.PhoneVault, guidePath); !ok || got != want {
+		t.Errorf("file of %d bytes (there: %v), want the 5 MiB of the computer", len(got), ok)
+	}
+}
+
+func TestFetchFile_EndsTheDownloadWhenNoCallWaitsForIt(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	w.WriteGuide(t, guidePath)
+	gone, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	err := w.Fetch(gone, guidePath)
+
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("error = %v, want context.Canceled", err)
+	}
+	if err := w.Fetch(t.Context(), guidePath); err != nil {
+		t.Errorf("a download after a cancelled one failed: %v", err)
 	}
 }

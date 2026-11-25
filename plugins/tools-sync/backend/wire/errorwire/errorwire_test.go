@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"strings"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -136,5 +138,24 @@ func TestDescribe_LogsTheSameFailureOfAnOperationOnce(t *testing.T) {
 
 	if lines := strings.Count(logged.String(), "level=WARN"); lines != 2 {
 		t.Errorf("logged %d warnings, want 2: one for each distinct failure\n%s", lines, logged.String())
+	}
+}
+
+func TestGetCodeAndGetText_AnswerAStoppedOrCancelledTransferWithAPlainSentence(t *testing.T) {
+	for name, one := range map[string]struct {
+		err      error
+		wantText string
+	}{
+		"stalled":   {err: fmt.Errorf("download a range: %w", syncclient.ErrTransferStalled), wantText: "The sync server stopped sending. Try again."},
+		"cut short": {err: fmt.Errorf("stopped: %w", io.ErrUnexpectedEOF), wantText: "The sync server stopped sending. Try again."},
+		"cancelled": {err: fmt.Errorf("download: %w", context.Canceled), wantText: "The transfer was cancelled."},
+		"too late":  {err: context.DeadlineExceeded, wantText: "The sync server stopped sending. Try again."},
+	} {
+		if got := GetCode(one.err); got != server.CodeUnavailable {
+			t.Errorf("%s: code = %q, want %q", name, got, server.CodeUnavailable)
+		}
+		if got := GetText(one.err); got != one.wantText {
+			t.Errorf("%s: text = %q, want %q", name, got, one.wantText)
+		}
 	}
 }

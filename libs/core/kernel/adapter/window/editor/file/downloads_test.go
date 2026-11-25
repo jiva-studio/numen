@@ -97,3 +97,21 @@ func TestADownloadInAWindowWithoutAVaultFails(t *testing.T) {
 		t.Errorf("the call failed with %v and asked the provider %q", err, p.calls)
 	}
 }
+
+func TestFetchFile_ProviderConnectionBreaksOrTimesOut_AnswersWithTheSentenceOfTheInterruption(t *testing.T) {
+	for name, cause := range map[string]error{
+		"lost":      connect.NewError(connect.CodeUnknown, errors.New("EOF")),
+		"cancelled": connect.NewError(connect.CodeCanceled, errors.New("context canceled")),
+		"too long":  connect.NewError(connect.CodeDeadlineExceeded, errors.New("deadline")),
+		"plain":     context.Canceled,
+	} {
+		handler := newDownloadsHandler(window{vault: domain.Vault{ID: "v-1"}}, &provider{err: cause})
+
+		_, err := handler.FetchFile(t.Context(), connect.NewRequest(&v1.FetchFileRequest{Path: "a.pdf"}))
+
+		var failure *connect.Error
+		if !errors.As(err, &failure) || failure.Code() != connect.CodeUnavailable || failure.Message() != "The download was interrupted. Try again." {
+			t.Errorf("%s: the call failed with %v", name, err)
+		}
+	}
+}
