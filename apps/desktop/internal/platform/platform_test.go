@@ -160,3 +160,9 @@ func TestACredentialsFileWithoutAChoiceRefusesKeys(t *testing.T) {
 		t.Fatalf("SetKey = %v, want ErrFileBackendNotConfirmed", err)
 	}
 }
+
+func TestTheDesktopCoreKeepsTheRegistryOfAbsentFiles(t *testing.T) {
+	if !GetConfig().Absent {
+		t.Error("the desktop config does not open the registry of absent files")
+	}
+}

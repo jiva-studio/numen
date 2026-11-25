@@ -33,7 +33,7 @@ const (
 
 // GetConfig returns the desktop launch paths.
 func GetConfig() container.Config {
-	var cfg container.Config
+	cfg := container.Config{Absent: true}
 	if path, err := GetIndexPath(); err == nil {
 		cfg.IndexPath = path
 	}
