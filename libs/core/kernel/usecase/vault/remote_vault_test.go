@@ -294,7 +294,7 @@ func newSuggestion(parent, setting string) (*vaults.SuggestVaultPath, string) {
 func TestTheDocumentsFolderIsWhereANewVaultGoesWhenNoFolderIsSet(t *testing.T) {
 	suggest, documents := newSuggestion(t.TempDir(), "")
 
-	got, err := suggest.Execute("Notes")
+	got, err := suggest.Execute("Notes", "")
 
 	if err != nil {
 		t.Fatal(err)
@@ -309,7 +309,7 @@ func TestTheFolderOfTheSettingIsWhereANewVaultGoes(t *testing.T) {
 	set := filepath.Join(parent, "Vaults")
 	suggest, _ := newSuggestion(parent, set)
 
-	got, err := suggest.Execute("Notes")
+	got, err := suggest.Execute("Notes", "")
 
 	if err != nil {
 		t.Fatal(err)
@@ -328,7 +328,7 @@ func TestATakenNameGetsTheLowestFreeNumber(t *testing.T) {
 		}
 	}
 
-	got, err := suggest.Execute("Notes")
+	got, err := suggest.Execute("Notes", "")
 
 	if err != nil {
 		t.Fatal(err)
@@ -343,7 +343,7 @@ func TestANameThatCannotNameAFolderIsMadeOneThatCan(t *testing.T) {
 	cases := map[string]string{"a/b": "a-b", `c:\d`: "c--d", "  ": vaultdomain.DefaultFolderName, "..": vaultdomain.DefaultFolderName, "Plain": "Plain"}
 
 	for name, want := range cases {
-		got, err := suggest.Execute(name)
+		got, err := suggest.Execute(name, "")
 
 		if err != nil {
 			t.Fatal(err)
@@ -357,7 +357,35 @@ func TestANameThatCannotNameAFolderIsMadeOneThatCan(t *testing.T) {
 func TestAFolderForNewVaultsThatIsNotAbsoluteIsAnInvalidPath(t *testing.T) {
 	suggest, _ := newSuggestion(t.TempDir(), "relative/vaults")
 
-	_, err := suggest.Execute("Notes")
+	_, err := suggest.Execute("Notes", "")
+
+	if !errors.Is(err, vaultdomain.ErrInvalidPath) {
+		t.Errorf("the error is %v, want ErrInvalidPath", err)
+	}
+}
+
+func TestATakenNameInTheChosenFolderGetsTheLowestFreeNumberThere(t *testing.T) {
+	parent := t.TempDir()
+	suggest, documents := newSuggestion(parent, "")
+	chosen := filepath.Join(parent, "Music")
+	if err := os.MkdirAll(filepath.Join(chosen, "Notes"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := suggest.Execute("Notes", chosen)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Folder != chosen || got.Path != filepath.Join(chosen, "Notes 2") || !got.IsTaken {
+		t.Errorf("the suggestion is %+v, want Notes 2 in %s and not in %s", got, chosen, documents)
+	}
+}
+
+func TestAChosenFolderThatIsNotAbsoluteIsAnInvalidPath(t *testing.T) {
+	suggest, _ := newSuggestion(t.TempDir(), "")
+
+	_, err := suggest.Execute("Notes", "relative/music")
 
 	if !errors.Is(err, vaultdomain.ErrInvalidPath) {
 		t.Errorf("the error is %v, want ErrInvalidPath", err)

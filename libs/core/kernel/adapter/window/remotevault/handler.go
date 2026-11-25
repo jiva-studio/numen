@@ -57,7 +57,7 @@ func (h *Handler) ListRemoteVaults(
 func (h *Handler) SuggestVaultPath(
 	_ context.Context, r *connect.Request[v1.SuggestVaultPathRequest],
 ) (*connect.Response[v1.SuggestVaultPathResponse], error) {
-	suggested, err := h.suggest.Execute(r.Msg.GetName())
+	suggested, err := h.suggest.Execute(r.Msg.GetName(), r.Msg.GetFolder())
 	if err != nil {
 		return nil, newOpenError(err)
 	}

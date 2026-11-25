@@ -39,7 +39,11 @@ export type RemoteVaultCalls = Pick<
 export interface RemoteVaultRpc {
   /** Lists the remote vaults. A provider that is off or not installed gives an empty list. */
   listRemoteVaults(): Promise<Result<readonly RemoteVault[], RemoteVaultFailure>>
-  suggestVaultPath(name: string): Promise<Result<VaultPathSuggestion, RemoteVaultFailure>>
+  /** Where a vault of `name` goes: in `folder` when given, else in the folder for new vaults. */
+  suggestVaultPath(
+    name: string,
+    folder?: string,
+  ): Promise<Result<VaultPathSuggestion, RemoteVaultFailure>>
   /** Makes the folder at the path, registers it as a vault, connects the remote vault and returns the vault id. */
   openRemoteVault(remoteId: string, path: string): Promise<Result<string, RemoteVaultFailure>>
 }
@@ -76,9 +80,9 @@ const answer = async <T>(call: () => Promise<T>): Promise<Result<T, RemoteVaultF
 export const createRemoteVaultClient = (calls: RemoteVaultCalls): RemoteVaultRpc => ({
   listRemoteVaults: async () =>
     answer(async () => (await calls.listRemoteVaults({})).vaults.map(readVault)),
-  suggestVaultPath: async (name) =>
+  suggestVaultPath: async (name, folder) =>
     answer(async () => {
-      const suggestion = await calls.suggestVaultPath({ name })
+      const suggestion = await calls.suggestVaultPath({ name, folder: folder ?? '' })
       return { folder: suggestion.folder, path: suggestion.path, isTaken: suggestion.isTaken }
     }),
   openRemoteVault: async (remoteId, path) =>

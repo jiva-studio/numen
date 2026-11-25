@@ -10,7 +10,7 @@ import type { CloudVault, VaultPlace } from '../lib/cloudVault'
 export interface RemoteVaults {
   /** The cloud vaults; none where the cloud is off, signed out or out of reach. */
   list(): Promise<readonly CloudVault[]>
-  suggestPath(name: string): Promise<Result<VaultPlace>>
+  suggestPath(name: string, folder?: string): Promise<Result<VaultPlace>>
   /** Starts getting the vault into `path` and answers with the id of the local vault. */
   open(remoteId: string, path: string): Promise<Result<string>>
 }
@@ -41,9 +41,9 @@ export const createRemoteVaults = (client: WindowClients['remoteVaults']): Remot
       return []
     }
   },
-  suggestPath: (name) =>
+  suggestPath: (name, folder) =>
     guard(async () => {
-      const answer = await client.suggestVaultPath(name)
+      const answer = await client.suggestVaultPath(name, folder)
       if (!answer.ok) return asFailed(answer)
       const { folder, path, isTaken } = answer.value
       return { ok: true, value: { folder, path, isTaken } }

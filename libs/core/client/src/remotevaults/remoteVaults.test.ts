@@ -14,14 +14,23 @@ const createCalls = (overrides: Partial<RemoteVaultCalls> = {}): RemoteVaultCall
     Promise.resolve(
       create(RemoteVaultServiceListRemoteVaultsResponseSchema, {
         vaults: [
-          create(RemoteVaultSchema, { remoteId: 'r-1', name: 'Notes', sizeBytes: 2048n, vaultId: 'v-1' }),
+          create(RemoteVaultSchema, {
+            remoteId: 'r-1',
+            name: 'Notes',
+            sizeBytes: 2048n,
+            vaultId: 'v-1',
+          }),
           create(RemoteVaultSchema, { remoteId: 'r-2', name: 'Books' }),
         ],
       }),
     ),
   suggestVaultPath: () =>
     Promise.resolve(
-      create(SuggestVaultPathResponseSchema, { folder: '/docs', path: '/docs/Notes 2', isTaken: true }),
+      create(SuggestVaultPathResponseSchema, {
+        folder: '/docs',
+        path: '/docs/Notes 2',
+        isTaken: true,
+      }),
     ),
   openRemoteVault: () => Promise.resolve(create(OpenRemoteVaultResponseSchema, { vaultId: 'v-9' })),
   ...overrides,
@@ -59,10 +68,36 @@ describe('createRemoteVaultClient', () => {
 
     const result = await client.suggestVaultPath('Notes')
 
-    expect(sent).toEqual([{ name: 'Notes' }])
+    expect(sent).toEqual([{ name: 'Notes', folder: '' }])
     expect(result).toEqual({
       ok: true,
       value: { folder: '/docs', path: '/docs/Notes 2', isTaken: true },
+    })
+  })
+
+  it('asks for the name in the chosen folder', async () => {
+    const sent: unknown[] = []
+    const client = createRemoteVaultClient(
+      createCalls({
+        suggestVaultPath: (request) => {
+          sent.push(request)
+          return Promise.resolve(
+            create(SuggestVaultPathResponseSchema, {
+              folder: '/music',
+              path: '/music/Notes 2',
+              isTaken: true,
+            }),
+          )
+        },
+      }),
+    )
+
+    const result = await client.suggestVaultPath('Notes', '/music')
+
+    expect(sent).toEqual([{ name: 'Notes', folder: '/music' }])
+    expect(result).toEqual({
+      ok: true,
+      value: { folder: '/music', path: '/music/Notes 2', isTaken: true },
     })
   })
 

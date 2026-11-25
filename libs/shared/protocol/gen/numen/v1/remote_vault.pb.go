@@ -102,8 +102,11 @@ func (x *RemoteVaultServiceListRemoteVaultsResponse) GetVaults() []*RemoteVault 
 }
 
 type SuggestVaultPathRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The folder to make the vault in. When empty, the setting Folder for new vaults, or the Documents
+	// folder of the system when the setting is empty.
+	Folder        string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -141,6 +144,13 @@ func (*SuggestVaultPathRequest) Descriptor() ([]byte, []int) {
 func (x *SuggestVaultPathRequest) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *SuggestVaultPathRequest) GetFolder() string {
+	if x != nil {
+		return x.Folder
 	}
 	return ""
 }
@@ -315,9 +325,10 @@ const file_numen_v1_remote_vault_proto_rawDesc = "" +
 	"\x1bnumen/v1/remote_vault.proto\x12\bnumen.v1\x1a\x1dnumen/v1/vault_provider.proto\"+\n" +
 	")RemoteVaultServiceListRemoteVaultsRequest\"[\n" +
 	"*RemoteVaultServiceListRemoteVaultsResponse\x12-\n" +
-	"\x06vaults\x18\x01 \x03(\v2\x15.numen.v1.RemoteVaultR\x06vaults\"-\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x15.numen.v1.RemoteVaultR\x06vaults\"E\n" +
 	"\x17SuggestVaultPathRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"a\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06folder\x18\x02 \x01(\tR\x06folder\"a\n" +
 	"\x18SuggestVaultPathResponse\x12\x16\n" +
 	"\x06folder\x18\x01 \x01(\tR\x06folder\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x19\n" +

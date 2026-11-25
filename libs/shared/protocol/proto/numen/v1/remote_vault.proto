@@ -31,6 +31,9 @@ message RemoteVaultServiceListRemoteVaultsResponse {
 
 message SuggestVaultPathRequest {
   string name = 1;
+  // The folder to make the vault in. When empty, the setting Folder for new vaults, or the Documents
+  // folder of the system when the setting is empty.
+  string folder = 2;
 }
 
 message SuggestVaultPathResponse {

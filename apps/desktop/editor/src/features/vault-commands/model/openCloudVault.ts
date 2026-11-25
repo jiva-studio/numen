@@ -3,7 +3,7 @@
  * opens while it downloads.
  */
 import type { PickerHost } from '@numen/plugin-loader'
-import { joinFolder, type CloudVault, type RemoteVaults, type Vaults } from '@/entities/vault'
+import type { CloudVault, RemoteVaults, Vaults } from '@/entities/vault'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { VAULT_WORDS } from '../words'
 
@@ -21,7 +21,7 @@ export interface CloudOpenDeps {
 
 /**
  * Asks where the vault goes until the person answers or leaves. The answer is the path to use, and
- * nothing where the person dismissed the question.
+ * nothing where the person dismissed the question or the core refused the chosen folder.
  */
 const askPlace = async (vault: CloudVault, first: string, deps: CloudOpenDeps): Promise<string> => {
   let path = first
@@ -36,7 +36,13 @@ const askPlace = async (vault: CloudVault, first: string, deps: CloudOpenDeps): 
     if (answer === undefined) return ''
     if (answer === USE_FOLDER) return path
     const folder = await deps.vaults.choose(VAULT_WORDS.folder)
-    if (folder) path = joinFolder(folder, vault.name)
+    if (!folder) continue
+    const suggested = await deps.remote.suggestPath(vault.name, folder)
+    if (!suggested.ok) {
+      deps.writeMessage(suggested.error || VAULT_WORDS.cloudFailed, 'error')
+      return ''
+    }
+    path = suggested.value.path
   }
 }
 

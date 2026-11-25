@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SelectOptionOptions } from '@numen/plugin-loader'
-import type { CloudVault } from '@/entities/vault'
+import type { CloudVault, RemoteVaults } from '@/entities/vault'
 import { openCloudVault, type CloudOpenDeps } from './openCloudVault'
 
 const HARE: CloudVault = { remoteId: 'r1', name: 'Hare Krishna', sizeBytes: 100, vaultId: '' }
@@ -13,7 +13,10 @@ function setup(answers: (string | undefined)[], chosen: string[] = []) {
   const deps = {
     vaults: { choose: vi.fn(async () => chosen.shift() ?? '') },
     remote: {
-      suggestPath: vi.fn(async () => ({ ok: true as const, value: PLACE })),
+      suggestPath: vi.fn<RemoteVaults['suggestPath']>(async () => ({
+        ok: true as const,
+        value: PLACE,
+      })),
       open: vi.fn(async () => ({ ok: true as const, value: 'local-1' })),
     },
     ask: {
@@ -53,8 +56,36 @@ describe('getting a cloud vault', () => {
 
     await openCloudVault(HARE, deps)
 
+    expect(deps.remote.suggestPath).toHaveBeenLastCalledWith('Hare Krishna', '/music')
     expect(asked[1]!.title).toContain('/music/Hare Krishna')
     expect(deps.remote.open).toHaveBeenCalledWith('r1', '/music/Hare Krishna')
+  })
+
+  it('asks with the free name when the name is taken in the chosen folder', async () => {
+    const { deps, asked } = setup(['choose', 'use'], ['/music'])
+    deps.remote.suggestPath
+      .mockResolvedValueOnce({ ok: true as const, value: PLACE })
+      .mockResolvedValueOnce({
+        ok: true as const,
+        value: { folder: '/music', path: '/music/Hare Krishna 2', isTaken: true },
+      })
+
+    await openCloudVault(HARE, deps)
+
+    expect(asked[1]!.title).toContain('/music/Hare Krishna 2')
+    expect(deps.remote.open).toHaveBeenCalledWith('r1', '/music/Hare Krishna 2')
+  })
+
+  it('writes the refusal of the chosen folder and gets nothing', async () => {
+    const { deps, messages } = setup(['choose', 'use'], ['/music'])
+    deps.remote.suggestPath
+      .mockResolvedValueOnce({ ok: true as const, value: PLACE })
+      .mockResolvedValueOnce({ ok: false, error: 'Not a folder' } as never)
+
+    await openCloudVault(HARE, deps)
+
+    expect(messages).toStrictEqual(['Not a folder'])
+    expect(deps.remote.open).not.toHaveBeenCalled()
   })
 
   it('asks again with the same path when the folder dialog is dismissed', async () => {

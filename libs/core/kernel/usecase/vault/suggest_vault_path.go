@@ -31,10 +31,14 @@ func NewSuggestVaultPath(setting NewVaultsFolder, user UserFolders, folders NewV
 	return &SuggestVaultPath{setting: setting, user: user, folders: folders}
 }
 
-// Execute returns the setting Folder for new vaults, or the Documents folder when it is empty, and the name in
-// it. A name that is taken there gets the lowest free number from 2 appended.
-func (u *SuggestVaultPath) Execute(name string) (SuggestedPath, error) {
-	folder := strings.TrimSpace(u.setting())
+// Execute returns the folder given, or the setting Folder for new vaults when none is given, or the Documents
+// folder when the setting is empty, and the name in it. A name that is taken there gets the lowest free number
+// from 2 appended.
+func (u *SuggestVaultPath) Execute(name, chosen string) (SuggestedPath, error) {
+	folder := strings.TrimSpace(chosen)
+	if folder == "" {
+		folder = strings.TrimSpace(u.setting())
+	}
 	if folder == "" {
 		documents, err := u.user.GetDocumentsFolder()
 		if err != nil {

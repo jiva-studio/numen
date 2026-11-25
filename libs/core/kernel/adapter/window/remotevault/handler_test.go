@@ -193,3 +193,20 @@ func TestAProviderThatIsNotAvailableIsAFailedPreconditionOnOpening(t *testing.T)
 		t.Errorf("the call failed with %v, want a failed precondition", err)
 	}
 }
+
+func TestANewVaultIsSuggestedAFolderInTheChosenFolder(t *testing.T) {
+	f := newFixture(t)
+	chosen := filepath.Join(f.parent, "Music")
+	if err := os.MkdirAll(filepath.Join(chosen, "Notes"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := f.client.SuggestVaultPath(t.Context(), connect.NewRequest(&v1.SuggestVaultPathRequest{Name: "Notes", Folder: chosen}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Msg.GetFolder() != chosen || got.Msg.GetPath() != filepath.Join(chosen, "Notes 2") || !got.Msg.GetIsTaken() {
+		t.Errorf("the suggestion is %v", got.Msg)
+	}
+}
