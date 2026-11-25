@@ -18,7 +18,16 @@ const timestampTolerance = 2 * time.Second
 // Folders makes and removes the folders of new vaults on the file system.
 type Folders struct{}
 
-// GetFolderState tells whether the path exists, whether it is a folder and whether the folder is empty.
+// CleanPath returns the shortest path that names the same folder.
+func (Folders) CleanPath(path string) string { return filepath.Clean(path) }
+
+// GetParentPath returns the path of the folder that holds the path. A disk root is its own parent.
+func (Folders) GetParentPath(path string) string { return filepath.Dir(path) }
+
+// JoinPath returns the path made of the elements.
+func (Folders) JoinPath(elements ...string) string { return filepath.Join(elements...) }
+
+// GetFolderState returns whether the path exists, whether it is a folder and whether the folder is empty.
 func (Folders) GetFolderState(path string) (vaultdomain.FolderState, error) {
 	info, err := os.Stat(path)
 	if errors.Is(err, fs.ErrNotExist) {

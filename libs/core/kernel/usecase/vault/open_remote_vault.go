@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -15,7 +14,13 @@ import (
 
 // NewVaultFolders is what the filesystem does for the folder of a new vault.
 type NewVaultFolders interface {
-	// GetFolderState tells whether the path exists, whether it is a folder and whether the folder is empty.
+	// CleanPath returns the shortest path of the machine that names the same folder.
+	CleanPath(path string) string
+	// GetParentPath returns the path of the folder that holds the path. A disk root is its own parent.
+	GetParentPath(path string) string
+	// JoinPath returns the path of the machine made of the elements.
+	JoinPath(elements ...string) string
+	// GetFolderState returns whether the path exists, whether it is a folder and whether the folder is empty.
 	GetFolderState(path string) (vaultdomain.FolderState, error)
 	// CreateFolder makes the folder at the path. Its parent exists.
 	CreateFolder(path string) error
@@ -61,7 +66,7 @@ func NewOpenRemoteVault(
 // vault. A failure after the folder was made removes the vault from the list again, and removes the folder
 // when this call made it and it holds nothing else.
 func (u *OpenRemoteVault) Execute(ctx context.Context, remoteID, path string) (id domain.VaultID, err error) {
-	path = filepath.Clean(path)
+	path = u.folders.CleanPath(path)
 	state, err := u.checkPath(path)
 	if err != nil {
 		return "", err
@@ -92,22 +97,23 @@ func (u *OpenRemoteVault) checkPath(path string) (vaultdomain.FolderState, error
 	if path == "." || !domain.IsAbsPath(path) {
 		return vaultdomain.FolderState{}, newInvalidPath("%q is not an absolute path", path)
 	}
-	if filepath.Dir(path) == path {
+	if u.folders.GetParentPath(path) == path {
 		return vaultdomain.FolderState{}, newInvalidPath("%s is a whole disk; a vault is a folder of its own", path)
 	}
 	home, err := u.user.GetHomeFolder()
 	if err != nil {
 		return vaultdomain.FolderState{}, err
 	}
-	if path == filepath.Clean(home) {
+	if path == u.folders.CleanPath(home) {
 		return vaultdomain.FolderState{}, newInvalidPath("%s is the home folder; a vault is a folder of its own", path)
 	}
-	parent, err := u.folders.GetFolderState(filepath.Dir(path))
+	parentPath := u.folders.GetParentPath(path)
+	parent, err := u.folders.GetFolderState(parentPath)
 	if err != nil {
 		return vaultdomain.FolderState{}, err
 	}
 	if !parent.Exists || !parent.IsFolder {
-		return vaultdomain.FolderState{}, newInvalidPath("%s is not a folder that exists", filepath.Dir(path))
+		return vaultdomain.FolderState{}, newInvalidPath("%s is not a folder that exists", parentPath)
 	}
 	state, err := u.folders.GetFolderState(path)
 	if err != nil {

@@ -2,7 +2,6 @@ package vault
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -49,12 +48,12 @@ func (u *SuggestVaultPath) Execute(name, chosen string) (SuggestedPath, error) {
 	if !domain.IsAbsPath(folder) {
 		return SuggestedPath{}, newInvalidPath("the folder for new vaults %q is not an absolute path", folder)
 	}
-	folder = filepath.Clean(folder)
+	folder = u.folders.CleanPath(folder)
 	base := getFolderName(name)
-	suggested := SuggestedPath{Folder: folder, Path: filepath.Join(folder, base)}
+	suggested := SuggestedPath{Folder: folder, Path: u.folders.JoinPath(folder, base)}
 	for number := 1; ; number++ {
 		if number > 1 {
-			suggested.Path = filepath.Join(folder, fmt.Sprintf("%s %d", base, number))
+			suggested.Path = u.folders.JoinPath(folder, fmt.Sprintf("%s %d", base, number))
 		}
 		state, err := u.folders.GetFolderState(suggested.Path)
 		if err != nil {
