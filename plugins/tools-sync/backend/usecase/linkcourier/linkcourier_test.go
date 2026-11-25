@@ -9,6 +9,7 @@ import (
 	"time"
 
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
@@ -205,4 +206,51 @@ func TestExecute_SendsALinkWhoseQRCodeNamesTheServerOfTheDevice(t *testing.T) {
 	if err != nil || len(got.Messages) != 1 || !bytes.Equal(got.Messages[0].Body, []byte("sealed blob")) {
 		t.Errorf("the displayer reads %+v, %v, want the blob of the core", got, err)
 	}
+}
+
+type lingeringRelay struct {
+	ports.Relay
+	waiting chan struct{}
+	release chan struct{}
+}
+
+func (l lingeringRelay) WaitMessages(ctx context.Context, id []byte, side syncclient.LinkSide, after uint32, wait time.Duration) (syncclient.LinkMessages, error) {
+	close(l.waiting)
+	<-ctx.Done()
+	<-l.release
+	return syncclient.LinkMessages{}, ctx.Err()
+}
+
+func TestExecute_ReturnsOnlyAfterTheWaitForMessagesEnded(t *testing.T) {
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	computer := synctest.NewFirstComputer(t, server, clock, "Test", synctest.NewWords(t))
+	deps := computer.LinkDeps()
+	relay := lingeringRelay{Relay: deps.Relay, waiting: make(chan struct{}), release: make(chan struct{})}
+	deps.Relay = relay
+	ctx, stop := context.WithCancel(t.Context())
+	finished := make(chan struct{})
+	go func() {
+		defer close(finished)
+		if err := linkcourier.NewCourier(deps).Execute(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
+	}()
+	if err := computer.Fake.ShowLink(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := computer.Fake.WaitLinkChannel(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	<-relay.waiting
+
+	stop()
+
+	select {
+	case <-finished:
+		t.Fatal("Execute returned while the wait for messages still ran")
+	case <-time.After(200 * time.Millisecond):
+	}
+	close(relay.release)
+	<-finished
 }

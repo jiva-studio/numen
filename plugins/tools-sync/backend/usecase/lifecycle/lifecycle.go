@@ -156,13 +156,15 @@ func (u *Lifecycle) flush(ctx context.Context) error {
 		close(ended)
 	}()
 	graceCtx, endGrace := context.WithCancel(ctx)
-	defer endGrace()
 	graced := make(chan error, 1)
 	go func() { graced <- u.deps.Clock.Wait(graceCtx, Grace) }()
 	var graceFailure error
 	select {
 	case <-ended:
+		endGrace()
+		<-graced
 	case err := <-graced:
+		endGrace()
 		if !isIgnored(err) {
 			graceFailure = err
 		}

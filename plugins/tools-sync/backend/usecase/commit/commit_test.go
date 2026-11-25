@@ -1,8 +1,8 @@
 package commit_test
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
@@ -51,6 +50,7 @@ type channelState struct {
 	side      ports.LinkSide
 	isClosed  bool
 	stopWaits context.CancelFunc
+	ended     chan struct{}
 }
 
 // Execute carries work until ctx ends. The core holds every key and decides when the link ends; the courier posts what
@@ -87,6 +87,7 @@ func (u *Courier) Execute(ctx context.Context) error {
 func stopWaits(current *channelState) {
 	if current.stopWaits != nil {
 		current.stopWaits()
+		<-current.ended
 	}
 }
 
@@ -103,7 +104,7 @@ func (u *Courier) carry(ctx context.Context, work ports.LinkWork, created *[]byt
 	}
 	if !bytes.Equal(current.id, work.ChannelID) {
 		stopWaits(current)
-		*current = channelState{id: bytes.Clone(work.ChannelID), side: getSide(work.ChannelID, *created), isClosed: false, stopWaits: nil}
+		*current = channelState{id: bytes.Clone(work.ChannelID), side: getSide(work.ChannelID, *created), isClosed: false, stopWaits: nil, ended: nil}
 	}
 	if !u.sendBlobs(ctx, current, work.Outbound) {
 		return false
@@ -176,15 +177,13 @@ func (u *Courier) startWaits(ctx context.Context, current *channelState) {
 		return
 	}
 	waitCtx, stop := context.WithCancel(ctx)
-	current.stopWaits = stop
+	ended := make(chan struct{})
+	current.stopWaits, current.ended = stop, ended
 	id, side := bytes.Clone(current.id), current.side
-	var started sync.WaitGroup
-	started.Add(1)
 	go func() {
-		started.Done()
+		defer close(ended)
 		u.readInbound(waitCtx, id, side)
 	}()
-	started.Wait()
 }
 
 func (u *Courier) readInbound(ctx context.Context, id []byte, side ports.LinkSide) {
