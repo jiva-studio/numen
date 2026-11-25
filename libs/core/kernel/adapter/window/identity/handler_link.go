@@ -132,7 +132,7 @@ func serveLinkCall(err error) (v1.IdentityErrorCode, string, error) {
 
 func getLinkRefusal(err error) (v1.IdentityErrorCode, string, bool) {
 	code, served := getErrorCode(err)
-	return code, err.Error(), served
+	return code, "", served
 }
 
 func getLinkErrorCode(err error) (v1.IdentityErrorCode, bool) {
