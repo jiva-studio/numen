@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestAdopt_RefusesARevokeWhoseKeyHistoryHoldsAnotherBoxThanTheEpochBefore(t *testing.T) {
+func TestAdopt_RefusesARevokeWhoseKeyHistoryHasAnotherBoxThanTheEpochBefore(t *testing.T) {
 	t.Parallel()
 	f := newForgery(t)
 	state := f.newOtherState(t)

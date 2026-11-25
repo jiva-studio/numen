@@ -20,12 +20,12 @@ type Timer interface {
 
 // Timers starts the timers that end a transfer which moves no byte for the idle time.
 type Timers interface {
-	AfterFunc(d time.Duration, f func()) Timer
+	StartTimer(d time.Duration, f func()) Timer
 }
 
 type systemTimers struct{}
 
-func (systemTimers) AfterFunc(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) }
+func (systemTimers) StartTimer(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) }
 
 // progressTimer cancels a transfer that moves no byte for its idle time.
 type progressTimer struct {
@@ -38,7 +38,7 @@ type progressTimer struct {
 
 func newProgressTimer(timers Timers, idle time.Duration, cancel context.CancelCauseFunc) *progressTimer {
 	t := &progressTimer{idle: idle, cancel: cancel, mu: sync.Mutex{}, isDone: false, timer: nil}
-	t.timer = timers.AfterFunc(idle, func() { cancel(ErrTransferStalled) })
+	t.timer = timers.StartTimer(idle, func() { cancel(ErrTransferStalled) })
 	return t
 }
 

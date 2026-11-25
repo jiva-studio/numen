@@ -276,11 +276,6 @@ func checkReplaceBaseline(root *os.Root, name, path string, baseline domain.File
 	return nil
 }
 
-func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) error {
-	_, err := atomicfile.Replace(ctx, root, target, content, newFileMode)
-	return err
-}
-
 func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.FileMode, error) {
 	info, err := root.Stat(name)
 	switch {

@@ -93,10 +93,10 @@ func (s *State) read(ctx context.Context, id domain.VaultID, name string, into a
 	files := s.getVault(id)
 	files.mu.Lock()
 	defer files.mu.Unlock()
-	return s.readLocked(ctx, id, files, name, into)
+	return s.readUnderLock(ctx, id, files, name, into)
 }
 
-func (s *State) readLocked(ctx context.Context, id domain.VaultID, files *vaultFiles, name string, into any) (bool, error) {
+func (s *State) readUnderLock(ctx context.Context, id domain.VaultID, files *vaultFiles, name string, into any) (bool, error) {
 	raw, err := s.host.Store(id).Read(ctx, name)
 	if errors.Is(err, host.ErrNotExist) {
 		delete(files.digests, name)
@@ -116,10 +116,10 @@ func (s *State) write(ctx context.Context, id domain.VaultID, name string, value
 	files := s.getVault(id)
 	files.mu.Lock()
 	defer files.mu.Unlock()
-	return s.writeLocked(ctx, id, files, name, value)
+	return s.writeUnderLock(ctx, id, files, name, value)
 }
 
-func (s *State) writeLocked(ctx context.Context, id domain.VaultID, files *vaultFiles, name string, value any) error {
+func (s *State) writeUnderLock(ctx context.Context, id domain.VaultID, files *vaultFiles, name string, value any) error {
 	raw, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("write %s: %w", name, err)
@@ -160,7 +160,7 @@ func (s *State) UpdateLink(ctx context.Context, id domain.VaultID, change func(*
 	files.mu.Lock()
 	defer files.mu.Unlock()
 	var link vaultlink.Link
-	found, err := s.readLocked(ctx, id, files, linkFile, &link)
+	found, err := s.readUnderLock(ctx, id, files, linkFile, &link)
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (s *State) UpdateLink(ctx context.Context, id domain.VaultID, change func(*
 	if err := change(&link); err != nil {
 		return err
 	}
-	return s.writeLocked(ctx, id, files, linkFile, link)
+	return s.writeUnderLock(ctx, id, files, linkFile, link)
 }
 
 // ReadRecords returns what is known of the synced notes of the vault.

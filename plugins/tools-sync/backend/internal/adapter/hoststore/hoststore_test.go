@@ -3,6 +3,7 @@ package hoststore_test
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -36,7 +37,7 @@ func (s countingStore) Write(ctx context.Context, name string, content []byte) e
 	return s.Store.Write(ctx, name, content)
 }
 
-func newCounted(t *testing.T) (*hoststore.State, *atomic.Int64, domain.VaultID) {
+func newStateWithCounter(t *testing.T) (*hoststore.State, *atomic.Int64, domain.VaultID) {
 	t.Helper()
 	vault := hosttest.CreateOnDisk(t, vaultName, nil)
 	writes := &atomic.Int64{}
@@ -46,7 +47,7 @@ func newCounted(t *testing.T) (*hoststore.State, *atomic.Int64, domain.VaultID) 
 func fileID(n int) []byte { return binary.BigEndian.AppendUint32(nil, uint32(n)) }
 
 func TestUpdateLink_TwoWritersLoseNoUpdate(t *testing.T) {
-	state, _, id := newCounted(t)
+	state, _, id := newStateWithCounter(t)
 	if err := state.WriteLink(t.Context(), id, vaultlink.Link{RemoteVaultID: "00"}); err != nil {
 		t.Fatal(err)
 	}
@@ -79,17 +80,17 @@ func TestUpdateLink_TwoWritersLoseNoUpdate(t *testing.T) {
 }
 
 func TestUpdateLink_ANotConnectedVaultIsRefused(t *testing.T) {
-	state, _, id := newCounted(t)
+	state, _, id := newStateWithCounter(t)
 
 	err := state.UpdateLink(t.Context(), id, func(*vaultlink.Link) error { return nil })
 
-	if err != vaultlink.ErrNotConnected {
+	if !errors.Is(err, vaultlink.ErrNotConnected) {
 		t.Errorf("err = %v, want ErrNotConnected", err)
 	}
 }
 
-func TestWriteLink_AnUnchangedLinkIsNotWrittenAgain(t *testing.T) {
-	state, writes, id := newCounted(t)
+func TestWriteLink_SkipsAnUnchangedLink(t *testing.T) {
+	state, writes, id := newStateWithCounter(t)
 	link := vaultlink.Link{RemoteVaultID: "00", ServerSeq: 4}
 	if err := state.WriteLink(t.Context(), id, link); err != nil {
 		t.Fatal(err)
@@ -113,8 +114,8 @@ func TestWriteLink_AnUnchangedLinkIsNotWrittenAgain(t *testing.T) {
 	}
 }
 
-func TestLockVault_OnePassHoldsTheVaultAtATime(t *testing.T) {
-	state, _, id := newCounted(t)
+func TestLockVault_AllowsOnePassAtATime(t *testing.T) {
+	state, _, id := newStateWithCounter(t)
 	var inside, overlaps atomic.Int64
 	var group sync.WaitGroup
 	for range 8 {
@@ -139,7 +140,7 @@ func TestLockVault_OnePassHoldsTheVaultAtATime(t *testing.T) {
 }
 
 func TestLockVault_AWaitingPassStopsWithItsContext(t *testing.T) {
-	state, _, id := newCounted(t)
+	state, _, id := newStateWithCounter(t)
 	unlock, err := state.LockVault(t.Context(), id)
 	if err != nil {
 		t.Fatal(err)
@@ -149,6 +150,6 @@ func TestLockVault_AWaitingPassStopsWithItsContext(t *testing.T) {
 	cancel()
 
 	if _, err := state.LockVault(ctx, id); err == nil {
-		t.Error("a cancelled wait got the vault")
+		t.Error("a canceled wait got the vault")
 	}
 }

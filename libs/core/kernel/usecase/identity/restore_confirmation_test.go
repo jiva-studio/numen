@@ -51,7 +51,7 @@ func TestStartRestore_ASilentServerWithAChainMarkCreatesNoIdentity(t *testing.T)
 	}
 }
 
-func TestCompleteRestore_RefusesAChainShorterThanTheHighestOneSeenForTheAccount(t *testing.T) {
+func TestCompleteRestore_RefusesAChainShorterThanTheLongestOfTheAccount(t *testing.T) {
 	t.Parallel()
 	older, current, _ := kitOfRestoredPhone(t)
 	phone := newRestoreKit(t, "Phone")

@@ -231,7 +231,7 @@ func (u *AcceptInvitation) joinAgain(ctx context.Context, id domain.VaultID, o o
 		if fresh.Received != nil {
 			seen = fresh.Received.Seen
 		}
-		received, err := u.getReceived(ctx, o, read, seen)
+		received, err := u.buildReceivedRecord(ctx, o, read, seen)
 		if err != nil {
 			return err
 		}
@@ -255,7 +255,7 @@ func (u *AcceptInvitation) runFirstPass(ctx context.Context, id domain.VaultID) 
 	return u.deps.Statuses.WriteStatus(ctx, id, getStatus(result, u.deps.Clock.Now()))
 }
 
-func (u *AcceptInvitation) getReceived(ctx context.Context, o opened, read followed, seen map[string][][]byte) (vaultlink.Received, error) {
+func (u *AcceptInvitation) buildReceivedRecord(ctx context.Context, o opened, read followed, seen map[string][][]byte) (vaultlink.Received, error) {
 	keys, err := read.position.Keys.Encode()
 	if err != nil {
 		return vaultlink.Received{}, err
@@ -272,7 +272,7 @@ func (u *AcceptInvitation) getReceived(ctx context.Context, o opened, read follo
 }
 
 func (u *AcceptInvitation) writeLink(ctx context.Context, id domain.VaultID, o opened, read followed) error {
-	received, err := u.getReceived(ctx, o, read, nil)
+	received, err := u.buildReceivedRecord(ctx, o, read, nil)
 	if err != nil {
 		return err
 	}

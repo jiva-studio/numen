@@ -50,7 +50,7 @@ type fakeTimers struct {
 	timers []*fakeTimer
 }
 
-func (f *fakeTimers) AfterFunc(d time.Duration, call func()) syncclient.Timer {
+func (f *fakeTimers) StartTimer(d time.Duration, call func()) syncclient.Timer {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	timer := &fakeTimer{owner: f, at: f.now + d, call: call, isActive: true}
@@ -97,7 +97,9 @@ func serveByStep(t *testing.T, stallAfter int, next <-chan struct{}) (string, <-
 			if _, err := w.Write(bytes.Repeat([]byte{1}, chunk)); err != nil {
 				return
 			}
-			w.(http.Flusher).Flush()
+			if err := http.NewResponseController(w).Flush(); err != nil {
+				return
+			}
 			if next != nil {
 				select {
 				case <-next:
@@ -111,7 +113,7 @@ func serveByStep(t *testing.T, stallAfter int, next <-chan struct{}) (string, <-
 	return server.URL, stalled
 }
 
-func TestGetBlobRange_ABodyThatKeepsArrivingIsNotCutByAnyTotalTime(t *testing.T) {
+func TestGetBlobRange_NoTotalTimeLimitsABodyThatKeepsArriving(t *testing.T) {
 	t.Parallel()
 	next := make(chan struct{})
 	address, _ := serveByStep(t, -1, next)
@@ -121,7 +123,7 @@ func TestGetBlobRange_ABodyThatKeepsArrivingIsNotCutByAnyTotalTime(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer body.Close()
+	defer closeBody(t, body)
 
 	for i := range steps {
 		if _, err := io.ReadFull(body, make([]byte, chunk)); err != nil {
@@ -164,7 +166,7 @@ func TestGetBlobRange_ABodyThatStopsArrivingEndsTheReadOfItsBody(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer body.Close()
+	defer closeBody(t, body)
 	<-stalled
 
 	timers.Advance(idle)
@@ -190,7 +192,7 @@ func (t *trickle) Read(p []byte) (int, error) {
 	return copy(p, bytes.Repeat([]byte{2}, chunk)), nil
 }
 
-func TestBlobClient_AnUploadThatTakesLongerThanTheIdleTimeButKeepsMovingIsSent(t *testing.T) {
+func TestBlobClient_SendsAnUploadSlowerThanTheIdleTimeThatKeepsMoving(t *testing.T) {
 	t.Parallel()
 	address, _ := serveByStep(t, -1, nil)
 	timers := &fakeTimers{}
@@ -204,9 +206,16 @@ func TestBlobClient_AnUploadThatTakesLongerThanTheIdleTimeButKeepsMovingIsSent(t
 	if err != nil {
 		t.Fatalf("a slow upload that never stood still failed: %v", err)
 	}
-	defer response.Body.Close()
+	defer closeBody(t, response.Body)
 
 	if response.StatusCode != http.StatusOK {
 		t.Errorf("status = %s", response.Status)
+	}
+}
+
+func closeBody(t *testing.T, body io.Closer) {
+	t.Helper()
+	if err := body.Close(); err != nil {
+		t.Error(err)
 	}
 }

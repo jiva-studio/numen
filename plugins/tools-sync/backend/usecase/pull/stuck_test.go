@@ -20,7 +20,7 @@ type stuckRevisions struct {
 
 const maxCalls = 5
 
-func (s *stuckRevisions) GetChanges(ctx context.Context, vaultID []byte, since uint64, limit uint32) (*syncv1.GetChangesResponse, error) {
+func (s *stuckRevisions) GetChanges(ctx context.Context, vaultID []byte, since uint64, _ uint32) (*syncv1.GetChangesResponse, error) {
 	s.calls++
 	live, err := s.Revisions.GetChanges(ctx, vaultID, 0, 0)
 	if err != nil {

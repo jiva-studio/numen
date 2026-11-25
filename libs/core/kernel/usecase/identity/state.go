@@ -176,12 +176,12 @@ func toIdentity(state identitylib.State) (identitydomain.Identity, error) {
 	return identitydomain.Identity{}, fmt.Errorf("%w: the device is not in its chain", identitylib.ErrMalformed)
 }
 
-func highWaterName(fingerprint string) string { return "chain-length-" + fingerprint }
+func getHighWaterName(fingerprint string) string { return "chain-length-" + fingerprint }
 
 // checkHighWater refuses a chain of the account that is shorter than the longest chain this device has held for it (ErrChainOutdated),
 // including after the identity was deleted from the device.
 func (r records) checkHighWater(ctx context.Context, fingerprint string, length int) error {
-	value, err := r.keys.GetKey(ctx, highWaterName(fingerprint))
+	value, err := r.keys.GetKey(ctx, getHighWaterName(fingerprint))
 	if isNoKey(err) {
 		return nil
 	}
@@ -210,7 +210,7 @@ func (r records) raiseHighWater(ctx context.Context, chain identitylib.Chain) er
 	if err != nil {
 		return err
 	}
-	if err := r.keys.SetKey(ctx, highWaterName(fingerprint), strconv.Itoa(chain.Len())); err != nil {
+	if err := r.keys.SetKey(ctx, getHighWaterName(fingerprint), strconv.Itoa(chain.Len())); err != nil {
 		return fmt.Errorf("%w: keep the chain length: %w", identitydomain.ErrKeyStore, err)
 	}
 	return nil

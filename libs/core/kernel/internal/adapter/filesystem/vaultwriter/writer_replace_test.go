@@ -27,7 +27,7 @@ func (e *editWhileReading) Read(p []byte) (int, error) {
 	return e.source.Read(p)
 }
 
-func TestReplace_AFileEditedWhileTheNewContentIsWrittenIsKeptAndTheReplaceIsStale(t *testing.T) {
+func TestReplace_KeepsAFileEditedDuringTheReplaceAndIsStale(t *testing.T) {
 	writer, root := openWriter(t)
 	path := filepath.Join(root, "Doc.pdf")
 	if err := os.WriteFile(path, []byte("read by the sync"), 0o644); err != nil {
@@ -45,10 +45,13 @@ func TestReplace_AFileEditedWhileTheNewContentIsWrittenIsKeptAndTheReplaceIsStal
 	if !errors.Is(err, edit.ErrStale) {
 		t.Fatalf("error = %v, want ErrStale", err)
 	}
-	if got, _ := os.ReadFile(path); string(got) != "typed by the person" {
+	if got := readFile(t, path); got != "typed by the person" {
 		t.Errorf("file = %q, want the edit of the person", got)
 	}
-	leftovers, _ := filepath.Glob(filepath.Join(root, ".Doc.pdf.*"))
+	leftovers, err := filepath.Glob(filepath.Join(root, ".Doc.pdf.*"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(leftovers) != 0 {
 		t.Errorf("temporary files left: %v", leftovers)
 	}
@@ -66,12 +69,12 @@ func TestReplace_AFileThatIsStillTheBaselineIsReplaced(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, _ := os.ReadFile(path); string(got) != "new" {
+	if got := readFile(t, path); got != "new" {
 		t.Errorf("file = %q, want the new content", got)
 	}
 }
 
-func TestImport_APathTakenWhileTheContentIsWrittenIsKeptAndTheImportIsRefused(t *testing.T) {
+func TestImport_KeepsAPathCreatedDuringTheImportAndRefuses(t *testing.T) {
 	writer, root := openWriter(t)
 	path := filepath.Join(root, "Doc.pdf")
 	content := &editWhileReading{source: strings.NewReader("from the server"), edit: func() {
@@ -85,7 +88,16 @@ func TestImport_APathTakenWhileTheContentIsWrittenIsKeptAndTheImportIsRefused(t 
 	if !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Fatalf("error = %v, want ErrAlreadyExists", err)
 	}
-	if got, _ := os.ReadFile(path); string(got) != "made by the person" {
+	if got := readFile(t, path); got != "made by the person" {
 		t.Errorf("file = %q, want the file of the person", got)
 	}
+}
+
+func readFile(t *testing.T, path string) string {
+	t.Helper()
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(content)
 }

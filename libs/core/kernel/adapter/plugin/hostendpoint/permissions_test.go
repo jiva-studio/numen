@@ -46,7 +46,11 @@ func getMethod(t *testing.T, procedure string) protoreflect.MethodDescriptor {
 	if err != nil {
 		t.Fatalf("%s: %v", procedure, err)
 	}
-	return found.(protoreflect.MethodDescriptor)
+	descriptor, isMethod := found.(protoreflect.MethodDescriptor)
+	if !isMethod {
+		t.Fatalf("%s is not a method", procedure)
+	}
+	return descriptor
 }
 
 func TestEveryProcedureOfTheMountedServicesIsListedOrNotServed(t *testing.T) {
@@ -56,10 +60,14 @@ func TestEveryProcedureOfTheMountedServicesIsListedOrNotServed(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		methods := found.(protoreflect.ServiceDescriptor).Methods()
+		service, isService := found.(protoreflect.ServiceDescriptor)
+		if !isService {
+			t.Fatalf("%s is not a service", name)
+		}
+		methods := service.Methods()
 		for i := range methods.Len() {
 			procedure := "/" + name + "/" + string(methods.Get(i).Name())
-			_, isListed := procedurePermissions[procedure]
+			_, isListed := getProcedurePermissions()[procedure]
 			isUnserved := slices.Contains(unserved, procedure)
 			if isListed == isUnserved {
 				t.Errorf("%s: listed %v, not served %v, want exactly one", procedure, isListed, isUnserved)
@@ -73,7 +81,7 @@ func TestEveryListedProcedureNeedsAPermissionOfTheManifestOrNone(t *testing.T) {
 	for _, permission := range manifest.ListPluginPermissions() {
 		known[permission] = true
 	}
-	for procedure, permission := range procedurePermissions {
+	for procedure, permission := range getProcedurePermissions() {
 		getMethod(t, procedure)
 		if !known[permission] {
 			t.Errorf("%s needs %q, which no manifest declares", procedure, permission)
@@ -88,7 +96,7 @@ func postProcedure(t *testing.T, base, procedure, token string) (int, string) {
 	if method.IsStreamingServer() || method.IsStreamingClient() {
 		contentType, body = "application/connect+json", []byte{0, 0, 0, 0, 2, '{', '}'}
 	}
-	request, err := http.NewRequestWithContext(context.Background(), http.MethodPost, base+procedure, bytes.NewReader(body))
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, base+procedure, bytes.NewReader(body))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +107,11 @@ func postProcedure(t *testing.T, base, procedure, token string) (int, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	answer, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)
@@ -125,7 +137,7 @@ func openEndpoint(t *testing.T, isConfined bool) string {
 
 func TestAPluginWithoutThePermissionOfAProcedureIsRefusedBeforeTheHandlerRuns(t *testing.T) {
 	base := openEndpoint(t, true)
-	for procedure, permission := range procedurePermissions {
+	for procedure, permission := range getProcedurePermissions() {
 		if permission == noPermission {
 			continue
 		}
@@ -136,7 +148,7 @@ func TestAPluginWithoutThePermissionOfAProcedureIsRefusedBeforeTheHandlerRuns(t 
 	}
 }
 
-func TestAProcedureNoPermissionListsIsRefusedToAPluginThatHoldsEveryPermission(t *testing.T) {
+func TestAnUnlistedProcedureIsRefusedToAPluginWithEveryPermission(t *testing.T) {
 	base := openEndpoint(t, false)
 	for _, procedure := range getUnservedProcedures() {
 		if _, answer := postProcedure(t, base, procedure, "token-a"); !strings.Contains(answer, "permission_denied") {
@@ -147,7 +159,7 @@ func TestAProcedureNoPermissionListsIsRefusedToAPluginThatHoldsEveryPermission(t
 
 func TestAnUnknownTokenIsUnauthenticatedBeforeTheTableIsRead(t *testing.T) {
 	fake := newCallers()
-	gate := permissionGate{endpoint: &Endpoint{callers: fake.asCallers()}}
+	gate := permissionGate{endpoint: &Endpoint{callers: fake.asCallers()}, permissions: getProcedurePermissions()}
 	header := http.Header{"Authorization": {"Bearer nobody"}}
 
 	err := gate.check("/unlisted.Service/Call", header)

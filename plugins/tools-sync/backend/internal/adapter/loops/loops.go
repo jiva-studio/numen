@@ -107,21 +107,21 @@ func (s *Supervisor[T]) Configure(address string) {
 	if isSame {
 		return
 	}
-	s.stopRunning()
+	s.stopLoops()
 	if address == "" {
 		return
 	}
-	s.startRunning(address)
+	s.startLoops(address)
 }
 
 // Stop ends the loops and waits for them.
 func (s *Supervisor[T]) Stop() {
 	s.configure.Lock()
 	defer s.configure.Unlock()
-	s.stopRunning()
+	s.stopLoops()
 }
 
-func (s *Supervisor[T]) startRunning(address string) {
+func (s *Supervisor[T]) startLoops(address string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	current, loops := s.start(ctx, address)
@@ -139,7 +139,7 @@ func (s *Supervisor[T]) startRunning(address string) {
 	}()
 }
 
-func (s *Supervisor[T]) stopRunning() {
+func (s *Supervisor[T]) stopLoops() {
 	s.mu.Lock()
 	cancel, done := s.cancel, s.done
 	s.mu.Unlock()

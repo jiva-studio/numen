@@ -36,7 +36,7 @@ func newResponseOfSerial(tb testing.TB, serial uint64) *syncv1.GetRestoreEpochRe
 	}
 }
 
-func TestRestoreClient_RefusesACertificateWithALowerSerialThanOneSeenBefore(t *testing.T) {
+func TestRestoreClient_RefusesACertificateWithALowerSerialThanAnEarlierOne(t *testing.T) {
 	t.Parallel()
 	_, rootPublic := newRoot(t, 1)
 	serials := &memorySerials{}

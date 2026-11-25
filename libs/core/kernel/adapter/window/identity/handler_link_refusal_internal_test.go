@@ -7,7 +7,7 @@ import (
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 )
 
-func TestGetLinkRefusal_GivesTheWindowNoTextOfTheError(t *testing.T) {
+func TestGetLinkError_OmitsTheTextOfTheError(t *testing.T) {
 	t.Parallel()
 	err := fmt.Errorf("%w: read /home/person/.config/numen/key: permission denied", identitydomain.ErrNoLink)
 

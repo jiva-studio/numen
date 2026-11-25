@@ -60,7 +60,7 @@ type Signer interface {
 // Chain is a signed, append-only log of devices rooted in the recovery signing key.
 type Chain struct{ entries []Entry }
 
-func entryTime(at time.Time, last Entry) time.Time {
+func getEntryTime(at time.Time, last Entry) time.Time {
 	at = at.UTC().Truncate(time.Second)
 	if at.Before(last.Time) {
 		return last.Time
@@ -113,7 +113,7 @@ func (c Chain) AppendDevice(by Signer, device DevicePublicKey, name string, at t
 		Seq:       last.Seq + 1,
 		Prev:      hashEntry(last),
 		Kind:      KindAddDevice,
-		Time:      entryTime(at, last),
+		Time:      getEntryTime(at, last),
 		Signer:    slices.Clone(by.SignerKey()),
 		AddDevice: &AddDevice{Device: DevicePublicKey{Sign: slices.Clone(device.Sign), Box: device.Box}, Name: name},
 	}
