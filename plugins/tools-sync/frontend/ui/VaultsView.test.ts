@@ -277,7 +277,7 @@ describe('VaultsView', () => {
     expect(rows[0]?.text()).toContain('1 MB of 4 MB')
     const ring = rows[0]?.find('[role="progressbar"]')
     expect(ring?.attributes('aria-valuenow')).toBe('25')
-    expect(ring?.find('svg.vault-row__ring').exists()).toBe(true)
+    expect(ring?.find('svg.sync-ring').exists()).toBe(true)
     expect(rows[0]?.find('.vault-row__progress').exists()).toBe(false)
     expect(rows[1]?.text()).toContain('Up to date')
     expect(rows[1]?.find('[role="progressbar"]').exists()).toBe(false)

@@ -4,7 +4,8 @@
   --chip-text: var(--numen-chrome-text-2);
   --chip-pad: calc(0.5 * var(--numen-chrome-unit));
   --chip-dot: calc(0.4375 * var(--numen-chrome-unit));
-  --chip-ring: calc(0.625 * var(--numen-chrome-unit));
+  --chip-ring: calc(0.875 * var(--numen-chrome-unit));
+  --chip-glyph: calc(0.4375 * var(--numen-chrome-unit));
   display: inline-flex;
   align-items: center;
   gap: calc(var(--chip-pad) / 2);
@@ -20,15 +21,21 @@
   line-height: 1;
 }
 
-.sync-badge__spinner {
+.sync-badge__ring {
+  --ring-tint: var(--numen-accent);
+  position: relative;
+  display: inline-flex;
   flex: none;
-  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
   inline-size: var(--chip-ring);
   block-size: var(--chip-ring);
-  border: var(--numen-stroke) solid var(--numen-hushed);
-  border-block-start-color: var(--numen-accent);
-  border-radius: var(--numen-radius-pill);
-  animation: sync-badge-spin var(--numen-wait-spin) linear infinite;
+  color: var(--ring-tint);
+}
+
+.sync-badge__ring .sync-ring__glyph {
+  inline-size: var(--chip-glyph);
+  block-size: var(--chip-glyph);
 }
 
 .sync-badge__dot {
@@ -41,12 +48,6 @@
 
 .sync-badge__label {
   white-space: nowrap;
-}
-
-@keyframes sync-badge-spin {
-  to {
-    transform: rotate(1turn);
-  }
 }
 
 .sync-card {
@@ -134,16 +135,17 @@
   color: var(--vault-row-tint);
 }
 
-.vault-row__icon svg {
+.vault-row__icon svg:not(.sync-ring) {
   inline-size: var(--vault-row-glyph);
   block-size: var(--vault-row-glyph);
 }
 
 .vault-row__icon--ring {
+  --ring-tint: var(--vault-row-tint);
   position: relative;
 }
 
-.vault-row__icon .vault-row__ring {
+.sync-ring {
   position: absolute;
   inset: 0;
   inline-size: 100%;
@@ -153,24 +155,24 @@
   transform: rotate(-90deg);
 }
 
-.vault-row__ring-track {
-  stroke: color-mix(in srgb, var(--vault-row-tint) 22%, transparent);
+.sync-ring__track {
+  stroke: color-mix(in srgb, var(--ring-tint) 22%, transparent);
 }
 
-.vault-row__ring-arc {
-  stroke: var(--vault-row-tint);
+.sync-ring__arc {
+  stroke: var(--ring-tint);
   stroke-linecap: round;
 }
 
-.vault-row__icon--indeterminate .vault-row__ring {
-  animation: vault-row-orbit 1.6s linear infinite;
+.sync-ring--indeterminate {
+  animation: sync-ring-orbit 1.6s linear infinite;
 }
 
-.vault-row__spin {
-  animation: vault-row-turn 1.6s linear infinite;
+.sync-ring__glyph {
+  animation: sync-ring-turn 1.6s linear infinite;
 }
 
-@keyframes vault-row-orbit {
+@keyframes sync-ring-orbit {
   from {
     transform: rotate(-90deg);
   }
@@ -180,15 +182,15 @@
   }
 }
 
-@keyframes vault-row-turn {
+@keyframes sync-ring-turn {
   to {
     transform: rotate(360deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vault-row__icon--indeterminate .vault-row__ring,
-  .vault-row__spin {
+  .sync-ring--indeterminate,
+  .sync-ring__glyph {
     animation: none;
   }
 }
