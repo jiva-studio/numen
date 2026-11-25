@@ -13,8 +13,8 @@ func NewStartRestoreFromKit(d Deps) *StartRestoreFromKit {
 }
 
 // Execute restores the recovery secret from the sheets (ErrNotEnoughSheets, ErrInvalidSheets), refuses when an
-// identity exists (ErrIdentityExists) and then keeps a pending restore exactly as StartRestore does for the words. The mark is the chain mark printed on the kit.
-func (u *StartRestoreFromKit) Execute(ctx context.Context, sheets [][]string, mark string) error {
+// identity exists (ErrIdentityExists) and then keeps a pending restore exactly as StartRestore does for the words. The mark is the chain mark printed on the kit; without one confirmUnmarked is needed.
+func (u *StartRestoreFromKit) Execute(ctx context.Context, sheets [][]string, mark string, confirmUnmarked bool) error {
 	secret, err := restoreSecret(sheets)
 	if err != nil {
 		return err
@@ -26,5 +26,5 @@ func (u *StartRestoreFromKit) Execute(ctx context.Context, sheets [][]string, ma
 	if err != nil {
 		return err
 	}
-	return u.completion.start(ctx, recovery, mark)
+	return u.completion.start(ctx, recovery, mark, confirmUnmarked)
 }

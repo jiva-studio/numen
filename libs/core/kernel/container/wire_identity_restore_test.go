@@ -27,7 +27,7 @@ func TestTheAccountOfThePluginsSeesTheRestoreTheWindowStarted(t *testing.T) {
 		t.Fatalf("openIdentityUseCases() = %+v, want a use case that starts a restore", use)
 	}
 
-	if err := use.Identity.StartRestore.Execute(t.Context(), words, ""); err != nil {
+	if err := use.Identity.StartRestore.Execute(t.Context(), words, "", true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -53,7 +53,7 @@ func TestACompleteRestoreOfThePluginsMakesTheIdentityOfTheWindowAndTheKeysOfTheP
 	use := openIdentityUseCases(pluginInstall{Keys: identity.SharedKeys{Store: keys}}, vaultWiring{Clock: clock}, res, nil)
 	account := openAccount(res)
 	words := strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
-	if err := use.Identity.StartRestore.Execute(t.Context(), words, ""); err != nil {
+	if err := use.Identity.StartRestore.Execute(t.Context(), words, "", true); err != nil {
 		t.Fatal(err)
 	}
 

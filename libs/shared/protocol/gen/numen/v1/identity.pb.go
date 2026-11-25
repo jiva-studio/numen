@@ -748,9 +748,12 @@ type StartRestoreRequest struct {
 	Words []string               `protobuf:"bytes,1,rep,name=words,proto3" json:"words,omitempty"`
 	// chain_mark is the chain mark printed on the recovery kit, or empty. A restore with a mark is refused when the chain of the server does
 	// not contain it.
-	ChainMark     string `protobuf:"bytes,2,opt,name=chain_mark,json=chainMark,proto3" json:"chain_mark,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ChainMark string `protobuf:"bytes,2,opt,name=chain_mark,json=chainMark,proto3" json:"chain_mark,omitempty"`
+	// confirm_unmarked is the confirmation of the person to restore without a chain mark: an empty answer of the server then makes a new
+	// identity of the words. Without a mark and without it the restore is refused (CHAIN_OUTDATED).
+	ConfirmUnmarked bool `protobuf:"varint,3,opt,name=confirm_unmarked,json=confirmUnmarked,proto3" json:"confirm_unmarked,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *StartRestoreRequest) Reset() {
@@ -795,6 +798,13 @@ func (x *StartRestoreRequest) GetChainMark() string {
 		return x.ChainMark
 	}
 	return ""
+}
+
+func (x *StartRestoreRequest) GetConfirmUnmarked() bool {
+	if x != nil {
+		return x.ConfirmUnmarked
+	}
+	return false
 }
 
 type StartRestoreResponse struct {
@@ -1205,9 +1215,11 @@ type StartRestoreFromKitRequest struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Sheets []*RecoverySheet       `protobuf:"bytes,1,rep,name=sheets,proto3" json:"sheets,omitempty"`
 	// chain_mark is the chain mark printed on the sheets, or empty.
-	ChainMark     string `protobuf:"bytes,2,opt,name=chain_mark,json=chainMark,proto3" json:"chain_mark,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ChainMark string `protobuf:"bytes,2,opt,name=chain_mark,json=chainMark,proto3" json:"chain_mark,omitempty"`
+	// confirm_unmarked is the confirmation of the person to restore without a chain mark, as in StartRestoreRequest.
+	ConfirmUnmarked bool `protobuf:"varint,3,opt,name=confirm_unmarked,json=confirmUnmarked,proto3" json:"confirm_unmarked,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *StartRestoreFromKitRequest) Reset() {
@@ -1252,6 +1264,13 @@ func (x *StartRestoreFromKitRequest) GetChainMark() string {
 		return x.ChainMark
 	}
 	return ""
+}
+
+func (x *StartRestoreFromKitRequest) GetConfirmUnmarked() bool {
+	if x != nil {
+		return x.ConfirmUnmarked
+	}
+	return false
 }
 
 type StartRestoreFromKitResponse struct {
@@ -2221,11 +2240,12 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x16CreateIdentityResponse\x122\n" +
 	"\bidentity\x18\x01 \x01(\v2\x16.numen.v1.IdentityInfoR\bidentity\x121\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"O\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"z\n" +
 	"\x13StartRestoreRequest\x12\x19\n" +
 	"\x05words\x18\x01 \x03(\tB\x03\x80\x01\x01R\x05words\x12\x1d\n" +
 	"\n" +
-	"chain_mark\x18\x02 \x01(\tR\tchainMark\"a\n" +
+	"chain_mark\x18\x02 \x01(\tR\tchainMark\x12)\n" +
+	"\x10confirm_unmarked\x18\x03 \x01(\bR\x0fconfirmUnmarked\"a\n" +
 	"\x14StartRestoreResponse\x121\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x17\n" +
@@ -2244,11 +2264,12 @@ const file_numen_v1_identity_proto_rawDesc = "" +
 	"\x17SaveRecoveryKitResponse\x12\x19\n" +
 	"\bis_saved\x18\x01 \x01(\bR\aisSaved\x121\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"l\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x97\x01\n" +
 	"\x1aStartRestoreFromKitRequest\x12/\n" +
 	"\x06sheets\x18\x01 \x03(\v2\x17.numen.v1.RecoverySheetR\x06sheets\x12\x1d\n" +
 	"\n" +
-	"chain_mark\x18\x02 \x01(\tR\tchainMark\"h\n" +
+	"chain_mark\x18\x02 \x01(\tR\tchainMark\x12)\n" +
+	"\x10confirm_unmarked\x18\x03 \x01(\bR\x0fconfirmUnmarked\"h\n" +
 	"\x1bStartRestoreFromKitResponse\x121\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1b.numen.v1.IdentityErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x95\x03\n" +

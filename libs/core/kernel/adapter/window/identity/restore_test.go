@@ -12,7 +12,7 @@ import (
 
 func startRestore(t *testing.T, h *windowidentity.Handler, words []string) *v1.StartRestoreResponse {
 	t.Helper()
-	answer, err := h.StartRestore(t.Context(), connect.NewRequest(&v1.StartRestoreRequest{Words: words}))
+	answer, err := h.StartRestore(t.Context(), connect.NewRequest(&v1.StartRestoreRequest{Words: words, ConfirmUnmarked: true}))
 	if err != nil {
 		t.Fatalf("StartRestore() error = %v", err)
 	}

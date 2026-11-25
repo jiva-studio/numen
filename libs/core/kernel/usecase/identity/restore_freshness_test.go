@@ -16,7 +16,7 @@ func kitOfRestoredPhone(t *testing.T) (older, current []byte, kit identitydomain
 	}
 	older = desktop.getChain(t)
 	phone := newRestoreKit(t, "Phone")
-	if err := phone.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
+	if err := phone.start.Execute(t.Context(), getLegalWords(), "", true); err != nil {
 		t.Fatal(err)
 	}
 	if err := phone.complete.Execute(t.Context(), syncPlugin, older); err != nil {
@@ -42,7 +42,7 @@ func TestCompleteRestore_RefusesAChainThatIsOlderThanTheChainMarkOfTheKit(t *tes
 	t.Parallel()
 	older, _, made := kitOfRestoredPhone(t)
 	fresh := newRestoreKit(t, "Tablet")
-	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 1, 2), made.ChainMark); err != nil {
+	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 1, 2), made.ChainMark, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -66,7 +66,7 @@ func TestCompleteRestore_RefusesNoChainWhenTheKitNamesOne(t *testing.T) {
 	t.Parallel()
 	_, _, made := kitOfRestoredPhone(t)
 	fresh := newRestoreKit(t, "Tablet")
-	if err := fresh.start.Execute(t.Context(), getLegalWords(), made.ChainMark); err != nil {
+	if err := fresh.start.Execute(t.Context(), getLegalWords(), made.ChainMark, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -86,14 +86,14 @@ func TestCompleteRestore_RefusesAChainOfAnotherHistoryThatIsAsLongAsTheMark(t *t
 		t.Fatal(err)
 	}
 	other := newRestoreKit(t, "Phone")
-	if err := other.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
+	if err := other.start.Execute(t.Context(), getLegalWords(), "", true); err != nil {
 		t.Fatal(err)
 	}
 	if err := other.complete.Execute(t.Context(), syncPlugin, stranger.getChain(t)); err != nil {
 		t.Fatal(err)
 	}
 	fresh := newRestoreKit(t, "Tablet")
-	if err := fresh.start.Execute(t.Context(), getLegalWords(), made.ChainMark); err != nil {
+	if err := fresh.start.Execute(t.Context(), getLegalWords(), made.ChainMark, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -106,7 +106,7 @@ func TestCompleteRestore_AcceptsTheChainOfTheMarkAndALongerOne(t *testing.T) {
 	t.Parallel()
 	_, current, made := kitOfRestoredPhone(t)
 	fresh := newRestoreKit(t, "Tablet")
-	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 2, 3), made.ChainMark); err != nil {
+	if err := fresh.startKit.Execute(t.Context(), pick(t, made, 2, 3), made.ChainMark, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -122,7 +122,7 @@ func TestStartRestore_RefusesAChainMarkThatIsNotAMark(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
 
-	err := k.start.Execute(t.Context(), getLegalWords(), "seven-ABC")
+	err := k.start.Execute(t.Context(), getLegalWords(), "seven-ABC", false)
 
 	if !errors.Is(err, identitydomain.ErrInvalidChainMark) {
 		t.Errorf("error = %v, want ErrInvalidChainMark", err)
@@ -143,7 +143,7 @@ func TestCompleteRestore_RotatesTheKeysSoTheKeysWrappedForTheWordsAreNotInUse(t 
 		t.Fatal(err)
 	}
 	phone := newRestoreKit(t, "Phone")
-	if err := phone.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
+	if err := phone.start.Execute(t.Context(), getLegalWords(), "", true); err != nil {
 		t.Fatal(err)
 	}
 

@@ -63,7 +63,7 @@ func TestIsPresent_TrueWhileRestoreAwaitsServerChain(t *testing.T) {
 	t.Parallel()
 	k := newPresenceKit()
 
-	if err := k.start.Execute(t.Context(), getLegalWords(), ""); err != nil {
+	if err := k.start.Execute(t.Context(), getLegalWords(), "", true); err != nil {
 		t.Fatal(err)
 	}
 

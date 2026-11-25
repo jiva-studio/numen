@@ -81,7 +81,7 @@ func saveKit(t *testing.T, h *windowidentity.Handler, request *v1.SaveRecoveryKi
 
 func restoreKit(t *testing.T, h *windowidentity.Handler, sheets []*v1.RecoverySheet) *v1.StartRestoreFromKitResponse {
 	t.Helper()
-	answer, err := h.StartRestoreFromKit(t.Context(), connect.NewRequest(&v1.StartRestoreFromKitRequest{Sheets: sheets}))
+	answer, err := h.StartRestoreFromKit(t.Context(), connect.NewRequest(&v1.StartRestoreFromKitRequest{Sheets: sheets, ConfirmUnmarked: true}))
 	if err != nil {
 		t.Fatalf("StartRestoreFromKit() error = %v", err)
 	}

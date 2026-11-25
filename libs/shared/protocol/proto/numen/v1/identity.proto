@@ -149,6 +149,9 @@ message StartRestoreRequest {
   // chain_mark is the chain mark printed on the recovery kit, or empty. A restore with a mark is refused when the chain of the server does
   // not contain it.
   string chain_mark = 2;
+  // confirm_unmarked is the confirmation of the person to restore without a chain mark: an empty answer of the server then makes a new
+  // identity of the words. Without a mark and without it the restore is refused (CHAIN_OUTDATED).
+  bool confirm_unmarked = 3;
 }
 
 message StartRestoreResponse {
@@ -194,6 +197,8 @@ message StartRestoreFromKitRequest {
   repeated RecoverySheet sheets = 1;
   // chain_mark is the chain mark printed on the sheets, or empty.
   string chain_mark = 2;
+  // confirm_unmarked is the confirmation of the person to restore without a chain mark, as in StartRestoreRequest.
+  bool confirm_unmarked = 3;
 }
 
 message StartRestoreFromKitResponse {

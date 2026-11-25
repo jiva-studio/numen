@@ -61,7 +61,7 @@ func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore
 	if err := c.records.checkAbsent(ctx); err != nil {
 		return err
 	}
-	state, err := c.buildRestoredState(restore, chainBytes)
+	state, err := c.buildRestoredState(ctx, restore, chainBytes)
 	if err != nil {
 		if errors.Is(err, identitydomain.ErrChainOutdated) {
 			store.refuseLocked(restore, err)
@@ -75,8 +75,12 @@ func (c restoreCompletion) complete(ctx context.Context, restore *pendingRestore
 	return nil
 }
 
-func (c restoreCompletion) buildRestoredState(restore *pendingRestore, chainBytes []byte) (identitylib.State, error) {
+func (c restoreCompletion) buildRestoredState(ctx context.Context, restore *pendingRestore, chainBytes []byte) (identitylib.State, error) {
+	fingerprint := restore.recovery.Public().Fingerprint().String()
 	if len(chainBytes) == 0 {
+		if err := c.records.checkHighWater(ctx, fingerprint, 0); err != nil {
+			return identitylib.State{}, err
+		}
 		if !restore.mark.IsZero() {
 			return identitylib.State{}, fmt.Errorf("%w: the server holds no chain", identitydomain.ErrChainOutdated)
 		}
@@ -88,6 +92,9 @@ func (c restoreCompletion) buildRestoredState(restore *pendingRestore, chainByte
 	}
 	if !bytes.Equal(chain.Root().Sign, restore.recovery.Public().Sign) {
 		return identitylib.State{}, fmt.Errorf("%w: the chain has another root", identitydomain.ErrInvalidChain)
+	}
+	if err := c.records.checkHighWater(ctx, fingerprint, chain.Len()); err != nil {
+		return identitylib.State{}, err
 	}
 	if !restore.mark.IsZero() && !chain.HasMark(restore.mark) {
 		return identitylib.State{}, fmt.Errorf("%w: the chain has %d entries and does not contain the mark %v", identitydomain.ErrChainOutdated, chain.Len(), restore.mark)

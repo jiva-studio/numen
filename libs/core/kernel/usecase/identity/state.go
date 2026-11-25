@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
@@ -117,6 +118,9 @@ func (r records) writeRecord(ctx context.Context, record identitylib.Record) err
 }
 
 func (r records) writeNewState(ctx context.Context, record identitylib.Record, chain identitylib.Chain) error {
+	if err := r.raiseHighWater(ctx, chain); err != nil {
+		return err
+	}
 	if err := r.writeChain(ctx, chain); err != nil {
 		return err
 	}
@@ -130,6 +134,9 @@ func (r records) adoptState(ctx context.Context, state identitylib.State, chain 
 	}
 	if next.Chain.Len() == state.Chain.Len() {
 		return next, nil
+	}
+	if err := r.raiseHighWater(ctx, next.Chain); err != nil {
+		return identitylib.State{}, err
 	}
 	if err := r.writeRecord(ctx, next.Record); err != nil {
 		return identitylib.State{}, err
@@ -166,3 +173,45 @@ func toIdentity(state identitylib.State) (identitydomain.Identity, error) {
 	}
 	return identitydomain.Identity{}, fmt.Errorf("%w: the device is not in its chain", identitylib.ErrMalformed)
 }
+
+func highWaterName(fingerprint string) string { return "chain-length-" + fingerprint }
+
+// checkHighWater refuses a chain of the account that is shorter than the longest chain this device has held for it (ErrChainOutdated),
+// including after the identity was deleted from the device.
+func (r records) checkHighWater(ctx context.Context, fingerprint string, length int) error {
+	value, err := r.keys.GetKey(ctx, highWaterName(fingerprint))
+	if isNoKey(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("%w: read the chain length: %w", identitydomain.ErrKeyStore, err)
+	}
+	highest, err := strconv.Atoi(value)
+	if err != nil {
+		return fmt.Errorf("%w: the chain length is not a number: %w", identitylib.ErrMalformed, err)
+	}
+	if length < highest {
+		return fmt.Errorf("%w: the chain has %d entries and this device has held one with %d", identitydomain.ErrChainOutdated, length, highest)
+	}
+	return nil
+}
+
+func (r records) raiseHighWater(ctx context.Context, chain identitylib.Chain) error {
+	if chain.Len() <= newIdentityChainLength {
+		return nil
+	}
+	fingerprint := chain.Root().Fingerprint().String()
+	err := r.checkHighWater(ctx, fingerprint, chain.Len())
+	if errors.Is(err, identitydomain.ErrChainOutdated) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if err := r.keys.SetKey(ctx, highWaterName(fingerprint), strconv.Itoa(chain.Len())); err != nil {
+		return fmt.Errorf("%w: keep the chain length: %w", identitydomain.ErrKeyStore, err)
+	}
+	return nil
+}
+
+const newIdentityChainLength = 2
