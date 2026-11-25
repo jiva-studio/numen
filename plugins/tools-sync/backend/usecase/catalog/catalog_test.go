@@ -442,3 +442,34 @@ func TestConnectVault_WaitsForTheLockOfTheVault(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+type noShares struct{}
+
+func (noShares) Execute(context.Context, domain.VaultID) error { return nil }
+
+func TestDeleteCloudVault_WaitsForTheHolderOfTheVaultBeforeForgettingIt(t *testing.T) {
+	w := newWorld(t)
+	w.first.Connect(t, "Test")
+	remote := w.first.Link(t, "Test").RemoteVaultID
+	unlock, err := w.first.State.LockVault(t.Context(), "Test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		done <- catalog.NewDeleteCloudVault(w.first.CatalogDeps(), noShares{}).Execute(t.Context(), remote)
+	}()
+
+	select {
+	case err := <-done:
+		t.Fatalf("deleted while another pass holds the vault: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+	if _, err := w.first.State.ReadLink(t.Context(), "Test"); err != nil {
+		t.Fatalf("link forgotten under a holder: %v", err)
+	}
+	unlock()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+}

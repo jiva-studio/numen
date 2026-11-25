@@ -3,6 +3,7 @@ package catalog
 import (
 	"context"
 	"encoding/hex"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
@@ -28,6 +29,11 @@ func NewDeleteCloudVault(deps Deps, shares ShareCloser) *DeleteCloudVault {
 // removed, deletes the vault on the server and forgets the links of this device to it. A vault the catalog does not
 // know, or has removed, is deleted on the server all the same. The files of the local vaults stay.
 func (u *DeleteCloudVault) Execute(ctx context.Context, remoteID string) error {
+	return u.ExecuteHeld(ctx, remoteID, "")
+}
+
+// ExecuteHeld does what Execute does for a caller that holds the lock of the vault held already.
+func (u *DeleteCloudVault) ExecuteHeld(ctx context.Context, remoteID string, held domain.VaultID) error {
 	id, err := hex.DecodeString(remoteID)
 	if err != nil {
 		return ErrUnknownRemoteVault
@@ -36,6 +42,11 @@ func (u *DeleteCloudVault) Execute(ctx context.Context, remoteID string) error {
 	if err != nil {
 		return err
 	}
+	unlock, err := u.lockLinked(ctx, linked, held)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	for _, vault := range linked {
 		if err := u.shares.Execute(ctx, vault); err != nil {
 			return err
@@ -66,7 +77,30 @@ func (u *DeleteCloudVault) listLinkedVaults(ctx context.Context, remoteID string
 			linked = append(linked, vault)
 		}
 	}
+	slices.Sort(linked)
 	return linked, nil
+}
+
+// lockLinked takes the lock of each linked vault but held, in the order of their ids so two callers do not wait on each other.
+func (u *DeleteCloudVault) lockLinked(ctx context.Context, linked []domain.VaultID, held domain.VaultID) (func(), error) {
+	var unlocks []func()
+	unlockAll := func() {
+		for _, unlock := range slices.Backward(unlocks) {
+			unlock()
+		}
+	}
+	for _, vault := range linked {
+		if vault == held {
+			continue
+		}
+		unlock, err := u.reader.deps.Locker.LockVault(ctx, vault)
+		if err != nil {
+			unlockAll()
+			return nil, err
+		}
+		unlocks = append(unlocks, unlock)
+	}
+	return unlockAll, nil
 }
 
 func (u *DeleteCloudVault) markRemoved(ctx context.Context, id []byte) error {

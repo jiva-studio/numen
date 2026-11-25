@@ -20,9 +20,9 @@ type Deps struct {
 	Locker ports.VaultLocker
 }
 
-// CloudDeleter deletes a synced vault from the cloud and forgets the links of this device to it.
+// CloudDeleter deletes a synced vault from the cloud and forgets the links of this device to it. The caller holds the lock of held.
 type CloudDeleter interface {
-	Execute(ctx context.Context, remoteID string) error
+	ExecuteHeld(ctx context.Context, remoteID string, held domain.VaultID) error
 }
 
 // StopSyncing ends the sync of a vault of this account on this device.
@@ -51,7 +51,7 @@ func (u *StopSyncing) Execute(ctx context.Context, id domain.VaultID, isDeleting
 		return domainshare.ErrReceivedStop
 	}
 	if isDeleting {
-		return u.deps.Cloud.Execute(ctx, link.RemoteVaultID)
+		return u.deps.Cloud.ExecuteHeld(ctx, link.RemoteVaultID, id)
 	}
 	return u.deps.Forget.ForgetVault(ctx, id)
 }
