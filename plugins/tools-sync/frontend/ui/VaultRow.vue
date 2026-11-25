@@ -24,7 +24,7 @@ const rest = computed(() => props.details.filter((one) => one !== ''))
 <template>
   <li class="vault-row" :class="`vault-row--${kind}`">
     <span class="vault-row__icon" aria-hidden="true">
-      <component :is="icon" :size="18" />
+      <component :is="icon" />
     </span>
     <div class="vault-row__label">
       <span class="vault-row__name">{{ name }}</span>
