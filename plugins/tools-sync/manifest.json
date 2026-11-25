@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.sync",
   "name": "Numen Sync",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "protocol": 1,
   "description": "Synchronizes your vaults across devices",
   "targets": ["desktop.editor", "mobile.app"],
@@ -45,7 +45,7 @@
     "vault:read",
     "vault:write"
   ],
-  "capabilities": ["files.provider"],
+  "capabilities": ["files.provider", "vault.provider"],
   "services": ["md.numen.tools.sync"],
   "backend": {
     "entrypoint": "bin/tools-sync",
