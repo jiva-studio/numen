@@ -44,6 +44,7 @@ export { runInBackground } from './shared/lib/async/background'
 export { reportFailure } from './shared/api/report'
 
 export { Spinner } from './shared/ui/spinner'
+export { ProgressRing } from './shared/ui/progress-ring'
 
 export { StageList, type Stage, type StageState } from './shared/ui/stage-list'
 
@@ -65,6 +66,7 @@ export { Dialog, provideDialogHost } from './shared/ui/dialog'
 export { Skeleton } from './shared/ui/skeleton'
 
 export { groupDigits, formatCount, formatPercent, pickPlural } from './shared/lib/format/digits'
+export { formatBytes, formatBytesOf } from './shared/lib/format/bytes'
 
 export { Prose } from './shared/ui/prose'
 export type { LinkPiece } from './shared/lib/text/marks'

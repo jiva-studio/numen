@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * The tab of a file whose bytes are being brought onto this device: a ring with the file name while
- * it downloads, the failure and a retry once it fails.
+ * The tab of a file whose bytes are being brought onto this device: one ring, filled to the share
+ * brought where it is known, with the file name and the size; the failure and a retry once it fails.
  */
 import { computed } from 'vue'
-import { RefreshCw, TriangleAlert } from '@lucide/vue'
-import { Button, Spinner } from '@numen/ui'
+import { TriangleAlert } from '@lucide/vue'
+import { Button, ProgressRing } from '@numen/ui'
 import type { DownloadState } from '../model/createDownloadTabs'
 import { WORDS } from '../words'
 
@@ -17,18 +17,22 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const view = computed(() => props.state.view.value)
 const isFailed = computed(() => view.value.failure !== '')
+const caption = computed(() => [view.value.title, view.value.size].filter(Boolean).join(' · '))
 </script>
 
 <template>
   <div class="download-pane" role="status" :aria-busy="!isFailed">
     <div class="download-pane__content">
       <TriangleAlert v-if="isFailed" class="download-pane__icon" aria-hidden="true" />
-      <span v-else class="download-pane__ring">
-        <Spinner class="download-pane__spinner" />
-        <RefreshCw class="download-pane__arrows" aria-hidden="true" />
-      </span>
+      <ProgressRing
+        v-else
+        class="download-pane__ring"
+        size="large"
+        :value="view.progress"
+        :label="WORDS.downloading"
+      />
       <h3 class="download-pane__title">{{ isFailed ? view.failure : WORDS.downloading }}</h3>
-      <p class="download-pane__text">{{ view.title }}</p>
+      <p class="download-pane__text">{{ caption }}</p>
       <Button v-if="isFailed" variant="ghost" size="small" @click="state.retry()">
         {{ WORDS.retry }}
       </Button>
@@ -60,26 +64,7 @@ const isFailed = computed(() => view.value.failure !== '')
 }
 
 .download-pane__ring {
-  --size: 3rem;
-  position: relative;
-  display: grid;
-  place-items: center;
-  inline-size: var(--size);
-  block-size: var(--size);
-  color: var(--numen-hushed);
-}
-
-.download-pane__spinner {
-  --spinner-size: 3rem;
-  --spinner-thickness: 0.125rem;
-  position: absolute;
-  inset: 0;
-}
-
-.download-pane__arrows {
-  --size: 1.25rem;
-  inline-size: var(--size);
-  block-size: var(--size);
+  color: var(--numen-accent);
 }
 
 .download-pane__icon {

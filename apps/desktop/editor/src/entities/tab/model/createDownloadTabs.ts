@@ -1,5 +1,6 @@
 import { computed, reactive, type Component, type ComputedRef } from 'vue'
 import { Download } from '@lucide/vue'
+import { formatBytesOf } from '@numen/ui'
 import { getFileName } from '@/shared/lib/paths'
 import { DOWNLOAD_KIND, formatDownloadFailure } from '../lib/downloadFailure'
 import type { AnyTabKind, TabKind } from '../lib/kinds'
@@ -9,7 +10,14 @@ import type { WindowTabs } from './windowTabs'
 /** What a download tab holds: the file, its title, the failure that ended the download, and what retries it. */
 export interface DownloadState {
   readonly path: string
-  readonly view: ComputedRef<{ readonly title: string; readonly failure: string }>
+  readonly view: ComputedRef<{
+    readonly title: string
+    readonly failure: string
+    /** The share brought, from 0 to 1; undefined where the size is not known. */
+    readonly progress: number | undefined
+    /** The bytes brought of the whole, such as "12 of 41 MB"; empty where the size is not known. */
+    readonly size: string
+  }>
   readonly retry: () => void
 }
 
@@ -25,6 +33,12 @@ export interface DownloadTabs {
   finish: (path: string) => void
 }
 
+/** The bytes of a download brought so far, of a size known. */
+export interface DownloadBytes {
+  readonly bytesDone: number
+  readonly bytesTotal: number
+}
+
 interface Entry {
   title: string
   failure: string
@@ -38,6 +52,7 @@ export function createDownloadTabs(
   pane: Component,
   windowTabs: WindowTabs,
   retry: (path: string, title: string) => void,
+  getProgress: (path: string) => DownloadBytes | undefined = () => undefined,
 ): { readonly kind: AnyTabKind; readonly tabs: DownloadTabs } {
   const entries = reactive(new Map<string, Entry>())
   const getTabIds = (path: string) =>
@@ -51,9 +66,12 @@ export function createDownloadTabs(
     open: (path) => {
       const view = computed(() => {
         const entry = entries.get(path)
+        const bytes = getProgress(path)
         return {
           title: entry?.title || getFileName(path),
           failure: entry ? entry.failure : WORDS.downloadFailed,
+          progress: bytes ? bytes.bytesDone / bytes.bytesTotal : undefined,
+          size: bytes ? formatBytesOf(bytes.bytesDone, bytes.bytesTotal) : '',
         }
       })
       return { path, view, retry: () => retry(path, entries.get(path)?.title ?? '') }
