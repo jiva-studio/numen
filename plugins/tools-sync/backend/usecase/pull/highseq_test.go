@@ -87,8 +87,8 @@ func TestPullChanges_ReportsSameWhenTheServerForgotRemovalsWhileTheDeviceWasAway
 	if result.Verdict != restore.Same {
 		t.Errorf("verdict = %v, want Same after the server forgot removals", result.Verdict)
 	}
-	if link := w.b.Link(t, target); link.HighSeq != w.getHead(t) {
-		t.Errorf("highest head = %d, want the head %d", link.HighSeq, w.getHead(t))
+	if link := w.b.Link(t, target); link.HighSeq <= w.getHead(t) {
+		t.Errorf("highest head = %d, want the head of the forgotten removal above the %d of the notes left", link.HighSeq, w.getHead(t))
 	}
 }
 

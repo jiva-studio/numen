@@ -509,7 +509,7 @@ func TestSyncVault_SendsWhatTheServerLostAfterTheWarningAndTheAnnouncement(t *te
 	wantNote(t, p.a, source, "Plan.md", "tea")
 }
 
-func TestSyncVault_RaisesNoWarningAfterTheRestoreWasRunAndTheServerHoldsFewerChanges(t *testing.T) {
+func TestSyncVault_ResetsTheHighestHeadWithTheRestore(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, "Shopping list.md", "bread")
 	sync(t, p.a, source)
