@@ -55,9 +55,9 @@ type SearchServiceClient interface {
 	// SearchText, and that answers with search results.
 	SearchNames(context.Context, *connect.Request[v1.SearchNamesRequest]) (*connect.Response[v1.SearchNamesResponse], error)
 	// SearchText is the text a vault holds that answers what was typed, by
-	// the words in it or by what it means or by what a section is called. The
-	// caller says which way it is asked, so a client drawing them apart asks once
-	// for each.
+	// the words in it or by what it means or by what a section is called. On the
+	// window endpoint the caller names a mode; on the host endpoint it runs the
+	// hybrid search and requires index:read.
 	SearchText(context.Context, *connect.Request[v1.SearchTextRequest]) (*connect.Response[v1.SearchTextResponse], error)
 	// CancelSearch stops the SearchNames or SearchText call that carries the
 	// search id. A client that aborts its request does not stop the call in the
@@ -131,9 +131,9 @@ type SearchServiceHandler interface {
 	// SearchText, and that answers with search results.
 	SearchNames(context.Context, *connect.Request[v1.SearchNamesRequest]) (*connect.Response[v1.SearchNamesResponse], error)
 	// SearchText is the text a vault holds that answers what was typed, by
-	// the words in it or by what it means or by what a section is called. The
-	// caller says which way it is asked, so a client drawing them apart asks once
-	// for each.
+	// the words in it or by what it means or by what a section is called. On the
+	// window endpoint the caller names a mode; on the host endpoint it runs the
+	// hybrid search and requires index:read.
 	SearchText(context.Context, *connect.Request[v1.SearchTextRequest]) (*connect.Response[v1.SearchTextResponse], error)
 	// CancelSearch stops the SearchNames or SearchText call that carries the
 	// search id. A client that aborts its request does not stop the call in the

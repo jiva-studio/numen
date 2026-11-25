@@ -290,9 +290,18 @@ type SearchTextRequest struct {
 	Mode  SearchMode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.SearchMode" json:"mode,omitempty"`
 	// The id CancelSearch names this call by, chosen by the client and unique
 	// among its calls. Empty when the call cannot be cancelled.
-	SearchId      string `protobuf:"bytes,4,opt,name=search_id,json=searchId,proto3" json:"search_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	SearchId string `protobuf:"bytes,4,opt,name=search_id,json=searchId,proto3" json:"search_id,omitempty"`
+	// The kinds of source to search, "note" or "file". Empty means every kind.
+	Kinds []string `protobuf:"bytes,5,rep,name=kinds,proto3" json:"kinds,omitempty"`
+	// Limits the search to the sources whose path starts with it, relative to the
+	// vault, in either Unicode form (NFC or NFD). The index applies it, so the
+	// limit counts search results under the prefix. Empty means the whole vault.
+	PathPrefix string `protobuf:"bytes,6,opt,name=path_prefix,json=pathPrefix,proto3" json:"path_prefix,omitempty"`
+	// Maximum search results of one source. Zero or less takes the endpoint default;
+	// above the limit means the limit.
+	ResultsPerSource int32 `protobuf:"varint,7,opt,name=results_per_source,json=resultsPerSource,proto3" json:"results_per_source,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *SearchTextRequest) Reset() {
@@ -351,6 +360,27 @@ func (x *SearchTextRequest) GetSearchId() string {
 		return x.SearchId
 	}
 	return ""
+}
+
+func (x *SearchTextRequest) GetKinds() []string {
+	if x != nil {
+		return x.Kinds
+	}
+	return nil
+}
+
+func (x *SearchTextRequest) GetPathPrefix() string {
+	if x != nil {
+		return x.PathPrefix
+	}
+	return ""
+}
+
+func (x *SearchTextRequest) GetResultsPerSource() int32 {
+	if x != nil {
+		return x.ResultsPerSource
+	}
+	return 0
 }
 
 type CancelSearchRequest struct {
@@ -435,8 +465,9 @@ func (*CancelSearchResponse) Descriptor() ([]byte, []int) {
 
 type SearchTextResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The search results that answer, best first, one per source.
+	// The search results that answer, best first.
 	Results       []*SearchResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	Error         ErrorCode       `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -476,6 +507,13 @@ func (x *SearchTextResponse) GetResults() []*SearchResult {
 		return x.Results
 	}
 	return nil
+}
+
+func (x *SearchTextResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 // SearchResult is what a search returns: the text around a hit, and where it came
@@ -671,17 +709,22 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x19\n" +
 	"\btab_kind\x18\x05 \x01(\tR\atabKindB\n" +
 	"\n" +
-	"\b_heading\"\x86\x01\n" +
+	"\b_heading\"\xeb\x01\n" +
 	"\x11SearchTextRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12(\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\x12\x1b\n" +
-	"\tsearch_id\x18\x04 \x01(\tR\bsearchId\"2\n" +
+	"\tsearch_id\x18\x04 \x01(\tR\bsearchId\x12\x14\n" +
+	"\x05kinds\x18\x05 \x03(\tR\x05kinds\x12\x1f\n" +
+	"\vpath_prefix\x18\x06 \x01(\tR\n" +
+	"pathPrefix\x12,\n" +
+	"\x12results_per_source\x18\a \x01(\x05R\x10resultsPerSource\"2\n" +
 	"\x13CancelSearchRequest\x12\x1b\n" +
 	"\tsearch_id\x18\x01 \x01(\tR\bsearchId\"\x16\n" +
-	"\x14CancelSearchResponse\"F\n" +
+	"\x14CancelSearchResponse\"q\n" +
 	"\x12SearchTextResponse\x120\n" +
-	"\aresults\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\aresults\"\xca\x03\n" +
+	"\aresults\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\aresults\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"\xca\x03\n" +
 	"\fSearchResult\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -743,6 +786,7 @@ var file_numen_v1_search_proto_goTypes = []any{
 	(*Note)(nil),                 // 9: numen.v1.Note
 	(*Heading)(nil),              // 10: numen.v1.Heading
 	(*Range)(nil),                // 11: numen.v1.Range
+	(ErrorCode)(0),               // 12: numen.v1.ErrorCode
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.SearchNamesResponse.matches:type_name -> numen.v1.NameMatch
@@ -751,20 +795,21 @@ var file_numen_v1_search_proto_depIdxs = []int32{
 	11, // 3: numen.v1.NameMatch.ranges:type_name -> numen.v1.Range
 	0,  // 4: numen.v1.SearchTextRequest.mode:type_name -> numen.v1.SearchMode
 	8,  // 5: numen.v1.SearchTextResponse.results:type_name -> numen.v1.SearchResult
-	9,  // 6: numen.v1.SearchResult.note:type_name -> numen.v1.Note
-	11, // 7: numen.v1.SearchResult.match_ranges:type_name -> numen.v1.Range
-	11, // 8: numen.v1.SearchResult.byte_range:type_name -> numen.v1.Range
-	1,  // 9: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
-	4,  // 10: numen.v1.SearchService.SearchText:input_type -> numen.v1.SearchTextRequest
-	5,  // 11: numen.v1.SearchService.CancelSearch:input_type -> numen.v1.CancelSearchRequest
-	2,  // 12: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
-	7,  // 13: numen.v1.SearchService.SearchText:output_type -> numen.v1.SearchTextResponse
-	6,  // 14: numen.v1.SearchService.CancelSearch:output_type -> numen.v1.CancelSearchResponse
-	12, // [12:15] is the sub-list for method output_type
-	9,  // [9:12] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	12, // 6: numen.v1.SearchTextResponse.error:type_name -> numen.v1.ErrorCode
+	9,  // 7: numen.v1.SearchResult.note:type_name -> numen.v1.Note
+	11, // 8: numen.v1.SearchResult.match_ranges:type_name -> numen.v1.Range
+	11, // 9: numen.v1.SearchResult.byte_range:type_name -> numen.v1.Range
+	1,  // 10: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
+	4,  // 11: numen.v1.SearchService.SearchText:input_type -> numen.v1.SearchTextRequest
+	5,  // 12: numen.v1.SearchService.CancelSearch:input_type -> numen.v1.CancelSearchRequest
+	2,  // 13: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
+	7,  // 14: numen.v1.SearchService.SearchText:output_type -> numen.v1.SearchTextResponse
+	6,  // 15: numen.v1.SearchService.CancelSearch:output_type -> numen.v1.CancelSearchResponse
+	13, // [13:16] is the sub-list for method output_type
+	10, // [10:13] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_search_proto_init() }

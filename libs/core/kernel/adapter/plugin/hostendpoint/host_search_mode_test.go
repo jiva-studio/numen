@@ -10,9 +10,9 @@ import (
 
 func TestHostSearchTextPassesTheLimitAndTheResultsPerSource(t *testing.T) {
 	search := &recordingSearch{}
-	client := newSearchClient(t, newSearchCallers(search), "token-a")
+	client := newTextSearchClient(t, newSearchCallers(search), "token-a")
 
-	_, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{
+	_, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "heron reed", Limit: 300, ResultsPerSource: 10,
 	}))
 	if err != nil {

@@ -70,6 +70,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewSearchServiceHandler(&searchTextEndpoint{searchEndpoint: searchEndpoint{endpoint: endpoint}}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostWindowServiceHandler(&windowEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewPluginHealthServiceHandler(&healthEndpoint{endpoint: endpoint}))

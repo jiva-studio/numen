@@ -20,19 +20,19 @@ import (
 
 // textSearchHost returns SearchText with fixed search results and records the requests.
 type textSearchHost struct {
-	numenv1connect.UnimplementedHostSearchServiceHandler
+	numenv1connect.UnimplementedSearchServiceHandler
 	code    v1.ErrorCode
 	status  *connect.Error
 	vault   string
-	request *v1.HostSearchServiceSearchTextRequest
+	request *v1.SearchTextRequest
 }
 
-func (h *textSearchHost) SearchText(_ context.Context, req *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
+func (h *textSearchHost) SearchText(_ context.Context, req *connect.Request[v1.SearchTextRequest]) (*connect.Response[v1.SearchTextResponse], error) {
 	h.vault, h.request = req.Header().Get("Numen-Vault"), req.Msg
 	if h.status != nil {
 		return nil, h.status
 	}
-	return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{
+	return connect.NewResponse(&v1.SearchTextResponse{
 		Error: h.code,
 		Results: []*v1.SearchResult{{
 			Path: "library/Birds.pdf", Text: "the heron stands in the reeds", PlaceLabel: "page 12",
@@ -46,7 +46,7 @@ func (h *textSearchHost) SearchText(_ context.Context, req *connect.Request[v1.H
 func dialTextSearch(t *testing.T, h *textSearchHost) *host.SearchClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostSearchServiceHandler(h))
+	mux.Handle(numenv1connect.NewSearchServiceHandler(h))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return host.NewSearchClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})

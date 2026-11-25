@@ -8,7 +8,7 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Heading, Note } from "./note_pb.js";
 import { file_numen_v1_note } from "./note_pb.js";
-import type { Range } from "./shared_pb.js";
+import type { ErrorCode, Range } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIkUKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIRCglzZWFyY2hfaWQYAyABKAkiOwoTU2VhcmNoTmFtZXNSZXNwb25zZRIkCgdtYXRjaGVzGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIp8BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIfCgZyYW5nZXMYAyADKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0eXBlGAQgASgJEhAKCHRhYl9raW5kGAUgASgJQgoKCF9oZWFkaW5nImgKEVNlYXJjaFRleHRSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEg0KBWxpbWl0GAIgASgFEiIKBG1vZGUYAyABKA4yFC5udW1lbi52MS5TZWFyY2hNb2RlEhEKCXNlYXJjaF9pZBgEIAEoCSIoChNDYW5jZWxTZWFyY2hSZXF1ZXN0EhEKCXNlYXJjaF9pZBgBIAEoCSIWChRDYW5jZWxTZWFyY2hSZXNwb25zZSI9ChJTZWFyY2hUZXh0UmVzcG9uc2USJwoHcmVzdWx0cxgBIAMoCzIWLm51bWVuLnYxLlNlYXJjaFJlc3VsdCLPAgoMU2VhcmNoUmVzdWx0EgwKBHBhdGgYASABKAkSIQoEbm90ZRgCIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBARIMCgR0ZXh0GAMgASgJEiUKDG1hdGNoX3JhbmdlcxgEIAMoCzIPLm51bWVuLnYxLlJhbmdlEhMKC3BsYWNlX2xhYmVsGAUgASgJEiMKCmJ5dGVfcmFuZ2UYBiABKAsyDy5udW1lbi52MS5SYW5nZRISCgptYXRjaF9saW5lGAcgASgFEgwKBHR5cGUYCCABKAkSEAoIc2VsZWN0b3IYCiABKAkSEAoIdGFiX2tpbmQYCyABKAkSDAoEa2luZBgQIAEoCRINCgV0aXRsZRgRIAEoCRISCgVzY29yZRgSIAEoAUgBiAEBEhUKDWlzX3dob2xlX2ZpbGUYEyABKAhCBwoFX25vdGVCCAoGX3Njb3JlKogBCgpTZWFyY2hNb2RlEhsKF1NFQVJDSF9NT0RFX1VOU1BFQ0lGSUVEEAASFQoRU0VBUkNIX01PREVfV09SRFMQARIXChNTRUFSQ0hfTU9ERV9NRUFOSU5HEAISFQoRU0VBUkNIX01PREVfTkFNRVMQAxIWChJTRUFSQ0hfTU9ERV9IWUJSSUQQBDLzAQoNU2VhcmNoU2VydmljZRJKCgtTZWFyY2hOYW1lcxIcLm51bWVuLnYxLlNlYXJjaE5hbWVzUmVxdWVzdBodLm51bWVuLnYxLlNlYXJjaE5hbWVzUmVzcG9uc2USRwoKU2VhcmNoVGV4dBIbLm51bWVuLnYxLlNlYXJjaFRleHRSZXF1ZXN0GhwubnVtZW4udjEuU2VhcmNoVGV4dFJlc3BvbnNlEk0KDENhbmNlbFNlYXJjaBIdLm51bWVuLnYxLkNhbmNlbFNlYXJjaFJlcXVlc3QaHi5udW1lbi52MS5DYW5jZWxTZWFyY2hSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIkUKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIRCglzZWFyY2hfaWQYAyABKAkiOwoTU2VhcmNoTmFtZXNSZXNwb25zZRIkCgdtYXRjaGVzGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIp8BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIfCgZyYW5nZXMYAyADKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0eXBlGAQgASgJEhAKCHRhYl9raW5kGAUgASgJQgoKCF9oZWFkaW5nIqgBChFTZWFyY2hUZXh0UmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZRIRCglzZWFyY2hfaWQYBCABKAkSDQoFa2luZHMYBSADKAkSEwoLcGF0aF9wcmVmaXgYBiABKAkSGgoScmVzdWx0c19wZXJfc291cmNlGAcgASgFIigKE0NhbmNlbFNlYXJjaFJlcXVlc3QSEQoJc2VhcmNoX2lkGAEgASgJIhYKFENhbmNlbFNlYXJjaFJlc3BvbnNlImEKElNlYXJjaFRleHRSZXNwb25zZRInCgdyZXN1bHRzGAEgAygLMhYubnVtZW4udjEuU2VhcmNoUmVzdWx0EiIKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlIs8CCgxTZWFyY2hSZXN1bHQSDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSJQoMbWF0Y2hfcmFuZ2VzGAQgAygLMg8ubnVtZW4udjEuUmFuZ2USEwoLcGxhY2VfbGFiZWwYBSABKAkSIwoKYnl0ZV9yYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEhIKCm1hdGNoX2xpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCRIQCgh0YWJfa2luZBgLIAEoCRIMCgRraW5kGBAgASgJEg0KBXRpdGxlGBEgASgJEhIKBXNjb3JlGBIgASgBSAGIAQESFQoNaXNfd2hvbGVfZmlsZRgTIAEoCEIHCgVfbm90ZUIICgZfc2NvcmUqiAEKClNlYXJjaE1vZGUSGwoXU0VBUkNIX01PREVfVU5TUEVDSUZJRUQQABIVChFTRUFSQ0hfTU9ERV9XT1JEUxABEhcKE1NFQVJDSF9NT0RFX01FQU5JTkcQAhIVChFTRUFSQ0hfTU9ERV9OQU1FUxADEhYKElNFQVJDSF9NT0RFX0hZQlJJRBAEMvMBCg1TZWFyY2hTZXJ2aWNlEkoKC1NlYXJjaE5hbWVzEhwubnVtZW4udjEuU2VhcmNoTmFtZXNSZXF1ZXN0Gh0ubnVtZW4udjEuU2VhcmNoTmFtZXNSZXNwb25zZRJHCgpTZWFyY2hUZXh0EhsubnVtZW4udjEuU2VhcmNoVGV4dFJlcXVlc3QaHC5udW1lbi52MS5TZWFyY2hUZXh0UmVzcG9uc2USTQoMQ2FuY2VsU2VhcmNoEh0ubnVtZW4udjEuQ2FuY2VsU2VhcmNoUmVxdWVzdBoeLm51bWVuLnYxLkNhbmNlbFNlYXJjaFJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -152,6 +152,30 @@ export type SearchTextRequest = Message<"numen.v1.SearchTextRequest"> & {
    * @generated from field: string search_id = 4;
    */
   searchId: string;
+
+  /**
+   * The kinds of source to search, "note" or "file". Empty means every kind.
+   *
+   * @generated from field: repeated string kinds = 5;
+   */
+  kinds: string[];
+
+  /**
+   * Limits the search to the sources whose path starts with it, relative to the
+   * vault, in either Unicode form (NFC or NFD). The index applies it, so the
+   * limit counts search results under the prefix. Empty means the whole vault.
+   *
+   * @generated from field: string path_prefix = 6;
+   */
+  pathPrefix: string;
+
+  /**
+   * Maximum search results of one source. Zero or less takes the endpoint default;
+   * above the limit means the limit.
+   *
+   * @generated from field: int32 results_per_source = 7;
+   */
+  resultsPerSource: number;
 };
 
 /**
@@ -196,11 +220,16 @@ export const CancelSearchResponseSchema: GenMessage<CancelSearchResponse> = /*@_
  */
 export type SearchTextResponse = Message<"numen.v1.SearchTextResponse"> & {
   /**
-   * The search results that answer, best first, one per source.
+   * The search results that answer, best first.
    *
    * @generated from field: repeated numen.v1.SearchResult results = 1;
    */
   results: SearchResult[];
+
+  /**
+   * @generated from field: numen.v1.ErrorCode error = 2;
+   */
+  error: ErrorCode;
 };
 
 /**
@@ -406,9 +435,9 @@ export const SearchService: GenService<{
   },
   /**
    * SearchText is the text a vault holds that answers what was typed, by
-   * the words in it or by what it means or by what a section is called. The
-   * caller says which way it is asked, so a client drawing them apart asks once
-   * for each.
+   * the words in it or by what it means or by what a section is called. On the
+   * window endpoint the caller names a mode; on the host endpoint it runs the
+   * hybrid search and requires index:read.
    *
    * @generated from rpc numen.v1.SearchService.SearchText
    */
