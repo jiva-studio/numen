@@ -25,7 +25,7 @@ import (
 type searchHost struct {
 	numenv1connect.UnimplementedHostSearchServiceHandler
 	mu      sync.Mutex
-	code    v1.HostSearchErrorCode
+	code    v1.ErrorCode
 	status  *connect.Error
 	source  v1.SearchFloorSource
 	vaults  []string
@@ -196,14 +196,13 @@ func TestASearchOfAnotherVaultNamesItOnEveryCall(t *testing.T) {
 }
 
 func TestEachCodeOfTheSearchIsItsOwnError(t *testing.T) {
-	cases := map[v1.HostSearchErrorCode]error{
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT:         host.ErrNoVault,
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL:         host.ErrNoModel,
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH:  host.ErrRecipeMismatch,
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_FLOOR:    host.ErrInvalidFloor,
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED:   host.ErrLimitExceeded,
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED: host.ErrEmbeddingFailed,
-		v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY:    host.ErrInvalidQuery,
+	cases := map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NO_VAULT:        host.ErrNoVault,
+		v1.ErrorCode_ERROR_CODE_NO_MODEL:        host.ErrNoModel,
+		v1.ErrorCode_ERROR_CODE_RECIPE_MISMATCH: host.ErrRecipeMismatch,
+		v1.ErrorCode_ERROR_CODE_LIMIT_EXCEEDED:  host.ErrLimitExceeded,
+		v1.ErrorCode_ERROR_CODE_UNAVAILABLE:     host.ErrEmbeddingFailed,
+		v1.ErrorCode_ERROR_CODE_INVALID:         host.ErrInvalidQuery,
 	}
 	for code, want := range cases {
 		ctx := t.Context()
@@ -223,17 +222,21 @@ func TestEachCodeOfTheSearchIsItsOwnError(t *testing.T) {
 		if _, err := c.GetSearchFloor(ctx, "r"); !errors.Is(err, want) {
 			t.Errorf("floor, code %s: got %v, want %v", code, err, want)
 		}
-		if err := c.SetSearchFloor(ctx, "r", 0.5); !errors.Is(err, want) {
-			t.Errorf("set, code %s: got %v, want %v", code, err, want)
+		wantSet := want
+		if code == v1.ErrorCode_ERROR_CODE_INVALID {
+			wantSet = host.ErrInvalidFloor
+		}
+		if err := c.SetSearchFloor(ctx, "r", 0.5); !errors.Is(err, wantSet) {
+			t.Errorf("set, code %s: got %v, want %v", code, err, wantSet)
 		}
 	}
 }
 
 func TestEveryErrorCodeAndFloorSourceOfTheSchemaIsRead(t *testing.T) {
-	schematest.CheckHandled(t, func(code v1.HostSearchErrorCode) bool {
+	schematest.CheckHandled(t, func(code v1.ErrorCode) bool {
 		h := &searchHost{code: code}
 		_, err := dialSearch(t, h).GetEmbeddingState(t.Context())
-		return code == v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED || err != nil
+		return code == v1.ErrorCode_ERROR_CODE_UNSPECIFIED || err != nil
 	})
 	schematest.CheckHandled(t, func(source v1.SearchFloorSource) bool {
 		got, err := dialSearch(t, &searchHost{source: source}).GetSearchFloor(t.Context(), "r")
@@ -303,7 +306,7 @@ func TestASearchClientReadsTheIndexStatistics(t *testing.T) {
 		t.Errorf("the call named the vaults %q", h.vaults)
 	}
 
-	if _, err := dialSearch(t, &searchHost{code: v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL}).GetIndexStats(ctx); !errors.Is(err, host.ErrNoModel) {
+	if _, err := dialSearch(t, &searchHost{code: v1.ErrorCode_ERROR_CODE_NO_MODEL}).GetIndexStats(ctx); !errors.Is(err, host.ErrNoModel) {
 		t.Errorf("a host with no model gave %v", err)
 	}
 	denied := dialSearch(t, &searchHost{status: connect.NewError(connect.CodePermissionDenied, errors.New("denied"))})

@@ -89,7 +89,7 @@ func TestAPluginsFilesAreAppendedReadAndListedInItsOwnFolder(t *testing.T) {
 	if diskErr != nil || string(on) != "one\ntwo\n" {
 		t.Errorf("the folder holds %q (%v)", on, diskErr)
 	}
-	if missingErr != nil || missing.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND {
+	if missingErr != nil || missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a missing file was answered %v (%v)", missing.Msg, missingErr)
 	}
 }
@@ -103,7 +103,7 @@ func TestAPluginSeesNoOtherPluginsFolder(t *testing.T) {
 	other := h.newClient("token-b")
 
 	mine, err := other.ReadStoreFile(ctx, connect.NewRequest(&v1.ReadStoreFileRequest{Name: "secret"}))
-	if err != nil || mine.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND {
+	if err != nil || mine.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("another plugin's file was answered %v (%v)", mine.Msg, err)
 	}
 	listed, err := other.ListStoreFiles(ctx, connect.NewRequest(&v1.ListStoreFilesRequest{}))
@@ -112,7 +112,7 @@ func TestAPluginSeesNoOtherPluginsFolder(t *testing.T) {
 	}
 	for _, name := range []string{"../md.numen.a/secret", "../config.json", ".hidden", ""} {
 		res, err := other.ReadStoreFile(ctx, connect.NewRequest(&v1.ReadStoreFileRequest{Name: name}))
-		if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT {
+		if err != nil || res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT {
 			t.Errorf("%q was answered %v (%v)", name, res.Msg, err)
 		}
 	}
@@ -140,7 +140,7 @@ func TestAHostShowingNoVaultAnswersNoVaultForTheStore(t *testing.T) {
 
 	res, err := h.newClient("token-a").ReadStoreFile(t.Context(), connect.NewRequest(&v1.ReadStoreFileRequest{Name: "a"}))
 
-	if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT {
+	if err != nil || res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Errorf("answered %v (%v)", res.Msg, err)
 	}
 }
@@ -163,7 +163,7 @@ func TestStoreWriteReplacesAndDeleteRemovesFile(t *testing.T) {
 
 	for range 2 {
 		res, err := client.DeleteStoreFile(ctx, connect.NewRequest(&v1.DeleteStoreFileRequest{Name: "a.json"}))
-		if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED {
+		if err != nil || res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 			t.Errorf("a delete was answered %v (%v)", res.Msg, err)
 		}
 	}
@@ -171,7 +171,7 @@ func TestStoreWriteReplacesAndDeleteRemovesFile(t *testing.T) {
 		t.Errorf("the deleted file is still there: %v", err)
 	}
 	outside, err := client.WriteStoreFile(ctx, connect.NewRequest(&v1.WriteStoreFileRequest{Name: "../md.numen.b/a", Content: []byte("x")}))
-	if err != nil || outside.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT {
+	if err != nil || outside.Msg.GetError() != v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT {
 		t.Errorf("a write outside the folder was answered %v (%v)", outside.Msg, err)
 	}
 }
@@ -186,18 +186,18 @@ func TestStoreRenameMovesAFileWithinTheFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 	res, err := client.RenameStoreFile(ctx, connect.NewRequest(&v1.RenameStoreFileRequest{From: "clip.part", To: "clip.mp4"}))
-	if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED {
+	if err != nil || res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("a rename was answered %v (%v)", res.Msg, err)
 	}
 	if on, err := os.ReadFile(filepath.Join(folder, "clip.mp4")); err != nil || string(on) != "a copy" {
 		t.Errorf("the new name holds %q (%v)", on, err)
 	}
 	missing, err := client.RenameStoreFile(ctx, connect.NewRequest(&v1.RenameStoreFileRequest{From: "clip.part", To: "clip.mp4"}))
-	if err != nil || missing.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND {
+	if err != nil || missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a rename of a file that is not there was answered %v (%v)", missing.Msg, err)
 	}
 	outside, err := client.RenameStoreFile(ctx, connect.NewRequest(&v1.RenameStoreFileRequest{From: "clip.mp4", To: "../md.numen.b/clip.mp4"}))
-	if err != nil || outside.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT {
+	if err != nil || outside.Msg.GetError() != v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT {
 		t.Errorf("a rename out of the folder was answered %v (%v)", outside.Msg, err)
 	}
 }

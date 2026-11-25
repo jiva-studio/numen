@@ -58,7 +58,7 @@ func TestTheEventHandlerReceivesADeliveredEvent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DeliverEvent failed: %v", err)
 	}
-	if code := resp.Msg.GetError(); code != v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED {
+	if code := resp.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("error = %v, want no error", code)
 	}
 
@@ -84,8 +84,8 @@ func TestEvent_HandlerRejectionReturnsError(t *testing.T) {
 			if err != nil {
 				t.Fatalf("DeliverEvent() = %v, want the call served", err)
 			}
-			if code := resp.Msg.GetError(); code != v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED {
-				t.Fatalf("error = %v, want %v", code, v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED)
+			if code := resp.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_INTERNAL {
+				t.Fatalf("error = %v, want %v", code, v1.ErrorCode_ERROR_CODE_INTERNAL)
 			}
 			if !strings.Contains(resp.Msg.GetDetail(), "the index is closed") {
 				t.Fatalf("reason = %q, want the handler's error", resp.Msg.GetDetail())

@@ -4,7 +4,7 @@
  * before it is sent to the plugin.
  */
 import {
-  COMMAND_ERROR_CODE,
+  WIRE_ERROR_CODE,
   type PluginCommand,
   type PluginHandler,
   type PluginKeybinding,
@@ -206,7 +206,7 @@ const readOutcome = (answer: {
   readonly message: string
   readonly openedPath?: string
 }): DeclaredCommandOutcome =>
-  answer.error === COMMAND_ERROR_CODE.UNSPECIFIED
+  answer.error === WIRE_ERROR_CODE.UNSPECIFIED
     ? { ok: true, value: { message: answer.message, openedPath: answer.openedPath ?? '' } }
     : { ok: false, error: answer.message }
 
@@ -224,7 +224,7 @@ const readItemList = (
 ): ItemListAnswer => ({
   ...request,
   result:
-    answer.error === COMMAND_ERROR_CODE.UNSPECIFIED
+    answer.error === WIRE_ERROR_CODE.UNSPECIFIED
       ? {
           ok: true,
           value: answer.items.map((item) => ({
@@ -338,7 +338,7 @@ export const createDeclaredCommandsApi = (
         const list = lists.shift()
         return readItemList(
           { pluginId: list?.pluginId ?? one.pluginId, command: list?.command ?? one.command },
-          list ?? { error: COMMAND_ERROR_CODE.UNSPECIFIED, message: '', items: [] },
+          list ?? { error: WIRE_ERROR_CODE.UNSPECIFIED, message: '', items: [] },
         )
       })
     },

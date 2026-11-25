@@ -48,7 +48,7 @@ func (c *Catalog) CallTool(ctx context.Context, callerID string, call *v1.CallTo
 	allowed := c.listAllowedTools(ctx, callerID)
 	index := slices.IndexFunc(allowed, func(one tool) bool { return one.spec.GetName() == call.GetName() })
 	if index < 0 {
-		record.response = &v1.CallToolResponse{Error: v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL}
+		record.response = &v1.CallToolResponse{Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND}
 	} else {
 		record.pluginID = allowed[index].pluginID
 		record.response, record.err = c.plugins.callTool(ctx, allowed[index], call)

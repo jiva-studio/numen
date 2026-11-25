@@ -21,7 +21,7 @@ import (
 // textSearchHost returns SearchText with fixed search results and records the requests.
 type textSearchHost struct {
 	numenv1connect.UnimplementedHostSearchServiceHandler
-	code    v1.HostSearchErrorCode
+	code    v1.ErrorCode
 	status  *connect.Error
 	vault   string
 	request *v1.HostSearchServiceSearchTextRequest
@@ -80,8 +80,8 @@ func TestSearchClientReturnsErrorsOfTextSearch(t *testing.T) {
 		h    *textSearchHost
 		want error
 	}{
-		"no vault":          {&textSearchHost{code: v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT}, host.ErrNoVault},
-		"no search index":   {&textSearchHost{code: v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL}, host.ErrNoModel},
+		"no vault":          {&textSearchHost{code: v1.ErrorCode_ERROR_CODE_NO_VAULT}, host.ErrNoVault},
+		"no search index":   {&textSearchHost{code: v1.ErrorCode_ERROR_CODE_NO_MODEL}, host.ErrNoModel},
 		"permission denied": {&textSearchHost{status: connect.NewError(connect.CodePermissionDenied, errors.New("no"))}, host.ErrPermissionDenied},
 	} {
 		t.Run(name, func(t *testing.T) {

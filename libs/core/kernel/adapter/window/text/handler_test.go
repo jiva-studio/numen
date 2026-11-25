@@ -132,7 +132,7 @@ func TestCreateTextEditOfAVersionThatIsNotThereIsMissing(t *testing.T) {
 	missing, err := s.handler.CreateTextEdit(t.Context(), connect.NewRequest(
 		&v1.CreateTextEditRequest{PluginId: "p.view", Path: "a.mp3", SourceVersionId: "x/y"}))
 
-	if err != nil || missing.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND {
+	if err != nil || missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Fatalf("an edit of a version that is not there: %v (%v)", missing.Msg, err)
 	}
 }

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/shared.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // HostStoreService is the calling plugin's own folder in a vault's store,
@@ -36,28 +38,12 @@ service HostStoreService {
   rpc RenameStoreFile(RenameStoreFileRequest) returns (RenameStoreFileResponse);
 }
 
-// HostStoreErrorCode is why a store call failed. Zero means success.
-enum HostStoreErrorCode {
-  HOST_STORE_ERROR_CODE_UNSPECIFIED = 0;
-
-  // The host is showing no vault.
-  HOST_STORE_ERROR_CODE_NO_VAULT = 1;
-
-  HOST_STORE_ERROR_CODE_NOT_FOUND = 2;
-
-  // The name is not a file of the plugin's folder.
-  HOST_STORE_ERROR_CODE_OUTSIDE_VAULT = 3;
-
-  // Another program holds the file.
-  HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER = 4;
-}
-
 message ReadStoreFileRequest {
   string name = 1;
 }
 
 message ReadStoreFileResponse {
-  HostStoreErrorCode error = 1;
+  ErrorCode error = 1;
   bytes content = 2;
 }
 
@@ -67,7 +53,7 @@ message AppendStoreFileRequest {
 }
 
 message AppendStoreFileResponse {
-  HostStoreErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message ListStoreFilesRequest {}
@@ -80,7 +66,7 @@ message HostStoreFile {
 }
 
 message ListStoreFilesResponse {
-  HostStoreErrorCode error = 1;
+  ErrorCode error = 1;
   repeated HostStoreFile files = 2;
 }
 
@@ -90,7 +76,7 @@ message WriteStoreFileRequest {
 }
 
 message WriteStoreFileResponse {
-  HostStoreErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message DeleteStoreFileRequest {
@@ -98,7 +84,7 @@ message DeleteStoreFileRequest {
 }
 
 message DeleteStoreFileResponse {
-  HostStoreErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message RenameStoreFileRequest {
@@ -107,5 +93,5 @@ message RenameStoreFileRequest {
 }
 
 message RenameStoreFileResponse {
-  HostStoreErrorCode error = 1;
+  ErrorCode error = 1;
 }

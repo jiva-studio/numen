@@ -7,7 +7,7 @@ import {
   ListProviderConnectionsResponseSchema,
   ListProviderConnectionTypesResponseSchema,
   ListRowOptionsResponseSchema,
-  ProviderConnectionErrorCode,
+  ErrorCode as ProtoErrorCode,
   UpdateProviderConnectionResponseSchema,
 } from '@numen/protocol'
 import { createConnectionClient, type ConnectionRpc } from './connections'
@@ -356,14 +356,14 @@ describe('createConnectionClient', () => {
   })
 
   it('reads each served error code as a failure with its detail', async () => {
-    const codes: Array<[ProviderConnectionErrorCode, string]> = [
-      [ProviderConnectionErrorCode.NOT_FOUND, 'notFound'],
-      [ProviderConnectionErrorCode.NAME_TAKEN, 'nameTaken'],
-      [ProviderConnectionErrorCode.INVALID_FIELD, 'invalidField'],
-      [ProviderConnectionErrorCode.TYPE_UNAVAILABLE, 'typeUnavailable'],
-      [ProviderConnectionErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
-      [ProviderConnectionErrorCode.STALE_REVISION, 'staleRevision'],
-      [ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE, 'providerUnavailable'],
+    const codes: Array<[ProtoErrorCode, string]> = [
+      [ProtoErrorCode.NOT_FOUND, 'notFound'],
+      [ProtoErrorCode.ALREADY_EXISTS, 'nameTaken'],
+      [ProtoErrorCode.INVALID, 'invalidField'],
+      [ProtoErrorCode.TYPE_UNAVAILABLE, 'typeUnavailable'],
+      [ProtoErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
+      [ProtoErrorCode.CONFLICT, 'staleRevision'],
+      [ProtoErrorCode.UNAVAILABLE, 'providerUnavailable'],
     ]
     for (const [code, expected] of codes) {
       const client = createConnectionClient(
@@ -394,7 +394,7 @@ describe('createConnectionClient', () => {
           deletedIds.push(request.id ?? '')
           return Promise.resolve(
             create(DeleteProviderConnectionResponseSchema, {
-              error: ProviderConnectionErrorCode.NOT_FOUND,
+              error: ProtoErrorCode.NOT_FOUND,
               detail: 'gone',
             }),
           )
@@ -461,7 +461,7 @@ describe('createConnectionClient', () => {
         listRowOptions: () =>
           Promise.resolve(
             create(ListRowOptionsResponseSchema, {
-              error: ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE,
+              error: ProtoErrorCode.UNAVAILABLE,
               detail: 'key rejected',
             }),
           ),

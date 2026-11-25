@@ -159,7 +159,7 @@ beforeEach(() => {
     textScale: 1,
   })
   wire.readTheme.mockResolvedValue({ css: '' })
-  wire.writeAppearance.mockResolvedValue({ error: '' })
+  wire.writeAppearance.mockResolvedValue({ error: 0, detail: '' })
 })
 
 afterEach(() => {

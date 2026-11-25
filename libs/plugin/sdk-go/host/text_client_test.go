@@ -21,7 +21,7 @@ import (
 // each call named.
 type textHost struct {
 	numenv1connect.UnimplementedHostTextServiceHandler
-	code    v1.TextErrorCode
+	code    v1.ErrorCode
 	request *v1.PutTextVersionRequest
 	auth    string
 	vaults  []string
@@ -30,7 +30,7 @@ type textHost struct {
 func (h *textHost) PutTextVersion(_ context.Context, req *connect.Request[v1.PutTextVersionRequest]) (*connect.Response[v1.PutTextVersionResponse], error) {
 	h.request, h.auth = req.Msg, req.Header().Get("Authorization")
 	h.vaults = append(h.vaults, req.Header().Get("Numen-Vault"))
-	if h.code != v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED {
+	if h.code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		return connect.NewResponse(&v1.PutTextVersionResponse{Error: h.code}), nil
 	}
 	return connect.NewResponse(&v1.PutTextVersionResponse{Version: &v1.TextVersion{
@@ -92,19 +92,16 @@ func TestTextClientSavesListsAndReadsThroughTheHost(t *testing.T) {
 }
 
 func TestTheTextClientReadsEveryCodeAsItsError(t *testing.T) {
-	for code, want := range map[v1.TextErrorCode]error{
-		v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND: host.ErrNotExist,
-		v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT:  host.ErrNoVault,
-		v1.TextErrorCode_TEXT_ERROR_CODE_INVALID:   host.ErrInvalidVersion,
-		v1.TextErrorCode_TEXT_ERROR_CODE_NOT_OWNER: host.ErrNotOwner,
+	for code, want := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND: host.ErrNotExist,
+		v1.ErrorCode_ERROR_CODE_NO_VAULT:  host.ErrNoVault,
+		v1.ErrorCode_ERROR_CODE_INVALID:   host.ErrInvalidVersion,
+		v1.ErrorCode_ERROR_CODE_NOT_OWNER: host.ErrNotOwner,
 	} {
 		_, err := newTextClient(t, &textHost{code: code}).PutVersion(t.Context(), host.TextPut{Path: "a", Key: "k"})
 		if !errors.Is(err, want) {
 			t.Errorf("%s: got %v, want %v", code, err, want)
 		}
-	}
-	if len(v1.TextErrorCode_name) != 5 {
-		t.Fatalf("the schema names %d codes and this test reads 4 and the zero", len(v1.TextErrorCode_name))
 	}
 }
 

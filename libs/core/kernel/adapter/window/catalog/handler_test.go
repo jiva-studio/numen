@@ -157,10 +157,10 @@ func TestOnePluginIsReturnedByIdOrAnswersNotFound(t *testing.T) {
 	found, err := handler.GetCatalogEntry(t.Context(), connect.NewRequest(&v1.GetCatalogEntryRequest{Id: "org.example.on"}))
 	missing, missingErr := handler.GetCatalogEntry(t.Context(), connect.NewRequest(&v1.GetCatalogEntryRequest{Id: "org.example.none"}))
 
-	if err != nil || found.Msg.GetEntry().GetId() != "org.example.on" || found.Msg.GetError() != v1.CatalogErrorCode_CATALOG_ERROR_CODE_UNSPECIFIED {
+	if err != nil || found.Msg.GetEntry().GetId() != "org.example.on" || found.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("found = %v, %v", found, err)
 	}
-	if missingErr != nil || missing.Msg.GetError() != v1.CatalogErrorCode_CATALOG_ERROR_CODE_NOT_FOUND || missing.Msg.GetEntry() != nil {
+	if missingErr != nil || missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND || missing.Msg.GetEntry() != nil {
 		t.Errorf("missing = %v, %v; want an answer with the not-found code and no entry", missing, missingErr)
 	}
 }
@@ -174,7 +174,7 @@ func TestAKindOfTabIsFoundOrAnswersNotFound(t *testing.T) {
 	if err != nil || found.Msg.GetEntry().GetId() != "org.example.on" {
 		t.Errorf("found = %v, %v", found, err)
 	}
-	if missingErr != nil || missing.Msg.GetError() != v1.CatalogErrorCode_CATALOG_ERROR_CODE_NOT_FOUND {
+	if missingErr != nil || missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("missing = %v, %v", missing, missingErr)
 	}
 }
@@ -190,7 +190,7 @@ func TestAFailedSourceIsReportedWithAnEntryThatWasFound(t *testing.T) {
 	if err != nil || got.Msg.GetEntry().GetId() != "org.example.on" || len(got.Msg.GetSourceErrors()) != 1 {
 		t.Errorf("found = %v, %v", got, err)
 	}
-	if missingErr != nil || missing.Msg.GetError() != v1.CatalogErrorCode_CATALOG_ERROR_CODE_NOT_FOUND || len(missing.Msg.GetSourceErrors()) != 1 {
+	if missingErr != nil || missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND || len(missing.Msg.GetSourceErrors()) != 1 {
 		t.Errorf("missing = %v, %v; want not found with the failed source", missing, missingErr)
 	}
 }

@@ -57,7 +57,7 @@ func writeCall(out io.Writer, record callRecord) {
 		Duration: record.duration,
 	}
 	setArguments(&line, record.call.GetArguments())
-	if code := record.response.GetError(); code != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED {
+	if code := record.response.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		line.ToolError = code.String()
 	}
 	if result := record.response.GetResult(); result != nil {

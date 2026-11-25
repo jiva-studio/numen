@@ -21,63 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// CallErrorCode is the reason a call did not succeed.
-type CallErrorCode int32
-
-const (
-	CallErrorCode_CALL_ERROR_CODE_UNSPECIFIED CallErrorCode = 0
-	// CALL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
-	CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION CallErrorCode = 1
-	// CALL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one. A row that
-	// fails after its first data frame is ALL_FAILED with that one connection.
-	CallErrorCode_CALL_ERROR_CODE_ALL_FAILED CallErrorCode = 2
-	// CALL_ERROR_CODE_STOPPED is a request that is wrong in itself, and the failure names the connection.
-	CallErrorCode_CALL_ERROR_CODE_STOPPED CallErrorCode = 3
-)
-
-// Enum value maps for CallErrorCode.
-var (
-	CallErrorCode_name = map[int32]string{
-		0: "CALL_ERROR_CODE_UNSPECIFIED",
-		1: "CALL_ERROR_CODE_NO_CONNECTION",
-		2: "CALL_ERROR_CODE_ALL_FAILED",
-		3: "CALL_ERROR_CODE_STOPPED",
-	}
-	CallErrorCode_value = map[string]int32{
-		"CALL_ERROR_CODE_UNSPECIFIED":   0,
-		"CALL_ERROR_CODE_NO_CONNECTION": 1,
-		"CALL_ERROR_CODE_ALL_FAILED":    2,
-		"CALL_ERROR_CODE_STOPPED":       3,
-	}
-)
-
-func (x CallErrorCode) Enum() *CallErrorCode {
-	p := new(CallErrorCode)
-	*p = x
-	return p
-}
-
-func (x CallErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (CallErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_connectioncall_proto_enumTypes[0].Descriptor()
-}
-
-func (CallErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_connectioncall_proto_enumTypes[0]
-}
-
-func (x CallErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use CallErrorCode.Descriptor instead.
-func (CallErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{0}
-}
-
 // CallRowFailure is one row that did not answer. reason is the words the person reads and code the reason
 // a program reads; a row the core set aside for a reason outside the enum has the code UNAVAILABLE.
 type CallRowFailure struct {
@@ -143,7 +86,7 @@ func (x *CallRowFailure) GetCode() FailureReason {
 // CallFailure ends a call that did not succeed.
 type CallFailure struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         CallErrorCode          `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CallErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	Failures      []*CallRowFailure      `protobuf:"bytes,3,rep,name=failures,proto3" json:"failures,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -180,11 +123,11 @@ func (*CallFailure) Descriptor() ([]byte, []int) {
 	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CallFailure) GetError() CallErrorCode {
+func (x *CallFailure) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return CallErrorCode_CALL_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *CallFailure) GetDetail() string {
@@ -903,13 +846,13 @@ var File_numen_v1_connectioncall_proto protoreflect.FileDescriptor
 
 const file_numen_v1_connectioncall_proto_rawDesc = "" +
 	"\n" +
-	"\x1dnumen/v1/connectioncall.proto\x12\bnumen.v1\x1a\x17numen/v1/provider.proto\x1a\x17numen/v1/settings.proto\"~\n" +
+	"\x1dnumen/v1/connectioncall.proto\x12\bnumen.v1\x1a\x17numen/v1/provider.proto\x1a\x17numen/v1/settings.proto\x1a\x15numen/v1/shared.proto\"~\n" +
 	"\x0eCallRowFailure\x12'\n" +
 	"\x0fconnection_name\x18\x01 \x01(\tR\x0econnectionName\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12+\n" +
-	"\x04code\x18\x03 \x01(\x0e2\x17.numen.v1.FailureReasonR\x04code\"\x8a\x01\n" +
-	"\vCallFailure\x12-\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.CallErrorCodeR\x05error\x12\x16\n" +
+	"\x04code\x18\x03 \x01(\x0e2\x17.numen.v1.FailureReasonR\x04code\"\x86\x01\n" +
+	"\vCallFailure\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x124\n" +
 	"\bfailures\x18\x03 \x03(\v2\x18.numen.v1.CallRowFailureR\bfailures\"\xd1\x01\n" +
 	"\fPreferredRow\x12#\n" +
@@ -964,12 +907,7 @@ const file_numen_v1_connectioncall_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"Y\n" +
 	"+ConnectionCallServiceListRowOptionsResponse\x12*\n" +
-	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions*\x90\x01\n" +
-	"\rCallErrorCode\x12\x1f\n" +
-	"\x1bCALL_ERROR_CODE_UNSPECIFIED\x10\x00\x12!\n" +
-	"\x1dCALL_ERROR_CODE_NO_CONNECTION\x10\x01\x12\x1e\n" +
-	"\x1aCALL_ERROR_CODE_ALL_FAILED\x10\x02\x12\x1b\n" +
-	"\x17CALL_ERROR_CODE_STOPPED\x10\x032\xaf\x03\n" +
+	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions2\xaf\x03\n" +
 	"\x15ConnectionCallService\x12a\n" +
 	"\x04Call\x12*.numen.v1.ConnectionCallServiceCallRequest\x1a+.numen.v1.ConnectionCallServiceCallResponse0\x01\x12G\n" +
 	"\n" +
@@ -989,51 +927,50 @@ func file_numen_v1_connectioncall_proto_rawDescGZIP() []byte {
 	return file_numen_v1_connectioncall_proto_rawDescData
 }
 
-var file_numen_v1_connectioncall_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_connectioncall_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_numen_v1_connectioncall_proto_goTypes = []any{
-	(CallErrorCode)(0),                                  // 0: numen.v1.CallErrorCode
-	(*CallRowFailure)(nil),                              // 1: numen.v1.CallRowFailure
-	(*CallFailure)(nil),                                 // 2: numen.v1.CallFailure
-	(*PreferredRow)(nil),                                // 3: numen.v1.PreferredRow
-	(*CallRowField)(nil),                                // 4: numen.v1.CallRowField
-	(*CallRow)(nil),                                     // 5: numen.v1.CallRow
-	(*ConnectionCallServiceCallRequest)(nil),            // 6: numen.v1.ConnectionCallServiceCallRequest
-	(*ConnectionCallServiceCallResponse)(nil),           // 7: numen.v1.ConnectionCallServiceCallResponse
-	(*CancelCallRequest)(nil),                           // 8: numen.v1.CancelCallRequest
-	(*CancelCallResponse)(nil),                          // 9: numen.v1.CancelCallResponse
-	(*ConnectionCallServiceListRowsRequest)(nil),        // 10: numen.v1.ConnectionCallServiceListRowsRequest
-	(*ConnectionCallServiceListRowsResponse)(nil),       // 11: numen.v1.ConnectionCallServiceListRowsResponse
-	(*ConnectionCallServiceListRowOptionsRequest)(nil),  // 12: numen.v1.ConnectionCallServiceListRowOptionsRequest
-	(*ConnectionCallServiceListRowOptionsResponse)(nil), // 13: numen.v1.ConnectionCallServiceListRowOptionsResponse
-	nil,                // 14: numen.v1.PreferredRow.OptionsEntry
-	nil,                // 15: numen.v1.CallRow.OptionsEntry
-	nil,                // 16: numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
-	(FailureReason)(0), // 17: numen.v1.FailureReason
+	(*CallRowFailure)(nil),                              // 0: numen.v1.CallRowFailure
+	(*CallFailure)(nil),                                 // 1: numen.v1.CallFailure
+	(*PreferredRow)(nil),                                // 2: numen.v1.PreferredRow
+	(*CallRowField)(nil),                                // 3: numen.v1.CallRowField
+	(*CallRow)(nil),                                     // 4: numen.v1.CallRow
+	(*ConnectionCallServiceCallRequest)(nil),            // 5: numen.v1.ConnectionCallServiceCallRequest
+	(*ConnectionCallServiceCallResponse)(nil),           // 6: numen.v1.ConnectionCallServiceCallResponse
+	(*CancelCallRequest)(nil),                           // 7: numen.v1.CancelCallRequest
+	(*CancelCallResponse)(nil),                          // 8: numen.v1.CancelCallResponse
+	(*ConnectionCallServiceListRowsRequest)(nil),        // 9: numen.v1.ConnectionCallServiceListRowsRequest
+	(*ConnectionCallServiceListRowsResponse)(nil),       // 10: numen.v1.ConnectionCallServiceListRowsResponse
+	(*ConnectionCallServiceListRowOptionsRequest)(nil),  // 11: numen.v1.ConnectionCallServiceListRowOptionsRequest
+	(*ConnectionCallServiceListRowOptionsResponse)(nil), // 12: numen.v1.ConnectionCallServiceListRowOptionsResponse
+	nil,                // 13: numen.v1.PreferredRow.OptionsEntry
+	nil,                // 14: numen.v1.CallRow.OptionsEntry
+	nil,                // 15: numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
+	(FailureReason)(0), // 16: numen.v1.FailureReason
+	(ErrorCode)(0),     // 17: numen.v1.ErrorCode
 	(Priority)(0),      // 18: numen.v1.Priority
 	(*Option)(nil),     // 19: numen.v1.Option
 }
 var file_numen_v1_connectioncall_proto_depIdxs = []int32{
-	17, // 0: numen.v1.CallRowFailure.code:type_name -> numen.v1.FailureReason
-	0,  // 1: numen.v1.CallFailure.error:type_name -> numen.v1.CallErrorCode
-	1,  // 2: numen.v1.CallFailure.failures:type_name -> numen.v1.CallRowFailure
-	14, // 3: numen.v1.PreferredRow.options:type_name -> numen.v1.PreferredRow.OptionsEntry
-	15, // 4: numen.v1.CallRow.options:type_name -> numen.v1.CallRow.OptionsEntry
-	4,  // 5: numen.v1.CallRow.fields:type_name -> numen.v1.CallRowField
+	16, // 0: numen.v1.CallRowFailure.code:type_name -> numen.v1.FailureReason
+	17, // 1: numen.v1.CallFailure.error:type_name -> numen.v1.ErrorCode
+	0,  // 2: numen.v1.CallFailure.failures:type_name -> numen.v1.CallRowFailure
+	13, // 3: numen.v1.PreferredRow.options:type_name -> numen.v1.PreferredRow.OptionsEntry
+	14, // 4: numen.v1.CallRow.options:type_name -> numen.v1.CallRow.OptionsEntry
+	3,  // 5: numen.v1.CallRow.fields:type_name -> numen.v1.CallRowField
 	18, // 6: numen.v1.ConnectionCallServiceCallRequest.priority:type_name -> numen.v1.Priority
-	3,  // 7: numen.v1.ConnectionCallServiceCallRequest.preferred_row:type_name -> numen.v1.PreferredRow
-	2,  // 8: numen.v1.ConnectionCallServiceCallResponse.failure:type_name -> numen.v1.CallFailure
-	5,  // 9: numen.v1.ConnectionCallServiceListRowsResponse.rows:type_name -> numen.v1.CallRow
-	16, // 10: numen.v1.ConnectionCallServiceListRowOptionsRequest.options:type_name -> numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
+	2,  // 7: numen.v1.ConnectionCallServiceCallRequest.preferred_row:type_name -> numen.v1.PreferredRow
+	1,  // 8: numen.v1.ConnectionCallServiceCallResponse.failure:type_name -> numen.v1.CallFailure
+	4,  // 9: numen.v1.ConnectionCallServiceListRowsResponse.rows:type_name -> numen.v1.CallRow
+	15, // 10: numen.v1.ConnectionCallServiceListRowOptionsRequest.options:type_name -> numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
 	19, // 11: numen.v1.ConnectionCallServiceListRowOptionsResponse.options:type_name -> numen.v1.Option
-	6,  // 12: numen.v1.ConnectionCallService.Call:input_type -> numen.v1.ConnectionCallServiceCallRequest
-	8,  // 13: numen.v1.ConnectionCallService.CancelCall:input_type -> numen.v1.CancelCallRequest
-	10, // 14: numen.v1.ConnectionCallService.ListRows:input_type -> numen.v1.ConnectionCallServiceListRowsRequest
-	12, // 15: numen.v1.ConnectionCallService.ListRowOptions:input_type -> numen.v1.ConnectionCallServiceListRowOptionsRequest
-	7,  // 16: numen.v1.ConnectionCallService.Call:output_type -> numen.v1.ConnectionCallServiceCallResponse
-	9,  // 17: numen.v1.ConnectionCallService.CancelCall:output_type -> numen.v1.CancelCallResponse
-	11, // 18: numen.v1.ConnectionCallService.ListRows:output_type -> numen.v1.ConnectionCallServiceListRowsResponse
-	13, // 19: numen.v1.ConnectionCallService.ListRowOptions:output_type -> numen.v1.ConnectionCallServiceListRowOptionsResponse
+	5,  // 12: numen.v1.ConnectionCallService.Call:input_type -> numen.v1.ConnectionCallServiceCallRequest
+	7,  // 13: numen.v1.ConnectionCallService.CancelCall:input_type -> numen.v1.CancelCallRequest
+	9,  // 14: numen.v1.ConnectionCallService.ListRows:input_type -> numen.v1.ConnectionCallServiceListRowsRequest
+	11, // 15: numen.v1.ConnectionCallService.ListRowOptions:input_type -> numen.v1.ConnectionCallServiceListRowOptionsRequest
+	6,  // 16: numen.v1.ConnectionCallService.Call:output_type -> numen.v1.ConnectionCallServiceCallResponse
+	8,  // 17: numen.v1.ConnectionCallService.CancelCall:output_type -> numen.v1.CancelCallResponse
+	10, // 18: numen.v1.ConnectionCallService.ListRows:output_type -> numen.v1.ConnectionCallServiceListRowsResponse
+	12, // 19: numen.v1.ConnectionCallService.ListRowOptions:output_type -> numen.v1.ConnectionCallServiceListRowOptionsResponse
 	16, // [16:20] is the sub-list for method output_type
 	12, // [12:16] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
@@ -1048,6 +985,7 @@ func file_numen_v1_connectioncall_proto_init() {
 	}
 	file_numen_v1_provider_proto_init()
 	file_numen_v1_settings_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_connectioncall_proto_msgTypes[6].OneofWrappers = []any{
 		(*ConnectionCallServiceCallResponse_Data)(nil),
 		(*ConnectionCallServiceCallResponse_Done)(nil),
@@ -1058,14 +996,13 @@ func file_numen_v1_connectioncall_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_connectioncall_proto_rawDesc), len(file_numen_v1_connectioncall_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_connectioncall_proto_goTypes,
 		DependencyIndexes: file_numen_v1_connectioncall_proto_depIdxs,
-		EnumInfos:         file_numen_v1_connectioncall_proto_enumTypes,
 		MessageInfos:      file_numen_v1_connectioncall_proto_msgTypes,
 	}.Build()
 	File_numen_v1_connectioncall_proto = out.File

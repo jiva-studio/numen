@@ -4,7 +4,7 @@
  */
 import type { Client } from '@connectrpc/connect'
 import {
-  LicenseErrorCode as ProtoLicenseErrorCode,
+  ErrorCode as ProtoErrorCode,
   LicenseStatus as ProtoLicenseStatus,
   type LicenseInfo as ProtoLicenseInfo,
   type LicenseService,
@@ -113,31 +113,33 @@ const readLicense = (info: ProtoLicenseInfo): LicenseInfo => ({
   verifiedUnixMs: Number(info.verifiedUnixMs),
 })
 
-const readErrorCode = (code: ProtoLicenseErrorCode): LicenseErrorCode | undefined => {
+const readErrorCode = (code: ProtoErrorCode): LicenseErrorCode | undefined => {
   switch (code) {
-    case ProtoLicenseErrorCode.UNSPECIFIED:
+    case ProtoErrorCode.UNSPECIFIED:
       return undefined
-    case ProtoLicenseErrorCode.NOT_FOUND:
+    case ProtoErrorCode.NOT_FOUND:
       return 'notFound'
-    case ProtoLicenseErrorCode.INVALID_KEY:
+    case ProtoErrorCode.INVALID:
       return 'invalidKey'
-    case ProtoLicenseErrorCode.ACTIVATION_LIMIT_REACHED:
+    case ProtoErrorCode.ACTIVATION_LIMIT_REACHED:
       return 'activationLimitReached'
-    case ProtoLicenseErrorCode.EXPIRED:
+    case ProtoErrorCode.EXPIRED:
       return 'expired'
-    case ProtoLicenseErrorCode.DISABLED:
+    case ProtoErrorCode.DISABLED:
       return 'disabled'
-    case ProtoLicenseErrorCode.PRODUCT_MISMATCH:
+    case ProtoErrorCode.PRODUCT_MISMATCH:
       return 'productMismatch'
-    case ProtoLicenseErrorCode.PROVIDER_UNAVAILABLE:
+    case ProtoErrorCode.UNAVAILABLE:
       return 'providerUnavailable'
-    case ProtoLicenseErrorCode.KEY_STORE_FAILED:
+    case ProtoErrorCode.KEY_STORE_FAILED:
       return 'keyStoreFailed'
+    default:
+      return undefined
   }
 }
 
 const readAnswer = (answer: {
-  error: ProtoLicenseErrorCode
+  error: ProtoErrorCode
   detail: string
   license?: ProtoLicenseInfo | undefined
 }): Result<LicenseInfo, LicenseFailure> => {

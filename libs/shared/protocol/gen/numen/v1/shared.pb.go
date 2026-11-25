@@ -23,14 +23,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ErrorCode is why a call on a file or a note was served and did nothing. The
-// zero value means the call did not fail. The window and the host endpoint
-// answer with the same codes.
+// ErrorCode is why a served call did not succeed. The zero value means the call
+// succeeded.
 type ErrorCode int32
 
 const (
 	ErrorCode_ERROR_CODE_UNSPECIFIED ErrorCode = 0
-	// Nothing is at the path. A read says so; a write creates the file.
+	// The named resource, path, command, tool, search or entry does not exist.
 	ErrorCode_ERROR_CODE_NOT_FOUND ErrorCode = 1
 	// The file is in the vault and is not a note.
 	ErrorCode_ERROR_CODE_NOT_A_NOTE ErrorCode = 2
@@ -41,30 +40,76 @@ const (
 	// The prose opens with a frontmatter delimiter, so writing it would put a
 	// second block inside the first.
 	ErrorCode_ERROR_CODE_BODY_UNWRITABLE ErrorCode = 5
-	// The frontmatter cannot be read, so the note can be neither read nor written
-	// from here.
+	// The frontmatter or folder cannot be read.
 	ErrorCode_ERROR_CODE_UNREADABLE ErrorCode = 6
-	// A file is already where the note would go. Nothing is written there; a
-	// rename may already have written the note it was moving.
+	// A file, vault or connection with the same path or name already exists.
 	ErrorCode_ERROR_CODE_ALREADY_EXISTS ErrorCode = 7
 	// A note cannot be called this: the title leaves nothing a file can be named
 	// after, it is more than one line, or a heading would read it back as
 	// something else. Nothing is written.
 	ErrorCode_ERROR_CODE_INVALID_NAME ErrorCode = 8
-	// The file is no longer the one this caller read. Nothing was written, and
-	// the person chooses what happens to what they have.
+	// The resource changed since this caller read it.
 	ErrorCode_ERROR_CODE_CONFLICT ErrorCode = 9
 	// The host is showing no vault.
 	ErrorCode_ERROR_CODE_NO_VAULT ErrorCode = 10
-	// The path is outside the vault or names no file.
+	// The path is outside the vault or the plugin's folder, or names no file.
 	ErrorCode_ERROR_CODE_OUTSIDE_VAULT ErrorCode = 11
 	// Another program holds the file.
 	ErrorCode_ERROR_CODE_LOCKED ErrorCode = 12
-	// The change of a note failed for a reason with no code of its own; the
-	// detail of that note carries the error text.
+	// The call failed for a reason with no code of its own; detail carries the
+	// error text.
 	ErrorCode_ERROR_CODE_INTERNAL ErrorCode = 13
 	// The call was cancelled before this note was changed: the note is as it was.
 	ErrorCode_ERROR_CODE_NOT_ATTEMPTED ErrorCode = 14
+	// An argument, field, key, version, floor, query or page token is invalid.
+	ErrorCode_ERROR_CODE_INVALID ErrorCode = 15
+	// The caller does not own the text version or tab.
+	ErrorCode_ERROR_CODE_NOT_OWNER ErrorCode = 16
+	// The plugin, provider or embedding model could not be started or reached.
+	ErrorCode_ERROR_CODE_UNAVAILABLE ErrorCode = 17
+	// The host has no window, or the target window is closed.
+	ErrorCode_ERROR_CODE_NO_WINDOW ErrorCode = 18
+	// The operation did not complete in time, or is no longer pending.
+	ErrorCode_ERROR_CODE_TIMEOUT ErrorCode = 19
+	// The operation was cancelled or superseded.
+	ErrorCode_ERROR_CODE_CANCELED ErrorCode = 20
+	// No connection row can serve the operation.
+	ErrorCode_ERROR_CODE_NO_CONNECTION ErrorCode = 21
+	// Every connection row failed or was set aside.
+	ErrorCode_ERROR_CODE_ALL_FAILED ErrorCode = 22
+	// The connection request is wrong in itself and stopped without trying
+	// another row.
+	ErrorCode_ERROR_CODE_STOPPED ErrorCode = 23
+	// The folder carries a vault identity already registered at another path.
+	ErrorCode_ERROR_CODE_VAULT_COPY ErrorCode = 24
+	// The folder lies inside a registered vault, or holds one.
+	ErrorCode_ERROR_CODE_VAULT_OVERLAPS ErrorCode = 25
+	// It is the only vault this installation holds.
+	ErrorCode_ERROR_CODE_LAST_VAULT ErrorCode = 26
+	// The vault is the one the window currently shows.
+	ErrorCode_ERROR_CODE_VAULT_CURRENT ErrorCode = 27
+	// This machine has no trash.
+	ErrorCode_ERROR_CODE_NO_TRASH ErrorCode = 28
+	// A tab has unsaved changes.
+	ErrorCode_ERROR_CODE_UNSAVED ErrorCode = 29
+	// The license key has used all of its machine slots.
+	ErrorCode_ERROR_CODE_ACTIVATION_LIMIT_REACHED ErrorCode = 30
+	// The license key has expired.
+	ErrorCode_ERROR_CODE_EXPIRED ErrorCode = 31
+	// The license key has been disabled or revoked by the provider.
+	ErrorCode_ERROR_CODE_DISABLED ErrorCode = 32
+	// The license key belongs to another product.
+	ErrorCode_ERROR_CODE_PRODUCT_MISMATCH ErrorCode = 33
+	// The key store failed or is absent on this machine.
+	ErrorCode_ERROR_CODE_KEY_STORE_FAILED ErrorCode = 34
+	// No installed and enabled plugin provides this connection type.
+	ErrorCode_ERROR_CODE_TYPE_UNAVAILABLE ErrorCode = 35
+	// The installation has no search model.
+	ErrorCode_ERROR_CODE_NO_MODEL ErrorCode = 36
+	// The recipe is not the one of the model in use.
+	ErrorCode_ERROR_CODE_RECIPE_MISMATCH ErrorCode = 37
+	// The call exceeds the allowed count or size limit.
+	ErrorCode_ERROR_CODE_LIMIT_EXCEEDED ErrorCode = 38
 )
 
 // Enum value maps for ErrorCode.
@@ -85,23 +130,71 @@ var (
 		12: "ERROR_CODE_LOCKED",
 		13: "ERROR_CODE_INTERNAL",
 		14: "ERROR_CODE_NOT_ATTEMPTED",
+		15: "ERROR_CODE_INVALID",
+		16: "ERROR_CODE_NOT_OWNER",
+		17: "ERROR_CODE_UNAVAILABLE",
+		18: "ERROR_CODE_NO_WINDOW",
+		19: "ERROR_CODE_TIMEOUT",
+		20: "ERROR_CODE_CANCELED",
+		21: "ERROR_CODE_NO_CONNECTION",
+		22: "ERROR_CODE_ALL_FAILED",
+		23: "ERROR_CODE_STOPPED",
+		24: "ERROR_CODE_VAULT_COPY",
+		25: "ERROR_CODE_VAULT_OVERLAPS",
+		26: "ERROR_CODE_LAST_VAULT",
+		27: "ERROR_CODE_VAULT_CURRENT",
+		28: "ERROR_CODE_NO_TRASH",
+		29: "ERROR_CODE_UNSAVED",
+		30: "ERROR_CODE_ACTIVATION_LIMIT_REACHED",
+		31: "ERROR_CODE_EXPIRED",
+		32: "ERROR_CODE_DISABLED",
+		33: "ERROR_CODE_PRODUCT_MISMATCH",
+		34: "ERROR_CODE_KEY_STORE_FAILED",
+		35: "ERROR_CODE_TYPE_UNAVAILABLE",
+		36: "ERROR_CODE_NO_MODEL",
+		37: "ERROR_CODE_RECIPE_MISMATCH",
+		38: "ERROR_CODE_LIMIT_EXCEEDED",
 	}
 	ErrorCode_value = map[string]int32{
-		"ERROR_CODE_UNSPECIFIED":     0,
-		"ERROR_CODE_NOT_FOUND":       1,
-		"ERROR_CODE_NOT_A_NOTE":      2,
-		"ERROR_CODE_NOT_TEXT":        3,
-		"ERROR_CODE_TOO_LARGE":       4,
-		"ERROR_CODE_BODY_UNWRITABLE": 5,
-		"ERROR_CODE_UNREADABLE":      6,
-		"ERROR_CODE_ALREADY_EXISTS":  7,
-		"ERROR_CODE_INVALID_NAME":    8,
-		"ERROR_CODE_CONFLICT":        9,
-		"ERROR_CODE_NO_VAULT":        10,
-		"ERROR_CODE_OUTSIDE_VAULT":   11,
-		"ERROR_CODE_LOCKED":          12,
-		"ERROR_CODE_INTERNAL":        13,
-		"ERROR_CODE_NOT_ATTEMPTED":   14,
+		"ERROR_CODE_UNSPECIFIED":              0,
+		"ERROR_CODE_NOT_FOUND":                1,
+		"ERROR_CODE_NOT_A_NOTE":               2,
+		"ERROR_CODE_NOT_TEXT":                 3,
+		"ERROR_CODE_TOO_LARGE":                4,
+		"ERROR_CODE_BODY_UNWRITABLE":          5,
+		"ERROR_CODE_UNREADABLE":               6,
+		"ERROR_CODE_ALREADY_EXISTS":           7,
+		"ERROR_CODE_INVALID_NAME":             8,
+		"ERROR_CODE_CONFLICT":                 9,
+		"ERROR_CODE_NO_VAULT":                 10,
+		"ERROR_CODE_OUTSIDE_VAULT":            11,
+		"ERROR_CODE_LOCKED":                   12,
+		"ERROR_CODE_INTERNAL":                 13,
+		"ERROR_CODE_NOT_ATTEMPTED":            14,
+		"ERROR_CODE_INVALID":                  15,
+		"ERROR_CODE_NOT_OWNER":                16,
+		"ERROR_CODE_UNAVAILABLE":              17,
+		"ERROR_CODE_NO_WINDOW":                18,
+		"ERROR_CODE_TIMEOUT":                  19,
+		"ERROR_CODE_CANCELED":                 20,
+		"ERROR_CODE_NO_CONNECTION":            21,
+		"ERROR_CODE_ALL_FAILED":               22,
+		"ERROR_CODE_STOPPED":                  23,
+		"ERROR_CODE_VAULT_COPY":               24,
+		"ERROR_CODE_VAULT_OVERLAPS":           25,
+		"ERROR_CODE_LAST_VAULT":               26,
+		"ERROR_CODE_VAULT_CURRENT":            27,
+		"ERROR_CODE_NO_TRASH":                 28,
+		"ERROR_CODE_UNSAVED":                  29,
+		"ERROR_CODE_ACTIVATION_LIMIT_REACHED": 30,
+		"ERROR_CODE_EXPIRED":                  31,
+		"ERROR_CODE_DISABLED":                 32,
+		"ERROR_CODE_PRODUCT_MISMATCH":         33,
+		"ERROR_CODE_KEY_STORE_FAILED":         34,
+		"ERROR_CODE_TYPE_UNAVAILABLE":         35,
+		"ERROR_CODE_NO_MODEL":                 36,
+		"ERROR_CODE_RECIPE_MISMATCH":          37,
+		"ERROR_CODE_LIMIT_EXCEEDED":           38,
 	}
 )
 
@@ -346,7 +439,7 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x03end\x18\x02 \x01(\x05R\x03end\",\n" +
 	"\x06Bounds\x12\x10\n" +
 	"\x03min\x18\x01 \x01(\x01R\x03min\x12\x10\n" +
-	"\x03max\x18\x02 \x01(\x01R\x03max*\xa4\x03\n" +
+	"\x03max\x18\x02 \x01(\x01R\x03max*\xc7\b\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ERROR_CODE_NOT_FOUND\x10\x01\x12\x19\n" +
@@ -363,7 +456,31 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x18ERROR_CODE_OUTSIDE_VAULT\x10\v\x12\x15\n" +
 	"\x11ERROR_CODE_LOCKED\x10\f\x12\x17\n" +
 	"\x13ERROR_CODE_INTERNAL\x10\r\x12\x1c\n" +
-	"\x18ERROR_CODE_NOT_ATTEMPTED\x10\x0eBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x18ERROR_CODE_NOT_ATTEMPTED\x10\x0e\x12\x16\n" +
+	"\x12ERROR_CODE_INVALID\x10\x0f\x12\x18\n" +
+	"\x14ERROR_CODE_NOT_OWNER\x10\x10\x12\x1a\n" +
+	"\x16ERROR_CODE_UNAVAILABLE\x10\x11\x12\x18\n" +
+	"\x14ERROR_CODE_NO_WINDOW\x10\x12\x12\x16\n" +
+	"\x12ERROR_CODE_TIMEOUT\x10\x13\x12\x17\n" +
+	"\x13ERROR_CODE_CANCELED\x10\x14\x12\x1c\n" +
+	"\x18ERROR_CODE_NO_CONNECTION\x10\x15\x12\x19\n" +
+	"\x15ERROR_CODE_ALL_FAILED\x10\x16\x12\x16\n" +
+	"\x12ERROR_CODE_STOPPED\x10\x17\x12\x19\n" +
+	"\x15ERROR_CODE_VAULT_COPY\x10\x18\x12\x1d\n" +
+	"\x19ERROR_CODE_VAULT_OVERLAPS\x10\x19\x12\x19\n" +
+	"\x15ERROR_CODE_LAST_VAULT\x10\x1a\x12\x1c\n" +
+	"\x18ERROR_CODE_VAULT_CURRENT\x10\x1b\x12\x17\n" +
+	"\x13ERROR_CODE_NO_TRASH\x10\x1c\x12\x16\n" +
+	"\x12ERROR_CODE_UNSAVED\x10\x1d\x12'\n" +
+	"#ERROR_CODE_ACTIVATION_LIMIT_REACHED\x10\x1e\x12\x16\n" +
+	"\x12ERROR_CODE_EXPIRED\x10\x1f\x12\x17\n" +
+	"\x13ERROR_CODE_DISABLED\x10 \x12\x1f\n" +
+	"\x1bERROR_CODE_PRODUCT_MISMATCH\x10!\x12\x1f\n" +
+	"\x1bERROR_CODE_KEY_STORE_FAILED\x10\"\x12\x1f\n" +
+	"\x1bERROR_CODE_TYPE_UNAVAILABLE\x10#\x12\x17\n" +
+	"\x13ERROR_CODE_NO_MODEL\x10$\x12\x1e\n" +
+	"\x1aERROR_CODE_RECIPE_MISMATCH\x10%\x12\x1d\n" +
+	"\x19ERROR_CODE_LIMIT_EXCEEDED\x10&BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once

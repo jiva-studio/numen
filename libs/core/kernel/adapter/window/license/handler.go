@@ -120,24 +120,24 @@ func getDetail(err error) string {
 	)
 }
 
-func getErrorCode(err error) (v1.LicenseErrorCode, bool) {
+func getErrorCode(err error) (v1.ErrorCode, bool) {
 	switch {
 	case errors.Is(err, license.ErrNotFound):
-		return v1.LicenseErrorCode_LICENSE_ERROR_CODE_NOT_FOUND, true
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, license.ErrInvalidKey):
-		return v1.LicenseErrorCode_LICENSE_ERROR_CODE_INVALID_KEY, true
+		return v1.ErrorCode_ERROR_CODE_INVALID, true
 	case errors.Is(err, license.ErrActivationLimitReached):
-		return v1.LicenseErrorCode_LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED, true
+		return v1.ErrorCode_ERROR_CODE_ACTIVATION_LIMIT_REACHED, true
 	case errors.Is(err, license.ErrExpired):
-		return v1.LicenseErrorCode_LICENSE_ERROR_CODE_EXPIRED, true
+		return v1.ErrorCode_ERROR_CODE_EXPIRED, true
 	case errors.Is(err, license.ErrDisabled):
-		return v1.LicenseErrorCode_LICENSE_ERROR_CODE_DISABLED, true
+		return v1.ErrorCode_ERROR_CODE_DISABLED, true
 	case errors.Is(err, license.ErrProductMismatch):
-		return v1.LicenseErrorCode_LICENSE_ERROR_CODE_PRODUCT_MISMATCH, true
+		return v1.ErrorCode_ERROR_CODE_PRODUCT_MISMATCH, true
 	case errors.Is(err, license.ErrProviderUnavailable):
-		return v1.LicenseErrorCode_LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE, true
+		return v1.ErrorCode_ERROR_CODE_UNAVAILABLE, true
 	case errors.Is(err, license.ErrKeyStore):
-		return v1.LicenseErrorCode_LICENSE_ERROR_CODE_KEY_STORE_FAILED, true
+		return v1.ErrorCode_ERROR_CODE_KEY_STORE_FAILED, true
 	}
-	return v1.LicenseErrorCode_LICENSE_ERROR_CODE_UNSPECIFIED, false
+	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
 }

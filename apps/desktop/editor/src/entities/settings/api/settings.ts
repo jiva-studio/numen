@@ -3,7 +3,11 @@
  * operations on a plugin that belong to its page. Each answer is mapped into the types of this
  * entity.
  */
-import { PLUGIN_CONTRIBUTION_KIND, type PluginContributionKindValue } from '@numen/core-client'
+import {
+  PLUGIN_CONTRIBUTION_KIND,
+  WIRE_ERROR_CODE,
+  type PluginContributionKindValue,
+} from '@numen/core-client'
 import { asFailure, asValue, type Result } from '@numen/result'
 import type { WindowClients } from '@/shared/api/clients'
 import type { JsonValue } from '@/shared/api/json'
@@ -216,8 +220,8 @@ export const createSettingsApi = (
      * A plugin whose last start failed, started once more. A failure is why it failed again.
      */
     retryPlugin: async (pluginId: string): Promise<Result<null, string>> => {
-      const { failure } = await pluginProcessService.retryPlugin({ pluginId })
-      return failure === '' ? asValue(null) : asFailure(failure)
+      const { error, detail } = await pluginProcessService.retryPlugin({ pluginId })
+      return error === WIRE_ERROR_CODE.UNSPECIFIED ? asValue(null) : asFailure(detail)
     },
 
     /** How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. */

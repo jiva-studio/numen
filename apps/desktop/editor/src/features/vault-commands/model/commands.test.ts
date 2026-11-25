@@ -3,7 +3,7 @@
  * entity: which calls each makes, and what it reports when the list rejects the request.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { VAULTS_ERROR_CODE } from '@numen/core-client'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import { createHandledApi } from '@/testing/coreAnswers'
 import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
@@ -141,7 +141,7 @@ describe('showing another vault', () => {
   })
 
   it('says why it would not open, as an error, and draws nothing again', async () => {
-    const one = createWindow({ opened: { error: VAULTS_ERROR_CODE.CURRENT } })
+    const one = createWindow({ opened: { error: WIRE_ERROR_CODE.VAULT_CURRENT } })
 
     await one.carry(invoke('app:vault.open', withVault('heat')))
 
@@ -160,7 +160,7 @@ describe('showing another vault', () => {
   })
 
   it('lets the writes go again where the vault would not open', async () => {
-    const one = createWindow({ opened: { error: VAULTS_ERROR_CODE.CURRENT } }, true)
+    const one = createWindow({ opened: { error: WIRE_ERROR_CODE.VAULT_CURRENT } }, true)
 
     await one.carry(invoke('app:vault.open', withVault('heat')))
 
@@ -178,7 +178,7 @@ describe('adding a vault', () => {
   })
 
   it('says why the list rejected, as an error', async () => {
-    const one = createWindow({ added: { error: VAULTS_ERROR_CODE.OVERLAPS } })
+    const one = createWindow({ added: { error: WIRE_ERROR_CODE.VAULT_OVERLAPS } })
 
     await one.carry(invoke('app:vault.create', target))
 
@@ -224,7 +224,7 @@ describe('renaming a vault', () => {
   })
 
   it('says why the list rejected, as an error', async () => {
-    const one = createWindow({ renamed: { error: VAULTS_ERROR_CODE.NAME_TAKEN } })
+    const one = createWindow({ renamed: { error: WIRE_ERROR_CODE.ALREADY_EXISTS } })
 
     await one.carry(invoke('app:vault.rename', target, 'Heat'))
 
@@ -260,7 +260,7 @@ describe('taking a vault off the list', () => {
   })
 
   it('says why the list rejected, as an error', async () => {
-    const one = createWindow({ removed: { error: VAULTS_ERROR_CODE.LAST_VAULT } })
+    const one = createWindow({ removed: { error: WIRE_ERROR_CODE.LAST_VAULT } })
 
     await one.carry(invoke('app:vault.remove', target))
 

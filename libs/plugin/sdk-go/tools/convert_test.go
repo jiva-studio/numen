@@ -15,9 +15,11 @@ func TestEnums_EveryProtocolValueRoundTrips(t *testing.T) {
 			t.Errorf("effect %v came back as %v", effect, got)
 		}
 	}
-	for value := range v1.ToolErrorCode_name {
-		code := v1.ToolErrorCode(value)
-		if got := readErrorCode(code); code != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED && got == ErrorCodeUnspecified {
+	for _, code := range []v1.ErrorCode{
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND,
+		v1.ErrorCode_ERROR_CODE_INVALID,
+	} {
+		if got := readErrorCode(code); got == ErrorCodeUnspecified {
 			t.Errorf("error code %v reads as no error", code)
 		}
 	}

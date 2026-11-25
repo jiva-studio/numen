@@ -111,31 +111,31 @@ func TestRunPluginCommand_ReturnsMessageAndErrorCode(t *testing.T) {
 	cases := map[string]struct {
 		commands pluginCommands
 		request  *v1.RunPluginCommandRequest
-		want     v1.CommandErrorCode
+		want     v1.ErrorCode
 		message  string
 	}{
 		"a command that ran": {
-			pluginCommands{result: plugin.CommandResult{Message: "made a.md", OpenedPath: "a.md"}}, valid, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED, "made a.md",
+			pluginCommands{result: plugin.CommandResult{Message: "made a.md", OpenedPath: "a.md"}}, valid, v1.ErrorCode_ERROR_CODE_UNSPECIFIED, "made a.md",
 		},
 		"a command no plugin declares": {
 			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "org.example.sample", Command: "shred"},
-			v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND, "",
+			v1.ErrorCode_ERROR_CODE_NOT_FOUND, "",
 		},
 		"arguments that do not meet it": {
 			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "org.example.sample", Command: "sample.create", Path: "a.md"},
-			v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS, "",
+			v1.ErrorCode_ERROR_CODE_INVALID, "",
 		},
 		"a command that failed": {
 			pluginCommands{err: &plugin.CommandFailedError{Message: "the disk is full"}}, valid,
-			v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, "the disk is full",
+			v1.ErrorCode_ERROR_CODE_INTERNAL, "the disk is full",
 		},
 		"a plugin that cannot start": {
 			pluginCommands{err: &plugin.UnavailableError{PluginID: "org.example.sample", Reason: plugin.Failed}}, valid,
-			v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE, "plugin org.example.sample failed to start",
+			v1.ErrorCode_ERROR_CODE_UNAVAILABLE, "plugin org.example.sample failed to start",
 		},
 		"a failure the core does not name": {
 			pluginCommands{err: errors.New("open /home/user/key: denied")}, valid,
-			v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, "the command failed",
+			v1.ErrorCode_ERROR_CODE_INTERNAL, "the command failed",
 		},
 	}
 	for name, one := range cases {
@@ -148,7 +148,7 @@ func TestRunPluginCommand_ReturnsMessageAndErrorCode(t *testing.T) {
 			if one.message != "" && res.GetMessage() != one.message {
 				t.Errorf("message = %q, want %q", res.GetMessage(), one.message)
 			}
-			if one.want == v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED && res.GetOpenedPath() != "a.md" {
+			if one.want == v1.ErrorCode_ERROR_CODE_UNSPECIFIED && res.GetOpenedPath() != "a.md" {
 				t.Errorf("opened path = %q", res.GetOpenedPath())
 			}
 			if res.GetMessage() == "" {

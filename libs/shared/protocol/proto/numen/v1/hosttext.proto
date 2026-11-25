@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/shared.proto";
 import "numen/v1/textsegment.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
@@ -77,7 +78,7 @@ message PutTextVersionRequest {
 
 message PutTextVersionResponse {
   TextVersion version = 1;
-  TextErrorCode error = 2;
+  ErrorCode error = 2;
 }
 
 message ListTextVersionsRequest {
@@ -88,7 +89,7 @@ message ListTextVersionsResponse {
   repeated TextVersion versions = 1;
   // live_version_id is the version shown and indexed, and empty where none is live.
   string live_version_id = 2;
-  TextErrorCode error = 3;
+  ErrorCode error = 3;
 }
 
 message ReadTextRequest {
@@ -110,7 +111,7 @@ message ReadTextResponse {
   repeated TextSegment segments = 1;
   // next_page_token is empty on the last page.
   string next_page_token = 2;
-  TextErrorCode error = 3;
+  ErrorCode error = 3;
   // For a ranged read: the start of the first segment returned in the whole
   // text, and the size of the whole text in bytes.
   int64 start = 4;

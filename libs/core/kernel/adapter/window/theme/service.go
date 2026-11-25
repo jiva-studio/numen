@@ -88,13 +88,13 @@ func (s *Service) WriteAppearance(
 	_ context.Context,
 	req *connect.Request[v1.WriteAppearanceRequest],
 ) (*connect.Response[v1.WriteAppearanceResponse], error) {
-	respond := func(reason string) (*connect.Response[v1.WriteAppearanceResponse], error) {
-		return connect.NewResponse(&v1.WriteAppearanceResponse{Error: reason}), nil
+	respond := func(code v1.ErrorCode, reason string) (*connect.Response[v1.WriteAppearanceResponse], error) {
+		return connect.NewResponse(&v1.WriteAppearanceResponse{Error: code, Detail: reason}), nil
 	}
 
 	name := req.Msg.GetName()
 	if req.Msg.GetMode() == v1.Mode_MODE_UNSPECIFIED {
-		return respond(name + ": which half of a pair to read was not said")
+		return respond(v1.ErrorCode_ERROR_CODE_INVALID, name+": which half of a pair to read was not said")
 	}
 	selected := themedomain.Appearance{
 		ThemeName:      name,
@@ -103,7 +103,7 @@ func (s *Service) WriteAppearance(
 		TextScale:      req.Msg.GetTextScale(),
 	}
 	if err := s.writeAppearance.Execute(selected); err != nil {
-		return respond(err.Error())
+		return respond(v1.ErrorCode_ERROR_CODE_INTERNAL, err.Error())
 	}
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }

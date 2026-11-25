@@ -100,11 +100,11 @@ func TestAFailureFrameIsReadAsTheErrorOfTheCall(t *testing.T) {
 		check   func(error) bool
 	}{
 		"no connection": {
-			&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION},
+			&v1.CallFailure{Error: v1.ErrorCode_ERROR_CODE_NO_CONNECTION},
 			func(err error) bool { return errors.Is(err, ErrNoConnection) },
 		},
 		"every row failed": {
-			&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED, Failures: []*v1.CallRowFailure{
+			&v1.CallFailure{Error: v1.ErrorCode_ERROR_CODE_ALL_FAILED, Failures: []*v1.CallRowFailure{
 				{ConnectionName: "OpenRouter", Reason: "payment required", Code: v1.FailureReason_FAILURE_REASON_PAYMENT_REQUIRED},
 				{ConnectionName: "Ollama", Reason: "unavailable", Code: v1.FailureReason_FAILURE_REASON_UNAVAILABLE},
 			}},
@@ -117,7 +117,7 @@ func TestAFailureFrameIsReadAsTheErrorOfTheCall(t *testing.T) {
 			},
 		},
 		"a stop": {
-			&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_STOPPED, Failures: []*v1.CallRowFailure{
+			&v1.CallFailure{Error: v1.ErrorCode_ERROR_CODE_STOPPED, Failures: []*v1.CallRowFailure{
 				{ConnectionName: "OpenRouter", Reason: "invalid request", Code: v1.FailureReason_FAILURE_REASON_INVALID_REQUEST},
 			}},
 			func(err error) bool {
@@ -227,7 +227,7 @@ func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
 	}
 
 	failHost := &fakeHost{frames: []*v1.ConnectionCallServiceCallResponse{
-		hostFailure(&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION}),
+		hostFailure(&v1.CallFailure{Error: v1.ErrorCode_ERROR_CODE_NO_CONNECTION}),
 		hostData("trailing"),
 	}}
 	failFrames, err := newTestClient(t, failHost).Call(t.Context(), "llm.complete", nil, PriorityBackground)
@@ -260,13 +260,19 @@ func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
 	}
 }
 
-func TestEveryErrorCodeOfTheSchemaIsReadAsAnError(t *testing.T) {
-	schematest.CheckHandled(t, func(code v1.CallErrorCode) bool {
+func TestEveryCallErrorCodeIsReadAsAnError(t *testing.T) {
+	for _, code := range []v1.ErrorCode{
+		v1.ErrorCode_ERROR_CODE_NO_CONNECTION,
+		v1.ErrorCode_ERROR_CODE_ALL_FAILED,
+		v1.ErrorCode_ERROR_CODE_STOPPED,
+	} {
 		err := readFailure(&v1.CallFailure{Error: code})
 		var failed *AllFailedError
 		var stopped *StoppedError
-		return errors.Is(err, ErrNoConnection) || errors.As(err, &failed) || errors.As(err, &stopped)
-	})
+		if !errors.Is(err, ErrNoConnection) && !errors.As(err, &failed) && !errors.As(err, &stopped) {
+			t.Errorf("%v reaches nothing on the way in", code)
+		}
+	}
 }
 
 func TestEveryPriorityOfTheSchemaIsNumberedFromOne(t *testing.T) {
@@ -286,7 +292,7 @@ func TestEveryFailureReasonOfTheSchemaIsReadAsTheCodeOfAFailure(t *testing.T) {
 	}
 	schematest.CheckHandled(t, func(code v1.FailureReason) bool {
 		err := readFailure(&v1.CallFailure{
-			Error: v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED, Failures: []*v1.CallRowFailure{{ConnectionName: "Harbor", Reason: "words", Code: code}},
+			Error: v1.ErrorCode_ERROR_CODE_ALL_FAILED, Failures: []*v1.CallRowFailure{{ConnectionName: "Harbor", Reason: "words", Code: code}},
 		})
 		var failed *AllFailedError
 		return errors.As(err, &failed) && failed.Failures[0].Code == want[code]

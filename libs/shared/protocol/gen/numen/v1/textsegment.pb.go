@@ -4,7 +4,7 @@
 // 	protoc        (unknown)
 // source: numen/v1/textsegment.proto
 
-// The segments a text version is made of, and the codes a text call answers with.
+// The segments a text version is made of.
 
 package numenv1
 
@@ -22,69 +22,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// TextErrorCode is the reason a served text call did not succeed. The zero
-// value is a call that succeeded.
-type TextErrorCode int32
-
-const (
-	TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED TextErrorCode = 0
-	// TEXT_ERROR_CODE_NOT_FOUND is a file, a version or a key that does not exist.
-	TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND TextErrorCode = 1
-	// TEXT_ERROR_CODE_NO_VAULT is a call while the host shows no vault.
-	TextErrorCode_TEXT_ERROR_CODE_NO_VAULT TextErrorCode = 2
-	// TEXT_ERROR_CODE_INVALID is a version the host does not accept: no kind, an
-	// empty key, a file that is missing or is not JSON Lines of segments, or a
-	// source that is no version of the file.
-	TextErrorCode_TEXT_ERROR_CODE_INVALID TextErrorCode = 3
-	// TEXT_ERROR_CODE_NOT_OWNER is a version another plugin made.
-	TextErrorCode_TEXT_ERROR_CODE_NOT_OWNER TextErrorCode = 4
-)
-
-// Enum value maps for TextErrorCode.
-var (
-	TextErrorCode_name = map[int32]string{
-		0: "TEXT_ERROR_CODE_UNSPECIFIED",
-		1: "TEXT_ERROR_CODE_NOT_FOUND",
-		2: "TEXT_ERROR_CODE_NO_VAULT",
-		3: "TEXT_ERROR_CODE_INVALID",
-		4: "TEXT_ERROR_CODE_NOT_OWNER",
-	}
-	TextErrorCode_value = map[string]int32{
-		"TEXT_ERROR_CODE_UNSPECIFIED": 0,
-		"TEXT_ERROR_CODE_NOT_FOUND":   1,
-		"TEXT_ERROR_CODE_NO_VAULT":    2,
-		"TEXT_ERROR_CODE_INVALID":     3,
-		"TEXT_ERROR_CODE_NOT_OWNER":   4,
-	}
-)
-
-func (x TextErrorCode) Enum() *TextErrorCode {
-	p := new(TextErrorCode)
-	*p = x
-	return p
-}
-
-func (x TextErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (TextErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_textsegment_proto_enumTypes[0].Descriptor()
-}
-
-func (TextErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_textsegment_proto_enumTypes[0]
-}
-
-func (x TextErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use TextErrorCode.Descriptor instead.
-func (TextErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_textsegment_proto_rawDescGZIP(), []int{0}
-}
 
 // TextSegment is one segment of a text. A version file holds one segment per
 // line as JSON: {"text", "heading"?, "selector"?}.
@@ -161,13 +98,7 @@ const file_numen_v1_textsegment_proto_rawDesc = "" +
 	"\vTextSegment\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x18\n" +
 	"\aheading\x18\x02 \x01(\tR\aheading\x12\x1a\n" +
-	"\bselector\x18\x03 \x01(\tR\bselector*\xa9\x01\n" +
-	"\rTextErrorCode\x12\x1f\n" +
-	"\x1bTEXT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1d\n" +
-	"\x19TEXT_ERROR_CODE_NOT_FOUND\x10\x01\x12\x1c\n" +
-	"\x18TEXT_ERROR_CODE_NO_VAULT\x10\x02\x12\x1b\n" +
-	"\x17TEXT_ERROR_CODE_INVALID\x10\x03\x12\x1d\n" +
-	"\x19TEXT_ERROR_CODE_NOT_OWNER\x10\x04BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\bselector\x18\x03 \x01(\tR\bselectorBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_textsegment_proto_rawDescOnce sync.Once
@@ -181,11 +112,9 @@ func file_numen_v1_textsegment_proto_rawDescGZIP() []byte {
 	return file_numen_v1_textsegment_proto_rawDescData
 }
 
-var file_numen_v1_textsegment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_textsegment_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_numen_v1_textsegment_proto_goTypes = []any{
-	(TextErrorCode)(0),  // 0: numen.v1.TextErrorCode
-	(*TextSegment)(nil), // 1: numen.v1.TextSegment
+	(*TextSegment)(nil), // 0: numen.v1.TextSegment
 }
 var file_numen_v1_textsegment_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -205,14 +134,13 @@ func file_numen_v1_textsegment_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_textsegment_proto_rawDesc), len(file_numen_v1_textsegment_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_numen_v1_textsegment_proto_goTypes,
 		DependencyIndexes: file_numen_v1_textsegment_proto_depIdxs,
-		EnumInfos:         file_numen_v1_textsegment_proto_enumTypes,
 		MessageInfos:      file_numen_v1_textsegment_proto_msgTypes,
 	}.Build()
 	File_numen_v1_textsegment_proto = out.File

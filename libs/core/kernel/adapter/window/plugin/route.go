@@ -62,7 +62,8 @@ func (h *Handler) RetryPlugin(
 	}
 	reply := &v1.RetryPluginResponse{}
 	if failure != nil {
-		reply.Failure = failure.Reason
+		reply.Error = v1.ErrorCode_ERROR_CODE_INTERNAL
+		reply.Detail = failure.Reason
 	}
 	return connect.NewResponse(reply), nil
 }

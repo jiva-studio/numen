@@ -3,7 +3,7 @@ import { create } from '@bufbuild/protobuf'
 import {
   ActivateLicenseResponseSchema,
   DeactivateLicenseResponseSchema,
-  LicenseErrorCode,
+  ErrorCode,
   LicenseStatus,
   ListLicensesResponseSchema,
   WatchLicensesResponseSchema,
@@ -139,15 +139,15 @@ describe('createLicenseClient', () => {
   })
 
   it('reads each served error code as a failure', async () => {
-    const codes: Array<[LicenseErrorCode, string]> = [
-      [LicenseErrorCode.NOT_FOUND, 'notFound'],
-      [LicenseErrorCode.INVALID_KEY, 'invalidKey'],
-      [LicenseErrorCode.ACTIVATION_LIMIT_REACHED, 'activationLimitReached'],
-      [LicenseErrorCode.EXPIRED, 'expired'],
-      [LicenseErrorCode.DISABLED, 'disabled'],
-      [LicenseErrorCode.PRODUCT_MISMATCH, 'productMismatch'],
-      [LicenseErrorCode.PROVIDER_UNAVAILABLE, 'providerUnavailable'],
-      [LicenseErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
+    const codes: Array<[ErrorCode, string]> = [
+      [ErrorCode.NOT_FOUND, 'notFound'],
+      [ErrorCode.INVALID, 'invalidKey'],
+      [ErrorCode.ACTIVATION_LIMIT_REACHED, 'activationLimitReached'],
+      [ErrorCode.EXPIRED, 'expired'],
+      [ErrorCode.DISABLED, 'disabled'],
+      [ErrorCode.PRODUCT_MISMATCH, 'productMismatch'],
+      [ErrorCode.UNAVAILABLE, 'providerUnavailable'],
+      [ErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
     ]
     for (const [code, expected] of codes) {
       const client = createLicenseClient(

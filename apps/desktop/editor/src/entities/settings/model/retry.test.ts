@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import { createLostConnection } from '@numen/core-client/testing'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { createAnsweredApi } from '@/testing/coreAnswers'
@@ -19,7 +20,9 @@ const createRetry = (answer: { failure: string } | { rejection: string }) => {
       retryPlugin: (request) => {
         calls.push(request.pluginId)
         if ('rejection' in answer) throw createLostConnection(answer.rejection)
-        return { failure: answer.failure }
+        return answer.failure === ''
+          ? { error: WIRE_ERROR_CODE.UNSPECIFIED, detail: '' }
+          : { error: WIRE_ERROR_CODE.INTERNAL, detail: answer.failure }
       },
     },
   })

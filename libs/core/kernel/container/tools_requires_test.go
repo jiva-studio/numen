@@ -58,7 +58,7 @@ func TestCallerWithoutRequiredPermissionCannotListOrCallTool(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if res.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL {
+			if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 				t.Errorf("a call of %s without %s returned %v, want UNKNOWN_TOOL", c.tool.GetName(), permission, res.Msg)
 			}
 			if requests := served.getRequests(); len(requests) != 0 {
@@ -85,7 +85,7 @@ func TestACallerWithTheRequiredPermissionListsAndCallsTheTool(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if res.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || res.Msg.GetResult() == nil {
+			if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || res.Msg.GetResult() == nil {
 				t.Errorf("a call of %s with %s returned %v", c.tool.GetName(), permission, res.Msg)
 			}
 			if requests := served.getRequests(); len(requests) != 1 || requests[0].GetName() != c.tool.GetName() {

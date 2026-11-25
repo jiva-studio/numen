@@ -676,8 +676,8 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := selected.Msg.GetError(); reason != "" {
-		t.Fatalf("failed: %s", reason)
+	if selected.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("failed: %v %s", selected.Msg.GetError(), selected.Msg.GetDetail())
 	}
 
 	response := adapterSettings.DefaultFile()
@@ -720,8 +720,8 @@ func TestASizeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := selected.Msg.GetError(); reason != "" {
-		t.Fatalf("failed: %s", reason)
+	if selected.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("failed: %v %s", selected.Msg.GetError(), selected.Msg.GetDetail())
 	}
 
 	response := adapterSettings.DefaultFile()
@@ -760,8 +760,8 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := selected.Msg.GetError(); !strings.Contains(reason, "appearance.textScale") {
-		t.Errorf("failed with %q", reason)
+	if selected.Msg.GetError() == v1.ErrorCode_ERROR_CODE_UNSPECIFIED || !strings.Contains(selected.Msg.GetDetail(), "appearance.textScale") {
+		t.Errorf("failed with %v %q", selected.Msg.GetError(), selected.Msg.GetDetail())
 	}
 
 	target, err := os.ReadFile(file)

@@ -3,7 +3,7 @@
  * through the real client over the router transport: this file encodes the answers the way the
  * core sends them and decodes the requests the way the core reads them.
  */
-import { PLUGIN_CONTRIBUTION_KIND } from '@numen/core-client'
+import { PLUGIN_CONTRIBUTION_KIND, WIRE_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { createAnsweredApi } from './coreAnswers'
 import type { PluginSettingCondition } from '@numen/plugin-manager'
@@ -222,7 +222,9 @@ const answerPluginProcesses = (core: Partial<SettingsCore>): Answers => {
     ? {
         retryPlugin: async (r: { pluginId: string }) => {
           const answer = await retryPlugin(r.pluginId)
-          return { failure: answer.ok ? '' : answer.error }
+          return answer.ok
+            ? { error: WIRE_ERROR_CODE.UNSPECIFIED, detail: '' }
+            : { error: WIRE_ERROR_CODE.INTERNAL, detail: answer.error }
         },
       }
     : {}

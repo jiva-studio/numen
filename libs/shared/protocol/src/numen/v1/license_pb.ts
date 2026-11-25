@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/license.proto.
  */
 export const file_numen_v1_license: GenFile = /*@__PURE__*/
-  fileDesc("ChZudW1lbi92MS9saWNlbnNlLnByb3RvEghudW1lbi52MSJRChJMaWNlbnNlQ29udHJpYnV0b3ISEQoJcGx1Z2luX2lkGAEgASgJEhMKC3BsdWdpbl9uYW1lGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJIoMBChVMaWNlbnNlUHJvdmlkZXJPcHRpb24SEAoIcHJvdmlkZXIYASABKAkSFQoNcHJvdmlkZXJfbmFtZRgCIAEoCRISCgpwcm9kdWN0X2lkGAMgASgJEhQKDGNoZWNrb3V0X3VybBgEIAEoCRIXCg9wYXltZW50X21ldGhvZHMYBSADKAki0gIKC0xpY2Vuc2VJbmZvEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEjIKDGNvbnRyaWJ1dG9ycxgDIAMoCzIcLm51bWVuLnYxLkxpY2Vuc2VDb250cmlidXRvchIyCglwcm92aWRlcnMYBCADKAsyHy5udW1lbi52MS5MaWNlbnNlUHJvdmlkZXJPcHRpb24SJwoGc3RhdHVzGAUgASgOMhcubnVtZW4udjEuTGljZW5zZVN0YXR1cxIRCglpc19hY3RpdmUYBiABKAgSDwoHaGFzX2tleRgHIAEoCBIQCghrZXlfaGludBgIIAEoCRIXCg9hY3RpdmVfcHJvdmlkZXIYCSABKAkSFQoNaW5zdGFuY2VfbmFtZRgKIAEoCRIXCg9leHBpcmVzX3VuaXhfbXMYCyABKAMSGAoQdmVyaWZpZWRfdW5peF9tcxgMIAEoAyIVChNMaXN0TGljZW5zZXNSZXF1ZXN0Ij8KFExpc3RMaWNlbnNlc1Jlc3BvbnNlEicKCGxpY2Vuc2VzGAEgAygLMhUubnVtZW4udjEuTGljZW5zZUluZm8iPgoWQWN0aXZhdGVMaWNlbnNlUmVxdWVzdBISCgpsaWNlbnNlX2lkGAEgASgJEhAKA2tleRgCIAEoCUIDgAEBInwKF0FjdGl2YXRlTGljZW5zZVJlc3BvbnNlEiYKB2xpY2Vuc2UYASABKAsyFS5udW1lbi52MS5MaWNlbnNlSW5mbxIpCgVlcnJvchgCIAEoDjIaLm51bWVuLnYxLkxpY2Vuc2VFcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIi4KGERlYWN0aXZhdGVMaWNlbnNlUmVxdWVzdBISCgpsaWNlbnNlX2lkGAEgASgJIn4KGURlYWN0aXZhdGVMaWNlbnNlUmVzcG9uc2USJgoHbGljZW5zZRgBIAEoCzIVLm51bWVuLnYxLkxpY2Vuc2VJbmZvEikKBWVycm9yGAIgASgOMhoubnVtZW4udjEuTGljZW5zZUVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiFgoUV2F0Y2hMaWNlbnNlc1JlcXVlc3QiQAoVV2F0Y2hMaWNlbnNlc1Jlc3BvbnNlEicKCGxpY2Vuc2VzGAEgAygLMhUubnVtZW4udjEuTGljZW5zZUluZm8qogEKDUxpY2Vuc2VTdGF0dXMSHgoaTElDRU5TRV9TVEFUVVNfVU5TUEVDSUZJRUQQABIbChdMSUNFTlNFX1NUQVRVU19JTkFDVElWRRABEhkKFUxJQ0VOU0VfU1RBVFVTX0FDVElWRRACEhoKFkxJQ0VOU0VfU1RBVFVTX0VYUElSRUQQAxIdChlMSUNFTlNFX1NUQVRVU19VTlZFUklGSUVEEAQq7QIKEExpY2Vuc2VFcnJvckNvZGUSIgoeTElDRU5TRV9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIAocTElDRU5TRV9FUlJPUl9DT0RFX05PVF9GT1VORBABEiIKHkxJQ0VOU0VfRVJST1JfQ09ERV9JTlZBTElEX0tFWRACEi8KK0xJQ0VOU0VfRVJST1JfQ09ERV9BQ1RJVkFUSU9OX0xJTUlUX1JFQUNIRUQQAxIeChpMSUNFTlNFX0VSUk9SX0NPREVfRVhQSVJFRBAEEh8KG0xJQ0VOU0VfRVJST1JfQ09ERV9ESVNBQkxFRBAFEicKI0xJQ0VOU0VfRVJST1JfQ09ERV9QUk9EVUNUX01JU01BVENIEAYSKwonTElDRU5TRV9FUlJPUl9DT0RFX1BST1ZJREVSX1VOQVZBSUxBQkxFEAcSJwojTElDRU5TRV9FUlJPUl9DT0RFX0tFWV9TVE9SRV9GQUlMRUQQCDLpAgoOTGljZW5zZVNlcnZpY2USTQoMTGlzdExpY2Vuc2VzEh0ubnVtZW4udjEuTGlzdExpY2Vuc2VzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RMaWNlbnNlc1Jlc3BvbnNlElYKD0FjdGl2YXRlTGljZW5zZRIgLm51bWVuLnYxLkFjdGl2YXRlTGljZW5zZVJlcXVlc3QaIS5udW1lbi52MS5BY3RpdmF0ZUxpY2Vuc2VSZXNwb25zZRJcChFEZWFjdGl2YXRlTGljZW5zZRIiLm51bWVuLnYxLkRlYWN0aXZhdGVMaWNlbnNlUmVxdWVzdBojLm51bWVuLnYxLkRlYWN0aXZhdGVMaWNlbnNlUmVzcG9uc2USUgoNV2F0Y2hMaWNlbnNlcxIeLm51bWVuLnYxLldhdGNoTGljZW5zZXNSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hMaWNlbnNlc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChZudW1lbi92MS9saWNlbnNlLnByb3RvEghudW1lbi52MSJRChJMaWNlbnNlQ29udHJpYnV0b3ISEQoJcGx1Z2luX2lkGAEgASgJEhMKC3BsdWdpbl9uYW1lGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJIoMBChVMaWNlbnNlUHJvdmlkZXJPcHRpb24SEAoIcHJvdmlkZXIYASABKAkSFQoNcHJvdmlkZXJfbmFtZRgCIAEoCRISCgpwcm9kdWN0X2lkGAMgASgJEhQKDGNoZWNrb3V0X3VybBgEIAEoCRIXCg9wYXltZW50X21ldGhvZHMYBSADKAki0gIKC0xpY2Vuc2VJbmZvEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEjIKDGNvbnRyaWJ1dG9ycxgDIAMoCzIcLm51bWVuLnYxLkxpY2Vuc2VDb250cmlidXRvchIyCglwcm92aWRlcnMYBCADKAsyHy5udW1lbi52MS5MaWNlbnNlUHJvdmlkZXJPcHRpb24SJwoGc3RhdHVzGAUgASgOMhcubnVtZW4udjEuTGljZW5zZVN0YXR1cxIRCglpc19hY3RpdmUYBiABKAgSDwoHaGFzX2tleRgHIAEoCBIQCghrZXlfaGludBgIIAEoCRIXCg9hY3RpdmVfcHJvdmlkZXIYCSABKAkSFQoNaW5zdGFuY2VfbmFtZRgKIAEoCRIXCg9leHBpcmVzX3VuaXhfbXMYCyABKAMSGAoQdmVyaWZpZWRfdW5peF9tcxgMIAEoAyIVChNMaXN0TGljZW5zZXNSZXF1ZXN0Ij8KFExpc3RMaWNlbnNlc1Jlc3BvbnNlEicKCGxpY2Vuc2VzGAEgAygLMhUubnVtZW4udjEuTGljZW5zZUluZm8iPgoWQWN0aXZhdGVMaWNlbnNlUmVxdWVzdBISCgpsaWNlbnNlX2lkGAEgASgJEhAKA2tleRgCIAEoCUIDgAEBInUKF0FjdGl2YXRlTGljZW5zZVJlc3BvbnNlEiYKB2xpY2Vuc2UYASABKAsyFS5udW1lbi52MS5MaWNlbnNlSW5mbxIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiLgoYRGVhY3RpdmF0ZUxpY2Vuc2VSZXF1ZXN0EhIKCmxpY2Vuc2VfaWQYASABKAkidwoZRGVhY3RpdmF0ZUxpY2Vuc2VSZXNwb25zZRImCgdsaWNlbnNlGAEgASgLMhUubnVtZW4udjEuTGljZW5zZUluZm8SIgoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIhYKFFdhdGNoTGljZW5zZXNSZXF1ZXN0IkAKFVdhdGNoTGljZW5zZXNSZXNwb25zZRInCghsaWNlbnNlcxgBIAMoCzIVLm51bWVuLnYxLkxpY2Vuc2VJbmZvKqIBCg1MaWNlbnNlU3RhdHVzEh4KGkxJQ0VOU0VfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGwoXTElDRU5TRV9TVEFUVVNfSU5BQ1RJVkUQARIZChVMSUNFTlNFX1NUQVRVU19BQ1RJVkUQAhIaChZMSUNFTlNFX1NUQVRVU19FWFBJUkVEEAMSHQoZTElDRU5TRV9TVEFUVVNfVU5WRVJJRklFRBAEMukCCg5MaWNlbnNlU2VydmljZRJNCgxMaXN0TGljZW5zZXMSHS5udW1lbi52MS5MaXN0TGljZW5zZXNSZXF1ZXN0Gh4ubnVtZW4udjEuTGlzdExpY2Vuc2VzUmVzcG9uc2USVgoPQWN0aXZhdGVMaWNlbnNlEiAubnVtZW4udjEuQWN0aXZhdGVMaWNlbnNlUmVxdWVzdBohLm51bWVuLnYxLkFjdGl2YXRlTGljZW5zZVJlc3BvbnNlElwKEURlYWN0aXZhdGVMaWNlbnNlEiIubnVtZW4udjEuRGVhY3RpdmF0ZUxpY2Vuc2VSZXF1ZXN0GiMubnVtZW4udjEuRGVhY3RpdmF0ZUxpY2Vuc2VSZXNwb25zZRJSCg1XYXRjaExpY2Vuc2VzEh4ubnVtZW4udjEuV2F0Y2hMaWNlbnNlc1JlcXVlc3QaHy5udW1lbi52MS5XYXRjaExpY2Vuc2VzUmVzcG9uc2UwAUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * LicenseContributor is one plugin that declares a license and what it unlocks when the license is
@@ -238,9 +240,9 @@ export type ActivateLicenseResponse = Message<"numen.v1.ActivateLicenseResponse"
   license?: LicenseInfo | undefined;
 
   /**
-   * @generated from field: numen.v1.LicenseErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: LicenseErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 3;
@@ -282,9 +284,9 @@ export type DeactivateLicenseResponse = Message<"numen.v1.DeactivateLicenseRespo
   license?: LicenseInfo | undefined;
 
   /**
-   * @generated from field: numen.v1.LicenseErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: LicenseErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 3;
@@ -373,79 +375,6 @@ export enum LicenseStatus {
  */
 export const LicenseStatusSchema: GenEnum<LicenseStatus> = /*@__PURE__*/
   enumDesc(file_numen_v1_license, 0);
-
-/**
- * LicenseErrorCode is why an activation or deactivation call failed. The zero value is a call
- * that succeeded.
- *
- * @generated from enum numen.v1.LicenseErrorCode
- */
-export enum LicenseErrorCode {
-  /**
-   * @generated from enum value: LICENSE_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * LICENSE_ERROR_CODE_NOT_FOUND is a license id that no plugin declares, or a key that no provider
-   * recognizes.
-   *
-   * @generated from enum value: LICENSE_ERROR_CODE_NOT_FOUND = 1;
-   */
-  NOT_FOUND = 1,
-
-  /**
-   * LICENSE_ERROR_CODE_INVALID_KEY is an empty or malformed license key.
-   *
-   * @generated from enum value: LICENSE_ERROR_CODE_INVALID_KEY = 2;
-   */
-  INVALID_KEY = 2,
-
-  /**
-   * LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED is a key that has used all of its machine slots.
-   *
-   * @generated from enum value: LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED = 3;
-   */
-  ACTIVATION_LIMIT_REACHED = 3,
-
-  /**
-   * @generated from enum value: LICENSE_ERROR_CODE_EXPIRED = 4;
-   */
-  EXPIRED = 4,
-
-  /**
-   * LICENSE_ERROR_CODE_DISABLED is a key that the provider has disabled or revoked.
-   *
-   * @generated from enum value: LICENSE_ERROR_CODE_DISABLED = 5;
-   */
-  DISABLED = 5,
-
-  /**
-   * @generated from enum value: LICENSE_ERROR_CODE_PRODUCT_MISMATCH = 6;
-   */
-  PRODUCT_MISMATCH = 6,
-
-  /**
-   * LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that could not be reached or returned a
-   * transient error.
-   *
-   * @generated from enum value: LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE = 7;
-   */
-  PROVIDER_UNAVAILABLE = 7,
-
-  /**
-   * LICENSE_ERROR_CODE_KEY_STORE_FAILED is a key store that failed or is absent on this machine.
-   *
-   * @generated from enum value: LICENSE_ERROR_CODE_KEY_STORE_FAILED = 8;
-   */
-  KEY_STORE_FAILED = 8,
-}
-
-/**
- * Describes the enum numen.v1.LicenseErrorCode.
- */
-export const LicenseErrorCodeSchema: GenEnum<LicenseErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_license, 1);
 
 /**
  * LicenseService manages the license keys that plugins declare: listing their status, activating a

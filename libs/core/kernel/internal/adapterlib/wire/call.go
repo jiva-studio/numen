@@ -23,16 +23,16 @@ func ConvertCallFailureToWire(ctx context.Context, err error) (*v1.CallFailure, 
 	var stopped *connection.StoppedError
 	switch {
 	case errors.Is(err, connection.ErrNoConnection):
-		return &v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION}, true
+		return &v1.CallFailure{Error: v1.ErrorCode_ERROR_CODE_NO_CONNECTION}, true
 	case errors.As(err, &allFailed):
 		failures := make([]*v1.CallRowFailure, len(allFailed.Failures))
 		for i, one := range allFailed.Failures {
 			failures[i] = &v1.CallRowFailure{ConnectionName: one.ConnectionName, Reason: one.Reason, Code: convertFailureReasonToWire(one.Code)}
 		}
-		return &v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED, Detail: allFailed.Error(), Failures: failures}, true
+		return &v1.CallFailure{Error: v1.ErrorCode_ERROR_CODE_ALL_FAILED, Detail: allFailed.Error(), Failures: failures}, true
 	case errors.As(err, &stopped):
 		return &v1.CallFailure{
-			Error: v1.CallErrorCode_CALL_ERROR_CODE_STOPPED, Detail: stopped.Error(),
+			Error: v1.ErrorCode_ERROR_CODE_STOPPED, Detail: stopped.Error(),
 			Failures: []*v1.CallRowFailure{{
 				ConnectionName: stopped.ConnectionName, Reason: stopped.Reason, Code: convertFailureReasonToWire(stopped.Code),
 			}},

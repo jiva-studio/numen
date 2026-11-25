@@ -35,7 +35,7 @@ func TestDependencyClientRequiresAnAuthenticatedRequest(t *testing.T) {
 		t.Fatalf("unauthenticated request = %v", err)
 	}
 	invalid, err := call("token-a", "bogus")
-	if err != nil || invalid.Msg.GetError() == "" || invalid.Msg.GetPath() != "" {
+	if err != nil || invalid.Msg.GetError() == v1.ErrorCode_ERROR_CODE_UNSPECIFIED || invalid.Msg.GetDetail() == "" || invalid.Msg.GetPath() != "" {
 		t.Fatalf("invalid pin response = %v, %v", invalid, err)
 	}
 	answer, err := call("token-a", strings.Repeat("0", 64))

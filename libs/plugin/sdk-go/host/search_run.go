@@ -115,6 +115,9 @@ func (c *SearchClient) StartSearch(ctx context.Context, start SearchStart) (stri
 	if err != nil {
 		return "", readSearchCallError(err)
 	}
+	if res.Msg.GetError() == v1.ErrorCode_ERROR_CODE_LIMIT_EXCEEDED {
+		return "", ErrTooManySearches
+	}
 	if err := readSearchError(res.Msg.GetError()); err != nil {
 		return "", err
 	}
@@ -129,6 +132,9 @@ func (c *SearchClient) GetSearch(ctx context.Context, id string, read SearchRead
 	}))
 	if err != nil {
 		return SearchState{}, readSearchCallError(err)
+	}
+	if res.Msg.GetError() == v1.ErrorCode_ERROR_CODE_INVALID {
+		return SearchState{}, ErrInvalidPageToken
 	}
 	if err := readSearchError(res.Msg.GetError()); err != nil {
 		return SearchState{}, err

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ReportedError } from '@numen/result'
-import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import type { AnyTabKind } from '@/entities/tab'
 import { createAnsweredApi } from '@/testing/coreAnswers'
@@ -72,11 +72,11 @@ describe('the tabs of a window', () => {
       workspace: {
         detachTab: ({ tab, x, y }) => {
           calls.push(`detach:${tab?.id}:${x}:${y}`)
-          return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+          return { error: WIRE_ERROR_CODE.UNSPECIFIED }
         },
         moveTab: ({ tab, targetWindowId }) => {
           calls.push(`move:${tab?.id}:${targetWindowId}`)
-          return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+          return { error: WIRE_ERROR_CODE.UNSPECIFIED }
         },
       },
     })

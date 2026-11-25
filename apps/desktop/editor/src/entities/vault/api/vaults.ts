@@ -1,7 +1,7 @@
 /**
  * The vaults the installation holds, and the operations on the list.
  */
-import { VAULTS_ERROR_CODE, type VaultsErrorCodeValue } from '@numen/core-client'
+import { WIRE_ERROR_CODE, type WireErrorCodeValue } from '@numen/core-client'
 import type { WindowClients } from '@/shared/api/clients'
 import type { Vault, VaultAction, VaultErrorCode, VaultResult, Vaults } from '../lib/vault'
 
@@ -12,22 +12,24 @@ interface VaultWire {
   readonly isMissing: boolean
 }
 
-const unvaulted: Record<VaultsErrorCodeValue, VaultErrorCode> = {
-  [VAULTS_ERROR_CODE.UNSPECIFIED]: 'unreadable',
-  [VAULTS_ERROR_CODE.UNREADABLE]: 'unreadable',
-  [VAULTS_ERROR_CODE.COPY]: 'copy',
-  [VAULTS_ERROR_CODE.OVERLAPS]: 'overlaps',
-  [VAULTS_ERROR_CODE.NAME_TAKEN]: 'nameTaken',
-  [VAULTS_ERROR_CODE.LAST_VAULT]: 'lastVault',
-  [VAULTS_ERROR_CODE.CURRENT]: 'current',
-  [VAULTS_ERROR_CODE.NOT_FOUND]: 'notFound',
-  [VAULTS_ERROR_CODE.NO_TRASH]: 'noTrash',
-  [VAULTS_ERROR_CODE.UNSAVED]: 'unsaved',
+const unvaulted: Partial<Record<WireErrorCodeValue, VaultErrorCode>> = {
+  [WIRE_ERROR_CODE.UNREADABLE]: 'unreadable',
+  [WIRE_ERROR_CODE.VAULT_COPY]: 'copy',
+  [WIRE_ERROR_CODE.VAULT_OVERLAPS]: 'overlaps',
+  [WIRE_ERROR_CODE.ALREADY_EXISTS]: 'nameTaken',
+  [WIRE_ERROR_CODE.LAST_VAULT]: 'lastVault',
+  [WIRE_ERROR_CODE.VAULT_CURRENT]: 'current',
+  [WIRE_ERROR_CODE.NOT_FOUND]: 'notFound',
+  [WIRE_ERROR_CODE.NO_TRASH]: 'noTrash',
+  [WIRE_ERROR_CODE.UNSAVED]: 'unsaved',
 }
 
 const getVaultError = (from: {
-  error?: VaultsErrorCodeValue | undefined
-}): VaultErrorCode | null => (from.error === undefined ? null : unvaulted[from.error])
+  error?: WireErrorCodeValue | undefined
+}): VaultErrorCode | null =>
+  from.error === undefined || from.error === WIRE_ERROR_CODE.UNSPECIFIED
+    ? null
+    : (unvaulted[from.error] ?? 'unreadable')
 
 const mapVault = (one: VaultWire): Vault => ({
   id: one.id,
@@ -38,14 +40,14 @@ const mapVault = (one: VaultWire): Vault => ({
 
 const mapVaultResult = (from: {
   vault?: VaultWire | undefined
-  error?: VaultsErrorCodeValue | undefined
+  error?: WireErrorCodeValue | undefined
 }): VaultResult => {
   const error = getVaultError(from)
   if (error) return { ok: false, error }
   return { ok: true, value: from.vault ? mapVault(from.vault) : null }
 }
 
-const mapNoValue = (from: { error?: VaultsErrorCodeValue | undefined }): VaultAction => {
+const mapNoValue = (from: { error?: WireErrorCodeValue | undefined }): VaultAction => {
   const error = getVaultError(from)
   return error ? { ok: false, error } : { ok: true, value: null }
 }

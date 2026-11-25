@@ -154,12 +154,12 @@ func writeResult(result Result) *v1.RunCommandResponse {
 }
 
 func writeFailure(err error) *v1.RunCommandResponse {
-	code := v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
+	code := v1.ErrorCode_ERROR_CODE_INTERNAL
 	switch {
 	case errors.Is(err, ErrUnknownCommand):
-		code = v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND
+		code = v1.ErrorCode_ERROR_CODE_NOT_FOUND
 	case errors.Is(err, ErrBadArguments):
-		code = v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS
+		code = v1.ErrorCode_ERROR_CODE_INVALID
 	}
 	return &v1.RunCommandResponse{Error: code, Message: err.Error()}
 }

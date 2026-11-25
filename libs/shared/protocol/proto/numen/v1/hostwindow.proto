@@ -7,7 +7,7 @@ import "numen/v1/shared.proto";
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // HostWindowService exposes the main window of the plugin's vault to plugins.
-// Every call needs window:focus. A host with no window returns HOST_WINDOW_ERROR_CODE_NO_WINDOW.
+// Every call needs window:focus. A host with no window returns ERROR_CODE_NO_WINDOW.
 // With several windows, the main window of the vault is used.
 service HostWindowService {
   // FocusNote makes a note the current one, and the neighborhood view is centered on it.
@@ -22,20 +22,12 @@ service HostWindowService {
   rpc ActivateTab(ActivateTabRequest) returns (ActivateTabResponse);
 }
 
-// HostWindowErrorCode is the reason a window call was not served. UNSPECIFIED means success.
-enum HostWindowErrorCode {
-  HOST_WINDOW_ERROR_CODE_UNSPECIFIED = 0;
-  HOST_WINDOW_ERROR_CODE_NO_WINDOW = 1;
-  // NOT_FOUND means a path with no note or file in the vault, or a tab id with no tab in the window.
-  HOST_WINDOW_ERROR_CODE_NOT_FOUND = 2;
-}
-
 message FocusNoteRequest {
   string path = 1;
 }
 
 message FocusNoteResponse {
-  HostWindowErrorCode error = 1;
+  ErrorCode error = 1;
   string path = 2;
   string title = 3;
   // Id is the note's stable identifier, empty for a note written outside the application.
@@ -48,7 +40,7 @@ message FocusFileRequest {
 }
 
 message FocusFileResponse {
-  HostWindowErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 // An OpenTab is a tab of the window as a plugin reads it.
@@ -72,7 +64,7 @@ message OpenTab {
 message HostWindowServiceReadOpenTabsRequest {}
 
 message HostWindowServiceReadOpenTabsResponse {
-  HostWindowErrorCode error = 1;
+  ErrorCode error = 1;
   repeated OpenTab tabs = 2;
   string active_id = 3;
 }
@@ -82,7 +74,7 @@ message ActivateTabRequest {
 }
 
 message ActivateTabResponse {
-  HostWindowErrorCode error = 1;
+  ErrorCode error = 1;
   OpenTab tab = 2;
   string active_id = 3;
 }

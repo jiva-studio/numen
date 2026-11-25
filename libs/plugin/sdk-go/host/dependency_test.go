@@ -17,10 +17,10 @@ type dependencyHost struct{}
 
 func (dependencyHost) FetchModelFile(_ context.Context, req *connect.Request[v1.FetchModelFileRequest]) (*connect.Response[v1.FetchModelFileResponse], error) {
 	if req.Header().Get("Authorization") != "Bearer test" || req.Msg.GetUrl() != "https://models.invalid/graph" {
-		return connect.NewResponse(&v1.FetchModelFileResponse{Error: "unexpected request"}), nil
+		return connect.NewResponse(&v1.FetchModelFileResponse{Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Detail: "unexpected request"}), nil
 	}
 	if req.Msg.GetSha256() != "pin" {
-		return connect.NewResponse(&v1.FetchModelFileResponse{Error: "checksum mismatch"}), nil
+		return connect.NewResponse(&v1.FetchModelFileResponse{Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Detail: "checksum mismatch"}), nil
 	}
 	return connect.NewResponse(&v1.FetchModelFileResponse{Path: "local-model"}), nil
 }

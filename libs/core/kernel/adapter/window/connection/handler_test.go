@@ -271,7 +271,7 @@ func TestCreateProviderConnectionReturnsTheConnectionWithoutTheSecret(t *testing
 	}
 
 	one := response.Msg.GetConnection()
-	if response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED {
+	if response.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("error = %v: %s", response.Msg.GetError(), response.Msg.GetDetail())
 	}
 	if one.GetName() != "OpenRouter" || one.GetRevision() != 1 || !one.GetIsTypeAvailable() || !one.GetIsComplete() {
@@ -307,26 +307,26 @@ func TestAServedFailureIsAnErrorCodeAndNotAStatus(t *testing.T) {
 	id := created.Msg.GetConnection().GetId()
 
 	taken, err := handler.CreateProviderConnection(t.Context(), createRequest("work"))
-	if err != nil || taken.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN || taken.Msg.GetConnection() != nil {
+	if err != nil || taken.Msg.GetError() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS || taken.Msg.GetConnection() != nil {
 		t.Errorf("create: response = %v, err = %v", taken.Msg, err)
 	}
 	stale, err := handler.UpdateProviderConnection(t.Context(), connect.NewRequest(&v1.UpdateProviderConnectionRequest{Id: id, Revision: 7, Name: "Home"}))
-	if err != nil || stale.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION {
+	if err != nil || stale.Msg.GetError() != v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Errorf("update: response = %v, err = %v", stale.Msg, err)
 	}
 	missing, err := handler.DeleteProviderConnection(t.Context(), connect.NewRequest(&v1.DeleteProviderConnectionRequest{Id: "c0000000f"}))
-	if err != nil || missing.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND {
+	if err != nil || missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("delete: response = %v, err = %v", missing.Msg, err)
 	}
 	invalid, err := handler.CreateProviderConnection(t.Context(), connect.NewRequest(&v1.CreateProviderConnectionRequest{
 		TypeId: "md.numen.connections.llm/openrouter", Fields: map[string]*structpb.Value{"nope": structpb.NewStringValue("x")},
 		Secrets: map[string]string{"apiKey": "k"},
 	}))
-	if err != nil || invalid.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD || invalid.Msg.GetDetail() != `the type has no field "nope"` {
+	if err != nil || invalid.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INVALID || invalid.Msg.GetDetail() != `the type has no field "nope"` {
 		t.Errorf("invalid: response = %v, err = %v", invalid.Msg, err)
 	}
 	unavailable, err := handler.CreateProviderConnection(t.Context(), connect.NewRequest(&v1.CreateProviderConnectionRequest{TypeId: "gone.plugin/x"}))
-	if err != nil || unavailable.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE {
+	if err != nil || unavailable.Msg.GetError() != v1.ErrorCode_ERROR_CODE_TYPE_UNAVAILABLE {
 		t.Errorf("unavailable: response = %v, err = %v", unavailable.Msg, err)
 	}
 }
@@ -337,7 +337,7 @@ func TestAKeyStoreFailureIsAnErrorCode(t *testing.T) {
 
 	response, err := newHandler(keys).CreateProviderConnection(t.Context(), createRequest(""))
 
-	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED {
+	if err != nil || response.Msg.GetError() != v1.ErrorCode_ERROR_CODE_KEY_STORE_FAILED {
 		t.Errorf("response = %v, err = %v", response.Msg, err)
 	}
 }
@@ -366,7 +366,7 @@ func TestDeleteProviderConnectionRemovesTheConnection(t *testing.T) {
 	created := mustCreate(t, handler)
 
 	response, err := handler.DeleteProviderConnection(t.Context(), connect.NewRequest(&v1.DeleteProviderConnectionRequest{Id: created.Msg.GetConnection().GetId()}))
-	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED {
+	if err != nil || response.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("response = %v, err = %v", response.Msg, err)
 	}
 
@@ -433,7 +433,7 @@ func TestListRowOptionsAsksTheProviderOfTheConnectionWithTheRowSoFar(t *testing.
 		t.Fatal(err)
 	}
 	got := response.Msg.GetOptions()
-	if response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED || len(got) != 2 ||
+	if response.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || len(got) != 2 ||
 		got[0].GetValue() != "google/gemini-2.5-flash" || got[0].GetTitle() != "Gemini 2.5 Flash" || got[0].GetGroup() != "Google" {
 		t.Errorf("response = %v", response.Msg)
 	}
@@ -447,7 +447,7 @@ func TestListRowOptionsOfAFieldWithNoOptionsIsAnInvalidField(t *testing.T) {
 		ConnectionId: created.Msg.GetConnection().GetId(), Field: "temperature",
 	}))
 
-	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD {
+	if err != nil || response.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INVALID {
 		t.Errorf("response = %v, %v", response, err)
 	}
 }
@@ -455,7 +455,7 @@ func TestListRowOptionsOfAFieldWithNoOptionsIsAnInvalidField(t *testing.T) {
 func TestListRowOptionsOfAConnectionThatIsNotInTheListIsNotFound(t *testing.T) {
 	response, err := newHandler(newKeys()).ListRowOptions(t.Context(), connect.NewRequest(&v1.ListRowOptionsRequest{ConnectionId: "c0000dead", Field: "model"}))
 
-	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND {
+	if err != nil || response.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("response = %v, %v", response, err)
 	}
 }
