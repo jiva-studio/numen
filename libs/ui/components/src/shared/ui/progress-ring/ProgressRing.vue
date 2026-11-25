@@ -4,7 +4,7 @@
  * turning arc where it is not. The large ring writes the percent inside.
  */
 import { computed } from 'vue'
-import { getRingView, RING_LENGTH } from './progressRing'
+import { getRingView, RING_LENGTH } from './ringView'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

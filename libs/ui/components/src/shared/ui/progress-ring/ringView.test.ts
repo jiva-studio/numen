@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getRingView } from './progressRing'
+import { getRingView } from './ringView'
 
 describe('the ring of a progress', () => {
   it('is a short arc where the progress is not known', () => {
