@@ -3,6 +3,7 @@ package vault_test
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -34,13 +35,17 @@ func TestTheListReportsWhichVaultFoldersAreMissing(t *testing.T) {
 	}
 }
 
-func TestAVaultAddedIsAnsweredWithTheStateOfItsFolder(t *testing.T) {
+func TestAddVault_NewFolder_ReturnsTheVaultWithTheStateOfItsFolder(t *testing.T) {
 	t.Parallel()
 	add, _ := newAdd(t)
 	root := folder(t, "shelf")
+	resolved, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	got, err := vaults.NewAddVault(add, vaultreader.Readers{}).Execute(root, "new")
-	if err != nil || got.Path != root || got.Name != "new" || got.IsMissing {
+	if err != nil || got.Path != resolved || got.Name != "new" || got.IsMissing {
 		t.Errorf("added %+v, %v", got, err)
 	}
 	if _, err := vaults.NewAddVault(add, vaultreader.Readers{}).Execute("relative", "new"); err == nil {
