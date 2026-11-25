@@ -84,7 +84,8 @@ func newOpenError(err error) error {
 	if answered, ok := errors.AsType[*connect.Error](err); ok {
 		return answered
 	}
-	if _, ok := errors.AsType[*plugindomain.UnavailableError](err); ok {
+	var unavailable *plugindomain.UnavailableError
+	if errors.As(err, &unavailable) {
 		return connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	switch {

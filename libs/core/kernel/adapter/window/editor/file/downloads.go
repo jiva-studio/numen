@@ -67,7 +67,8 @@ func (h *Downloads) GetDownloadProgress(
 		return nil, err
 	}
 	progress, err := h.progress.Execute(ctx, showing, r.Msg.GetPath())
-	if _, isUnavailable := errors.AsType[*plugindomain.UnavailableError](err); isUnavailable {
+	var unavailable *plugindomain.UnavailableError
+	if errors.As(err, &unavailable) {
 		return connect.NewResponse(&v1.GetDownloadProgressResponse{}), nil
 	}
 	if err != nil {
@@ -92,7 +93,8 @@ func newDownloadError(err error) error {
 		}
 		return answered
 	}
-	if _, ok := errors.AsType[*plugindomain.UnavailableError](err); ok {
+	var unavailable *plugindomain.UnavailableError
+	if errors.As(err, &unavailable) {
 		return connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
