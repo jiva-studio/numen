@@ -109,6 +109,12 @@ export {
   createConnectionCallClient,
 } from './connectioncalls'
 export {
+  type DownloadProgress,
+  type DownloadRpc,
+  type DownloadClient,
+  createDownloadClient,
+} from './downloads'
+export {
   type LicenseInfo,
   type LicenseErrorCode,
   type LicenseFailure,
