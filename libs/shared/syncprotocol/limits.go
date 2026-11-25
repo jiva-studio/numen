@@ -38,3 +38,8 @@ const (
 	MaxShareSeals   = 1000
 	MaxEncShareBody = 1 << 10
 )
+
+const (
+	MaxCatalogEntries = 100_000
+	MaxPullPages      = 10_000
+)

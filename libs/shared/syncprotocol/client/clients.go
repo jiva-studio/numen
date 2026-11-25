@@ -54,7 +54,14 @@ func (c *CatalogClient) GetCatalog(ctx context.Context, sinceVersion uint64) ([]
 		if len(page) == 0 {
 			return nil, fmt.Errorf("the sync server has more catalog entries after version %d and sent none", sinceVersion)
 		}
-		sinceVersion = page[len(page)-1].GetVersion()
+		if next := page[len(page)-1].GetVersion(); next > sinceVersion {
+			sinceVersion = next
+		} else {
+			return nil, fmt.Errorf("the sync server sent a catalog page that ends at version %d, not after %d", next, sinceVersion)
+		}
+		if len(entries) >= syncprotocol.MaxCatalogEntries {
+			return nil, fmt.Errorf("the sync server sent more than %d catalog entries", syncprotocol.MaxCatalogEntries)
+		}
 	}
 }
 

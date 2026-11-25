@@ -3,12 +3,14 @@ package pull
 import (
 	"context"
 	"slices"
+
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 )
 
 func (r *run) reconcile(ctx context.Context) error {
 	present := map[string]bool{}
 	r.isListing = true
-	for since := uint64(0); ; {
+	for pages, since := 1, uint64(0); ; pages++ {
 		page, err := r.deps.Revisions.GetChanges(ctx, r.remote, since, 0)
 		if err != nil {
 			return err
@@ -25,6 +27,9 @@ func (r *run) reconcile(ctx context.Context) error {
 		}
 		if !page.GetHasMore() {
 			break
+		}
+		if err := syncprotocol.CheckPage(pages, since, page.GetNextSeq(), page.GetHasMore()); err != nil {
+			return err
 		}
 		since = page.GetNextSeq()
 	}

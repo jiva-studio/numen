@@ -160,7 +160,7 @@ func (r *rewrap) open(ctx context.Context, id domain.VaultID, root domainshare.R
 func (r *rewrap) readHeads(ctx context.Context) ([]*syncv1.StoredRevision, error) {
 	var heads []*syncv1.StoredRevision
 	var since uint64
-	for {
+	for pages := 1; ; pages++ {
 		page, err := r.deps.Revisions.GetChanges(ctx, r.remote, since, 0)
 		if err != nil {
 			return nil, err
@@ -168,6 +168,9 @@ func (r *rewrap) readHeads(ctx context.Context) ([]*syncv1.StoredRevision, error
 		heads = append(heads, page.GetChanges()...)
 		if !page.GetHasMore() {
 			return heads, nil
+		}
+		if err := syncprotocol.CheckPage(pages, since, page.GetNextSeq(), page.GetHasMore()); err != nil {
+			return nil, err
 		}
 		since = page.GetNextSeq()
 	}

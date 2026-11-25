@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
@@ -189,7 +190,7 @@ func (u *FetchFile) open(ctx context.Context, id domain.VaultID, path string) (t
 
 func (u *FetchFile) readHead(ctx context.Context, t target, key [32]byte) (*syncv1.Revision, note.Meta, error) {
 	var since uint64
-	for {
+	for pages := 1; ; pages++ {
 		page, err := u.deps.Revisions.GetChanges(ctx, t.remote, since, 0)
 		if err != nil {
 			return nil, note.Meta{}, err
@@ -207,6 +208,9 @@ func (u *FetchFile) readHead(ctx context.Context, t target, key [32]byte) (*sync
 		}
 		if !page.GetHasMore() {
 			return nil, note.Meta{}, fmt.Errorf("download %s: %w", t.path, ErrHeadChanged)
+		}
+		if err := syncprotocol.CheckPage(pages, since, page.GetNextSeq(), page.GetHasMore()); err != nil {
+			return nil, note.Meta{}, err
 		}
 		since = page.GetNextSeq()
 	}

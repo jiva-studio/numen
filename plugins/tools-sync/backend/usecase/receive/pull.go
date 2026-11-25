@@ -119,7 +119,7 @@ func (r *pullRun) execute(ctx context.Context) error {
 		return err
 	}
 	since := r.link.ServerSeq
-	for {
+	for pages := 1; ; pages++ {
 		page, err := r.deps.Shares.GetShareChanges(ctx, r.shareID, since, 0)
 		if err != nil {
 			return err
@@ -133,6 +133,9 @@ func (r *pullRun) execute(ctx context.Context) error {
 		}
 		if isStopped || !page.GetHasMore() {
 			return nil
+		}
+		if err := syncprotocol.CheckPage(pages, since, page.GetNextSeq(), page.GetHasMore()); err != nil {
+			return err
 		}
 		since = page.GetNextSeq()
 	}

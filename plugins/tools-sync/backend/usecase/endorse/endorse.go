@@ -105,7 +105,7 @@ func (u *Endorse) listHeads(ctx context.Context, remote []byte, revoked [][]byte
 	}
 	var found []*syncv1.StoredRevision
 	var since uint64
-	for {
+	for pages := 1; ; pages++ {
 		page, err := u.deps.Revisions.GetChanges(ctx, remote, since, 0)
 		if err != nil {
 			return nil, err
@@ -114,6 +114,9 @@ func (u *Endorse) listHeads(ctx context.Context, remote []byte, revoked [][]byte
 			if note.CheckRevision(stored, isRevoked) == nil {
 				found = append(found, stored)
 			}
+		}
+		if err := syncprotocol.CheckPage(pages, since, page.GetNextSeq(), page.GetHasMore()); err != nil {
+			return nil, err
 		}
 		since = page.GetNextSeq()
 		if !page.GetHasMore() {

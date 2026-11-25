@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
@@ -101,7 +102,7 @@ func (r *run) execute(ctx context.Context) error {
 		return err
 	}
 	since := r.link.ServerSeq
-	for {
+	for pages := 1; ; pages++ {
 		page, err := r.deps.Revisions.GetChanges(ctx, r.remote, since, 0)
 		if err != nil {
 			return err
@@ -126,6 +127,9 @@ func (r *run) execute(ctx context.Context) error {
 		}
 		if !page.GetHasMore() {
 			return r.finish(ctx)
+		}
+		if err := syncprotocol.CheckPage(pages, since, page.GetNextSeq(), page.GetHasMore()); err != nil {
+			return err
 		}
 		since = page.GetNextSeq()
 	}

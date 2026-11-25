@@ -123,3 +123,24 @@ type RateLimitedError struct {
 func (e RateLimitedError) Error() string {
 	return fmt.Sprintf("the share is rate limited for %s", e.RetryAfter)
 }
+
+// ErrPageStuck means a page the server sent, with more to come, ends at or before the position it was asked from.
+var ErrPageStuck = errors.New("the sync server sent a page that does not move past the position asked")
+
+// ErrTooManyPages means a read of pages went on past MaxPullPages.
+var ErrTooManyPages = errors.New("the sync server sent more pages than a read follows")
+
+// CheckPage checks one page of a read that goes on from position to position: with more to come, the next position has
+// to be past the one asked from, and the read ends after MaxPullPages pages. Pages count from 1.
+func CheckPage(pages int, since, next uint64, hasMore bool) error {
+	if !hasMore {
+		return nil
+	}
+	if next <= since {
+		return ErrPageStuck
+	}
+	if pages >= MaxPullPages {
+		return ErrTooManyPages
+	}
+	return nil
+}

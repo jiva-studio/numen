@@ -26,7 +26,7 @@ func (u *RecoverVault) readHeads(ctx context.Context, vault transfer.Vault) (hea
 	remote := vault.ID
 	found := heads{byFile: map[string]domain.Head{}, blobs: map[string][]byte{}, epochID: nil}
 	var since uint64
-	for isFirst := true; ; isFirst = false {
+	for pages, isFirst := 1, true; ; pages, isFirst = pages+1, false {
 		page, err := u.deps.Revisions.GetChanges(ctx, remote, since, 0)
 		if err != nil {
 			return heads{}, err
@@ -37,6 +37,9 @@ func (u *RecoverVault) readHeads(ctx context.Context, vault transfer.Vault) (hea
 			return heads{}, errEpochMoved
 		}
 		found.add(vault, page.GetChanges())
+		if err := syncprotocol.CheckPage(pages, since, page.GetNextSeq(), page.GetHasMore()); err != nil {
+			return heads{}, err
+		}
 		since = page.GetNextSeq()
 		if !page.GetHasMore() {
 			return found, nil
