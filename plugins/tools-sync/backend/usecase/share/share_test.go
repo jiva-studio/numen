@@ -481,3 +481,26 @@ func TestCreateShare_RewrapsAFileSealedAtALaterEpochOfTheVault(t *testing.T) {
 		t.Errorf("%d share revisions, want 2: the file of epoch 0 and the file of epoch 1", shared)
 	}
 }
+
+func TestCreateShare_AFileMovedInsideTheFolderStaysInTheShare(t *testing.T) {
+	w := newWorld(t)
+	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
+	w.syncOwner(t)
+	w.shareFolder(t)
+	w.syncOwner(t)
+	if _, err := w.owner.Vaults.With(owned).MoveFile(t.Context(), "Food/Soup.md", "Food/Dinner/Soup.md", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	w.syncOwner(t)
+
+	heads := w.heads(t)
+	if len(heads) != 1 {
+		t.Fatalf("%d files on the server, want 1", len(heads))
+	}
+	for _, head := range heads {
+		if len(head.GetRevision().GetShareRootId()) == 0 {
+			t.Error("the file moved inside the shared folder left the share")
+		}
+	}
+}

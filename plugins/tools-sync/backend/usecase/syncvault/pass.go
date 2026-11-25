@@ -170,7 +170,7 @@ func (p *pass) sendMoves(ctx context.Context, vault transfer.Vault, records []tr
 	if len(moves) == 0 {
 		return records, false, nil
 	}
-	outcomes, err := p.use.steps.Move.Execute(ctx, transfer.MoveInput{Vault: vault, Moves: moves})
+	outcomes, err := p.use.steps.Move.Execute(ctx, transfer.MoveInput{Vault: vault, Moves: moves, Shares: p.shares})
 	if err != nil {
 		return records, false, err
 	}

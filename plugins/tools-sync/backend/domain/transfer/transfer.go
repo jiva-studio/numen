@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 )
 
 // CommitStatus is how the server took a file.
@@ -79,10 +80,11 @@ type Move struct {
 	To     string
 }
 
-// MoveInput is the moves to commit to a vault.
+// MoveInput is the moves to commit to a vault, with the shares of the vault, whose folders seal the metadata of the files moved into or inside them.
 type MoveInput struct {
-	Vault Vault
-	Moves []Move
+	Vault  Vault
+	Moves  []Move
+	Shares []share.Root
 }
 
 // RemoveInput is the records of the files removed from the vault, to commit as removals.

@@ -29,7 +29,7 @@ func (u *CommitMoves) Execute(ctx context.Context, in transfer.MoveInput) ([]tra
 		batch := in.Moves[start:min(start+note.MovedBatchFiles, len(in.Moves))]
 		revisions := make([]*syncv1.Revision, len(batch))
 		for i, move := range batch {
-			if revisions[i], err = u.build(ctx, in.Vault, author.DeviceSignKey, move); err != nil {
+			if revisions[i], err = u.build(ctx, in, author.DeviceSignKey, move); err != nil {
 				return nil, err
 			}
 		}
@@ -49,21 +49,22 @@ func (u *CommitMoves) Execute(ctx context.Context, in transfer.MoveInput) ([]tra
 	return outcomes, nil
 }
 
-func (u *CommitMoves) build(ctx context.Context, vault transfer.Vault, author []byte, move transfer.Move) (*syncv1.Revision, error) {
+func (u *CommitMoves) build(ctx context.Context, in transfer.MoveInput, author []byte, move transfer.Move) (*syncv1.Revision, error) {
+	vault := in.Vault
 	record := move.Record
 	key, err := u.deps.Crypto.OpenData(ctx, note.GetRecordKeyContext(vault.ID, record.FileID), record.SealedKey)
 	if err != nil {
 		return nil, fmt.Errorf("open the key of %s: %w", record.Path, err)
 	}
 	meta := note.Meta{Path: move.To, Size: record.Size, MTime: record.ModifiedAt, Hash: record.BaseHash, Key: key, Kind: record.Kind}
-	newest := vault.GetNewest()
-	sealed, err := note.SealMeta(u.deps.Random, newest.Key, vault.ID, record.FileID, meta)
+	run := &batchRun{deps: u.deps, vault: vault, author: author, shares: in.Shares}
+	sealed, err := run.sealMeta(move.To, record.FileID, meta)
 	if err != nil {
 		return nil, err
 	}
 	revision := &syncv1.Revision{
 		VaultId: vault.ID, FileId: record.FileID, ParentRev: record.HeadRev, BlobId: record.BlobID, BlobHash: record.BlobHash, BlobSize: record.BlobSize,
-		EncMeta: sealed, PathHash: note.HashPath(vault.Key, move.To), AuthorDeviceSignKey: author, Epoch: newest.Epoch, FileVersion: record.Version + 1,
+		EncMeta: sealed.encoded, PathHash: note.HashPath(vault.Key, move.To), ShareRootId: sealed.shareID, AuthorDeviceSignKey: author, Epoch: sealed.epoch, FileVersion: record.Version + 1,
 	}
 	return revision, u.sign(ctx, revision)
 }
