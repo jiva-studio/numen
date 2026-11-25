@@ -49,3 +49,40 @@ func TestReadServerAddress_AcceptsHTTPSAndLoopbackHTTPAndRefusesOtherHTTP(t *tes
 		}
 	}
 }
+
+func TestRuntimeConfigure_TurnsOnDemandOnWhenTheSettingIsMissing(t *testing.T) {
+	t.Parallel()
+	r := newRuntime(parts{clock: clock.System{}})
+	t.Cleanup(r.stop)
+
+	r.configure(map[string]string{})
+
+	if !r.isOnDemand.IsOn() {
+		t.Error("on demand is off, want on by default")
+	}
+}
+
+func TestRuntimeConfigure_TurnsOnDemandOffWithTheSetting(t *testing.T) {
+	t.Parallel()
+	r := newRuntime(parts{clock: clock.System{}})
+	t.Cleanup(r.stop)
+
+	r.configure(map[string]string{settingOnDemand: "false"})
+
+	if r.isOnDemand.IsOn() {
+		t.Error("on demand is on, want off")
+	}
+}
+
+func TestGetSessionOptions_DifferWhenOnDemandChanges(t *testing.T) {
+	t.Parallel()
+	on := getSessionOptions(map[string]string{settingOnDemand: "true"})
+	off := getSessionOptions(map[string]string{settingOnDemand: "false"})
+
+	if on == off {
+		t.Error("options of both settings are equal, want the sync loops to restart on the change")
+	}
+	if getSessionOptions(map[string]string{}) != on {
+		t.Error("a missing setting differs from true, want on by default")
+	}
+}

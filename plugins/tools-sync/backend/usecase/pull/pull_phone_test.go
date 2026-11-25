@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
@@ -109,7 +110,7 @@ func TestPullChanges_ListsAnImageOverTheLimitAsAbsentOnAPhone(t *testing.T) {
 	}
 }
 
-func TestPullChanges_DownloadsAHeavyFileWhenTheDeviceIsNotAPhone(t *testing.T) {
+func TestPullChanges_DownloadsAHeavyFileAtOnceWhenOnDemandIsOff(t *testing.T) {
 	p := newPair(t)
 	p.push(t, guidePath, getHeavy(), nil)
 
@@ -119,7 +120,7 @@ func TestPullChanges_DownloadsAHeavyFileWhenTheDeviceIsNotAPhone(t *testing.T) {
 		t.Errorf("file of %d bytes (there: %v), want the whole file", len(text), ok)
 	}
 	if len(p.b.ListAbsent(t, target)) != 0 {
-		t.Error("a computer listed a file as absent")
+		t.Error("a device with on demand off listed a file as absent")
 	}
 }
 
@@ -180,4 +181,41 @@ func TestPullChanges_EvictsAndListsADownloadedFileThatGrewPastTheLimit(t *testin
 func newVault(t *testing.T, a *synctest.Computer) transfer.Vault {
 	t.Helper()
 	return transfer.Vault{ID: a.GetRemoteID(t, source), Key: a.GetVaultKey(t, source)}
+}
+
+func TestPullChanges_KeepsTheFilesOnDiskWhenOnDemandTurnsOnAndListsOnlyNewHeavyFiles(t *testing.T) {
+	p := newPair(t)
+	p.push(t, guidePath, getHeavy(), nil)
+	p.pull(t, trustAll)
+	p.b.LazyHeavy = true
+	p.push(t, "Books/Atlas.pdf", getHeavy(), nil)
+
+	p.pull(t, trustAll)
+
+	if text, ok := p.b.ReadNote(target, guidePath); !ok || text != getHeavy() {
+		t.Errorf("file already on disk = %d bytes (there: %v), want it kept", len(text), ok)
+	}
+	if listed := p.b.ListAbsent(t, target); len(listed) != 1 || listed[0].Path != "Books/Atlas.pdf" {
+		t.Errorf("absent files = %+v, want only the new heavy file", listed)
+	}
+}
+
+func TestPullChanges_ListsNothingNewAfterOnDemandTurnsOffAndTheAbsentFileStaysFetchable(t *testing.T) {
+	p := newPhonePair(t)
+	p.push(t, guidePath, getHeavy(), nil)
+	p.pull(t, trustAll)
+	p.b.LazyHeavy = false
+	p.push(t, "Books/Atlas.pdf", getHeavy(), nil)
+
+	p.pull(t, trustAll)
+
+	if text, ok := p.b.ReadNote(target, "Books/Atlas.pdf"); !ok || text != getHeavy() {
+		t.Errorf("new file = %d bytes (there: %v), want it downloaded at once", len(text), ok)
+	}
+	if err := fetchfile.NewFetchFile(p.b.FetchDeps()).Execute(t.Context(), target, guidePath); err != nil {
+		t.Fatalf("fetch of the absent file = %v, want nil", err)
+	}
+	if text, ok := p.b.ReadNote(target, guidePath); !ok || text != getHeavy() || p.b.IsAbsent(t, target, guidePath) {
+		t.Errorf("fetched file = %d bytes (there: %v), want the whole file placed", len(text), ok)
+	}
 }

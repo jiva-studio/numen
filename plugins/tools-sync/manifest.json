@@ -99,6 +99,14 @@
       "description": "Stops the sync while the app is off the screen",
       "details": "Stops the sync when the app leaves the screen and starts it when it returns.",
       "default": false
+    },
+    {
+      "key": "downloadOnDemand",
+      "type": "boolean",
+      "title": "Download big files when opened",
+      "description": "Keeps large files in the cloud until you open them",
+      "details": "Notes and small images are still downloaded at once. Files already on this device stay.",
+      "default": true
     }
   ],
   "settingsTabs": [{ "id": "sync", "title": "Sync" }],

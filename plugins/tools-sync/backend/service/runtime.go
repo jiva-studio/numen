@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
@@ -21,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/logging"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/platform"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
@@ -74,6 +74,7 @@ type runtime struct {
 	received     *loops.Text
 	session      *loops.Supervisor[*Backend]
 	isForeground loops.Flag
+	isOnDemand   loops.Flag
 	settings     *settingswire.Settings
 	epochRoot    *loops.Text
 	failures     *errorwire.Failures
@@ -106,7 +107,14 @@ func (r *runtime) configure(values map[string]string) {
 	r.removal.Set(values[settingRemovalDelay])
 	r.received.Set(values[settingReceivedFolder])
 	r.epochRoot.Set(values[settingswire.SettingEpochRoot])
-	r.session.Configure(r.settings.ReadServerAddress(values[settingswire.SettingServer]), values[settingForeground]+"\x00"+values[settingswire.SettingEpochRoot])
+	r.isOnDemand.Set(isOnDemandOn(values))
+	r.session.Configure(r.settings.ReadServerAddress(values[settingswire.SettingServer]), getSessionOptions(values))
+}
+
+func isOnDemandOn(values map[string]string) bool { return values[settingOnDemand] != "false" }
+
+func getSessionOptions(values map[string]string) string {
+	return values[settingForeground] + "\x00" + values[settingswire.SettingEpochRoot] + "\x00" + strconv.FormatBool(isOnDemandOn(values))
 }
 
 func (r *runtime) start(ctx context.Context, address string) (*Backend, map[string]func(context.Context) error) {
@@ -132,7 +140,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	wired := syncwire.Deps{
 		Deps: deps, Uploads: cloud.NewUploader(cloudSide, p.clock.Now), UploadEntries: p.state, DownloadBlobs: cloud.NewBlobs(cloudSide),
 		DownloadEntries: p.state, Pending: p.state, Approvals: p.state, Absences: p.state, RemovalDelay: r.removal.Get,
-		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}), LazyHeavy: platform.IsPhone(),
+		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}), LazyHeavy: r.isOnDemand.IsOn(),
 	}
 	wired.Downloads = syncwire.NewDownloads(wired)
 	pass := syncwire.NewSyncVault(wired)
