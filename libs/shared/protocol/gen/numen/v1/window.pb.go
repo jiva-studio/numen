@@ -27,7 +27,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// TaskKind is what an entry of the list of tasks is.
 type TaskKind int32
 
 const (
@@ -238,9 +237,8 @@ func (x *WatchTasksRequest) GetWindowId() string {
 
 type WatchTasksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Everything being done now, in the order the work began. The list arrives
-	// whole, because what is being done is a list and not a set of differences to
-	// apply.
+	// Reported tasks and notices, ordered by when the window first received each
+	// one. Each message carries the full list.
 	Tasks         []*Task `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -283,8 +281,7 @@ func (x *WatchTasksResponse) GetTasks() []*Task {
 	return nil
 }
 
-// A Task is one piece of work the application runs for the window. Every kind of
-// work is a Task, so a new kind adds an entry to the list and no new field.
+// Task is one piece of work the application runs for the window.
 type Task struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Id identifies the work. A task reported again with the same id replaces the
@@ -296,13 +293,12 @@ type Task struct {
 	Detail string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	// Progress of the work: completed_count out of total_count. Both zero means the
 	// work runs with nothing to count.
-	CompletedCount int64 `protobuf:"varint,4,opt,name=completed_count,json=completedCount,proto3" json:"completed_count,omitempty"`
-	TotalCount     int64 `protobuf:"varint,5,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	// The reason the work failed. Empty when it did not fail.
-	FailureReason string `protobuf:"bytes,6,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
+	CompletedCount int64  `protobuf:"varint,4,opt,name=completed_count,json=completedCount,proto3" json:"completed_count,omitempty"`
+	TotalCount     int64  `protobuf:"varint,5,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	FailureReason  string `protobuf:"bytes,6,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
 	// Set for work a person started and is waiting on.
 	IsUserStarted bool `protobuf:"varint,7,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
-	// Unit is what done and total are counted in.
+	// Unit of completed_count and total_count.
 	Unit Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`
 	// The plugin that reported the task, as the core knows the caller, and its
 	// name from the manifest. Both are empty for the core's own work.

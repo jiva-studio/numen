@@ -89,8 +89,7 @@ service HostSearchService {
   rpc ListSearchFunctions(ListSearchFunctionsRequest) returns (ListSearchFunctionsResponse);
 }
 
-// HostSearchErrorCode is why a call on the search index failed. The zero
-// value means it was not.
+// HostSearchErrorCode is why a search index call failed. Zero means success.
 enum HostSearchErrorCode {
   HOST_SEARCH_ERROR_CODE_UNSPECIFIED = 0;
 
@@ -149,7 +148,6 @@ message GetEmbeddingStateResponse {
   // floor it stores, is kept under it.
   string recipe = 2;
 
-  // The name of the model in use.
   string model = 3;
 
   // The starting floor the plugin of the model reports, zero when it has none.
@@ -171,7 +169,6 @@ message ExtensionStats {
   // The extension in lower case, without the dot. Empty for a file with none.
   string extension = 1;
 
-  // How many sources have the extension.
   int64 source_count = 2;
 
   // How many chunks that can carry a vector belong to those sources.
@@ -263,7 +260,6 @@ message FindNearestChunksRequest {
   SearchPlace place = 1;
   repeated float vector = 2;
 
-  // The most chunks to answer.
   int32 limit = 3;
 
   // The kinds of source to search, "note" or "file". Empty means every kind.
@@ -409,7 +405,6 @@ message SearchState {
   // How the scores were made: none, meaning, words, fused or rerank.
   string score_kind = 12;
 
-  // The similarity floor the search used.
   double floor = 13;
 
   // The generation of the index of the vault when the search started; opaque.

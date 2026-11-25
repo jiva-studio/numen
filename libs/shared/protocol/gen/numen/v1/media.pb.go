@@ -70,9 +70,7 @@ func (x *ResolveAddressRequest) GetAddress() string {
 
 type ResolveAddressResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// An http address on the loopback interface: a player in a window drawn from
-	// the toolkit's own scheme loads no media from that scheme, and a page
-	// framed from that scheme sends no Referer. Empty where this build serves no
+	// An http address on the loopback interface. Empty where this build serves no
 	// files.
 	Src string `protobuf:"bytes,1,opt,name=src,proto3" json:"src,omitempty"`
 	// The media type (RFC 6838) of the bytes at src. Empty where no type is known.

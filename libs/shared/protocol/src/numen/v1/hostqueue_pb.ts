@@ -113,9 +113,6 @@ export const FinishTaskResponseSchema: GenMessage<FinishTaskResponse> = /*@__PUR
   messageDesc(file_numen_v1_hostqueue, 5);
 
 /**
- * WorkState is the state of a piece of work in the queue. UNSPECIFIED means
- * nothing was said.
- *
  * @generated from enum numen.v1.WorkState
  */
 export enum WorkState {

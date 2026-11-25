@@ -68,7 +68,6 @@ type HostVaultServiceClient interface {
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
 	// until the plugin stops. A caller that finds it held waits for it.
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
-	// UnlockVault releases the lock taken by LockVault.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
 	// ListParseProblems lists what parsing each file of the vault turned up.
 	ListParseProblems(context.Context, *connect.Request[v1.ListParseProblemsRequest]) (*connect.Response[v1.ListParseProblemsResponse], error)
@@ -196,7 +195,6 @@ type HostVaultServiceHandler interface {
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
 	// until the plugin stops. A caller that finds it held waits for it.
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
-	// UnlockVault releases the lock taken by LockVault.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
 	// ListParseProblems lists what parsing each file of the vault turned up.
 	ListParseProblems(context.Context, *connect.Request[v1.ListParseProblemsRequest]) (*connect.Response[v1.ListParseProblemsResponse], error)

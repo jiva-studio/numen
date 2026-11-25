@@ -51,8 +51,6 @@ export type CatalogEntry = Message<"numen.v1.CatalogEntry"> & {
   contributes?: ManifestContributes | undefined;
 
   /**
-   * source names the source the entry comes from.
-   *
    * @generated from field: string source = 7;
    */
   source: string;
@@ -166,8 +164,6 @@ export const GetCatalogEntryRequestSchema: GenMessage<GetCatalogEntryRequest> = 
  */
 export type GetCatalogEntryResponse = Message<"numen.v1.GetCatalogEntryResponse"> & {
   /**
-   * error is set when no entry is returned.
-   *
    * @generated from field: numen.v1.CatalogErrorCode error = 1;
    */
   error: CatalogErrorCode;
@@ -248,8 +244,6 @@ export const FindCatalogEntryByTabKindRequestSchema: GenMessage<FindCatalogEntry
  */
 export type FindCatalogEntryByTabKindResponse = Message<"numen.v1.FindCatalogEntryByTabKindResponse"> & {
   /**
-   * error is set when no entry is returned.
-   *
    * @generated from field: numen.v1.CatalogErrorCode error = 1;
    */
   error: CatalogErrorCode;

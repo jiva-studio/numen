@@ -600,8 +600,8 @@ type NoteFrontmatterWrite struct {
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// values is a JSON object; a key with the value null is removed.
 	Values []byte `protobuf:"bytes,2,opt,name=values,proto3" json:"values,omitempty"`
-	// baseline is the file state the caller read; a note changed since is left
-	// unchanged (stale).
+	// baseline is the file state the caller read; a note changed since returns
+	// CONFLICT.
 	Baseline      *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -837,8 +837,7 @@ func (x *NoteFrontmatter) GetSourceId() int64 {
 
 type HostNoteServiceRenameNoteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The note to rename.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// What the note is called from now on. The file is named after it.
 	Title         string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -892,13 +891,11 @@ func (x *HostNoteServiceRenameNoteRequest) GetTitle() string {
 type HostNoteServiceRenameNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
-	// Where the note is filed after the rename.
-	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// What the note is called.
-	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	// Which of the three names the note, and so which the rename brought into line.
+	Path  string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	Title string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	// Which name source the rename updated.
 	NameSource NameSource `protobuf:"varint,4,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
-	// What the file did. Absent when it kept its position.
+	// Absent when the file did not move.
 	MoveResult *MoveResult `protobuf:"bytes,5,opt,name=move_result,json=moveResult,proto3,oneof" json:"move_result,omitempty"`
 	// The text of the error where it carries more than the code does.
 	Detail        string `protobuf:"bytes,6,opt,name=detail,proto3" json:"detail,omitempty"`
@@ -1036,9 +1033,8 @@ func (x *HostNoteServiceMoveNotesRequest) GetFolder() string {
 type HostNoteMove struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// From is always set; to only when the note moved.
-	Move *MoveResult `protobuf:"bytes,1,opt,name=move,proto3" json:"move,omitempty"`
-	// Why this note did not move.
-	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Move  *MoveResult `protobuf:"bytes,1,opt,name=move,proto3" json:"move,omitempty"`
+	Error ErrorCode   `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text where this note did not move, empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1196,12 +1192,10 @@ func (x *HostNoteServiceRemoveNotesRequest) GetPaths() []string {
 
 // HostNoteRemoval is the outcome of removing one note.
 type HostNoteRemoval struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// The path of the file in the trash.
-	TrashPath string `protobuf:"bytes,2,opt,name=trash_path,json=trashPath,proto3" json:"trash_path,omitempty"`
-	// The notes whose links are now broken.
-	BrokenLinks []string `protobuf:"bytes,3,rep,name=broken_links,json=brokenLinks,proto3" json:"broken_links,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Path        string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	TrashPath   string                 `protobuf:"bytes,2,opt,name=trash_path,json=trashPath,proto3" json:"trash_path,omitempty"`
+	BrokenLinks []string               `protobuf:"bytes,3,rep,name=broken_links,json=brokenLinks,proto3" json:"broken_links,omitempty"`
 	// Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
 	// file that is not a note, or INTERNAL.
 	Error ErrorCode `protobuf:"varint,4,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`

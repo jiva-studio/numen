@@ -36,15 +36,13 @@ service HostStoreService {
   rpc RenameStoreFile(RenameStoreFileRequest) returns (RenameStoreFileResponse);
 }
 
-// HostStoreErrorCode is why a call on the plugin's folder failed. The
-// zero value means it was not.
+// HostStoreErrorCode is why a store call failed. Zero means success.
 enum HostStoreErrorCode {
   HOST_STORE_ERROR_CODE_UNSPECIFIED = 0;
 
   // The host is showing no vault.
   HOST_STORE_ERROR_CODE_NO_VAULT = 1;
 
-  // The file is not there.
   HOST_STORE_ERROR_CODE_NOT_FOUND = 2;
 
   // The name is not a file of the plugin's folder.

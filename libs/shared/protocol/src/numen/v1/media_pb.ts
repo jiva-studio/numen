@@ -38,9 +38,7 @@ export const ResolveAddressRequestSchema: GenMessage<ResolveAddressRequest> = /*
  */
 export type ResolveAddressResponse = Message<"numen.v1.ResolveAddressResponse"> & {
   /**
-   * An http address on the loopback interface: a player in a window drawn from
-   * the toolkit's own scheme loads no media from that scheme, and a page
-   * framed from that scheme sends no Referer. Empty where this build serves no
+   * An http address on the loopback interface. Empty where this build serves no
    * files.
    *
    * @generated from field: string src = 1;
@@ -64,9 +62,6 @@ export const ResolveAddressResponseSchema: GenMessage<ResolveAddressResponse> = 
 
 /**
  * MediaService resolves the address of a file to where a window loads its bytes from.
- *
- * It is a service apart from the vault's notes: a window that serves the notes
- * to a network need not serve the files, and a binary mounts a service whole.
  *
  * @generated from service numen.v1.MediaService
  */

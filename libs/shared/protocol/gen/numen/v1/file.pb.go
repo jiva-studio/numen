@@ -4,11 +4,7 @@
 // 	protoc        (unknown)
 // source: numen/v1/file.proto
 
-// What a client may ask about the tree a vault is filed in.
-//
-// A path is what the vault calls a file or a folder, and what is here is the
-// moving one, removing one, making one. What is inside a note is note.proto,
-// and the bytes a file of the person's own holds are asset.proto.
+// File and folder operations on the vault tree.
 
 package numenv1
 
@@ -125,7 +121,7 @@ type Entry struct {
 	// Path is what the vault calls it, relative to the root, with forward
 	// slashes.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// The last segment of the path, which is what the row shows.
+	// The last segment of the path.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Whether the entry holds other entries. A folder carries no source and
 	// nothing is made from it.
@@ -316,10 +312,9 @@ func (x *ListFileKindsResponse) GetKinds() []*FileKind {
 
 // FileKind is what the vault holds at one path.
 type FileKind struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Whether a note is at the path.
-	IsNote bool `protobuf:"varint,5,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Path   string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	IsNote bool                   `protobuf:"varint,5,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
 	// The `type` key of the note's frontmatter, which says what the note is. Empty for an
 	// ordinary note. It says nothing about a path holding no note.
 	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
@@ -400,11 +395,9 @@ func (x *FileKind) GetTabKind() string {
 }
 
 type MoveFileRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The file or folder to move, as the vault calls it.
-	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	// Where it is filed from now on. The last segment is what it is called.
-	To            string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	From          string                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To            string                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -455,13 +448,12 @@ func (x *MoveFileRequest) GetTo() string {
 
 type MoveFileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// What the file did. Absent when nothing was moved.
+	// Absent when nothing was moved.
 	MoveResult *MoveResult `protobuf:"bytes,1,opt,name=move_result,json=moveResult,proto3,oneof" json:"move_result,omitempty"`
-	// Set when nothing was moved, and why.
-	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Error      ErrorCode   `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the move reached the vault and the index could not be updated for
-	// it. Search answers about these files as it read them last, until a walk
-	// goes past.
+	// it. Search answers about these files as it read them last, until the next
+	// index scan.
 	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -522,16 +514,11 @@ func (x *MoveFileResponse) GetIsIndexOutdated() bool {
 // written by the name it had.
 type MoveResult struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Where the file was.
-	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	// Where it is now.
-	To string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	From  string                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To    string                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	// The notes whose link stopped resolving and was written again, by name.
 	RepairedNotes []string `protobuf:"bytes,3,rep,name=repaired_notes,json=repairedNotes,proto3" json:"repaired_notes,omitempty"`
-	// The notes whose link stopped resolving and could not be written again, by
-	// name. Each of them still points at the name the file left, and nothing
-	// returns to it: a move that reports only what it repaired reports a
-	// vault it did not leave behind.
+	// The notes whose links stopped resolving and could not be updated, by name.
 	DanglingNotes []string `protobuf:"bytes,4,rep,name=dangling_notes,json=danglingNotes,proto3" json:"dangling_notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -596,9 +583,8 @@ func (x *MoveResult) GetDanglingNotes() []string {
 }
 
 type RemoveFileRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The file or folder to remove.
-	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -723,14 +709,13 @@ func (x *EmptyTrashResponse) GetFailedPaths() []string {
 
 type RemoveFileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// and when nothing was removed.
+	// Path of the removed entry in the trash. Empty when nothing was removed.
 	TrashPath string `protobuf:"bytes,1,opt,name=trash_path,json=trashPath,proto3" json:"trash_path,omitempty"`
 	// The notes whose links pointed at what was removed and now reach nothing.
-	DanglingNotes []string `protobuf:"bytes,2,rep,name=dangling_notes,json=danglingNotes,proto3" json:"dangling_notes,omitempty"`
-	// Set when nothing was removed, and why.
-	Error ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	DanglingNotes []string  `protobuf:"bytes,2,rep,name=dangling_notes,json=danglingNotes,proto3" json:"dangling_notes,omitempty"`
+	Error         ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the file no longer exists and the index could not be updated for it.
-	// Search answers about it as it read it last, until a walk goes past.
+	// Search answers about it as it read it last, until the next index scan.
 	IsIndexOutdated bool `protobuf:"varint,4,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -841,9 +826,8 @@ func (x *CreateFolderRequest) GetPath() string {
 }
 
 type CreateFolderResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was made, and why.
-	Error         ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

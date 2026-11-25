@@ -98,8 +98,6 @@ export type DeleteVersionResponse = Message<"numen.v1.DeleteVersionResponse"> & 
   error: CommandErrorCode;
 
   /**
-   * What a person reads about a failure.
-   *
    * @generated from field: string message = 2;
    */
   message: string;

@@ -25,7 +25,6 @@ service HostWindowService {
 // HostWindowErrorCode is the reason a window call was not served. UNSPECIFIED means success.
 enum HostWindowErrorCode {
   HOST_WINDOW_ERROR_CODE_UNSPECIFIED = 0;
-  // NO_WINDOW means the host has no window.
   HOST_WINDOW_ERROR_CODE_NO_WINDOW = 1;
   // NOT_FOUND means a path with no note or file in the vault, or a tab id with no tab in the window.
   HOST_WINDOW_ERROR_CODE_NOT_FOUND = 2;
@@ -57,14 +56,12 @@ message OpenTab {
   // Id is what the window calls this tab, which the active id names.
   string id = 1;
 
-  // Kind is the registered name of the tab kind.
   string kind = 2;
 
   // Path is the file the tab holds, relative to the vault, and empty for a tab
   // holding no file.
   string path = 3;
 
-  // Title is what the tab is called, as the person reads it.
   string title = 4;
 
   // Place is the JSON of the place the reader of the tab reported, as the window

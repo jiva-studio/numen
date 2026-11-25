@@ -263,8 +263,7 @@ export const RenameStoreFileResponseSchema: GenMessage<RenameStoreFileResponse> 
   messageDesc(file_numen_v1_hoststore, 12);
 
 /**
- * HostStoreErrorCode is why a call on the plugin's folder failed. The
- * zero value means it was not.
+ * HostStoreErrorCode is why a store call failed. Zero means success.
  *
  * @generated from enum numen.v1.HostStoreErrorCode
  */
@@ -282,8 +281,6 @@ export enum HostStoreErrorCode {
   NO_VAULT = 1,
 
   /**
-   * The file is not there.
-   *
    * @generated from enum value: HOST_STORE_ERROR_CODE_NOT_FOUND = 2;
    */
   NOT_FOUND = 2,

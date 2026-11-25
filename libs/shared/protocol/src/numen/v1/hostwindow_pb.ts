@@ -118,8 +118,6 @@ export type OpenTab = Message<"numen.v1.OpenTab"> & {
   id: string;
 
   /**
-   * Kind is the registered name of the tab kind.
-   *
    * @generated from field: string kind = 2;
    */
   kind: string;
@@ -133,8 +131,6 @@ export type OpenTab = Message<"numen.v1.OpenTab"> & {
   path: string;
 
   /**
-   * Title is what the tab is called, as the person reads it.
-   *
    * @generated from field: string title = 4;
    */
   title: string;
@@ -251,8 +247,6 @@ export enum HostWindowErrorCode {
   UNSPECIFIED = 0,
 
   /**
-   * NO_WINDOW means the host has no window.
-   *
    * @generated from enum value: HOST_WINDOW_ERROR_CODE_NO_WINDOW = 1;
    */
   NO_WINDOW = 1,

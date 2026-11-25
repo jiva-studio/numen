@@ -269,8 +269,8 @@ export type ResolveAddressesRequest = Message<"numen.v1.ResolveAddressesRequest"
 
   /**
    * The addresses to answer about. A scheme written before `://` is read as
-   * one — `name://Entropy`, `note://<identifier>` — and everything else is a
-   * name, so what a file carries between its brackets is taken currently.
+   * one — `name://Entropy`, `note://<identifier>` — and everything else is
+   * taken as a name.
    *
    * @generated from field: repeated string addresses = 2;
    */
@@ -488,16 +488,15 @@ export type Heading = Message<"numen.v1.Heading"> & {
   text: string;
 
   /**
-   * The line it relies on, counted from the first line of the prose.
+   * One-based line number in the note prose.
    *
    * @generated from field: int32 line = 2;
    */
   line: number;
 
   /**
-   * How deep it sits, from one for the shallowest a note can carry. Zero where
-   * the answer does not say: a name that matched carries the heading's words
-   * and at its current position, and nothing about its depth.
+   * Heading depth starting at 1. Zero where depth is omitted (for example in
+   * NameMatch).
    *
    * @generated from field: int32 level = 3;
    */
@@ -540,8 +539,6 @@ export type ReadNoteResponse = Message<"numen.v1.ReadNoteResponse"> & {
   body: string;
 
   /**
-   * Set when the note was not read, and why.
-   *
    * @generated from field: numen.v1.ErrorCode error = 2;
    */
   error: ErrorCode;
@@ -627,8 +624,6 @@ export const WriteNoteRequestSchema: GenMessage<WriteNoteRequest> = /*@__PURE__*
  */
 export type WriteNoteResponse = Message<"numen.v1.WriteNoteResponse"> & {
   /**
-   * Set when nothing was written, and why.
-   *
    * @generated from field: numen.v1.ErrorCode error = 1;
    */
   error: ErrorCode;
@@ -644,7 +639,7 @@ export type WriteNoteResponse = Message<"numen.v1.WriteNoteResponse"> & {
   /**
    * Set when the prose is on disk and the index could not be updated for it.
    * The write happened and `file_stat` stands; search answers about this note as it
-   * read it last, until a walk goes past.
+   * read it last, until the next index scan.
    *
    * @generated from field: bool is_index_outdated = 3;
    */
@@ -756,8 +751,6 @@ export type CreateNoteResponse = Message<"numen.v1.CreateNoteResponse"> & {
   path: string;
 
   /**
-   * Set when nothing was made, and why.
-   *
    * @generated from field: numen.v1.ErrorCode error = 2;
    */
   error: ErrorCode;
@@ -765,7 +758,7 @@ export type CreateNoteResponse = Message<"numen.v1.CreateNoteResponse"> & {
   /**
    * Set when the note is on disk and the index could not be updated for it.
    * The note was made and `path` stands; search does not answer about it until
-   * a walk goes past.
+   * the next index scan.
    *
    * @generated from field: bool is_index_outdated = 3;
    */
@@ -1194,8 +1187,6 @@ export type CreateRelatedNoteResponse = Message<"numen.v1.CreateRelatedNoteRespo
   path: string;
 
   /**
-   * Set when nothing was made, and why.
-   *
    * @generated from field: numen.v1.ErrorCode error = 2;
    */
   error: ErrorCode;
@@ -1317,8 +1308,6 @@ export const ListBacklinksResponseSchema: GenMessage<ListBacklinksResponse> = /*
  */
 export type RenameNoteRequest = Message<"numen.v1.RenameNoteRequest"> & {
   /**
-   * The note to rename.
-   *
    * @generated from field: string path = 1;
    */
   path: string;
@@ -1343,30 +1332,29 @@ export const RenameNoteRequestSchema: GenMessage<RenameNoteRequest> = /*@__PURE_
  */
 export type RenameNoteResponse = Message<"numen.v1.RenameNoteResponse"> & {
   /**
-   * Where the note is filed. Empty when the note was never opened. The note is
-   * path the note still has.
+   * Where the note is filed. Empty when the note could not be opened.
    *
    * @generated from field: string path = 1;
    */
   path: string;
 
   /**
-   * What the note is called. Empty when the note was never opened.
+   * What the note is called. Empty when the note could not be opened.
    *
    * @generated from field: string title = 2;
    */
   title: string;
 
   /**
-   * Which of the three names the note, and so which the rename brought into
-   * line. NAME_SOURCE_UNSPECIFIED when the note was never opened.
+   * Which name source the rename updated. NAME_SOURCE_UNSPECIFIED when the note
+   * could not be opened.
    *
    * @generated from field: numen.v1.NameSource name_source = 3;
    */
   nameSource: NameSource;
 
   /**
-   * What the file did. Absent when it kept its position.
+   * Absent when the file did not move.
    *
    * @generated from field: optional numen.v1.MoveResult move_result = 4;
    */
@@ -1374,7 +1362,7 @@ export type RenameNoteResponse = Message<"numen.v1.RenameNoteResponse"> & {
 
   /**
    * Set when the rename did not finish, and why. The note may already have been
-   * written: `path`, `title` and `by` say what stands. A note holding prose the
+   * written: `path`, `title` and `name_source` say what stands. A note holding prose the
    * caller never saw is ERROR_CODE_CONFLICT, and nothing was written at all.
    *
    * @generated from field: numen.v1.ErrorCode error = 5;
@@ -1383,8 +1371,8 @@ export type RenameNoteResponse = Message<"numen.v1.RenameNoteResponse"> & {
 
   /**
    * Set when the rename reached the vault and the index could not be updated
-   * with it. Search answers about these files as it read them last, until a
-   * walk goes past.
+   * with it. Search answers about these files as it read them last, until the
+   * next index scan.
    *
    * @generated from field: bool is_index_outdated = 6;
    */
@@ -1431,8 +1419,6 @@ export type WatchEditsResponse = Message<"numen.v1.WatchEditsResponse"> & {
   change: string;
 
   /**
-   * The note being changed.
-   *
    * @generated from field: string path = 2;
    */
   path: string;
@@ -1553,8 +1539,7 @@ export const LinkDirectionSchema: GenEnum<LinkDirection> = /*@__PURE__*/
   enumDesc(file_numen_v1_note, 1);
 
 /**
- * Role is what kind of relationship a link is. The list is closed: navigation
- * and drawing read it, so a role no one has decided on has no behaviour.
+ * Role is the kind of relationship a link declares.
  *
  * @generated from enum numen.v1.Role
  */
@@ -1597,9 +1582,8 @@ export const RoleSchema: GenEnum<Role> = /*@__PURE__*/
   enumDesc(file_numen_v1_note, 2);
 
 /**
- * Marker is what is drawn at the end of a link that points at its target. The
- * list is closed: a value is introduced together with the code that draws it.
- * MARKER_UNSPECIFIED draws nothing.
+ * Marker is what is drawn at the target end of a link. MARKER_UNSPECIFIED draws
+ * nothing.
  *
  * @generated from enum numen.v1.Marker
  */
@@ -1699,8 +1683,7 @@ export const NoteService: GenService<{
    * note it does not name is not in the answer, and neither is one that carries
    * no headings.
    *
-   * A path named twice is answered once, and a filter naming more notes than
-   * fit.
+   * A path named twice is answered once.
    *
    * @generated from rpc numen.v1.NoteService.ListHeadings
    */
@@ -1721,8 +1704,8 @@ export const NoteService: GenService<{
   },
   /**
    * WriteNote puts prose into a note, keeping the frontmatter the file has when
-   * the write lands and creating the file where there is none. A note that no
-   * `stale`.
+   * the write lands and creating the file where there is none. A note whose
+   * baseline no longer matches returns ERROR_CODE_CONFLICT.
    *
    * @generated from rpc numen.v1.NoteService.WriteNote
    */
@@ -1821,10 +1804,8 @@ export const NoteService: GenService<{
     output: typeof ListBacklinksResponseSchema;
   },
   /**
-   * RenameNote gives a note a different name. A note is shown by its title,
-   * else by its first level-one heading, else by its filename: whichever of the
-   * three names it is brought into line, and the file follows it where a title
-   * and a filename are kept as one name.
+   * RenameNote renames a note by updating its frontmatter title or its
+   * filename, and moves the file when its name follows the title.
    *
    * @generated from rpc numen.v1.NoteService.RenameNote
    */

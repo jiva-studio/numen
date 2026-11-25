@@ -137,8 +137,6 @@ export type WriteFileRequest = Message<"numen.v1.WriteFileRequest"> & {
   content: Uint8Array;
 
   /**
-   * What the file was when the caller read it.
-   *
    * @generated from field: numen.v1.FileStat baseline = 3;
    */
   baseline?: FileStat | undefined;
@@ -161,8 +159,6 @@ export type WriteFileResponse = Message<"numen.v1.WriteFileResponse"> & {
   error: ErrorCode;
 
   /**
-   * What the file is now.
-   *
    * @generated from field: numen.v1.FileStat stat = 2;
    */
   stat?: FileStat | undefined;
@@ -342,8 +338,6 @@ export type ListFileChangesResponse = Message<"numen.v1.ListFileChangesResponse"
   isReset: boolean;
 
   /**
-   * has_more is true when more changes follow next.
-   *
    * @generated from field: bool has_more = 5;
    */
   hasMore: boolean;
@@ -425,8 +419,7 @@ export const FileChangeSchema: GenMessage<FileChange> = /*@__PURE__*/
  * The endpoint checks the permission of each call: a call that reads needs
  * vault:read and one that changes anything needs vault:write.
  *
- * Numen-Vault works the vault of that identity instead of the vault the host
- * shows.
+ * Numen-Vault selects the vault by identity; without it a call targets the active vault.
  *
  * Every path is relative to the vault root and written with forward slashes.
  *
@@ -434,8 +427,7 @@ export const FileChangeSchema: GenMessage<FileChange> = /*@__PURE__*/
  */
 export const HostFileService: GenService<{
   /**
-   * StatFile says what a file is now. A file that is not there is
-   * returns the error code NOT_FOUND.
+   * StatFile returns the current FileStat of a file, or NOT_FOUND.
    *
    * @generated from rpc numen.v1.HostFileService.StatFile
    */

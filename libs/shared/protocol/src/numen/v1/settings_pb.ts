@@ -2,15 +2,9 @@
 // @generated from file numen/v1/settings.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client may ask about the file a person configures this installation
-// in.
-//
-// The settings belong to the installation and not to a vault: the same file
-//
-// They travel as the file's own text. Their sections belong to whichever
-// adapters an installation is composed of, so the core does not know the whole
-// shape and does not describe it, and a setting is written by naming the path
-// through the file. It is the only tree here that goes undescribed.
+// Installation-wide settings stored as JSON.
+// Sections are owned by app or plugin ids; individual settings are written by
+// key path.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -213,8 +207,6 @@ export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"
   pluginId: string;
 
   /**
-   * The key of the setting.
-   *
    * @generated from field: string key = 2;
    */
   key: string;
@@ -239,8 +231,6 @@ export type ChoosePluginPathResponse = Message<"numen.v1.ChoosePluginPathRespons
   path: string;
 
   /**
-   * Set when the person chose a path.
-   *
    * @generated from field: bool is_chosen = 2;
    */
   isChosen: boolean;
@@ -316,8 +306,6 @@ export const OptionsSchema: GenMessage<Options> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 10);
 
 /**
- * Option is one value of a field.
- *
  * @generated from message numen.v1.Option
  */
 export type Option = Message<"numen.v1.Option"> & {
@@ -355,8 +343,6 @@ export const OptionSchema: GenMessage<Option> = /*@__PURE__*/
  */
 export const SettingsService: GenService<{
   /**
-   * GetSettings is every setting of the file.
-   *
    * @generated from rpc numen.v1.SettingsService.GetSettings
    */
   getSettings: {
