@@ -102,6 +102,9 @@ func (u discoverer) walkAndRecord(
 			}
 			return u.recordFile(ctx, v, stats, ref, res)
 		case domain.KindNote:
+			if ref.IsAbsent {
+				return nil
+			}
 			hasCut, err := u.checkNote(ctx, on, noteStats, ref, res)
 			if err != nil {
 				return err

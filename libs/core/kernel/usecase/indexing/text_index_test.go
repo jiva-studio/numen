@@ -653,3 +653,52 @@ func TestExecuteIndexesNoteTextVersion(t *testing.T) {
 		t.Errorf("run after dropping the version reports %+v and reread %v", res, reread)
 	}
 }
+
+func TestAnAbsentBookIsNotOpenedAndIsIndexedOnceItsBytesArrive(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
+	raw := indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 300))
+	shelf.PutAbsent(bookPath, domain.KindFile, int64(len(raw)), 1)
+	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
+
+	res, err := extract.Execute(ctx, indexfake.GetFirst())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shelf.Reads[bookPath] != 0 || res.Extracted != 0 || res.Unreadable != 0 || res.Removed != 0 {
+		t.Errorf("the run over an absent book reports %+v with %d reads, want the book left alone", res, shelf.Reads[bookPath])
+	}
+	if _, isSource := index.Sources[indexfake.GetFirst().ID][bookPath]; isSource || index.Extractions[bookPath] != 0 {
+		t.Error("an absent book was recorded as a source")
+	}
+
+	shelf.Fill(bookPath, raw)
+	res, err = extract.Execute(ctx, indexfake.GetFirst())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Extracted != 1 || !index.IsCut(indexfake.GetFirst().ID, bookPath) {
+		t.Errorf("the run after the fill reports %+v, want the book extracted", res)
+	}
+}
+
+func TestABookThatBecomesAbsentKeepsItsChunksAndIsNotReadAgain(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
+	raw := indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 300))
+	shelf.Put(bookPath, domain.KindFile, raw, 1)
+	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
+	if _, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
+		t.Fatal(err)
+	}
+	reads := shelf.Reads[bookPath]
+
+	shelf.PutAbsent(bookPath, domain.KindFile, int64(len(raw)), 1)
+	res, err := extract.Execute(ctx, indexfake.GetFirst())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shelf.Reads[bookPath] != reads || res.Removed != 0 || !index.IsCut(indexfake.GetFirst().ID, bookPath) {
+		t.Errorf("after the eviction the run reports %+v with %d reads, want the chunks kept and no read", res, shelf.Reads[bookPath])
+	}
+}

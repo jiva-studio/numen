@@ -260,6 +260,9 @@ func (u cutter) statTextSource(
 	if err != nil {
 		return domain.FileStat{}, false, fmt.Errorf("stat %s: %w", path, err)
 	}
+	if ref.IsAbsent {
+		return ref, true, nil
+	}
 	isRecorded, err := u.recordIfWithoutText(ctx, v, on, ref, sizes)
 	return ref, isRecorded, err
 }

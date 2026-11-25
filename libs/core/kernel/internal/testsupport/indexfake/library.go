@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -54,6 +55,9 @@ type File struct {
 	Kind  domain.SourceKind
 	Raw   []byte
 	MTime int64
+	// IsAbsent lists the file with its size and no bytes.
+	IsAbsent bool
+	Size     int64
 }
 
 // NewLibrary creates an empty vault.
@@ -64,6 +68,16 @@ func NewLibrary() *Library {
 // Put adds one file to the vault, with the modification time given.
 func (l *Library) Put(path string, kind domain.SourceKind, raw []byte, mtime int64) {
 	l.Files[path] = &File{Kind: kind, Raw: raw, MTime: mtime}
+}
+
+// PutAbsent lists a file whose bytes are not on this device.
+func (l *Library) PutAbsent(path string, kind domain.SourceKind, size, mtime int64) {
+	l.Files[path] = &File{Kind: kind, MTime: mtime, IsAbsent: true, Size: size}
+}
+
+// Fill gives the absent file at path its bytes.
+func (l *Library) Fill(path string, raw []byte) {
+	l.Files[path].Raw, l.Files[path].IsAbsent = raw, false
 }
 
 func (l *Library) WalkFiles(_ context.Context, fn func(domain.FileStat) error) error {
@@ -80,6 +94,9 @@ func (l *Library) Read(_ context.Context, path string) ([]byte, error) {
 	if !ok {
 		return nil, fmt.Errorf("read %s: %w", path, edit.ErrNotExist)
 	}
+	if target.IsAbsent {
+		return nil, fmt.Errorf("read %s: %w", path, vaultdomain.ErrFileAbsent)
+	}
 	l.Reads[path]++
 	return target.Raw, nil
 }
@@ -88,6 +105,9 @@ func (l *Library) Open(_ context.Context, path string) (io.ReadSeekCloser, error
 	target, ok := l.Files[path]
 	if !ok {
 		return nil, fmt.Errorf("open %s: %w", path, edit.ErrNotExist)
+	}
+	if target.IsAbsent {
+		return nil, fmt.Errorf("open %s: %w", path, vaultdomain.ErrFileAbsent)
 	}
 	l.Reads[path]++
 	return nopCloser{bytes.NewReader(target.Raw)}, nil
@@ -107,8 +127,12 @@ func (l *Library) StatFile(_ context.Context, path string) (domain.FileStat, err
 
 func (l *Library) getStat(path string) domain.FileStat {
 	target := l.Files[path]
+	size := int64(len(target.Raw))
+	if target.IsAbsent {
+		size = target.Size
+	}
 	return domain.FileStat{
-		Path: path, Kind: target.Kind, Size: int64(len(target.Raw)), ModTime: time.Unix(0, target.MTime),
+		Path: path, Kind: target.Kind, Size: size, ModTime: time.Unix(0, target.MTime), IsAbsent: target.IsAbsent,
 	}
 }
 
