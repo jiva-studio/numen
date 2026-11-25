@@ -1091,8 +1091,8 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a folder could not be added: %v", err)
 	}
-	if rejected := added.Msg.Error; rejected != nil {
-		t.Fatalf("the folder failed: %v", *rejected)
+	if rejected := added.Msg.GetError(); rejected != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("the folder failed: %v", rejected)
 	}
 
 	if _, err := f.holds.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{

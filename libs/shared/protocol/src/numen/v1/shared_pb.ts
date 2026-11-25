@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxImUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAxIMCgRoYXNoGAQgASgJEg8KB3ZlcnNpb24YBSABKAQSDwoHaXNfbm90ZRgGIAEoCCIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEqpAMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBxIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAIEhcKE0VSUk9SX0NPREVfQ09ORkxJQ1QQCRIXChNFUlJPUl9DT0RFX05PX1ZBVUxUEAoSHAoYRVJST1JfQ09ERV9PVVRTSURFX1ZBVUxUEAsSFQoRRVJST1JfQ09ERV9MT0NLRUQQDBIXChNFUlJPUl9DT0RFX0lOVEVSTkFMEA0SHAoYRVJST1JfQ09ERV9OT1RfQVRURU1QVEVEEA5CSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxImUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAxIMCgRoYXNoGAQgASgJEg8KB3ZlcnNpb24YBSABKAQSDwoHaXNfbm90ZRgGIAEoCCIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEqxwgKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBxIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAIEhcKE0VSUk9SX0NPREVfQ09ORkxJQ1QQCRIXChNFUlJPUl9DT0RFX05PX1ZBVUxUEAoSHAoYRVJST1JfQ09ERV9PVVRTSURFX1ZBVUxUEAsSFQoRRVJST1JfQ09ERV9MT0NLRUQQDBIXChNFUlJPUl9DT0RFX0lOVEVSTkFMEA0SHAoYRVJST1JfQ09ERV9OT1RfQVRURU1QVEVEEA4SFgoSRVJST1JfQ09ERV9JTlZBTElEEA8SGAoURVJST1JfQ09ERV9OT1RfT1dORVIQEBIaChZFUlJPUl9DT0RFX1VOQVZBSUxBQkxFEBESGAoURVJST1JfQ09ERV9OT19XSU5ET1cQEhIWChJFUlJPUl9DT0RFX1RJTUVPVVQQExIXChNFUlJPUl9DT0RFX0NBTkNFTEVEEBQSHAoYRVJST1JfQ09ERV9OT19DT05ORUNUSU9OEBUSGQoVRVJST1JfQ09ERV9BTExfRkFJTEVEEBYSFgoSRVJST1JfQ09ERV9TVE9QUEVEEBcSGQoVRVJST1JfQ09ERV9WQVVMVF9DT1BZEBgSHQoZRVJST1JfQ09ERV9WQVVMVF9PVkVSTEFQUxAZEhkKFUVSUk9SX0NPREVfTEFTVF9WQVVMVBAaEhwKGEVSUk9SX0NPREVfVkFVTFRfQ1VSUkVOVBAbEhcKE0VSUk9SX0NPREVfTk9fVFJBU0gQHBIWChJFUlJPUl9DT0RFX1VOU0FWRUQQHRInCiNFUlJPUl9DT0RFX0FDVElWQVRJT05fTElNSVRfUkVBQ0hFRBAeEhYKEkVSUk9SX0NPREVfRVhQSVJFRBAfEhcKE0VSUk9SX0NPREVfRElTQUJMRUQQIBIfChtFUlJPUl9DT0RFX1BST0RVQ1RfTUlTTUFUQ0gQIRIfChtFUlJPUl9DT0RFX0tFWV9TVE9SRV9GQUlMRUQQIhIfChtFUlJPUl9DT0RFX1RZUEVfVU5BVkFJTEFCTEUQIxIXChNFUlJPUl9DT0RFX05PX01PREVMECQSHgoaRVJST1JfQ09ERV9SRUNJUEVfTUlTTUFUQ0gQJRIdChlFUlJPUl9DT0RFX0xJTUlUX0VYQ0VFREVEECZCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * FileStat is which file this is: where it is filed, how big it is, and when
@@ -127,9 +127,8 @@ export const BoundsSchema: GenMessage<Bounds> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 2);
 
 /**
- * ErrorCode is why a call on a file or a note was served and did nothing. The
- * zero value means the call did not fail. The window and the host endpoint
- * answer with the same codes.
+ * ErrorCode is why a served call did not succeed. The zero value means the call
+ * succeeded.
  *
  * @generated from enum numen.v1.ErrorCode
  */
@@ -140,7 +139,7 @@ export enum ErrorCode {
   UNSPECIFIED = 0,
 
   /**
-   * Nothing is at the path. A read says so; a write creates the file.
+   * The named resource, path, command, tool, search or entry does not exist.
    *
    * @generated from enum value: ERROR_CODE_NOT_FOUND = 1;
    */
@@ -176,16 +175,14 @@ export enum ErrorCode {
   BODY_UNWRITABLE = 5,
 
   /**
-   * The frontmatter cannot be read, so the note can be neither read nor written
-   * from here.
+   * The frontmatter or folder cannot be read.
    *
    * @generated from enum value: ERROR_CODE_UNREADABLE = 6;
    */
   UNREADABLE = 6,
 
   /**
-   * A file is already where the note would go. Nothing is written there; a
-   * rename may already have written the note it was moving.
+   * A file, vault or connection with the same path or name already exists.
    *
    * @generated from enum value: ERROR_CODE_ALREADY_EXISTS = 7;
    */
@@ -201,8 +198,7 @@ export enum ErrorCode {
   INVALID_NAME = 8,
 
   /**
-   * The file is no longer the one this caller read. Nothing was written, and
-   * the person chooses what happens to what they have.
+   * The resource changed since this caller read it.
    *
    * @generated from enum value: ERROR_CODE_CONFLICT = 9;
    */
@@ -216,7 +212,7 @@ export enum ErrorCode {
   NO_VAULT = 10,
 
   /**
-   * The path is outside the vault or names no file.
+   * The path is outside the vault or the plugin's folder, or names no file.
    *
    * @generated from enum value: ERROR_CODE_OUTSIDE_VAULT = 11;
    */
@@ -230,8 +226,8 @@ export enum ErrorCode {
   LOCKED = 12,
 
   /**
-   * The change of a note failed for a reason with no code of its own; the
-   * detail of that note carries the error text.
+   * The call failed for a reason with no code of its own; detail carries the
+   * error text.
    *
    * @generated from enum value: ERROR_CODE_INTERNAL = 13;
    */
@@ -243,6 +239,175 @@ export enum ErrorCode {
    * @generated from enum value: ERROR_CODE_NOT_ATTEMPTED = 14;
    */
   NOT_ATTEMPTED = 14,
+
+  /**
+   * An argument, field, key, version, floor, query or page token is invalid.
+   *
+   * @generated from enum value: ERROR_CODE_INVALID = 15;
+   */
+  INVALID = 15,
+
+  /**
+   * The caller does not own the text version or tab.
+   *
+   * @generated from enum value: ERROR_CODE_NOT_OWNER = 16;
+   */
+  NOT_OWNER = 16,
+
+  /**
+   * The plugin, provider or embedding model could not be started or reached.
+   *
+   * @generated from enum value: ERROR_CODE_UNAVAILABLE = 17;
+   */
+  UNAVAILABLE = 17,
+
+  /**
+   * The host has no window, or the target window is closed.
+   *
+   * @generated from enum value: ERROR_CODE_NO_WINDOW = 18;
+   */
+  NO_WINDOW = 18,
+
+  /**
+   * The operation did not complete in time, or is no longer pending.
+   *
+   * @generated from enum value: ERROR_CODE_TIMEOUT = 19;
+   */
+  TIMEOUT = 19,
+
+  /**
+   * The operation was cancelled or superseded.
+   *
+   * @generated from enum value: ERROR_CODE_CANCELED = 20;
+   */
+  CANCELED = 20,
+
+  /**
+   * No connection row can serve the operation.
+   *
+   * @generated from enum value: ERROR_CODE_NO_CONNECTION = 21;
+   */
+  NO_CONNECTION = 21,
+
+  /**
+   * Every connection row failed or was set aside.
+   *
+   * @generated from enum value: ERROR_CODE_ALL_FAILED = 22;
+   */
+  ALL_FAILED = 22,
+
+  /**
+   * The connection request is wrong in itself and stopped without trying
+   * another row.
+   *
+   * @generated from enum value: ERROR_CODE_STOPPED = 23;
+   */
+  STOPPED = 23,
+
+  /**
+   * The folder carries a vault identity already registered at another path.
+   *
+   * @generated from enum value: ERROR_CODE_VAULT_COPY = 24;
+   */
+  VAULT_COPY = 24,
+
+  /**
+   * The folder lies inside a registered vault, or holds one.
+   *
+   * @generated from enum value: ERROR_CODE_VAULT_OVERLAPS = 25;
+   */
+  VAULT_OVERLAPS = 25,
+
+  /**
+   * It is the only vault this installation holds.
+   *
+   * @generated from enum value: ERROR_CODE_LAST_VAULT = 26;
+   */
+  LAST_VAULT = 26,
+
+  /**
+   * The vault is the one the window currently shows.
+   *
+   * @generated from enum value: ERROR_CODE_VAULT_CURRENT = 27;
+   */
+  VAULT_CURRENT = 27,
+
+  /**
+   * This machine has no trash, so the folder stays where it is.
+   *
+   * @generated from enum value: ERROR_CODE_NO_TRASH = 28;
+   */
+  NO_TRASH = 28,
+
+  /**
+   * A tab has unsaved changes.
+   *
+   * @generated from enum value: ERROR_CODE_UNSAVED = 29;
+   */
+  UNSAVED = 29,
+
+  /**
+   * The license key has used all of its machine slots.
+   *
+   * @generated from enum value: ERROR_CODE_ACTIVATION_LIMIT_REACHED = 30;
+   */
+  ACTIVATION_LIMIT_REACHED = 30,
+
+  /**
+   * The license key has expired.
+   *
+   * @generated from enum value: ERROR_CODE_EXPIRED = 31;
+   */
+  EXPIRED = 31,
+
+  /**
+   * The license key has been disabled or revoked by the provider.
+   *
+   * @generated from enum value: ERROR_CODE_DISABLED = 32;
+   */
+  DISABLED = 32,
+
+  /**
+   * The license key belongs to another product.
+   *
+   * @generated from enum value: ERROR_CODE_PRODUCT_MISMATCH = 33;
+   */
+  PRODUCT_MISMATCH = 33,
+
+  /**
+   * The key store failed or is absent on this machine.
+   *
+   * @generated from enum value: ERROR_CODE_KEY_STORE_FAILED = 34;
+   */
+  KEY_STORE_FAILED = 34,
+
+  /**
+   * No installed and enabled plugin provides this connection type.
+   *
+   * @generated from enum value: ERROR_CODE_TYPE_UNAVAILABLE = 35;
+   */
+  TYPE_UNAVAILABLE = 35,
+
+  /**
+   * The installation has no search model.
+   *
+   * @generated from enum value: ERROR_CODE_NO_MODEL = 36;
+   */
+  NO_MODEL = 36,
+
+  /**
+   * The recipe is not the one of the model in use.
+   *
+   * @generated from enum value: ERROR_CODE_RECIPE_MISMATCH = 37;
+   */
+  RECIPE_MISMATCH = 37,
+
+  /**
+   * The call exceeds the allowed count or size limit.
+   *
+   * @generated from enum value: ERROR_CODE_LIMIT_EXCEEDED = 38;
+   */
+  LIMIT_EXCEEDED = 38,
 }
 
 /**

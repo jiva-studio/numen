@@ -3,7 +3,7 @@
  * out over the real call of the plugin entity. Every path is invented.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { COMMAND_ERROR_CODE } from '@numen/core-client'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import { createHandledApi } from '@/testing/coreAnswers'
 import type { CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
@@ -24,7 +24,7 @@ const createTarget = (path: string, isFolder = false): CommandTarget => ({
 
 const createWindow = (
   answer: { error: number; message: string } = {
-    error: COMMAND_ERROR_CODE.UNSPECIFIED,
+    error: WIRE_ERROR_CODE.UNSPECIFIED,
     message: '',
   },
 ) => {
@@ -78,7 +78,7 @@ describe('Delete text', () => {
 
   it('writes the error of a delete that failed', async () => {
     const { set, messages } = createWindow({
-      error: COMMAND_ERROR_CODE.FAILED,
+      error: WIRE_ERROR_CODE.INTERNAL,
       message: 'no such version',
     })
 

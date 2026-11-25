@@ -3,6 +3,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/manifest.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -76,7 +77,7 @@ message GetCatalogEntryRequest {
 
 message GetCatalogEntryResponse {
   // error is set when no entry is returned.
-  CatalogErrorCode error = 1;
+  ErrorCode error = 1;
   CatalogEntry entry = 2;
   repeated CatalogSourceError source_errors = 3;
 }
@@ -96,15 +97,7 @@ message FindCatalogEntryByTabKindRequest {
 
 message FindCatalogEntryByTabKindResponse {
   // error is set when no entry is returned.
-  CatalogErrorCode error = 1;
+  ErrorCode error = 1;
   CatalogEntry entry = 2;
   repeated CatalogSourceError source_errors = 3;
-}
-
-// CatalogErrorCode is why a call was served without an entry.
-enum CatalogErrorCode {
-  // CATALOG_ERROR_CODE_UNSPECIFIED is a call that was served in full.
-  CATALOG_ERROR_CODE_UNSPECIFIED = 0;
-  // CATALOG_ERROR_CODE_NOT_FOUND is no plugin of the id, or none providing the kind of tab.
-  CATALOG_ERROR_CODE_NOT_FOUND = 1;
 }

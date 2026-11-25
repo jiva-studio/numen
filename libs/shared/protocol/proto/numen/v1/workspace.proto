@@ -85,7 +85,7 @@ message DetachTabRequest {
 message DetachTabResponse {
   // Unspecified after the new window accepts the tab. On any other value the
   // source window keeps the tab.
-  TabMoveErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message WatchFocusRequest {}
@@ -317,7 +317,7 @@ message MoveTabRequest {
 message MoveTabResponse {
   // Unspecified after the target window accepts the tab. On any other value
   // the source window keeps the tab.
-  TabMoveErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message AcceptTabMoveRequest {
@@ -338,29 +338,7 @@ message MovedTab {
 message AcceptTabMoveResponse {
   // Unspecified when the move completed. On any other value the source window
   // keeps the tab and the target window closes it.
-  TabMoveErrorCode error = 1;
-}
-
-// TabMoveErrorCode is why a move of a tab was served and did not complete.
-enum TabMoveErrorCode {
-  // TAB_MOVE_ERROR_CODE_UNSPECIFIED is a move that completed.
-  TAB_MOVE_ERROR_CODE_UNSPECIFIED = 0;
-
-  // TAB_MOVE_ERROR_CODE_WINDOW_CLOSED is a target window that does not watch
-  // the tab links, or stopped watching before it opened the tab.
-  TAB_MOVE_ERROR_CODE_WINDOW_CLOSED = 1;
-
-  // TAB_MOVE_ERROR_CODE_TIMEOUT is a target window that did not open the tab in
-  // time, or an AcceptTabMove for a move no longer pending.
-  TAB_MOVE_ERROR_CODE_TIMEOUT = 2;
-
-  // TAB_MOVE_ERROR_CODE_NOT_OWNER is a source window that does not own the tab;
-  // another window reported it first.
-  TAB_MOVE_ERROR_CODE_NOT_OWNER = 3;
-
-  // TAB_MOVE_ERROR_CODE_CANCELED is a move that a newer move or detach of the
-  // tab, a cancelled request, or another window that took the tab ended.
-  TAB_MOVE_ERROR_CODE_CANCELED = 4;
+  ErrorCode error = 1;
 }
 
 message HighlightWindowRequest {

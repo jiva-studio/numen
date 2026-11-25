@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { TAB_MOVE_ERROR_CODE, type TabMoveErrorCodeValue } from '@numen/core-client'
+import { WIRE_ERROR_CODE, type WireErrorCodeValue } from '@numen/core-client'
 import type { Tab } from '@/entities/tab'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { ACCEPT_ATTEMPTS, ACCEPT_RETRY_MS, ASKING_MESSAGE, STILL_OPEN_MESSAGE } from '../lib/move'
@@ -29,16 +29,16 @@ const setup = (asking: () => boolean = () => false) => {
   const steps: string[] = []
   type Sent = { tab: object; x?: number; y?: number; width?: number; height?: number }
   const core = {
-    detachTab: vi.fn(async (_sent: Sent): Promise<{ error: TabMoveErrorCodeValue }> => {
+    detachTab: vi.fn(async (_sent: Sent): Promise<{ error: WireErrorCodeValue }> => {
       steps.push('detach')
-      return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+      return { error: WIRE_ERROR_CODE.UNSPECIFIED }
     }),
     moveTab: vi.fn(
       async (
         _sent: Sent & { windowId: string; targetWindowId: string },
-      ): Promise<{ error: TabMoveErrorCodeValue }> => {
+      ): Promise<{ error: WireErrorCodeValue }> => {
         steps.push('move')
-        return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+        return { error: WIRE_ERROR_CODE.UNSPECIFIED }
       },
     ),
   }
@@ -119,7 +119,7 @@ describe('moveTab', () => {
 
   it('keeps the tab and writes the error when the target window does not accept it', async () => {
     const { core, deps, mover } = setup()
-    core.moveTab.mockResolvedValueOnce({ error: TAB_MOVE_ERROR_CODE.WINDOW_CLOSED })
+    core.moveTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.NO_WINDOW })
 
     await mover.moveTab(ORBITS_ID, 'window-b')
 
@@ -132,7 +132,7 @@ describe('moveTab', () => {
 
   it('shows the cancelled message when a newer transfer ends the move', async () => {
     const { core, deps, mover } = setup()
-    core.moveTab.mockResolvedValueOnce({ error: TAB_MOVE_ERROR_CODE.CANCELED })
+    core.moveTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.CANCELED })
 
     await mover.moveTab(ORBITS_ID, 'window-b')
 
@@ -219,7 +219,7 @@ describe('detachTab', () => {
 
   it('keeps the source tab open until the new window accepts the tab', async () => {
     const { core, deps, mover } = setup()
-    core.detachTab.mockResolvedValueOnce({ error: TAB_MOVE_ERROR_CODE.TIMEOUT })
+    core.detachTab.mockResolvedValueOnce({ error: WIRE_ERROR_CODE.TIMEOUT })
 
     await mover.detachTab(ORBITS_ID, { x: 100, y: 200 })
 

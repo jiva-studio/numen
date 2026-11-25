@@ -21,7 +21,7 @@ import (
 // windowHost returns HostWindowService with fixed values and records the requests.
 type windowHost struct {
 	numenv1connect.UnimplementedHostWindowServiceHandler
-	code          v1.HostWindowErrorCode
+	code          v1.ErrorCode
 	status        *connect.Error
 	authHeader    string
 	notes         []*v1.FocusNoteRequest
@@ -34,7 +34,7 @@ func (h *windowHost) FocusNote(_ context.Context, req *connect.Request[v1.FocusN
 	if h.status != nil {
 		return nil, h.status
 	}
-	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
+	if h.code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		return connect.NewResponse(&v1.FocusNoteResponse{Error: h.code}), nil
 	}
 	return connect.NewResponse(&v1.FocusNoteResponse{Path: req.Msg.GetPath(), Title: "Gray Heron", Id: "01J8HERON0000000000000000"}), nil
@@ -46,7 +46,7 @@ func (h *windowHost) FocusFile(_ context.Context, req *connect.Request[v1.FocusF
 	if h.status != nil {
 		return nil, h.status
 	}
-	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
+	if h.code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		return connect.NewResponse(&v1.FocusFileResponse{Error: h.code}), nil
 	}
 	return connect.NewResponse(&v1.FocusFileResponse{}), nil
@@ -57,7 +57,7 @@ func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.Hos
 	if h.status != nil {
 		return nil, h.status
 	}
-	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
+	if h.code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Error: h.code}), nil
 	}
 	return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{
@@ -147,8 +147,8 @@ func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {
 		h    *windowHost
 		want error
 	}{
-		"no window":         {&windowHost{code: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}, host.ErrNoWindow},
-		"not found":         {&windowHost{code: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND}, host.ErrNotExist},
+		"no window":         {&windowHost{code: v1.ErrorCode_ERROR_CODE_NO_WINDOW}, host.ErrNoWindow},
+		"not found":         {&windowHost{code: v1.ErrorCode_ERROR_CODE_NOT_FOUND}, host.ErrNotExist},
 		"permission denied": {&windowHost{status: connect.NewError(connect.CodePermissionDenied, errors.New("plugin lacks window:focus"))}, host.ErrPermissionDenied},
 	} {
 		t.Run(name, func(t *testing.T) {

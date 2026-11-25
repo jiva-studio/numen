@@ -2,17 +2,19 @@
 // @generated from file numen/v1/plugincommand.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { ManifestCommandAnswers, ManifestCommandWarns } from "./manifest_pb.js";
 import { file_numen_v1_manifest } from "./manifest_pb.js";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/plugincommand.proto.
  */
 export const file_numen_v1_plugincommand: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSLDAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5Eg8KB2l0ZW1faWQYBCABKAkSDQoFcGF0aHMYBSADKAkaMAoOQXJndW1lbnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJlChJSdW5Db21tYW5kUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5Db21tYW5kRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkSEwoLb3BlbmVkX3BhdGgYAyABKAkiFQoTTGlzdENvbW1hbmRzUmVxdWVzdCJBChRMaXN0Q29tbWFuZHNSZXNwb25zZRIpCghjb21tYW5kcxgBIAMoCzIXLm51bWVuLnYxLlBsdWdpbkNvbW1hbmQi/AEKDVBsdWdpbkNvbW1hbmQSEQoJcGx1Z2luX2lkGAEgASgJEgoKAmlkGAIgASgJEg0KBXRpdGxlGAMgASgJEiwKCWFyZ3VtZW50cxgFIAMoCzIZLm51bWVuLnYxLkNvbW1hbmRBcmd1bWVudBIMCgRpY29uGAcgASgJEgwKBHdoZW4YCiABKAkSEQoJaGFzX2l0ZW1zGAsgASgIEjEKB2Fuc3dlcnMYDCABKAsyIC5udW1lbi52MS5NYW5pZmVzdENvbW1hbmRBbnN3ZXJzEi0KBXdhcm5zGA0gASgLMh4ubnVtZW4udjEuTWFuaWZlc3RDb21tYW5kV2FybnMiQwoPQ29tbWFuZEFyZ3VtZW50EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLaXNfcmVxdWlyZWQYAyABKAgi0wEKF1J1blBsdWdpbkNvbW1hbmRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJEgwKBHBhdGgYAyABKAkSQwoJYXJndW1lbnRzGAQgAygLMjAubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QuQXJndW1lbnRzRW50cnkSDwoHaXRlbV9pZBgFIAEoCRowCg5Bcmd1bWVudHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlQKF0xpc3RDb21tYW5kSXRlbXNSZXF1ZXN0EgwKBHBhdGgYASABKAkSKwoIY29tbWFuZHMYAiADKAsyGS5udW1lbi52MS5QbHVnaW5Db21tYW5kSWQiNQoPUGx1Z2luQ29tbWFuZElkEhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJIkQKGExpc3RDb21tYW5kSXRlbXNSZXNwb25zZRIoCgVsaXN0cxgBIAMoCzIZLm51bWVuLnYxLkNvbW1hbmRJdGVtTGlzdCKXAQoPQ29tbWFuZEl0ZW1MaXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJEiQKBWl0ZW1zGAMgAygLMhUubnVtZW4udjEuQ29tbWFuZEl0ZW0SKQoFZXJyb3IYBCABKA4yGi5udW1lbi52MS5Db21tYW5kRXJyb3JDb2RlEg8KB21lc3NhZ2UYBSABKAkiOAoLQ29tbWFuZEl0ZW0SCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSDgoGZGV0YWlsGAMgASgJImsKGFJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLkNvbW1hbmRFcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCRITCgtvcGVuZWRfcGF0aBgDIAEoCSrHAQoQQ29tbWFuZEVycm9yQ29kZRIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABImCiJDT01NQU5EX0VSUk9SX0NPREVfVU5LTk9XTl9DT01NQU5EEAESJAogQ09NTUFORF9FUlJPUl9DT0RFX0JBRF9BUkdVTUVOVFMQAhIdChlDT01NQU5EX0VSUk9SX0NPREVfRkFJTEVEEAMSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAQyXwoUUGx1Z2luQ29tbWFuZFNlcnZpY2USRwoKUnVuQ29tbWFuZBIbLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0GhwubnVtZW4udjEuUnVuQ29tbWFuZFJlc3BvbnNlMpUCCg5Db21tYW5kU2VydmljZRJNCgxMaXN0Q29tbWFuZHMSHS5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXF1ZXN0Gh4ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2USWQoQUnVuUGx1Z2luQ29tbWFuZBIhLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0GiIubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlElkKEExpc3RDb21tYW5kSXRlbXMSIS5udW1lbi52MS5MaXN0Q29tbWFuZEl0ZW1zUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RDb21tYW5kSXRlbXNSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_manifest]);
+  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSLDAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5Eg8KB2l0ZW1faWQYBCABKAkSDQoFcGF0aHMYBSADKAkaMAoOQXJndW1lbnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJeChJSdW5Db21tYW5kUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCRITCgtvcGVuZWRfcGF0aBgDIAEoCSIVChNMaXN0Q29tbWFuZHNSZXF1ZXN0IkEKFExpc3RDb21tYW5kc1Jlc3BvbnNlEikKCGNvbW1hbmRzGAEgAygLMhcubnVtZW4udjEuUGx1Z2luQ29tbWFuZCL8AQoNUGx1Z2luQ29tbWFuZBIRCglwbHVnaW5faWQYASABKAkSCgoCaWQYAiABKAkSDQoFdGl0bGUYAyABKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkSDAoEd2hlbhgKIAEoCRIRCgloYXNfaXRlbXMYCyABKAgSMQoHYW5zd2VycxgMIAEoCzIgLm51bWVuLnYxLk1hbmlmZXN0Q29tbWFuZEFuc3dlcnMSLQoFd2FybnMYDSABKAsyHi5udW1lbi52MS5NYW5pZmVzdENvbW1hbmRXYXJucyJDCg9Db21tYW5kQXJndW1lbnQSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtpc19yZXF1aXJlZBgDIAEoCCLTAQoXUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEg8KB2NvbW1hbmQYAiABKAkSDAoEcGF0aBgDIAEoCRJDCglhcmd1bWVudHMYBCADKAsyMC5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVxdWVzdC5Bcmd1bWVudHNFbnRyeRIPCgdpdGVtX2lkGAUgASgJGjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiVAoXTGlzdENvbW1hbmRJdGVtc1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIrCghjb21tYW5kcxgCIAMoCzIZLm51bWVuLnYxLlBsdWdpbkNvbW1hbmRJZCI1Cg9QbHVnaW5Db21tYW5kSWQSEQoJcGx1Z2luX2lkGAEgASgJEg8KB2NvbW1hbmQYAiABKAkiRAoYTGlzdENvbW1hbmRJdGVtc1Jlc3BvbnNlEigKBWxpc3RzGAEgAygLMhkubnVtZW4udjEuQ29tbWFuZEl0ZW1MaXN0IpABCg9Db21tYW5kSXRlbUxpc3QSEQoJcGx1Z2luX2lkGAEgASgJEg8KB2NvbW1hbmQYAiABKAkSJAoFaXRlbXMYAyADKAsyFS5udW1lbi52MS5Db21tYW5kSXRlbRIiCgVlcnJvchgEIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIPCgdtZXNzYWdlGAUgASgJIjgKC0NvbW1hbmRJdGVtEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg4KBmRldGFpbBgDIAEoCSJkChhSdW5QbHVnaW5Db21tYW5kUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCRITCgtvcGVuZWRfcGF0aBgDIAEoCTJfChRQbHVnaW5Db21tYW5kU2VydmljZRJHCgpSdW5Db21tYW5kEhsubnVtZW4udjEuUnVuQ29tbWFuZFJlcXVlc3QaHC5udW1lbi52MS5SdW5Db21tYW5kUmVzcG9uc2UylQIKDkNvbW1hbmRTZXJ2aWNlEk0KDExpc3RDb21tYW5kcxIdLm51bWVuLnYxLkxpc3RDb21tYW5kc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXNwb25zZRJZChBSdW5QbHVnaW5Db21tYW5kEiEubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QaIi5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVzcG9uc2USWQoQTGlzdENvbW1hbmRJdGVtcxIhLm51bWVuLnYxLkxpc3RDb21tYW5kSXRlbXNSZXF1ZXN0GiIubnVtZW4udjEuTGlzdENvbW1hbmRJdGVtc1Jlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_manifest, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.RunCommandRequest
@@ -75,9 +77,9 @@ export type RunCommandResponse = Message<"numen.v1.RunCommandResponse"> & {
    * Set when the command was served and did not run, or ran and failed. The
    * message then says why.
    *
-   * @generated from field: numen.v1.CommandErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: CommandErrorCode;
+  error: ErrorCode;
 
   /**
    * What a person reads about the outcome.
@@ -376,9 +378,9 @@ export type CommandItemList = Message<"numen.v1.CommandItemList"> & {
   /**
    * Set when the items could not be listed; the message then says why.
    *
-   * @generated from field: numen.v1.CommandErrorCode error = 4;
+   * @generated from field: numen.v1.ErrorCode error = 4;
    */
-  error: CommandErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string message = 5;
@@ -430,9 +432,9 @@ export const CommandItemSchema: GenMessage<CommandItem> = /*@__PURE__*/
  */
 export type RunPluginCommandResponse = Message<"numen.v1.RunPluginCommandResponse"> & {
   /**
-   * @generated from field: numen.v1.CommandErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: CommandErrorCode;
+  error: ErrorCode;
 
   /**
    * What a person reads about the outcome.
@@ -455,52 +457,6 @@ export type RunPluginCommandResponse = Message<"numen.v1.RunPluginCommandRespons
  */
 export const RunPluginCommandResponseSchema: GenMessage<RunPluginCommandResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugincommand, 12);
-
-/**
- * CommandErrorCode is why a command was served and did not succeed.
- *
- * @generated from enum numen.v1.CommandErrorCode
- */
-export enum CommandErrorCode {
-  /**
-   * @generated from enum value: COMMAND_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * No plugin declares a command of that id.
-   *
-   * @generated from enum value: COMMAND_ERROR_CODE_UNKNOWN_COMMAND = 1;
-   */
-  UNKNOWN_COMMAND = 1,
-
-  /**
-   * The arguments or the file do not meet the declaration.
-   *
-   * @generated from enum value: COMMAND_ERROR_CODE_BAD_ARGUMENTS = 2;
-   */
-  BAD_ARGUMENTS = 2,
-
-  /**
-   * The command ran and failed.
-   *
-   * @generated from enum value: COMMAND_ERROR_CODE_FAILED = 3;
-   */
-  FAILED = 3,
-
-  /**
-   * The plugin that declares the command cannot be started or reached.
-   *
-   * @generated from enum value: COMMAND_ERROR_CODE_UNAVAILABLE = 4;
-   */
-  UNAVAILABLE = 4,
-}
-
-/**
- * Describes the enum numen.v1.CommandErrorCode.
- */
-export const CommandErrorCodeSchema: GenEnum<CommandErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_plugincommand, 0);
 
 /**
  * PluginCommandService is what the backend of a plugin that declares commands

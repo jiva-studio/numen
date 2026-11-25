@@ -6,6 +6,7 @@ import "numen/v1/embedding.proto";
 import "numen/v1/provider.proto";
 import "numen/v1/search.proto";
 import "numen/v1/search_source.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -89,43 +90,6 @@ service HostSearchService {
   rpc ListSearchFunctions(ListSearchFunctionsRequest) returns (ListSearchFunctionsResponse);
 }
 
-// HostSearchErrorCode is why a call on the search index failed. The zero
-// value means it was not.
-enum HostSearchErrorCode {
-  HOST_SEARCH_ERROR_CODE_UNSPECIFIED = 0;
-
-  // The host is showing no vault.
-  HOST_SEARCH_ERROR_CODE_NO_VAULT = 1;
-
-  // The installation has no search source.
-  HOST_SEARCH_ERROR_CODE_NO_MODEL = 2;
-
-  // The recipe is not the one of the model in use.
-  HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH = 3;
-
-  // The floor is not a cosine similarity above zero and at most one.
-  HOST_SEARCH_ERROR_CODE_INVALID_FLOOR = 4;
-
-  // The call names more texts, or longer ones, than one call embeds.
-  HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED = 5;
-
-  // The embedding model could not answer.
-  HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED = 6;
-
-  // A query vector has a dimension count other than the one of the vectors in the index.
-  HOST_SEARCH_ERROR_CODE_INVALID_QUERY = 7;
-
-
-  // The plugin started no search with the id, or it was removed or expired.
-  HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND = 10;
-
-  // The most searches kept are all running.
-  HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES = 11;
-
-  // The page token is not one of this search.
-  HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN = 12;
-}
-
 // SearchFloorSource is where the floor a search applies comes from.
 enum SearchFloorSource {
   SEARCH_FLOOR_SOURCE_UNSPECIFIED = 0;
@@ -143,7 +107,7 @@ enum SearchFloorSource {
 message GetEmbeddingStateRequest {}
 
 message GetEmbeddingStateResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
 
   // The recipe of the model in use. Every vector the host returns, and every
   // floor it stores, is kept under it.
@@ -179,7 +143,7 @@ message ExtensionStats {
 }
 
 message GetIndexStatsResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
 
   // The recipe, the name and the dimension count of the model in use.
   string recipe = 2;
@@ -208,7 +172,7 @@ message EmbedTextsRequest {
 }
 
 message EmbedTextsResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
 
   // The recipe of the model that made the vectors.
   string recipe = 2;
@@ -239,7 +203,7 @@ message SimilarityRow {
 }
 
 message SampleSimilaritiesResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
 
   // How many chunks the host sampled, and how many sources they come from.
   int32 chunk_count = 2;
@@ -255,7 +219,7 @@ message GetBestSimilarityRequest {
 }
 
 message GetBestSimilarityResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
   double similarity = 2;
 }
 
@@ -277,7 +241,7 @@ message FindNearestChunksRequest {
 }
 
 message FindNearestChunksResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
 
   // Nearest first. The score is the cosine similarity.
   repeated ChunkMatch matches = 2;
@@ -288,7 +252,7 @@ message GetSearchFloorRequest {
 }
 
 message GetSearchFloorResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
 
   // The floor a search applies when its query names none.
   double floor = 2;
@@ -314,7 +278,7 @@ message SetSearchFloorRequest {
 }
 
 message SetSearchFloorResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message HostSearchServiceSearchTextRequest {
@@ -340,7 +304,7 @@ message HostSearchServiceSearchTextRequest {
 }
 
 message HostSearchServiceSearchTextResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
 
   // Matching search results, best first, at most results_per_source of one
   // source.
@@ -359,7 +323,7 @@ message StartSearchRequest {
 }
 
 message StartSearchResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
   string id = 2;
 }
 
@@ -376,7 +340,7 @@ message GetSearchRequest {
 }
 
 message GetSearchResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
   SearchState search = 2;
 }
 
@@ -446,13 +410,13 @@ message DeleteSearchRequest {
 }
 
 message DeleteSearchResponse {
-  HostSearchErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message ListSearchFunctionsRequest {}
 
 message ListSearchFunctionsResponse {
-  HostSearchErrorCode error = 3;
+  ErrorCode error = 3;
   repeated SearchFunction functions = 1;
 
   // Changes whenever the list changes.

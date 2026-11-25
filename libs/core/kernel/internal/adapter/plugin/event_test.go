@@ -55,7 +55,7 @@ func (r *eventRecorder) DeliverEvent(
 	}
 	if r.reason != "" {
 		return connect.NewResponse(&v1.DeliverEventResponse{
-			Error:  v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED,
+			Error:  v1.ErrorCode_ERROR_CODE_INTERNAL,
 			Detail: r.reason,
 		}), nil
 	}
@@ -284,14 +284,13 @@ func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 }
 
 func TestReadEventErrorHandlesEveryCode(t *testing.T) {
-	testsupport.CheckHandled(t, func(code v1.PluginEventErrorCode) bool {
-		err := transport.ConvertEventRefusal(code, "the index is closed")
-		if code == v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED {
-			return err == nil
-		}
-		return errors.Is(err, transport.ErrEventRefused) && strings.Contains(err.Error(), "the index is closed") && !strings.Contains(err.Error(), "unknown code")
-	})
-	if err := transport.ConvertEventRefusal(v1.PluginEventErrorCode(99), "why"); !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
+	if err := transport.ConvertEventRefusal(v1.ErrorCode_ERROR_CODE_UNSPECIFIED, "the index is closed"); err != nil {
+		t.Fatalf("ConvertEventRefusal(UNSPECIFIED) = %v, want nil", err)
+	}
+	if err := transport.ConvertEventRefusal(v1.ErrorCode_ERROR_CODE_INTERNAL, "the index is closed"); !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "the index is closed") || strings.Contains(err.Error(), "unknown code") {
+		t.Fatalf("ConvertEventRefusal(INTERNAL) = %v, want event refusal with detail", err)
+	}
+	if err := transport.ConvertEventRefusal(v1.ErrorCode(99), "why"); !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
 		t.Fatalf("convertEventRefusal(99) = %v, want an error naming the unknown code", err)
 	}
 }

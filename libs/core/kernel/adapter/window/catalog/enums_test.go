@@ -28,9 +28,13 @@ func TestEveryIncompatibilityIsSavedFromOne(t *testing.T) {
 	}, newWireIncompatibility)
 }
 
-func TestEveryCatalogErrorCodeIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.CatalogErrorCode]error{
-		v1.CatalogErrorCode_CATALOG_ERROR_CODE_UNSPECIFIED: nil,
-		v1.CatalogErrorCode_CATALOG_ERROR_CODE_NOT_FOUND:   catalog.ErrNotFound,
-	}, newWireErrorCode)
+func TestEveryErrorCodeIsSavedFromOne(t *testing.T) {
+	for want, failure := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_UNSPECIFIED: nil,
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:   catalog.ErrNotFound,
+	} {
+		if got := newWireErrorCode(failure); got != want {
+			t.Errorf("%v produced %v, want %v", failure, got, want)
+		}
+	}
 }

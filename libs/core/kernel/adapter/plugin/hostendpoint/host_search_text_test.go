@@ -42,7 +42,7 @@ func TestHostSearchTextReturnPlacesAndCheckPermission(t *testing.T) {
 	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{
 		Query: "heron", Limit: 5, Kinds: []string{"file"}, PathPrefix: "library/",
 	}))
-	if err != nil || got.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED || len(got.Msg.GetResults()) != 2 {
+	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || len(got.Msg.GetResults()) != 2 {
 		t.Fatalf("returned %v (%v)", got.Msg, err)
 	}
 	first, second := got.Msg.GetResults()[0], got.Msg.GetResults()[1]
@@ -105,7 +105,7 @@ func TestHostSearchWithoutIndexReportsNoIndex(t *testing.T) {
 	fakeCallers := newSearchCallers(nil)
 	client := newSearchClient(t, fakeCallers, "token-a")
 	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{Query: "heron"}))
-	if err != nil || got.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL {
+	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_MODEL {
 		t.Errorf("returned %v (%v), want the no-index error", got.Msg, err)
 	}
 }

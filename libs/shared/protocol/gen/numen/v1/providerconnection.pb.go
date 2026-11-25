@@ -22,84 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ProviderConnectionErrorCode is the reason a served call did not succeed. The zero value is a call
-// that succeeded.
-type ProviderConnectionErrorCode int32
-
-const (
-	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED ProviderConnectionErrorCode = 0
-	// PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND is a connection that is not in the list.
-	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND ProviderConnectionErrorCode = 1
-	// PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN is a name another connection has, ignoring case.
-	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN ProviderConnectionErrorCode = 2
-	// PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD is a name, a value or an address the type does not
-	// accept; the detail says which.
-	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD ProviderConnectionErrorCode = 3
-	// PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE is a type that no installed and enabled plugin
-	// provides.
-	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE ProviderConnectionErrorCode = 4
-	// PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED is a key store that fails or that this machine
-	// does not have.
-	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED ProviderConnectionErrorCode = 5
-	// PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION is an update that carries an older revision than
-	// the connection has, because another window changed it.
-	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION ProviderConnectionErrorCode = 6
-	// PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that cannot be started or that
-	// failed; the detail says why, for example that the key was rejected.
-	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE ProviderConnectionErrorCode = 7
-)
-
-// Enum value maps for ProviderConnectionErrorCode.
-var (
-	ProviderConnectionErrorCode_name = map[int32]string{
-		0: "PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED",
-		1: "PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND",
-		2: "PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN",
-		3: "PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD",
-		4: "PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE",
-		5: "PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED",
-		6: "PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION",
-		7: "PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE",
-	}
-	ProviderConnectionErrorCode_value = map[string]int32{
-		"PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED":          0,
-		"PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND":            1,
-		"PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN":           2,
-		"PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD":        3,
-		"PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE":     4,
-		"PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED":     5,
-		"PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION":       6,
-		"PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE": 7,
-	}
-)
-
-func (x ProviderConnectionErrorCode) Enum() *ProviderConnectionErrorCode {
-	p := new(ProviderConnectionErrorCode)
-	*p = x
-	return p
-}
-
-func (x ProviderConnectionErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ProviderConnectionErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_providerconnection_proto_enumTypes[0].Descriptor()
-}
-
-func (ProviderConnectionErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_providerconnection_proto_enumTypes[0]
-}
-
-func (x ProviderConnectionErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ProviderConnectionErrorCode.Descriptor instead.
-func (ProviderConnectionErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_providerconnection_proto_rawDescGZIP(), []int{0}
-}
-
 // ProviderConnectionType is a kind of connection one plugin provides.
 type ProviderConnectionType struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -652,10 +574,10 @@ func (x *CreateProviderConnectionRequest) GetSecrets() map[string]string {
 }
 
 type CreateProviderConnectionResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Connection    *ProviderConnection         `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
-	Error         ProviderConnectionErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ProviderConnectionErrorCode" json:"error,omitempty"`
-	Detail        string                      `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Connection    *ProviderConnection    `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -697,11 +619,11 @@ func (x *CreateProviderConnectionResponse) GetConnection() *ProviderConnection {
 	return nil
 }
 
-func (x *CreateProviderConnectionResponse) GetError() ProviderConnectionErrorCode {
+func (x *CreateProviderConnectionResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *CreateProviderConnectionResponse) GetDetail() string {
@@ -791,10 +713,10 @@ func (x *UpdateProviderConnectionRequest) GetSecrets() map[string]string {
 }
 
 type UpdateProviderConnectionResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Connection    *ProviderConnection         `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
-	Error         ProviderConnectionErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ProviderConnectionErrorCode" json:"error,omitempty"`
-	Detail        string                      `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Connection    *ProviderConnection    `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -836,11 +758,11 @@ func (x *UpdateProviderConnectionResponse) GetConnection() *ProviderConnection {
 	return nil
 }
 
-func (x *UpdateProviderConnectionResponse) GetError() ProviderConnectionErrorCode {
+func (x *UpdateProviderConnectionResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *UpdateProviderConnectionResponse) GetDetail() string {
@@ -895,9 +817,9 @@ func (x *DeleteProviderConnectionRequest) GetId() string {
 }
 
 type DeleteProviderConnectionResponse struct {
-	state  protoimpl.MessageState      `protogen:"open.v1"`
-	Error  ProviderConnectionErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ProviderConnectionErrorCode" json:"error,omitempty"`
-	Detail string                      `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Error  ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Detail string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	// removed_uses are the settings whose rows named the connection and were removed with it.
 	RemovedUses   []*ProviderConnectionUse `protobuf:"bytes,3,rep,name=removed_uses,json=removedUses,proto3" json:"removed_uses,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -934,11 +856,11 @@ func (*DeleteProviderConnectionResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_providerconnection_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *DeleteProviderConnectionResponse) GetError() ProviderConnectionErrorCode {
+func (x *DeleteProviderConnectionResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *DeleteProviderConnectionResponse) GetDetail() string {
@@ -1027,10 +949,10 @@ func (x *ListRowOptionsRequest) GetOperations() []string {
 }
 
 type ListRowOptionsResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Options       []*Option                   `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
-	Error         ProviderConnectionErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ProviderConnectionErrorCode" json:"error,omitempty"`
-	Detail        string                      `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Options       []*Option              `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1072,11 +994,11 @@ func (x *ListRowOptionsResponse) GetOptions() []*Option {
 	return nil
 }
 
-func (x *ListRowOptionsResponse) GetError() ProviderConnectionErrorCode {
+func (x *ListRowOptionsResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ListRowOptionsResponse) GetDetail() string {
@@ -1090,7 +1012,7 @@ var File_numen_v1_providerconnection_proto protoreflect.FileDescriptor
 
 const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\n" +
-	"!numen/v1/providerconnection.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17numen/v1/manifest.proto\x1a\x17numen/v1/settings.proto\"\xe7\x02\n" +
+	"!numen/v1/providerconnection.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17numen/v1/manifest.proto\x1a\x17numen/v1/settings.proto\x1a\x15numen/v1/shared.proto\"\xe7\x02\n" +
 	"\x16ProviderConnectionType\x12\x17\n" +
 	"\atype_id\x18\x01 \x01(\tR\x06typeId\x12\x1b\n" +
 	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x1f\n" +
@@ -1149,12 +1071,12 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x16.google.protobuf.ValueR\x05value:\x028\x01\x1a:\n" +
 	"\fSecretsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb5\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa3\x01\n" +
 	" CreateProviderConnectionResponse\x12<\n" +
 	"\n" +
 	"connection\x18\x01 \x01(\v2\x1c.numen.v1.ProviderConnectionR\n" +
-	"connection\x12;\n" +
-	"\x05error\x18\x02 \x01(\x0e2%.numen.v1.ProviderConnectionErrorCodeR\x05error\x12\x16\n" +
+	"connection\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x96\x03\n" +
 	"\x1fUpdateProviderConnectionRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
@@ -1167,17 +1089,17 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x16.google.protobuf.ValueR\x05value:\x028\x01\x1a:\n" +
 	"\fSecretsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb5\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa3\x01\n" +
 	" UpdateProviderConnectionResponse\x12<\n" +
 	"\n" +
 	"connection\x18\x01 \x01(\v2\x1c.numen.v1.ProviderConnectionR\n" +
-	"connection\x12;\n" +
-	"\x05error\x18\x02 \x01(\x0e2%.numen.v1.ProviderConnectionErrorCodeR\x05error\x12\x16\n" +
+	"connection\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"1\n" +
 	"\x1fDeleteProviderConnectionRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xbb\x01\n" +
-	" DeleteProviderConnectionResponse\x12;\n" +
-	"\x05error\x18\x01 \x01(\x0e2%.numen.v1.ProviderConnectionErrorCodeR\x05error\x12\x16\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xa9\x01\n" +
+	" DeleteProviderConnectionResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x12B\n" +
 	"\fremoved_uses\x18\x03 \x03(\v2\x1f.numen.v1.ProviderConnectionUseR\vremovedUses\"\xf6\x01\n" +
 	"\x15ListRowOptionsRequest\x12#\n" +
@@ -1189,20 +1111,11 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"operations\x1a:\n" +
 	"\fOptionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x99\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x87\x01\n" +
 	"\x16ListRowOptionsResponse\x12*\n" +
-	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions\x12;\n" +
-	"\x05error\x18\x02 \x01(\x0e2%.numen.v1.ProviderConnectionErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail*\xb2\x03\n" +
-	"\x1bProviderConnectionErrorCode\x12.\n" +
-	"*PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED\x10\x00\x12,\n" +
-	"(PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND\x10\x01\x12-\n" +
-	")PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN\x10\x02\x120\n" +
-	",PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD\x10\x03\x123\n" +
-	"/PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE\x10\x04\x123\n" +
-	"/PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED\x10\x05\x121\n" +
-	"-PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION\x10\x06\x127\n" +
-	"3PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE\x10\a2\xb5\x05\n" +
+	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail2\xb5\x05\n" +
 	"\x19ProviderConnectionService\x12z\n" +
 	"\x1bListProviderConnectionTypes\x12,.numen.v1.ListProviderConnectionTypesRequest\x1a-.numen.v1.ListProviderConnectionTypesResponse\x12n\n" +
 	"\x17ListProviderConnections\x12(.numen.v1.ListProviderConnectionsRequest\x1a).numen.v1.ListProviderConnectionsResponse\x12q\n" +
@@ -1223,72 +1136,71 @@ func file_numen_v1_providerconnection_proto_rawDescGZIP() []byte {
 	return file_numen_v1_providerconnection_proto_rawDescData
 }
 
-var file_numen_v1_providerconnection_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_providerconnection_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_numen_v1_providerconnection_proto_goTypes = []any{
-	(ProviderConnectionErrorCode)(0),            // 0: numen.v1.ProviderConnectionErrorCode
-	(*ProviderConnectionType)(nil),              // 1: numen.v1.ProviderConnectionType
-	(*ProviderConnection)(nil),                  // 2: numen.v1.ProviderConnection
-	(*ProviderConnectionUse)(nil),               // 3: numen.v1.ProviderConnectionUse
-	(*ListProviderConnectionTypesRequest)(nil),  // 4: numen.v1.ListProviderConnectionTypesRequest
-	(*ListProviderConnectionTypesResponse)(nil), // 5: numen.v1.ListProviderConnectionTypesResponse
-	(*ListProviderConnectionsRequest)(nil),      // 6: numen.v1.ListProviderConnectionsRequest
-	(*ListProviderConnectionsResponse)(nil),     // 7: numen.v1.ListProviderConnectionsResponse
-	(*CreateProviderConnectionRequest)(nil),     // 8: numen.v1.CreateProviderConnectionRequest
-	(*CreateProviderConnectionResponse)(nil),    // 9: numen.v1.CreateProviderConnectionResponse
-	(*UpdateProviderConnectionRequest)(nil),     // 10: numen.v1.UpdateProviderConnectionRequest
-	(*UpdateProviderConnectionResponse)(nil),    // 11: numen.v1.UpdateProviderConnectionResponse
-	(*DeleteProviderConnectionRequest)(nil),     // 12: numen.v1.DeleteProviderConnectionRequest
-	(*DeleteProviderConnectionResponse)(nil),    // 13: numen.v1.DeleteProviderConnectionResponse
-	(*ListRowOptionsRequest)(nil),               // 14: numen.v1.ListRowOptionsRequest
-	(*ListRowOptionsResponse)(nil),              // 15: numen.v1.ListRowOptionsResponse
-	nil,                                         // 16: numen.v1.ProviderConnection.FieldsEntry
-	nil,                                         // 17: numen.v1.CreateProviderConnectionRequest.FieldsEntry
-	nil,                                         // 18: numen.v1.CreateProviderConnectionRequest.SecretsEntry
-	nil,                                         // 19: numen.v1.UpdateProviderConnectionRequest.FieldsEntry
-	nil,                                         // 20: numen.v1.UpdateProviderConnectionRequest.SecretsEntry
-	nil,                                         // 21: numen.v1.ListRowOptionsRequest.OptionsEntry
-	(*ManifestConnectionField)(nil),             // 22: numen.v1.ManifestConnectionField
-	(*ManifestOperation)(nil),                   // 23: numen.v1.ManifestOperation
+	(*ProviderConnectionType)(nil),              // 0: numen.v1.ProviderConnectionType
+	(*ProviderConnection)(nil),                  // 1: numen.v1.ProviderConnection
+	(*ProviderConnectionUse)(nil),               // 2: numen.v1.ProviderConnectionUse
+	(*ListProviderConnectionTypesRequest)(nil),  // 3: numen.v1.ListProviderConnectionTypesRequest
+	(*ListProviderConnectionTypesResponse)(nil), // 4: numen.v1.ListProviderConnectionTypesResponse
+	(*ListProviderConnectionsRequest)(nil),      // 5: numen.v1.ListProviderConnectionsRequest
+	(*ListProviderConnectionsResponse)(nil),     // 6: numen.v1.ListProviderConnectionsResponse
+	(*CreateProviderConnectionRequest)(nil),     // 7: numen.v1.CreateProviderConnectionRequest
+	(*CreateProviderConnectionResponse)(nil),    // 8: numen.v1.CreateProviderConnectionResponse
+	(*UpdateProviderConnectionRequest)(nil),     // 9: numen.v1.UpdateProviderConnectionRequest
+	(*UpdateProviderConnectionResponse)(nil),    // 10: numen.v1.UpdateProviderConnectionResponse
+	(*DeleteProviderConnectionRequest)(nil),     // 11: numen.v1.DeleteProviderConnectionRequest
+	(*DeleteProviderConnectionResponse)(nil),    // 12: numen.v1.DeleteProviderConnectionResponse
+	(*ListRowOptionsRequest)(nil),               // 13: numen.v1.ListRowOptionsRequest
+	(*ListRowOptionsResponse)(nil),              // 14: numen.v1.ListRowOptionsResponse
+	nil,                                         // 15: numen.v1.ProviderConnection.FieldsEntry
+	nil,                                         // 16: numen.v1.CreateProviderConnectionRequest.FieldsEntry
+	nil,                                         // 17: numen.v1.CreateProviderConnectionRequest.SecretsEntry
+	nil,                                         // 18: numen.v1.UpdateProviderConnectionRequest.FieldsEntry
+	nil,                                         // 19: numen.v1.UpdateProviderConnectionRequest.SecretsEntry
+	nil,                                         // 20: numen.v1.ListRowOptionsRequest.OptionsEntry
+	(*ManifestConnectionField)(nil),             // 21: numen.v1.ManifestConnectionField
+	(*ManifestOperation)(nil),                   // 22: numen.v1.ManifestOperation
+	(ErrorCode)(0),                              // 23: numen.v1.ErrorCode
 	(*Option)(nil),                              // 24: numen.v1.Option
 	(*structpb.Value)(nil),                      // 25: google.protobuf.Value
 }
 var file_numen_v1_providerconnection_proto_depIdxs = []int32{
-	22, // 0: numen.v1.ProviderConnectionType.fields:type_name -> numen.v1.ManifestConnectionField
-	22, // 1: numen.v1.ProviderConnectionType.row_fields:type_name -> numen.v1.ManifestConnectionField
-	16, // 2: numen.v1.ProviderConnection.fields:type_name -> numen.v1.ProviderConnection.FieldsEntry
-	3,  // 3: numen.v1.ProviderConnection.uses:type_name -> numen.v1.ProviderConnectionUse
-	1,  // 4: numen.v1.ListProviderConnectionTypesResponse.types:type_name -> numen.v1.ProviderConnectionType
-	23, // 5: numen.v1.ListProviderConnectionTypesResponse.operations:type_name -> numen.v1.ManifestOperation
-	2,  // 6: numen.v1.ListProviderConnectionsResponse.connections:type_name -> numen.v1.ProviderConnection
-	17, // 7: numen.v1.CreateProviderConnectionRequest.fields:type_name -> numen.v1.CreateProviderConnectionRequest.FieldsEntry
-	18, // 8: numen.v1.CreateProviderConnectionRequest.secrets:type_name -> numen.v1.CreateProviderConnectionRequest.SecretsEntry
-	2,  // 9: numen.v1.CreateProviderConnectionResponse.connection:type_name -> numen.v1.ProviderConnection
-	0,  // 10: numen.v1.CreateProviderConnectionResponse.error:type_name -> numen.v1.ProviderConnectionErrorCode
-	19, // 11: numen.v1.UpdateProviderConnectionRequest.fields:type_name -> numen.v1.UpdateProviderConnectionRequest.FieldsEntry
-	20, // 12: numen.v1.UpdateProviderConnectionRequest.secrets:type_name -> numen.v1.UpdateProviderConnectionRequest.SecretsEntry
-	2,  // 13: numen.v1.UpdateProviderConnectionResponse.connection:type_name -> numen.v1.ProviderConnection
-	0,  // 14: numen.v1.UpdateProviderConnectionResponse.error:type_name -> numen.v1.ProviderConnectionErrorCode
-	0,  // 15: numen.v1.DeleteProviderConnectionResponse.error:type_name -> numen.v1.ProviderConnectionErrorCode
-	3,  // 16: numen.v1.DeleteProviderConnectionResponse.removed_uses:type_name -> numen.v1.ProviderConnectionUse
-	21, // 17: numen.v1.ListRowOptionsRequest.options:type_name -> numen.v1.ListRowOptionsRequest.OptionsEntry
+	21, // 0: numen.v1.ProviderConnectionType.fields:type_name -> numen.v1.ManifestConnectionField
+	21, // 1: numen.v1.ProviderConnectionType.row_fields:type_name -> numen.v1.ManifestConnectionField
+	15, // 2: numen.v1.ProviderConnection.fields:type_name -> numen.v1.ProviderConnection.FieldsEntry
+	2,  // 3: numen.v1.ProviderConnection.uses:type_name -> numen.v1.ProviderConnectionUse
+	0,  // 4: numen.v1.ListProviderConnectionTypesResponse.types:type_name -> numen.v1.ProviderConnectionType
+	22, // 5: numen.v1.ListProviderConnectionTypesResponse.operations:type_name -> numen.v1.ManifestOperation
+	1,  // 6: numen.v1.ListProviderConnectionsResponse.connections:type_name -> numen.v1.ProviderConnection
+	16, // 7: numen.v1.CreateProviderConnectionRequest.fields:type_name -> numen.v1.CreateProviderConnectionRequest.FieldsEntry
+	17, // 8: numen.v1.CreateProviderConnectionRequest.secrets:type_name -> numen.v1.CreateProviderConnectionRequest.SecretsEntry
+	1,  // 9: numen.v1.CreateProviderConnectionResponse.connection:type_name -> numen.v1.ProviderConnection
+	23, // 10: numen.v1.CreateProviderConnectionResponse.error:type_name -> numen.v1.ErrorCode
+	18, // 11: numen.v1.UpdateProviderConnectionRequest.fields:type_name -> numen.v1.UpdateProviderConnectionRequest.FieldsEntry
+	19, // 12: numen.v1.UpdateProviderConnectionRequest.secrets:type_name -> numen.v1.UpdateProviderConnectionRequest.SecretsEntry
+	1,  // 13: numen.v1.UpdateProviderConnectionResponse.connection:type_name -> numen.v1.ProviderConnection
+	23, // 14: numen.v1.UpdateProviderConnectionResponse.error:type_name -> numen.v1.ErrorCode
+	23, // 15: numen.v1.DeleteProviderConnectionResponse.error:type_name -> numen.v1.ErrorCode
+	2,  // 16: numen.v1.DeleteProviderConnectionResponse.removed_uses:type_name -> numen.v1.ProviderConnectionUse
+	20, // 17: numen.v1.ListRowOptionsRequest.options:type_name -> numen.v1.ListRowOptionsRequest.OptionsEntry
 	24, // 18: numen.v1.ListRowOptionsResponse.options:type_name -> numen.v1.Option
-	0,  // 19: numen.v1.ListRowOptionsResponse.error:type_name -> numen.v1.ProviderConnectionErrorCode
+	23, // 19: numen.v1.ListRowOptionsResponse.error:type_name -> numen.v1.ErrorCode
 	25, // 20: numen.v1.ProviderConnection.FieldsEntry.value:type_name -> google.protobuf.Value
 	25, // 21: numen.v1.CreateProviderConnectionRequest.FieldsEntry.value:type_name -> google.protobuf.Value
 	25, // 22: numen.v1.UpdateProviderConnectionRequest.FieldsEntry.value:type_name -> google.protobuf.Value
-	4,  // 23: numen.v1.ProviderConnectionService.ListProviderConnectionTypes:input_type -> numen.v1.ListProviderConnectionTypesRequest
-	6,  // 24: numen.v1.ProviderConnectionService.ListProviderConnections:input_type -> numen.v1.ListProviderConnectionsRequest
-	8,  // 25: numen.v1.ProviderConnectionService.CreateProviderConnection:input_type -> numen.v1.CreateProviderConnectionRequest
-	10, // 26: numen.v1.ProviderConnectionService.UpdateProviderConnection:input_type -> numen.v1.UpdateProviderConnectionRequest
-	12, // 27: numen.v1.ProviderConnectionService.DeleteProviderConnection:input_type -> numen.v1.DeleteProviderConnectionRequest
-	14, // 28: numen.v1.ProviderConnectionService.ListRowOptions:input_type -> numen.v1.ListRowOptionsRequest
-	5,  // 29: numen.v1.ProviderConnectionService.ListProviderConnectionTypes:output_type -> numen.v1.ListProviderConnectionTypesResponse
-	7,  // 30: numen.v1.ProviderConnectionService.ListProviderConnections:output_type -> numen.v1.ListProviderConnectionsResponse
-	9,  // 31: numen.v1.ProviderConnectionService.CreateProviderConnection:output_type -> numen.v1.CreateProviderConnectionResponse
-	11, // 32: numen.v1.ProviderConnectionService.UpdateProviderConnection:output_type -> numen.v1.UpdateProviderConnectionResponse
-	13, // 33: numen.v1.ProviderConnectionService.DeleteProviderConnection:output_type -> numen.v1.DeleteProviderConnectionResponse
-	15, // 34: numen.v1.ProviderConnectionService.ListRowOptions:output_type -> numen.v1.ListRowOptionsResponse
+	3,  // 23: numen.v1.ProviderConnectionService.ListProviderConnectionTypes:input_type -> numen.v1.ListProviderConnectionTypesRequest
+	5,  // 24: numen.v1.ProviderConnectionService.ListProviderConnections:input_type -> numen.v1.ListProviderConnectionsRequest
+	7,  // 25: numen.v1.ProviderConnectionService.CreateProviderConnection:input_type -> numen.v1.CreateProviderConnectionRequest
+	9,  // 26: numen.v1.ProviderConnectionService.UpdateProviderConnection:input_type -> numen.v1.UpdateProviderConnectionRequest
+	11, // 27: numen.v1.ProviderConnectionService.DeleteProviderConnection:input_type -> numen.v1.DeleteProviderConnectionRequest
+	13, // 28: numen.v1.ProviderConnectionService.ListRowOptions:input_type -> numen.v1.ListRowOptionsRequest
+	4,  // 29: numen.v1.ProviderConnectionService.ListProviderConnectionTypes:output_type -> numen.v1.ListProviderConnectionTypesResponse
+	6,  // 30: numen.v1.ProviderConnectionService.ListProviderConnections:output_type -> numen.v1.ListProviderConnectionsResponse
+	8,  // 31: numen.v1.ProviderConnectionService.CreateProviderConnection:output_type -> numen.v1.CreateProviderConnectionResponse
+	10, // 32: numen.v1.ProviderConnectionService.UpdateProviderConnection:output_type -> numen.v1.UpdateProviderConnectionResponse
+	12, // 33: numen.v1.ProviderConnectionService.DeleteProviderConnection:output_type -> numen.v1.DeleteProviderConnectionResponse
+	14, // 34: numen.v1.ProviderConnectionService.ListRowOptions:output_type -> numen.v1.ListRowOptionsResponse
 	29, // [29:35] is the sub-list for method output_type
 	23, // [23:29] is the sub-list for method input_type
 	23, // [23:23] is the sub-list for extension type_name
@@ -1303,19 +1215,19 @@ func file_numen_v1_providerconnection_proto_init() {
 	}
 	file_numen_v1_manifest_proto_init()
 	file_numen_v1_settings_proto_init()
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_providerconnection_proto_rawDesc), len(file_numen_v1_providerconnection_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_providerconnection_proto_goTypes,
 		DependencyIndexes: file_numen_v1_providerconnection_proto_depIdxs,
-		EnumInfos:         file_numen_v1_providerconnection_proto_enumTypes,
 		MessageInfos:      file_numen_v1_providerconnection_proto_msgTypes,
 	}.Build()
 	File_numen_v1_providerconnection_proto = out.File

@@ -15,27 +15,27 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func (c searchCall) getRunErrorCode(needsVault bool) v1.HostSearchErrorCode {
+func (c searchCall) getRunErrorCode(needsVault bool) v1.ErrorCode {
 	if c.search == nil || c.search.Runs == nil {
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL
+		return v1.ErrorCode_ERROR_CODE_NO_MODEL
 	}
 	return c.getRefusal(needsVault)
 }
 
-func answerRun(ctx context.Context, err error) (v1.HostSearchErrorCode, error) {
+func answerRun(ctx context.Context, err error) (v1.ErrorCode, error) {
 	if err == nil {
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED, nil
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, nil
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	switch {
 	case errors.Is(err, searchrun.ErrNotFound):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND, nil
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, nil
 	case errors.Is(err, searchrun.ErrTooManySearches):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES, nil
+		return v1.ErrorCode_ERROR_CODE_LIMIT_EXCEEDED, nil
 	case errors.Is(err, searchrun.ErrInvalidPageToken):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN, nil
+		return v1.ErrorCode_ERROR_CODE_INVALID, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }

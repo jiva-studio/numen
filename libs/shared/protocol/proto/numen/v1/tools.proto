@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/shared.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // PluginToolService is what a plugin that declares the tools capability serves.
@@ -98,7 +100,7 @@ message CallToolRequest {
 message CallToolResponse {
   // Set when the call could not be served: the tool is not one the plugin
   // lists, or its arguments are not a JSON object. The result is then unset.
-  ToolErrorCode error = 1;
+  ErrorCode error = 1;
 
   // What the tool answered, for an agent to read.
   ToolResult result = 2;
@@ -116,15 +118,4 @@ message ToolResult {
   // Set when the tool ran and returned an error; text then contains the
   // error message.
   bool is_error = 3;
-}
-
-// ToolErrorCode is why a call was served and not run.
-enum ToolErrorCode {
-  TOOL_ERROR_CODE_UNSPECIFIED = 0;
-
-  // The plugin lists no tool of that name.
-  TOOL_ERROR_CODE_UNKNOWN_TOOL = 1;
-
-  // The arguments are not a JSON object.
-  TOOL_ERROR_CODE_BAD_ARGUMENTS = 2;
 }

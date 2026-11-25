@@ -117,7 +117,7 @@ func TestRangedReadTextOfVersionWithNoTextReturnsMissing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND || len(res.Msg.GetSegments()) != 0 {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND || len(res.Msg.GetSegments()) != 0 {
 		t.Errorf("a ranged read of a version with no text returned %v, want MISSING", res.Msg)
 	}
 }

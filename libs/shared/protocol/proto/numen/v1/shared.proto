@@ -14,13 +14,12 @@ package numen.v1;
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
-// ErrorCode is why a call on a file or a note was served and did nothing. The
-// zero value means the call did not fail. The window and the host endpoint
-// answer with the same codes.
+// ErrorCode is why a served call did not succeed. The zero value means the call
+// succeeded.
 enum ErrorCode {
   ERROR_CODE_UNSPECIFIED = 0;
 
-  // Nothing is at the path. A read says so; a write creates the file.
+  // The named resource, path, command, tool, search or entry does not exist.
   ERROR_CODE_NOT_FOUND = 1;
 
   // The file is in the vault and is not a note.
@@ -36,12 +35,10 @@ enum ErrorCode {
   // second block inside the first.
   ERROR_CODE_BODY_UNWRITABLE = 5;
 
-  // The frontmatter cannot be read, so the note can be neither read nor written
-  // from here.
+  // The frontmatter or folder cannot be read.
   ERROR_CODE_UNREADABLE = 6;
 
-  // A file is already where the note would go. Nothing is written there; a
-  // rename may already have written the note it was moving.
+  // A file, vault or connection with the same path or name already exists.
   ERROR_CODE_ALREADY_EXISTS = 7;
 
   // A note cannot be called this: the title leaves nothing a file can be named
@@ -49,25 +46,97 @@ enum ErrorCode {
   // something else. Nothing is written.
   ERROR_CODE_INVALID_NAME = 8;
 
-  // The file is no longer the one this caller read. Nothing was written, and
-  // the person chooses what happens to what they have.
+  // The resource changed since this caller read it.
   ERROR_CODE_CONFLICT = 9;
 
   // The host is showing no vault.
   ERROR_CODE_NO_VAULT = 10;
 
-  // The path is outside the vault or names no file.
+  // The path is outside the vault or the plugin's folder, or names no file.
   ERROR_CODE_OUTSIDE_VAULT = 11;
 
   // Another program holds the file.
   ERROR_CODE_LOCKED = 12;
 
-  // The change of a note failed for a reason with no code of its own; the
-  // detail of that note carries the error text.
+  // The call failed for a reason with no code of its own; detail carries the
+  // error text.
   ERROR_CODE_INTERNAL = 13;
 
   // The call was cancelled before this note was changed: the note is as it was.
   ERROR_CODE_NOT_ATTEMPTED = 14;
+
+  // An argument, field, key, version, floor, query or page token is invalid.
+  ERROR_CODE_INVALID = 15;
+
+  // The caller does not own the text version or tab.
+  ERROR_CODE_NOT_OWNER = 16;
+
+  // The plugin, provider or embedding model could not be started or reached.
+  ERROR_CODE_UNAVAILABLE = 17;
+
+  // The host has no window, or the target window is closed.
+  ERROR_CODE_NO_WINDOW = 18;
+
+  // The operation did not complete in time, or is no longer pending.
+  ERROR_CODE_TIMEOUT = 19;
+
+  // The operation was cancelled or superseded.
+  ERROR_CODE_CANCELED = 20;
+
+  // No connection row can serve the operation.
+  ERROR_CODE_NO_CONNECTION = 21;
+
+  // Every connection row failed or was set aside.
+  ERROR_CODE_ALL_FAILED = 22;
+
+  // The connection request is wrong in itself and stopped without trying
+  // another row.
+  ERROR_CODE_STOPPED = 23;
+
+  // The folder carries a vault identity already registered at another path.
+  ERROR_CODE_VAULT_COPY = 24;
+
+  // The folder lies inside a registered vault, or holds one.
+  ERROR_CODE_VAULT_OVERLAPS = 25;
+
+  // It is the only vault this installation holds.
+  ERROR_CODE_LAST_VAULT = 26;
+
+  // The vault is the one the window currently shows.
+  ERROR_CODE_VAULT_CURRENT = 27;
+
+  // This machine has no trash, so the folder stays where it is.
+  ERROR_CODE_NO_TRASH = 28;
+
+  // A tab has unsaved changes.
+  ERROR_CODE_UNSAVED = 29;
+
+  // The license key has used all of its machine slots.
+  ERROR_CODE_ACTIVATION_LIMIT_REACHED = 30;
+
+  // The license key has expired.
+  ERROR_CODE_EXPIRED = 31;
+
+  // The license key has been disabled or revoked by the provider.
+  ERROR_CODE_DISABLED = 32;
+
+  // The license key belongs to another product.
+  ERROR_CODE_PRODUCT_MISMATCH = 33;
+
+  // The key store failed or is absent on this machine.
+  ERROR_CODE_KEY_STORE_FAILED = 34;
+
+  // No installed and enabled plugin provides this connection type.
+  ERROR_CODE_TYPE_UNAVAILABLE = 35;
+
+  // The installation has no search model.
+  ERROR_CODE_NO_MODEL = 36;
+
+  // The recipe is not the one of the model in use.
+  ERROR_CODE_RECIPE_MISMATCH = 37;
+
+  // The call exceeds the allowed count or size limit.
+  ERROR_CODE_LIMIT_EXCEEDED = 38;
 }
 
 // FileStat is which file this is: where it is filed, how big it is, and when

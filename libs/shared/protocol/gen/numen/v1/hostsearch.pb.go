@@ -21,91 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// HostSearchErrorCode is why a call on the search index failed. The zero
-// value means it was not.
-type HostSearchErrorCode int32
-
-const (
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED HostSearchErrorCode = 0
-	// The host is showing no vault.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT HostSearchErrorCode = 1
-	// The installation has no search source.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL HostSearchErrorCode = 2
-	// The recipe is not the one of the model in use.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH HostSearchErrorCode = 3
-	// The floor is not a cosine similarity above zero and at most one.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_FLOOR HostSearchErrorCode = 4
-	// The call names more texts, or longer ones, than one call embeds.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED HostSearchErrorCode = 5
-	// The embedding model could not answer.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED HostSearchErrorCode = 6
-	// A query vector has a dimension count other than the one of the vectors in the index.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY HostSearchErrorCode = 7
-	// The plugin started no search with the id, or it was removed or expired.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND HostSearchErrorCode = 10
-	// The most searches kept are all running.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES HostSearchErrorCode = 11
-	// The page token is not one of this search.
-	HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN HostSearchErrorCode = 12
-)
-
-// Enum value maps for HostSearchErrorCode.
-var (
-	HostSearchErrorCode_name = map[int32]string{
-		0:  "HOST_SEARCH_ERROR_CODE_UNSPECIFIED",
-		1:  "HOST_SEARCH_ERROR_CODE_NO_VAULT",
-		2:  "HOST_SEARCH_ERROR_CODE_NO_MODEL",
-		3:  "HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH",
-		4:  "HOST_SEARCH_ERROR_CODE_INVALID_FLOOR",
-		5:  "HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED",
-		6:  "HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED",
-		7:  "HOST_SEARCH_ERROR_CODE_INVALID_QUERY",
-		10: "HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND",
-		11: "HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES",
-		12: "HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN",
-	}
-	HostSearchErrorCode_value = map[string]int32{
-		"HOST_SEARCH_ERROR_CODE_UNSPECIFIED":        0,
-		"HOST_SEARCH_ERROR_CODE_NO_VAULT":           1,
-		"HOST_SEARCH_ERROR_CODE_NO_MODEL":           2,
-		"HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH":    3,
-		"HOST_SEARCH_ERROR_CODE_INVALID_FLOOR":      4,
-		"HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED":     5,
-		"HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED":   6,
-		"HOST_SEARCH_ERROR_CODE_INVALID_QUERY":      7,
-		"HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND":   10,
-		"HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES":  11,
-		"HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN": 12,
-	}
-)
-
-func (x HostSearchErrorCode) Enum() *HostSearchErrorCode {
-	p := new(HostSearchErrorCode)
-	*p = x
-	return p
-}
-
-func (x HostSearchErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (HostSearchErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_hostsearch_proto_enumTypes[0].Descriptor()
-}
-
-func (HostSearchErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_hostsearch_proto_enumTypes[0]
-}
-
-func (x HostSearchErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use HostSearchErrorCode.Descriptor instead.
-func (HostSearchErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{0}
-}
-
 // SearchFloorSource is where the floor a search applies comes from.
 type SearchFloorSource int32
 
@@ -146,11 +61,11 @@ func (x SearchFloorSource) String() string {
 }
 
 func (SearchFloorSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_hostsearch_proto_enumTypes[1].Descriptor()
+	return file_numen_v1_hostsearch_proto_enumTypes[0].Descriptor()
 }
 
 func (SearchFloorSource) Type() protoreflect.EnumType {
-	return &file_numen_v1_hostsearch_proto_enumTypes[1]
+	return &file_numen_v1_hostsearch_proto_enumTypes[0]
 }
 
 func (x SearchFloorSource) Number() protoreflect.EnumNumber {
@@ -159,7 +74,7 @@ func (x SearchFloorSource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SearchFloorSource.Descriptor instead.
 func (SearchFloorSource) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{0}
 }
 
 type GetEmbeddingStateRequest struct {
@@ -200,7 +115,7 @@ func (*GetEmbeddingStateRequest) Descriptor() ([]byte, []int) {
 
 type GetEmbeddingStateResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The recipe of the model in use. Every vector the host returns, and every
 	// floor it stores, is kept under it.
 	Recipe string `protobuf:"bytes,2,opt,name=recipe,proto3" json:"recipe,omitempty"`
@@ -248,11 +163,11 @@ func (*GetEmbeddingStateResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetEmbeddingStateResponse) GetError() HostSearchErrorCode {
+func (x *GetEmbeddingStateResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetEmbeddingStateResponse) GetRecipe() string {
@@ -399,7 +314,7 @@ func (x *ExtensionStats) GetChunkCount() int64 {
 
 type GetIndexStatsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The recipe, the name and the dimension count of the model in use.
 	Recipe     string `protobuf:"bytes,2,opt,name=recipe,proto3" json:"recipe,omitempty"`
 	Model      string `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
@@ -450,11 +365,11 @@ func (*GetIndexStatsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetIndexStatsResponse) GetError() HostSearchErrorCode {
+func (x *GetIndexStatsResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetIndexStatsResponse) GetRecipe() string {
@@ -566,7 +481,7 @@ func (x *EmbedTextsRequest) GetTexts() []string {
 
 type EmbedTextsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The recipe of the model that made the vectors.
 	Recipe string `protobuf:"bytes,2,opt,name=recipe,proto3" json:"recipe,omitempty"`
 	// One vector per text, in the order the texts arrived.
@@ -605,11 +520,11 @@ func (*EmbedTextsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *EmbedTextsResponse) GetError() HostSearchErrorCode {
+func (x *EmbedTextsResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *EmbedTextsResponse) GetRecipe() string {
@@ -782,7 +697,7 @@ func (x *SimilarityRow) GetValues() []float64 {
 
 type SampleSimilaritiesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// How many chunks the host sampled, and how many sources they come from.
 	ChunkCount  int32 `protobuf:"varint,2,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
 	SourceCount int32 `protobuf:"varint,3,opt,name=source_count,json=sourceCount,proto3" json:"source_count,omitempty"`
@@ -822,11 +737,11 @@ func (*SampleSimilaritiesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *SampleSimilaritiesResponse) GetError() HostSearchErrorCode {
+func (x *SampleSimilaritiesResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *SampleSimilaritiesResponse) GetChunkCount() int32 {
@@ -904,7 +819,7 @@ func (x *GetBestSimilarityRequest) GetQuery() []float32 {
 
 type GetBestSimilarityResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Similarity    float64                `protobuf:"fixed64,2,opt,name=similarity,proto3" json:"similarity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -940,11 +855,11 @@ func (*GetBestSimilarityResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *GetBestSimilarityResponse) GetError() HostSearchErrorCode {
+func (x *GetBestSimilarityResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetBestSimilarityResponse) GetSimilarity() float64 {
@@ -1044,7 +959,7 @@ func (x *FindNearestChunksRequest) GetFloor() float64 {
 
 type FindNearestChunksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Nearest first. The score is the cosine similarity.
 	Matches       []*ChunkMatch `protobuf:"bytes,2,rep,name=matches,proto3" json:"matches,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1081,11 +996,11 @@ func (*FindNearestChunksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *FindNearestChunksResponse) GetError() HostSearchErrorCode {
+func (x *FindNearestChunksResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *FindNearestChunksResponse) GetMatches() []*ChunkMatch {
@@ -1141,7 +1056,7 @@ func (x *GetSearchFloorRequest) GetRecipe() string {
 
 type GetSearchFloorResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The floor a search applies when its query names none.
 	Floor  float64           `protobuf:"fixed64,2,opt,name=floor,proto3" json:"floor,omitempty"`
 	Source SearchFloorSource `protobuf:"varint,3,opt,name=source,proto3,enum=numen.v1.SearchFloorSource" json:"source,omitempty"`
@@ -1185,11 +1100,11 @@ func (*GetSearchFloorResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *GetSearchFloorResponse) GetError() HostSearchErrorCode {
+func (x *GetSearchFloorResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetSearchFloorResponse) GetFloor() float64 {
@@ -1283,7 +1198,7 @@ func (x *SetSearchFloorRequest) GetFloor() float64 {
 
 type SetSearchFloorResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1318,11 +1233,11 @@ func (*SetSearchFloorResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *SetSearchFloorResponse) GetError() HostSearchErrorCode {
+func (x *SetSearchFloorResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 type HostSearchServiceSearchTextRequest struct {
@@ -1411,7 +1326,7 @@ func (x *HostSearchServiceSearchTextRequest) GetResultsPerSource() int32 {
 
 type HostSearchServiceSearchTextResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Matching search results, best first, at most results_per_source of one
 	// source.
 	Results       []*SearchResult `protobuf:"bytes,2,rep,name=results,proto3" json:"results,omitempty"`
@@ -1449,11 +1364,11 @@ func (*HostSearchServiceSearchTextResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *HostSearchServiceSearchTextResponse) GetError() HostSearchErrorCode {
+func (x *HostSearchServiceSearchTextResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostSearchServiceSearchTextResponse) GetResults() []*SearchResult {
@@ -1528,7 +1443,7 @@ func (x *StartSearchRequest) GetIsBackground() bool {
 
 type StartSearchResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1564,11 +1479,11 @@ func (*StartSearchResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *StartSearchResponse) GetError() HostSearchErrorCode {
+func (x *StartSearchResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *StartSearchResponse) GetId() string {
@@ -1650,7 +1565,7 @@ func (x *GetSearchRequest) GetPageToken() string {
 
 type GetSearchResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Search        *SearchState           `protobuf:"bytes,2,opt,name=search,proto3" json:"search,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1686,11 +1601,11 @@ func (*GetSearchResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *GetSearchResponse) GetError() HostSearchErrorCode {
+func (x *GetSearchResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetSearchResponse) GetSearch() *SearchState {
@@ -2094,7 +2009,7 @@ func (x *DeleteSearchRequest) GetId() string {
 
 type DeleteSearchResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2129,11 +2044,11 @@ func (*DeleteSearchResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{30}
 }
 
-func (x *DeleteSearchResponse) GetError() HostSearchErrorCode {
+func (x *DeleteSearchResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 type ListSearchFunctionsRequest struct {
@@ -2174,7 +2089,7 @@ func (*ListSearchFunctionsRequest) Descriptor() ([]byte, []int) {
 
 type ListSearchFunctionsResponse struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
-	Error     HostSearchErrorCode    `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	Error     ErrorCode              `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Functions []*SearchFunction      `protobuf:"bytes,1,rep,name=functions,proto3" json:"functions,omitempty"`
 	// Changes whenever the list changes.
 	Revision      string `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
@@ -2212,11 +2127,11 @@ func (*ListSearchFunctionsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *ListSearchFunctionsResponse) GetError() HostSearchErrorCode {
+func (x *ListSearchFunctionsResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ListSearchFunctionsResponse) GetFunctions() []*SearchFunction {
@@ -2333,10 +2248,10 @@ var File_numen_v1_hostsearch_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/hostsearch.proto\x12\bnumen.v1\x1a\x18numen/v1/embedding.proto\x1a\x17numen/v1/provider.proto\x1a\x15numen/v1/search.proto\x1a\x1cnumen/v1/search_source.proto\"\x1a\n" +
-	"\x18GetEmbeddingStateRequest\"\x80\x02\n" +
-	"\x19GetEmbeddingStateResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12\x16\n" +
+	"\x19numen/v1/hostsearch.proto\x12\bnumen.v1\x1a\x18numen/v1/embedding.proto\x1a\x17numen/v1/provider.proto\x1a\x15numen/v1/search.proto\x1a\x1cnumen/v1/search_source.proto\x1a\x15numen/v1/shared.proto\"\x1a\n" +
+	"\x18GetEmbeddingStateRequest\"\xf6\x01\n" +
+	"\x19GetEmbeddingStateResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06recipe\x18\x02 \x01(\tR\x06recipe\x12\x14\n" +
 	"\x05model\x18\x03 \x01(\tR\x05model\x12\x1d\n" +
 	"\n" +
@@ -2350,9 +2265,9 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\textension\x18\x01 \x01(\tR\textension\x12!\n" +
 	"\fsource_count\x18\x02 \x01(\x03R\vsourceCount\x12\x1f\n" +
 	"\vchunk_count\x18\x03 \x01(\x03R\n" +
-	"chunkCount\"\x85\x03\n" +
-	"\x15GetIndexStatsResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12\x16\n" +
+	"chunkCount\"\xfb\x02\n" +
+	"\x15GetIndexStatsResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06recipe\x18\x02 \x01(\tR\x06recipe\x12\x14\n" +
 	"\x05model\x18\x03 \x01(\tR\x05model\x12\x1e\n" +
 	"\n" +
@@ -2369,9 +2284,9 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\fvector_bytes\x18\n" +
 	" \x01(\x03R\vvectorBytes\")\n" +
 	"\x11EmbedTextsRequest\x12\x14\n" +
-	"\x05texts\x18\x01 \x03(\tR\x05texts\"\x92\x01\n" +
-	"\x12EmbedTextsResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12\x16\n" +
+	"\x05texts\x18\x01 \x03(\tR\x05texts\"\x88\x01\n" +
+	"\x12EmbedTextsResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06recipe\x18\x02 \x01(\tR\x06recipe\x12/\n" +
 	"\avectors\x18\x03 \x03(\v2\x15.numen.v1.FloatVectorR\avectors\"T\n" +
 	"\x0fSimilarityQuery\x12-\n" +
@@ -2381,18 +2296,18 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x06recipe\x18\x01 \x01(\tR\x06recipe\x123\n" +
 	"\aqueries\x18\x02 \x03(\v2\x19.numen.v1.SimilarityQueryR\aqueries\"'\n" +
 	"\rSimilarityRow\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\x01R\x06values\"\xc2\x01\n" +
-	"\x1aSampleSimilaritiesResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12\x1f\n" +
+	"\x06values\x18\x01 \x03(\x01R\x06values\"\xb8\x01\n" +
+	"\x1aSampleSimilaritiesResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x1f\n" +
 	"\vchunk_count\x18\x02 \x01(\x05R\n" +
 	"chunkCount\x12!\n" +
 	"\fsource_count\x18\x03 \x01(\x05R\vsourceCount\x12+\n" +
 	"\x04rows\x18\x04 \x03(\v2\x17.numen.v1.SimilarityRowR\x04rows\"H\n" +
 	"\x18GetBestSimilarityRequest\x12\x16\n" +
 	"\x06recipe\x18\x01 \x01(\tR\x06recipe\x12\x14\n" +
-	"\x05query\x18\x02 \x03(\x02R\x05query\"p\n" +
-	"\x19GetBestSimilarityResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12\x1e\n" +
+	"\x05query\x18\x02 \x03(\x02R\x05query\"f\n" +
+	"\x19GetBestSimilarityResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x1e\n" +
 	"\n" +
 	"similarity\x18\x02 \x01(\x01R\n" +
 	"similarity\"\xc2\x01\n" +
@@ -2403,14 +2318,14 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x05kinds\x18\x04 \x03(\tR\x05kinds\x12\x1f\n" +
 	"\vpath_prefix\x18\x05 \x01(\tR\n" +
 	"pathPrefix\x12\x14\n" +
-	"\x05floor\x18\x06 \x01(\x01R\x05floor\"\x80\x01\n" +
-	"\x19FindNearestChunksResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12.\n" +
+	"\x05floor\x18\x06 \x01(\x01R\x05floor\"v\n" +
+	"\x19FindNearestChunksResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12.\n" +
 	"\amatches\x18\x02 \x03(\v2\x14.numen.v1.ChunkMatchR\amatches\"/\n" +
 	"\x15GetSearchFloorRequest\x12\x16\n" +
-	"\x06recipe\x18\x01 \x01(\tR\x06recipe\"\xff\x01\n" +
-	"\x16GetSearchFloorResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12\x14\n" +
+	"\x06recipe\x18\x01 \x01(\tR\x06recipe\"\xf5\x01\n" +
+	"\x16GetSearchFloorResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x14\n" +
 	"\x05floor\x18\x02 \x01(\x01R\x05floor\x123\n" +
 	"\x06source\x18\x03 \x01(\x0e2\x1b.numen.v1.SearchFloorSourceR\x06source\x12!\n" +
 	"\fstored_floor\x18\x04 \x01(\x01R\vstoredFloor\x12\x1d\n" +
@@ -2419,34 +2334,34 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\rdefault_floor\x18\x06 \x01(\x01R\fdefaultFloor\"E\n" +
 	"\x15SetSearchFloorRequest\x12\x16\n" +
 	"\x06recipe\x18\x01 \x01(\tR\x06recipe\x12\x14\n" +
-	"\x05floor\x18\x02 \x01(\x01R\x05floor\"M\n" +
-	"\x16SetSearchFloorResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\"\xb5\x01\n" +
+	"\x05floor\x18\x02 \x01(\x01R\x05floor\"C\n" +
+	"\x16SetSearchFloorResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"\xb5\x01\n" +
 	"\"HostSearchServiceSearchTextRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x14\n" +
 	"\x05kinds\x18\x03 \x03(\tR\x05kinds\x12\x1f\n" +
 	"\vpath_prefix\x18\x04 \x01(\tR\n" +
 	"pathPrefix\x12,\n" +
-	"\x12results_per_source\x18\x05 \x01(\x05R\x10resultsPerSource\"\x8c\x01\n" +
-	"#HostSearchServiceSearchTextResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x120\n" +
+	"\x12results_per_source\x18\x05 \x01(\x05R\x10resultsPerSource\"\x82\x01\n" +
+	"#HostSearchServiceSearchTextResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x120\n" +
 	"\aresults\x18\x02 \x03(\v2\x16.numen.v1.SearchResultR\aresults\"\x7f\n" +
 	"\x12StartSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12.\n" +
 	"\bpriority\x18\x02 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\x12#\n" +
-	"\ris_background\x18\x03 \x01(\bR\fisBackground\"Z\n" +
-	"\x13StartSearchResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12\x0e\n" +
+	"\ris_background\x18\x03 \x01(\bR\fisBackground\"P\n" +
+	"\x13StartSearchResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\"w\n" +
 	"\x10GetSearchRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\await_ms\x18\x02 \x01(\x03R\x06waitMs\x12\x1b\n" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +
-	"page_token\x18\x04 \x01(\tR\tpageToken\"w\n" +
-	"\x11GetSearchResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12-\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\"m\n" +
+	"\x11GetSearchResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12-\n" +
 	"\x06search\x18\x02 \x01(\v2\x15.numen.v1.SearchStateR\x06search\"\x8a\x04\n" +
 	"\vSearchState\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
@@ -2485,12 +2400,12 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"sent_count\x18\x02 \x01(\x05R\tsentCount\x12!\n" +
 	"\freused_count\x18\x03 \x01(\x05R\vreusedCount\"%\n" +
 	"\x13DeleteSearchRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"K\n" +
-	"\x14DeleteSearchResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\"\x1c\n" +
-	"\x1aListSearchFunctionsRequest\"\xa6\x01\n" +
-	"\x1bListSearchFunctionsResponse\x123\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x126\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"A\n" +
+	"\x14DeleteSearchResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"\x1c\n" +
+	"\x1aListSearchFunctionsRequest\"\x9c\x01\n" +
+	"\x1bListSearchFunctionsResponse\x12)\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x126\n" +
 	"\tfunctions\x18\x01 \x03(\v2\x18.numen.v1.SearchFunctionR\tfunctions\x12\x1a\n" +
 	"\brevision\x18\x02 \x01(\tR\brevision\"\xc4\x01\n" +
 	"\x0eSearchFunction\x12\x12\n" +
@@ -2502,20 +2417,7 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"signatures\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x18\n" +
 	"\aexample\x18\x06 \x01(\tR\aexample\x12\x18\n" +
-	"\asummary\x18\a \x01(\tR\asummary*\xe9\x03\n" +
-	"\x13HostSearchErrorCode\x12&\n" +
-	"\"HOST_SEARCH_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
-	"\x1fHOST_SEARCH_ERROR_CODE_NO_VAULT\x10\x01\x12#\n" +
-	"\x1fHOST_SEARCH_ERROR_CODE_NO_MODEL\x10\x02\x12*\n" +
-	"&HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH\x10\x03\x12(\n" +
-	"$HOST_SEARCH_ERROR_CODE_INVALID_FLOOR\x10\x04\x12)\n" +
-	"%HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED\x10\x05\x12+\n" +
-	"'HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED\x10\x06\x12(\n" +
-	"$HOST_SEARCH_ERROR_CODE_INVALID_QUERY\x10\a\x12+\n" +
-	"'HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND\x10\n" +
-	"\x12,\n" +
-	"(HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES\x10\v\x12-\n" +
-	")HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN\x10\f*\x9d\x01\n" +
+	"\asummary\x18\a \x01(\tR\asummary*\x9d\x01\n" +
 	"\x11SearchFloorSource\x12#\n" +
 	"\x1fSEARCH_FLOOR_SOURCE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aSEARCH_FLOOR_SOURCE_STORED\x10\x01\x12\"\n" +
@@ -2550,45 +2452,45 @@ func file_numen_v1_hostsearch_proto_rawDescGZIP() []byte {
 	return file_numen_v1_hostsearch_proto_rawDescData
 }
 
-var file_numen_v1_hostsearch_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_hostsearch_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_hostsearch_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_numen_v1_hostsearch_proto_goTypes = []any{
-	(HostSearchErrorCode)(0),                    // 0: numen.v1.HostSearchErrorCode
-	(SearchFloorSource)(0),                      // 1: numen.v1.SearchFloorSource
-	(*GetEmbeddingStateRequest)(nil),            // 2: numen.v1.GetEmbeddingStateRequest
-	(*GetEmbeddingStateResponse)(nil),           // 3: numen.v1.GetEmbeddingStateResponse
-	(*GetIndexStatsRequest)(nil),                // 4: numen.v1.GetIndexStatsRequest
-	(*ExtensionStats)(nil),                      // 5: numen.v1.ExtensionStats
-	(*GetIndexStatsResponse)(nil),               // 6: numen.v1.GetIndexStatsResponse
-	(*EmbedTextsRequest)(nil),                   // 7: numen.v1.EmbedTextsRequest
-	(*EmbedTextsResponse)(nil),                  // 8: numen.v1.EmbedTextsResponse
-	(*SimilarityQuery)(nil),                     // 9: numen.v1.SimilarityQuery
-	(*SampleSimilaritiesRequest)(nil),           // 10: numen.v1.SampleSimilaritiesRequest
-	(*SimilarityRow)(nil),                       // 11: numen.v1.SimilarityRow
-	(*SampleSimilaritiesResponse)(nil),          // 12: numen.v1.SampleSimilaritiesResponse
-	(*GetBestSimilarityRequest)(nil),            // 13: numen.v1.GetBestSimilarityRequest
-	(*GetBestSimilarityResponse)(nil),           // 14: numen.v1.GetBestSimilarityResponse
-	(*FindNearestChunksRequest)(nil),            // 15: numen.v1.FindNearestChunksRequest
-	(*FindNearestChunksResponse)(nil),           // 16: numen.v1.FindNearestChunksResponse
-	(*GetSearchFloorRequest)(nil),               // 17: numen.v1.GetSearchFloorRequest
-	(*GetSearchFloorResponse)(nil),              // 18: numen.v1.GetSearchFloorResponse
-	(*SetSearchFloorRequest)(nil),               // 19: numen.v1.SetSearchFloorRequest
-	(*SetSearchFloorResponse)(nil),              // 20: numen.v1.SetSearchFloorResponse
-	(*HostSearchServiceSearchTextRequest)(nil),  // 21: numen.v1.HostSearchServiceSearchTextRequest
-	(*HostSearchServiceSearchTextResponse)(nil), // 22: numen.v1.HostSearchServiceSearchTextResponse
-	(*StartSearchRequest)(nil),                  // 23: numen.v1.StartSearchRequest
-	(*StartSearchResponse)(nil),                 // 24: numen.v1.StartSearchResponse
-	(*GetSearchRequest)(nil),                    // 25: numen.v1.GetSearchRequest
-	(*GetSearchResponse)(nil),                   // 26: numen.v1.GetSearchResponse
-	(*SearchState)(nil),                         // 27: numen.v1.SearchState
-	(*SearchProgress)(nil),                      // 28: numen.v1.SearchProgress
-	(*SearchProblem)(nil),                       // 29: numen.v1.SearchProblem
-	(*SearchRerank)(nil),                        // 30: numen.v1.SearchRerank
-	(*DeleteSearchRequest)(nil),                 // 31: numen.v1.DeleteSearchRequest
-	(*DeleteSearchResponse)(nil),                // 32: numen.v1.DeleteSearchResponse
-	(*ListSearchFunctionsRequest)(nil),          // 33: numen.v1.ListSearchFunctionsRequest
-	(*ListSearchFunctionsResponse)(nil),         // 34: numen.v1.ListSearchFunctionsResponse
-	(*SearchFunction)(nil),                      // 35: numen.v1.SearchFunction
+	(SearchFloorSource)(0),                      // 0: numen.v1.SearchFloorSource
+	(*GetEmbeddingStateRequest)(nil),            // 1: numen.v1.GetEmbeddingStateRequest
+	(*GetEmbeddingStateResponse)(nil),           // 2: numen.v1.GetEmbeddingStateResponse
+	(*GetIndexStatsRequest)(nil),                // 3: numen.v1.GetIndexStatsRequest
+	(*ExtensionStats)(nil),                      // 4: numen.v1.ExtensionStats
+	(*GetIndexStatsResponse)(nil),               // 5: numen.v1.GetIndexStatsResponse
+	(*EmbedTextsRequest)(nil),                   // 6: numen.v1.EmbedTextsRequest
+	(*EmbedTextsResponse)(nil),                  // 7: numen.v1.EmbedTextsResponse
+	(*SimilarityQuery)(nil),                     // 8: numen.v1.SimilarityQuery
+	(*SampleSimilaritiesRequest)(nil),           // 9: numen.v1.SampleSimilaritiesRequest
+	(*SimilarityRow)(nil),                       // 10: numen.v1.SimilarityRow
+	(*SampleSimilaritiesResponse)(nil),          // 11: numen.v1.SampleSimilaritiesResponse
+	(*GetBestSimilarityRequest)(nil),            // 12: numen.v1.GetBestSimilarityRequest
+	(*GetBestSimilarityResponse)(nil),           // 13: numen.v1.GetBestSimilarityResponse
+	(*FindNearestChunksRequest)(nil),            // 14: numen.v1.FindNearestChunksRequest
+	(*FindNearestChunksResponse)(nil),           // 15: numen.v1.FindNearestChunksResponse
+	(*GetSearchFloorRequest)(nil),               // 16: numen.v1.GetSearchFloorRequest
+	(*GetSearchFloorResponse)(nil),              // 17: numen.v1.GetSearchFloorResponse
+	(*SetSearchFloorRequest)(nil),               // 18: numen.v1.SetSearchFloorRequest
+	(*SetSearchFloorResponse)(nil),              // 19: numen.v1.SetSearchFloorResponse
+	(*HostSearchServiceSearchTextRequest)(nil),  // 20: numen.v1.HostSearchServiceSearchTextRequest
+	(*HostSearchServiceSearchTextResponse)(nil), // 21: numen.v1.HostSearchServiceSearchTextResponse
+	(*StartSearchRequest)(nil),                  // 22: numen.v1.StartSearchRequest
+	(*StartSearchResponse)(nil),                 // 23: numen.v1.StartSearchResponse
+	(*GetSearchRequest)(nil),                    // 24: numen.v1.GetSearchRequest
+	(*GetSearchResponse)(nil),                   // 25: numen.v1.GetSearchResponse
+	(*SearchState)(nil),                         // 26: numen.v1.SearchState
+	(*SearchProgress)(nil),                      // 27: numen.v1.SearchProgress
+	(*SearchProblem)(nil),                       // 28: numen.v1.SearchProblem
+	(*SearchRerank)(nil),                        // 29: numen.v1.SearchRerank
+	(*DeleteSearchRequest)(nil),                 // 30: numen.v1.DeleteSearchRequest
+	(*DeleteSearchResponse)(nil),                // 31: numen.v1.DeleteSearchResponse
+	(*ListSearchFunctionsRequest)(nil),          // 32: numen.v1.ListSearchFunctionsRequest
+	(*ListSearchFunctionsResponse)(nil),         // 33: numen.v1.ListSearchFunctionsResponse
+	(*SearchFunction)(nil),                      // 34: numen.v1.SearchFunction
+	(ErrorCode)(0),                              // 35: numen.v1.ErrorCode
 	(*FloatVector)(nil),                         // 36: numen.v1.FloatVector
 	(*SearchPlace)(nil),                         // 37: numen.v1.SearchPlace
 	(*ChunkMatch)(nil),                          // 38: numen.v1.ChunkMatch
@@ -2596,61 +2498,61 @@ var file_numen_v1_hostsearch_proto_goTypes = []any{
 	(Priority)(0),                               // 40: numen.v1.Priority
 }
 var file_numen_v1_hostsearch_proto_depIdxs = []int32{
-	0,  // 0: numen.v1.GetEmbeddingStateResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	0,  // 1: numen.v1.GetIndexStatsResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	5,  // 2: numen.v1.GetIndexStatsResponse.extensions:type_name -> numen.v1.ExtensionStats
-	0,  // 3: numen.v1.EmbedTextsResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	35, // 0: numen.v1.GetEmbeddingStateResponse.error:type_name -> numen.v1.ErrorCode
+	35, // 1: numen.v1.GetIndexStatsResponse.error:type_name -> numen.v1.ErrorCode
+	4,  // 2: numen.v1.GetIndexStatsResponse.extensions:type_name -> numen.v1.ExtensionStats
+	35, // 3: numen.v1.EmbedTextsResponse.error:type_name -> numen.v1.ErrorCode
 	36, // 4: numen.v1.EmbedTextsResponse.vectors:type_name -> numen.v1.FloatVector
 	36, // 5: numen.v1.SimilarityQuery.vector:type_name -> numen.v1.FloatVector
-	9,  // 6: numen.v1.SampleSimilaritiesRequest.queries:type_name -> numen.v1.SimilarityQuery
-	0,  // 7: numen.v1.SampleSimilaritiesResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	11, // 8: numen.v1.SampleSimilaritiesResponse.rows:type_name -> numen.v1.SimilarityRow
-	0,  // 9: numen.v1.GetBestSimilarityResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	8,  // 6: numen.v1.SampleSimilaritiesRequest.queries:type_name -> numen.v1.SimilarityQuery
+	35, // 7: numen.v1.SampleSimilaritiesResponse.error:type_name -> numen.v1.ErrorCode
+	10, // 8: numen.v1.SampleSimilaritiesResponse.rows:type_name -> numen.v1.SimilarityRow
+	35, // 9: numen.v1.GetBestSimilarityResponse.error:type_name -> numen.v1.ErrorCode
 	37, // 10: numen.v1.FindNearestChunksRequest.place:type_name -> numen.v1.SearchPlace
-	0,  // 11: numen.v1.FindNearestChunksResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	35, // 11: numen.v1.FindNearestChunksResponse.error:type_name -> numen.v1.ErrorCode
 	38, // 12: numen.v1.FindNearestChunksResponse.matches:type_name -> numen.v1.ChunkMatch
-	0,  // 13: numen.v1.GetSearchFloorResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	1,  // 14: numen.v1.GetSearchFloorResponse.source:type_name -> numen.v1.SearchFloorSource
-	0,  // 15: numen.v1.SetSearchFloorResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	0,  // 16: numen.v1.HostSearchServiceSearchTextResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	35, // 13: numen.v1.GetSearchFloorResponse.error:type_name -> numen.v1.ErrorCode
+	0,  // 14: numen.v1.GetSearchFloorResponse.source:type_name -> numen.v1.SearchFloorSource
+	35, // 15: numen.v1.SetSearchFloorResponse.error:type_name -> numen.v1.ErrorCode
+	35, // 16: numen.v1.HostSearchServiceSearchTextResponse.error:type_name -> numen.v1.ErrorCode
 	39, // 17: numen.v1.HostSearchServiceSearchTextResponse.results:type_name -> numen.v1.SearchResult
 	40, // 18: numen.v1.StartSearchRequest.priority:type_name -> numen.v1.Priority
-	0,  // 19: numen.v1.StartSearchResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	0,  // 20: numen.v1.GetSearchResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	27, // 21: numen.v1.GetSearchResponse.search:type_name -> numen.v1.SearchState
-	28, // 22: numen.v1.SearchState.progress:type_name -> numen.v1.SearchProgress
+	35, // 19: numen.v1.StartSearchResponse.error:type_name -> numen.v1.ErrorCode
+	35, // 20: numen.v1.GetSearchResponse.error:type_name -> numen.v1.ErrorCode
+	26, // 21: numen.v1.GetSearchResponse.search:type_name -> numen.v1.SearchState
+	27, // 22: numen.v1.SearchState.progress:type_name -> numen.v1.SearchProgress
 	39, // 23: numen.v1.SearchState.results:type_name -> numen.v1.SearchResult
-	29, // 24: numen.v1.SearchState.errors:type_name -> numen.v1.SearchProblem
-	30, // 25: numen.v1.SearchState.reranks:type_name -> numen.v1.SearchRerank
-	0,  // 26: numen.v1.DeleteSearchResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	0,  // 27: numen.v1.ListSearchFunctionsResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	35, // 28: numen.v1.ListSearchFunctionsResponse.functions:type_name -> numen.v1.SearchFunction
-	2,  // 29: numen.v1.HostSearchService.GetEmbeddingState:input_type -> numen.v1.GetEmbeddingStateRequest
-	4,  // 30: numen.v1.HostSearchService.GetIndexStats:input_type -> numen.v1.GetIndexStatsRequest
-	7,  // 31: numen.v1.HostSearchService.EmbedTexts:input_type -> numen.v1.EmbedTextsRequest
-	10, // 32: numen.v1.HostSearchService.SampleSimilarities:input_type -> numen.v1.SampleSimilaritiesRequest
-	13, // 33: numen.v1.HostSearchService.GetBestSimilarity:input_type -> numen.v1.GetBestSimilarityRequest
-	15, // 34: numen.v1.HostSearchService.FindNearestChunks:input_type -> numen.v1.FindNearestChunksRequest
-	21, // 35: numen.v1.HostSearchService.SearchText:input_type -> numen.v1.HostSearchServiceSearchTextRequest
-	17, // 36: numen.v1.HostSearchService.GetSearchFloor:input_type -> numen.v1.GetSearchFloorRequest
-	19, // 37: numen.v1.HostSearchService.SetSearchFloor:input_type -> numen.v1.SetSearchFloorRequest
-	23, // 38: numen.v1.HostSearchService.StartSearch:input_type -> numen.v1.StartSearchRequest
-	25, // 39: numen.v1.HostSearchService.GetSearch:input_type -> numen.v1.GetSearchRequest
-	31, // 40: numen.v1.HostSearchService.DeleteSearch:input_type -> numen.v1.DeleteSearchRequest
-	33, // 41: numen.v1.HostSearchService.ListSearchFunctions:input_type -> numen.v1.ListSearchFunctionsRequest
-	3,  // 42: numen.v1.HostSearchService.GetEmbeddingState:output_type -> numen.v1.GetEmbeddingStateResponse
-	6,  // 43: numen.v1.HostSearchService.GetIndexStats:output_type -> numen.v1.GetIndexStatsResponse
-	8,  // 44: numen.v1.HostSearchService.EmbedTexts:output_type -> numen.v1.EmbedTextsResponse
-	12, // 45: numen.v1.HostSearchService.SampleSimilarities:output_type -> numen.v1.SampleSimilaritiesResponse
-	14, // 46: numen.v1.HostSearchService.GetBestSimilarity:output_type -> numen.v1.GetBestSimilarityResponse
-	16, // 47: numen.v1.HostSearchService.FindNearestChunks:output_type -> numen.v1.FindNearestChunksResponse
-	22, // 48: numen.v1.HostSearchService.SearchText:output_type -> numen.v1.HostSearchServiceSearchTextResponse
-	18, // 49: numen.v1.HostSearchService.GetSearchFloor:output_type -> numen.v1.GetSearchFloorResponse
-	20, // 50: numen.v1.HostSearchService.SetSearchFloor:output_type -> numen.v1.SetSearchFloorResponse
-	24, // 51: numen.v1.HostSearchService.StartSearch:output_type -> numen.v1.StartSearchResponse
-	26, // 52: numen.v1.HostSearchService.GetSearch:output_type -> numen.v1.GetSearchResponse
-	32, // 53: numen.v1.HostSearchService.DeleteSearch:output_type -> numen.v1.DeleteSearchResponse
-	34, // 54: numen.v1.HostSearchService.ListSearchFunctions:output_type -> numen.v1.ListSearchFunctionsResponse
+	28, // 24: numen.v1.SearchState.errors:type_name -> numen.v1.SearchProblem
+	29, // 25: numen.v1.SearchState.reranks:type_name -> numen.v1.SearchRerank
+	35, // 26: numen.v1.DeleteSearchResponse.error:type_name -> numen.v1.ErrorCode
+	35, // 27: numen.v1.ListSearchFunctionsResponse.error:type_name -> numen.v1.ErrorCode
+	34, // 28: numen.v1.ListSearchFunctionsResponse.functions:type_name -> numen.v1.SearchFunction
+	1,  // 29: numen.v1.HostSearchService.GetEmbeddingState:input_type -> numen.v1.GetEmbeddingStateRequest
+	3,  // 30: numen.v1.HostSearchService.GetIndexStats:input_type -> numen.v1.GetIndexStatsRequest
+	6,  // 31: numen.v1.HostSearchService.EmbedTexts:input_type -> numen.v1.EmbedTextsRequest
+	9,  // 32: numen.v1.HostSearchService.SampleSimilarities:input_type -> numen.v1.SampleSimilaritiesRequest
+	12, // 33: numen.v1.HostSearchService.GetBestSimilarity:input_type -> numen.v1.GetBestSimilarityRequest
+	14, // 34: numen.v1.HostSearchService.FindNearestChunks:input_type -> numen.v1.FindNearestChunksRequest
+	20, // 35: numen.v1.HostSearchService.SearchText:input_type -> numen.v1.HostSearchServiceSearchTextRequest
+	16, // 36: numen.v1.HostSearchService.GetSearchFloor:input_type -> numen.v1.GetSearchFloorRequest
+	18, // 37: numen.v1.HostSearchService.SetSearchFloor:input_type -> numen.v1.SetSearchFloorRequest
+	22, // 38: numen.v1.HostSearchService.StartSearch:input_type -> numen.v1.StartSearchRequest
+	24, // 39: numen.v1.HostSearchService.GetSearch:input_type -> numen.v1.GetSearchRequest
+	30, // 40: numen.v1.HostSearchService.DeleteSearch:input_type -> numen.v1.DeleteSearchRequest
+	32, // 41: numen.v1.HostSearchService.ListSearchFunctions:input_type -> numen.v1.ListSearchFunctionsRequest
+	2,  // 42: numen.v1.HostSearchService.GetEmbeddingState:output_type -> numen.v1.GetEmbeddingStateResponse
+	5,  // 43: numen.v1.HostSearchService.GetIndexStats:output_type -> numen.v1.GetIndexStatsResponse
+	7,  // 44: numen.v1.HostSearchService.EmbedTexts:output_type -> numen.v1.EmbedTextsResponse
+	11, // 45: numen.v1.HostSearchService.SampleSimilarities:output_type -> numen.v1.SampleSimilaritiesResponse
+	13, // 46: numen.v1.HostSearchService.GetBestSimilarity:output_type -> numen.v1.GetBestSimilarityResponse
+	15, // 47: numen.v1.HostSearchService.FindNearestChunks:output_type -> numen.v1.FindNearestChunksResponse
+	21, // 48: numen.v1.HostSearchService.SearchText:output_type -> numen.v1.HostSearchServiceSearchTextResponse
+	17, // 49: numen.v1.HostSearchService.GetSearchFloor:output_type -> numen.v1.GetSearchFloorResponse
+	19, // 50: numen.v1.HostSearchService.SetSearchFloor:output_type -> numen.v1.SetSearchFloorResponse
+	23, // 51: numen.v1.HostSearchService.StartSearch:output_type -> numen.v1.StartSearchResponse
+	25, // 52: numen.v1.HostSearchService.GetSearch:output_type -> numen.v1.GetSearchResponse
+	31, // 53: numen.v1.HostSearchService.DeleteSearch:output_type -> numen.v1.DeleteSearchResponse
+	33, // 54: numen.v1.HostSearchService.ListSearchFunctions:output_type -> numen.v1.ListSearchFunctionsResponse
 	42, // [42:55] is the sub-list for method output_type
 	29, // [29:42] is the sub-list for method input_type
 	29, // [29:29] is the sub-list for extension type_name
@@ -2667,12 +2569,13 @@ func file_numen_v1_hostsearch_proto_init() {
 	file_numen_v1_provider_proto_init()
 	file_numen_v1_search_proto_init()
 	file_numen_v1_search_source_proto_init()
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostsearch_proto_rawDesc), len(file_numen_v1_hostsearch_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,

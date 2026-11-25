@@ -3,7 +3,7 @@
  * rest passes a message through unchanged, and the schema defines its shape.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { THEME_MODE, THEME_ORIGIN, createThemeRpc } from '../clients'
+import { THEME_MODE, THEME_ORIGIN, WIRE_ERROR_CODE, createThemeRpc } from '../clients'
 import { createCoreTransport } from '../testing'
 import { createThemeClient } from './themes'
 
@@ -110,7 +110,10 @@ describe('how far a size goes', () => {
 
 describe('a choice written', () => {
   it('sends the mode as the schema carries it and answers why it was refused', async () => {
-    request.writeAppearance.mockResolvedValue({ error: 'the file is read-only' })
+    request.writeAppearance.mockResolvedValue({
+      error: WIRE_ERROR_CODE.INTERNAL,
+      detail: 'the file is read-only',
+    })
 
     const answer = await themes.writeAppearance('mine:sea', 'light')
 

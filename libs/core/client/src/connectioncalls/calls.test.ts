@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
-  CallErrorCode,
+  ErrorCode,
   CancelCallResponseSchema,
   CallFailureSchema,
   ConnectionCallServiceCallResponseSchema,
@@ -144,10 +144,10 @@ describe('createConnectionCallClient', () => {
   })
 
   it('ends the call with the failure the core serves and keeps the frames before it', async () => {
-    const codes: Array<[CallErrorCode, string]> = [
-      [CallErrorCode.NO_CONNECTION, 'noConnection'],
-      [CallErrorCode.ALL_FAILED, 'allFailed'],
-      [CallErrorCode.STOPPED, 'stopped'],
+    const codes: Array<[ErrorCode, string]> = [
+      [ErrorCode.NO_CONNECTION, 'noConnection'],
+      [ErrorCode.ALL_FAILED, 'allFailed'],
+      [ErrorCode.STOPPED, 'stopped'],
     ]
     for (const [code, expected] of codes) {
       const rpc: ConnectionCallRpc = {
@@ -198,7 +198,7 @@ describe('createConnectionCallClient', () => {
     ]
     for (const [code, expected] of codes) {
       const failure = create(CallFailureSchema, {
-        error: CallErrorCode.ALL_FAILED,
+        error: ErrorCode.ALL_FAILED,
         failures: [{ connectionName: 'Harbor', reason: 'words of the reason', code }],
       })
       const rpc: ConnectionCallRpc = {

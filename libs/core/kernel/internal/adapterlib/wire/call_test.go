@@ -11,14 +11,16 @@ import (
 )
 
 func TestEveryErrorCodeOfTheSchemaIsProducedFromAFailure(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.CallErrorCode]error{
-		v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION: connection.ErrNoConnection,
-		v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED:    &connection.AllFailedError{},
-		v1.CallErrorCode_CALL_ERROR_CODE_STOPPED:       &connection.StoppedError{},
-	}, func(failure error) v1.CallErrorCode {
+	for want, failure := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NO_CONNECTION: connection.ErrNoConnection,
+		v1.ErrorCode_ERROR_CODE_ALL_FAILED:    &connection.AllFailedError{},
+		v1.ErrorCode_ERROR_CODE_STOPPED:       &connection.StoppedError{},
+	} {
 		served, _ := ConvertCallFailureToWire(t.Context(), failure)
-		return served.GetError()
-	})
+		if got := served.GetError(); got != want {
+			t.Errorf("%v produced %v, want %v", failure, got, want)
+		}
+	}
 }
 
 func TestEveryPriorityOfTheSchemaIsReadAsThePortOne(t *testing.T) {

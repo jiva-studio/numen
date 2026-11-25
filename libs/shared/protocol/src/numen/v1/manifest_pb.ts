@@ -506,7 +506,7 @@ export type ManifestSearchFunction = Message<"numen.v1.ManifestSearchFunction"> 
   args: ManifestSearchFunctionArg[];
 
   /**
-   * level is "document"; version 1 refuses "chunk".
+   * level is "document"; version 1 rejects "chunk".
    *
    * @generated from field: string level = 3;
    */

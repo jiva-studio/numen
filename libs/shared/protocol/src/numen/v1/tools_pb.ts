@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/tools.proto.
  */
 export const file_numen_v1_tools: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90b29scy5wcm90bxIIbnVtZW4udjEiEgoQTGlzdFRvb2xzUmVxdWVzdCI4ChFMaXN0VG9vbHNSZXNwb25zZRIjCgV0b29scxgBIAMoCzIULm51bWVuLnYxLlBsdWdpblRvb2wiuQEKClBsdWdpblRvb2wSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIUCgxpbnB1dF9zY2hlbWEYBCABKAwSFQoNb3V0cHV0X3NjaGVtYRgFIAEoDBIkCgZlZmZlY3QYBiABKA4yFC5udW1lbi52MS5Ub29sRWZmZWN0EhQKDGluc3RydWN0aW9ucxgHIAMoCRIQCghyZXF1aXJlcxgIIAMoCSLEAQoPQ2FsbFRvb2xSZXF1ZXN0EgwKBG5hbWUYASABKAkSEQoJYXJndW1lbnRzGAIgASgMEjcKB2NvbnRleHQYAyADKAsyJi5udW1lbi52MS5DYWxsVG9vbFJlcXVlc3QuQ29udGV4dEVudHJ5EhAKCHZhdWx0X2lkGAQgASgJEhUKDWNvbm5lY3Rpb25faWQYBSABKAkaLgoMQ29udGV4dEVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiYAoQQ2FsbFRvb2xSZXNwb25zZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLlRvb2xFcnJvckNvZGUSJAoGcmVzdWx0GAIgASgLMhQubnVtZW4udjEuVG9vbFJlc3VsdCJACgpUb29sUmVzdWx0EgwKBHRleHQYASABKAkSEgoKc3RydWN0dXJlZBgCIAEoDBIQCghpc19lcnJvchgDIAEoCCpgCgpUb29sRWZmZWN0EhsKF1RPT0xfRUZGRUNUX1VOU1BFQ0lGSUVEEAASGQoVVE9PTF9FRkZFQ1RfUkVBRF9PTkxZEAESGgoWVE9PTF9FRkZFQ1RfUkVBRF9XUklURRACKnUKDVRvb2xFcnJvckNvZGUSHwobVE9PTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIAocVE9PTF9FUlJPUl9DT0RFX1VOS05PV05fVE9PTBABEiEKHVRPT0xfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAIynAEKEVBsdWdpblRvb2xTZXJ2aWNlEkQKCUxpc3RUb29scxIaLm51bWVuLnYxLkxpc3RUb29sc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0VG9vbHNSZXNwb25zZRJBCghDYWxsVG9vbBIZLm51bWVuLnYxLkNhbGxUb29sUmVxdWVzdBoaLm51bWVuLnYxLkNhbGxUb29sUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS90b29scy5wcm90bxIIbnVtZW4udjEiEgoQTGlzdFRvb2xzUmVxdWVzdCI4ChFMaXN0VG9vbHNSZXNwb25zZRIjCgV0b29scxgBIAMoCzIULm51bWVuLnYxLlBsdWdpblRvb2wiuQEKClBsdWdpblRvb2wSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIUCgxpbnB1dF9zY2hlbWEYBCABKAwSFQoNb3V0cHV0X3NjaGVtYRgFIAEoDBIkCgZlZmZlY3QYBiABKA4yFC5udW1lbi52MS5Ub29sRWZmZWN0EhQKDGluc3RydWN0aW9ucxgHIAMoCRIQCghyZXF1aXJlcxgIIAMoCSLEAQoPQ2FsbFRvb2xSZXF1ZXN0EgwKBG5hbWUYASABKAkSEQoJYXJndW1lbnRzGAIgASgMEjcKB2NvbnRleHQYAyADKAsyJi5udW1lbi52MS5DYWxsVG9vbFJlcXVlc3QuQ29udGV4dEVudHJ5EhAKCHZhdWx0X2lkGAQgASgJEhUKDWNvbm5lY3Rpb25faWQYBSABKAkaLgoMQ29udGV4dEVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiXAoQQ2FsbFRvb2xSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIkCgZyZXN1bHQYAiABKAsyFC5udW1lbi52MS5Ub29sUmVzdWx0IkAKClRvb2xSZXN1bHQSDAoEdGV4dBgBIAEoCRISCgpzdHJ1Y3R1cmVkGAIgASgMEhAKCGlzX2Vycm9yGAMgASgIKmAKClRvb2xFZmZlY3QSGwoXVE9PTF9FRkZFQ1RfVU5TUEVDSUZJRUQQABIZChVUT09MX0VGRkVDVF9SRUFEX09OTFkQARIaChZUT09MX0VGRkVDVF9SRUFEX1dSSVRFEAIynAEKEVBsdWdpblRvb2xTZXJ2aWNlEkQKCUxpc3RUb29scxIaLm51bWVuLnYxLkxpc3RUb29sc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0VG9vbHNSZXNwb25zZRJBCghDYWxsVG9vbBIZLm51bWVuLnYxLkNhbGxUb29sUmVxdWVzdBoaLm51bWVuLnYxLkNhbGxUb29sUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListToolsRequest
@@ -183,9 +185,9 @@ export type CallToolResponse = Message<"numen.v1.CallToolResponse"> & {
    * Set when the call could not be served: the tool is not one the plugin
    * lists, or its arguments are not a JSON object. The result is then unset.
    *
-   * @generated from field: numen.v1.ToolErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: ToolErrorCode;
+  error: ErrorCode;
 
   /**
    * What the tool answered, for an agent to read.
@@ -271,38 +273,6 @@ export enum ToolEffect {
  */
 export const ToolEffectSchema: GenEnum<ToolEffect> = /*@__PURE__*/
   enumDesc(file_numen_v1_tools, 0);
-
-/**
- * ToolErrorCode is why a call was served and not run.
- *
- * @generated from enum numen.v1.ToolErrorCode
- */
-export enum ToolErrorCode {
-  /**
-   * @generated from enum value: TOOL_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The plugin lists no tool of that name.
-   *
-   * @generated from enum value: TOOL_ERROR_CODE_UNKNOWN_TOOL = 1;
-   */
-  UNKNOWN_TOOL = 1,
-
-  /**
-   * The arguments are not a JSON object.
-   *
-   * @generated from enum value: TOOL_ERROR_CODE_BAD_ARGUMENTS = 2;
-   */
-  BAD_ARGUMENTS = 2,
-}
-
-/**
- * Describes the enum numen.v1.ToolErrorCode.
- */
-export const ToolErrorCodeSchema: GenEnum<ToolErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_tools, 1);
 
 /**
  * PluginToolService is what a plugin that declares the tools capability serves.

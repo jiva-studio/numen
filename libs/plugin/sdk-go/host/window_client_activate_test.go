@@ -20,7 +20,7 @@ import (
 // activateHost returns ActivateTab with a fixed result and records the requests.
 type activateHost struct {
 	numenv1connect.UnimplementedHostWindowServiceHandler
-	code         v1.HostWindowErrorCode
+	code         v1.ErrorCode
 	status       *connect.Error
 	authHeader   string
 	requestedIDs []string
@@ -32,7 +32,7 @@ func (h *activateHost) ActivateTab(_ context.Context, req *connect.Request[v1.Ac
 	if h.status != nil {
 		return nil, h.status
 	}
-	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
+	if h.code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		return connect.NewResponse(&v1.ActivateTabResponse{Error: h.code}), nil
 	}
 	return connect.NewResponse(&v1.ActivateTabResponse{
@@ -72,8 +72,8 @@ func TestClientActivateTabReturnsTheErrorsOfTheHost(t *testing.T) {
 		h    *activateHost
 		want error
 	}{
-		"no tab with the id": {&activateHost{code: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND}, host.ErrNotExist},
-		"no window":          {&activateHost{code: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}, host.ErrNoWindow},
+		"no tab with the id": {&activateHost{code: v1.ErrorCode_ERROR_CODE_NOT_FOUND}, host.ErrNotExist},
+		"no window":          {&activateHost{code: v1.ErrorCode_ERROR_CODE_NO_WINDOW}, host.ErrNoWindow},
 		"permission denied": {
 			&activateHost{status: connect.NewError(connect.CodePermissionDenied, errors.New("plugin lacks window:focus"))}, host.ErrPermissionDenied,
 		},

@@ -4,7 +4,7 @@
  *
  * The core does not order requests; the caller sequences those whose order matters.
  */
-import { TAB_MOVE_ERROR_CODE, type TabMoveErrorCodeValue } from '@numen/core-client'
+import { WIRE_ERROR_CODE, type WireErrorCodeValue } from '@numen/core-client'
 import type { WindowClients } from '@/shared/api/clients'
 import type { Result } from '@numen/result'
 import type { MovedTab, Tab, TabMoveError } from '@/entities/tab'
@@ -17,15 +17,15 @@ const parseTab = ({ id, kind, path, title, state }: Omit<Tab, 'place'>): Tab => 
   state,
 })
 
-const moveErrors: Record<TabMoveErrorCodeValue, TabMoveError | null> = {
-  [TAB_MOVE_ERROR_CODE.UNSPECIFIED]: null,
-  [TAB_MOVE_ERROR_CODE.WINDOW_CLOSED]: 'window-closed',
-  [TAB_MOVE_ERROR_CODE.TIMEOUT]: 'timeout',
-  [TAB_MOVE_ERROR_CODE.NOT_OWNER]: 'not-owner',
-  [TAB_MOVE_ERROR_CODE.CANCELED]: 'cancelled',
+const moveErrors: Partial<Record<WireErrorCodeValue, TabMoveError | null>> = {
+  [WIRE_ERROR_CODE.UNSPECIFIED]: null,
+  [WIRE_ERROR_CODE.NO_WINDOW]: 'window-closed',
+  [WIRE_ERROR_CODE.TIMEOUT]: 'timeout',
+  [WIRE_ERROR_CODE.NOT_OWNER]: 'not-owner',
+  [WIRE_ERROR_CODE.CANCELED]: 'cancelled',
 }
 
-const parseMoveError = (code: TabMoveErrorCodeValue): Result<void, TabMoveError> => {
+const parseMoveError = (code: WireErrorCodeValue): Result<void, TabMoveError> => {
   const error = moveErrors[code]
   return error ? { ok: false, error } : { ok: true, value: undefined }
 }

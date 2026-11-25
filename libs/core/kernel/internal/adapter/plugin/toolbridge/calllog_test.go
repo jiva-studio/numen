@@ -89,7 +89,7 @@ func TestACallOfAnUnknownToolIsLoggedWithItsToolError(t *testing.T) {
 	if line["tool"] != "pond_depth" || line["plugin"] != "" {
 		t.Errorf("the call is logged as tool %v on plugin %v", line["tool"], line["plugin"])
 	}
-	if line["toolError"] != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL.String() {
+	if line["toolError"] != v1.ErrorCode_ERROR_CODE_NOT_FOUND.String() {
 		t.Errorf("the tool error is logged as %v", line["toolError"])
 	}
 }

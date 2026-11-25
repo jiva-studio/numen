@@ -4,11 +4,11 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
-func readErrorCode(code v1.ToolErrorCode) ErrorCode {
+func readErrorCode(code v1.ErrorCode) ErrorCode {
 	switch code {
-	case v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL:
+	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
 		return ErrorCodeUnknownTool
-	case v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS:
+	case v1.ErrorCode_ERROR_CODE_INVALID:
 		return ErrorCodeBadArguments
 	default:
 		return ErrorCodeUnspecified

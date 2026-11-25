@@ -70,8 +70,8 @@ type ListVersionItemsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Items []*CommandItem         `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
 	// Set when the versions could not be listed; the message then says why.
-	Error         CommandErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.CommandErrorCode" json:"error,omitempty"`
-	Message       string           `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	Error         ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Message       string    `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -113,11 +113,11 @@ func (x *ListVersionItemsResponse) GetItems() []*CommandItem {
 	return nil
 }
 
-func (x *ListVersionItemsResponse) GetError() CommandErrorCode {
+func (x *ListVersionItemsResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ListVersionItemsResponse) GetMessage() string {
@@ -183,7 +183,7 @@ func (x *DeleteVersionRequest) GetVersionId() string {
 
 type DeleteVersionResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error CommandErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CommandErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// What a person reads about a failure.
 	Message       string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -220,11 +220,11 @@ func (*DeleteVersionResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_textversion_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *DeleteVersionResponse) GetError() CommandErrorCode {
+func (x *DeleteVersionResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *DeleteVersionResponse) GetMessage() string {
@@ -238,19 +238,19 @@ var File_numen_v1_textversion_proto protoreflect.FileDescriptor
 
 const file_numen_v1_textversion_proto_rawDesc = "" +
 	"\n" +
-	"\x1anumen/v1/textversion.proto\x12\bnumen.v1\x1a\x1cnumen/v1/plugincommand.proto\"-\n" +
+	"\x1anumen/v1/textversion.proto\x12\bnumen.v1\x1a\x1cnumen/v1/plugincommand.proto\x1a\x15numen/v1/shared.proto\"-\n" +
 	"\x17ListVersionItemsRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x93\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x8c\x01\n" +
 	"\x18ListVersionItemsResponse\x12+\n" +
-	"\x05items\x18\x01 \x03(\v2\x15.numen.v1.CommandItemR\x05items\x120\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1a.numen.v1.CommandErrorCodeR\x05error\x12\x18\n" +
+	"\x05items\x18\x01 \x03(\v2\x15.numen.v1.CommandItemR\x05items\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x18\n" +
 	"\amessage\x18\x03 \x01(\tR\amessage\"I\n" +
 	"\x14DeleteVersionRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x02 \x01(\tR\tversionId\"c\n" +
-	"\x15DeleteVersionResponse\x120\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.CommandErrorCodeR\x05error\x12\x18\n" +
+	"version_id\x18\x02 \x01(\tR\tversionId\"\\\n" +
+	"\x15DeleteVersionResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage2\xc1\x01\n" +
 	"\x12TextVersionService\x12Y\n" +
 	"\x10ListVersionItems\x12!.numen.v1.ListVersionItemsRequest\x1a\".numen.v1.ListVersionItemsResponse\x12P\n" +
@@ -275,12 +275,12 @@ var file_numen_v1_textversion_proto_goTypes = []any{
 	(*DeleteVersionRequest)(nil),     // 2: numen.v1.DeleteVersionRequest
 	(*DeleteVersionResponse)(nil),    // 3: numen.v1.DeleteVersionResponse
 	(*CommandItem)(nil),              // 4: numen.v1.CommandItem
-	(CommandErrorCode)(0),            // 5: numen.v1.CommandErrorCode
+	(ErrorCode)(0),                   // 5: numen.v1.ErrorCode
 }
 var file_numen_v1_textversion_proto_depIdxs = []int32{
 	4, // 0: numen.v1.ListVersionItemsResponse.items:type_name -> numen.v1.CommandItem
-	5, // 1: numen.v1.ListVersionItemsResponse.error:type_name -> numen.v1.CommandErrorCode
-	5, // 2: numen.v1.DeleteVersionResponse.error:type_name -> numen.v1.CommandErrorCode
+	5, // 1: numen.v1.ListVersionItemsResponse.error:type_name -> numen.v1.ErrorCode
+	5, // 2: numen.v1.DeleteVersionResponse.error:type_name -> numen.v1.ErrorCode
 	0, // 3: numen.v1.TextVersionService.ListVersionItems:input_type -> numen.v1.ListVersionItemsRequest
 	2, // 4: numen.v1.TextVersionService.DeleteVersion:input_type -> numen.v1.DeleteVersionRequest
 	1, // 5: numen.v1.TextVersionService.ListVersionItems:output_type -> numen.v1.ListVersionItemsResponse
@@ -298,6 +298,7 @@ func file_numen_v1_textversion_proto_init() {
 		return
 	}
 	file_numen_v1_plugincommand_proto_init()
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

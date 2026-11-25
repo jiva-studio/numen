@@ -41,7 +41,7 @@ func BenchmarkListCommandItems_OfASharedCommandOverTheRepositoryPlugins(b *testi
 	})
 	for b.Loop() {
 		res, err := handler.ListCommandItems(b.Context(), request)
-		if err != nil || res.Msg.GetLists()[0].GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED {
+		if err != nil || res.Msg.GetLists()[0].GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 			b.Fatalf("got %v, %v", res, err)
 		}
 	}

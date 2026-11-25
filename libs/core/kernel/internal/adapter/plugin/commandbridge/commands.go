@@ -56,15 +56,15 @@ func (c Commands) RunCommand(
 	}
 	message := res.Msg.GetMessage()
 	switch res.Msg.GetError() {
-	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED:
+	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
 		return plugin.CommandResult{Message: message, OpenedPath: res.Msg.GetOpenedPath()}, nil
-	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND:
+	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
 		return plugin.CommandResult{}, fmt.Errorf("%w: %s", ErrUnknownCommand, call.Command)
-	case v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS:
+	case v1.ErrorCode_ERROR_CODE_INVALID:
 		return plugin.CommandResult{}, fmt.Errorf("%w: %s", ErrBadArguments, message)
-	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE:
+	case v1.ErrorCode_ERROR_CODE_UNAVAILABLE:
 		return plugin.CommandResult{}, &plugin.UnavailableError{PluginID: call.PluginID, Reason: plugin.Failed, Err: errors.New(message)}
-	case v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED:
+	case v1.ErrorCode_ERROR_CODE_INTERNAL:
 	}
 	return plugin.CommandResult{}, &plugin.CommandFailedError{Message: message}
 }

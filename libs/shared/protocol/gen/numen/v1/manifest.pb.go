@@ -781,7 +781,7 @@ type ManifestSearchFunction struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// args are the positional arguments of the function.
 	Args []*ManifestSearchFunctionArg `protobuf:"bytes,2,rep,name=args,proto3" json:"args,omitempty"`
-	// level is "document"; version 1 refuses "chunk".
+	// level is "document"; version 1 rejects "chunk".
 	Level string `protobuf:"bytes,3,opt,name=level,proto3" json:"level,omitempty"`
 	// description is one line an agent reads about the function.
 	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`

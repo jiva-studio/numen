@@ -59,18 +59,18 @@ func (h *Handler) HighlightWindow(
 	return connect.NewResponse(&v1.HighlightWindowResponse{}), nil
 }
 
-func convertMoveErrorToWire(outcome tablink.MoveError) v1.TabMoveErrorCode {
+func convertMoveErrorToWire(outcome tablink.MoveError) v1.ErrorCode {
 	switch outcome {
 	case tablink.MoveErrorWindowClosed:
-		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_WINDOW_CLOSED
+		return v1.ErrorCode_ERROR_CODE_NO_WINDOW
 	case tablink.MoveErrorTimeout:
-		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_TIMEOUT
+		return v1.ErrorCode_ERROR_CODE_TIMEOUT
 	case tablink.MoveErrorNotOwner:
-		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_NOT_OWNER
+		return v1.ErrorCode_ERROR_CODE_NOT_OWNER
 	case tablink.MoveErrorCanceled:
-		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_CANCELED
+		return v1.ErrorCode_ERROR_CODE_CANCELED
 	default:
-		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED
 	}
 }
 

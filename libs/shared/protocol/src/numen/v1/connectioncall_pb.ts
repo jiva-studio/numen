@@ -2,19 +2,21 @@
 // @generated from file numen/v1/connectioncall.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { FailureReason, Priority } from "./provider_pb.js";
 import { file_numen_v1_provider } from "./provider_pb.js";
 import type { Option } from "./settings_pb.js";
 import { file_numen_v1_settings } from "./settings_pb.js";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/connectioncall.proto.
  */
 export const file_numen_v1_connectioncall: GenFile = /*@__PURE__*/
-  fileDesc("Ch1udW1lbi92MS9jb25uZWN0aW9uY2FsbC5wcm90bxIIbnVtZW4udjEiYAoOQ2FsbFJvd0ZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCRIlCgRjb2RlGAMgASgOMhcubnVtZW4udjEuRmFpbHVyZVJlYXNvbiJxCgtDYWxsRmFpbHVyZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLkNhbGxFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJEioKCGZhaWx1cmVzGAMgAygLMhgubnVtZW4udjEuQ2FsbFJvd0ZhaWx1cmUioQEKDFByZWZlcnJlZFJvdxIVCg1jb25uZWN0aW9uX2lkGAEgASgJEjQKB29wdGlvbnMYAiADKAsyIy5udW1lbi52MS5QcmVmZXJyZWRSb3cuT3B0aW9uc0VudHJ5EhQKDGlzX2V4Y2x1c2l2ZRgDIAEoCBouCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJVCgxDYWxsUm93RmllbGQSCwoDa2V5GAEgASgJEg0KBXRpdGxlGAIgASgJEhQKDG9wdGlvbnNfZnJvbRgDIAEoCRITCgtpc19yZXF1aXJlZBgEIAEoCCLCAQoHQ2FsbFJvdxIVCg1jb25uZWN0aW9uX2lkGAEgASgJEhcKD2Nvbm5lY3Rpb25fbmFtZRgCIAEoCRIvCgdvcHRpb25zGAMgAygLMh4ubnVtZW4udjEuQ2FsbFJvdy5PcHRpb25zRW50cnkSJgoGZmllbGRzGAQgAygLMhYubnVtZW4udjEuQ2FsbFJvd0ZpZWxkGi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIr8BCiBDb25uZWN0aW9uQ2FsbFNlcnZpY2VDYWxsUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSEQoJb3BlcmF0aW9uGAIgASgJEg8KB3BheWxvYWQYAyABKAwSJAoIcHJpb3JpdHkYBCABKA4yEi5udW1lbi52MS5Qcmlvcml0eRItCg1wcmVmZXJyZWRfcm93GAUgASgLMhYubnVtZW4udjEuUHJlZmVycmVkUm93Eg8KB2NhbGxfaWQYBiABKAkidgohQ29ubmVjdGlvbkNhbGxTZXJ2aWNlQ2FsbFJlc3BvbnNlEg4KBGRhdGEYASABKAxIABIOCgRkb25lGAIgASgMSAASKAoHZmFpbHVyZRgDIAEoCzIVLm51bWVuLnYxLkNhbGxGYWlsdXJlSABCBwoFZnJhbWUiNwoRQ2FuY2VsQ2FsbFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEg8KB2NhbGxfaWQYAiABKAkiFAoSQ2FuY2VsQ2FsbFJlc3BvbnNlIkwKJENvbm5lY3Rpb25DYWxsU2VydmljZUxpc3RSb3dzUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSEQoJb3BlcmF0aW9uGAIgASgJIkgKJUNvbm5lY3Rpb25DYWxsU2VydmljZUxpc3RSb3dzUmVzcG9uc2USHwoEcm93cxgBIAMoCzIRLm51bWVuLnYxLkNhbGxSb3ci/AEKKkNvbm5lY3Rpb25DYWxsU2VydmljZUxpc3RSb3dPcHRpb25zUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSEQoJb3BlcmF0aW9uGAIgASgJEhUKDWNvbm5lY3Rpb25faWQYAyABKAkSDQoFZmllbGQYBCABKAkSUgoHb3B0aW9ucxgFIAMoCzJBLm51bWVuLnYxLkNvbm5lY3Rpb25DYWxsU2VydmljZUxpc3RSb3dPcHRpb25zUmVxdWVzdC5PcHRpb25zRW50cnkaLgoMT3B0aW9uc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiUAorQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXNwb25zZRIhCgdvcHRpb25zGAEgAygLMhAubnVtZW4udjEuT3B0aW9uKpABCg1DYWxsRXJyb3JDb2RlEh8KG0NBTExfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiEKHUNBTExfRVJST1JfQ09ERV9OT19DT05ORUNUSU9OEAESHgoaQ0FMTF9FUlJPUl9DT0RFX0FMTF9GQUlMRUQQAhIbChdDQUxMX0VSUk9SX0NPREVfU1RPUFBFRBADMq8DChVDb25uZWN0aW9uQ2FsbFNlcnZpY2USYQoEQ2FsbBIqLm51bWVuLnYxLkNvbm5lY3Rpb25DYWxsU2VydmljZUNhbGxSZXF1ZXN0GisubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlQ2FsbFJlc3BvbnNlMAESRwoKQ2FuY2VsQ2FsbBIbLm51bWVuLnYxLkNhbmNlbENhbGxSZXF1ZXN0GhwubnVtZW4udjEuQ2FuY2VsQ2FsbFJlc3BvbnNlEmsKCExpc3RSb3dzEi4ubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd3NSZXF1ZXN0Gi8ubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd3NSZXNwb25zZRJ9Cg5MaXN0Um93T3B0aW9ucxI0Lm51bWVuLnYxLkNvbm5lY3Rpb25DYWxsU2VydmljZUxpc3RSb3dPcHRpb25zUmVxdWVzdBo1Lm51bWVuLnYxLkNvbm5lY3Rpb25DYWxsU2VydmljZUxpc3RSb3dPcHRpb25zUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_provider, file_numen_v1_settings]);
+  fileDesc("Ch1udW1lbi92MS9jb25uZWN0aW9uY2FsbC5wcm90bxIIbnVtZW4udjEiYAoOQ2FsbFJvd0ZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCRIlCgRjb2RlGAMgASgOMhcubnVtZW4udjEuRmFpbHVyZVJlYXNvbiJtCgtDYWxsRmFpbHVyZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkSKgoIZmFpbHVyZXMYAyADKAsyGC5udW1lbi52MS5DYWxsUm93RmFpbHVyZSKhAQoMUHJlZmVycmVkUm93EhUKDWNvbm5lY3Rpb25faWQYASABKAkSNAoHb3B0aW9ucxgCIAMoCzIjLm51bWVuLnYxLlByZWZlcnJlZFJvdy5PcHRpb25zRW50cnkSFAoMaXNfZXhjbHVzaXZlGAMgASgIGi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlUKDENhbGxSb3dGaWVsZBILCgNrZXkYASABKAkSDQoFdGl0bGUYAiABKAkSFAoMb3B0aW9uc19mcm9tGAMgASgJEhMKC2lzX3JlcXVpcmVkGAQgASgIIsIBCgdDYWxsUm93EhUKDWNvbm5lY3Rpb25faWQYASABKAkSFwoPY29ubmVjdGlvbl9uYW1lGAIgASgJEi8KB29wdGlvbnMYAyADKAsyHi5udW1lbi52MS5DYWxsUm93Lk9wdGlvbnNFbnRyeRImCgZmaWVsZHMYBCADKAsyFi5udW1lbi52MS5DYWxsUm93RmllbGQaLgoMT3B0aW9uc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEivwEKIENvbm5lY3Rpb25DYWxsU2VydmljZUNhbGxSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIRCglvcGVyYXRpb24YAiABKAkSDwoHcGF5bG9hZBgDIAEoDBIkCghwcmlvcml0eRgEIAEoDjISLm51bWVuLnYxLlByaW9yaXR5Ei0KDXByZWZlcnJlZF9yb3cYBSABKAsyFi5udW1lbi52MS5QcmVmZXJyZWRSb3cSDwoHY2FsbF9pZBgGIAEoCSJ2CiFDb25uZWN0aW9uQ2FsbFNlcnZpY2VDYWxsUmVzcG9uc2USDgoEZGF0YRgBIAEoDEgAEg4KBGRvbmUYAiABKAxIABIoCgdmYWlsdXJlGAMgASgLMhUubnVtZW4udjEuQ2FsbEZhaWx1cmVIAEIHCgVmcmFtZSI3ChFDYW5jZWxDYWxsUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY2FsbF9pZBgCIAEoCSIUChJDYW5jZWxDYWxsUmVzcG9uc2UiTAokQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd3NSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIRCglvcGVyYXRpb24YAiABKAkiSAolQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd3NSZXNwb25zZRIfCgRyb3dzGAEgAygLMhEubnVtZW4udjEuQ2FsbFJvdyL8AQoqQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIRCglvcGVyYXRpb24YAiABKAkSFQoNY29ubmVjdGlvbl9pZBgDIAEoCRINCgVmaWVsZBgEIAEoCRJSCgdvcHRpb25zGAUgAygLMkEubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXF1ZXN0Lk9wdGlvbnNFbnRyeRouCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJQCitDb25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93T3B0aW9uc1Jlc3BvbnNlEiEKB29wdGlvbnMYASADKAsyEC5udW1lbi52MS5PcHRpb24yrwMKFUNvbm5lY3Rpb25DYWxsU2VydmljZRJhCgRDYWxsEioubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlQ2FsbFJlcXVlc3QaKy5udW1lbi52MS5Db25uZWN0aW9uQ2FsbFNlcnZpY2VDYWxsUmVzcG9uc2UwARJHCgpDYW5jZWxDYWxsEhsubnVtZW4udjEuQ2FuY2VsQ2FsbFJlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxDYWxsUmVzcG9uc2USawoITGlzdFJvd3MSLi5udW1lbi52MS5Db25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93c1JlcXVlc3QaLy5udW1lbi52MS5Db25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93c1Jlc3BvbnNlEn0KDkxpc3RSb3dPcHRpb25zEjQubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXF1ZXN0GjUubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_provider, file_numen_v1_settings, file_numen_v1_shared]);
 
 /**
  * CallRowFailure is one row that did not answer. reason is the words the person reads and code the reason
@@ -53,9 +55,9 @@ export const CallRowFailureSchema: GenMessage<CallRowFailure> = /*@__PURE__*/
  */
 export type CallFailure = Message<"numen.v1.CallFailure"> & {
   /**
-   * @generated from field: numen.v1.CallErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: CallErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 2;
@@ -403,50 +405,10 @@ export const ConnectionCallServiceListRowOptionsResponseSchema: GenMessage<Conne
   messageDesc(file_numen_v1_connectioncall, 12);
 
 /**
- * CallErrorCode is the reason a call did not succeed.
- *
- * @generated from enum numen.v1.CallErrorCode
- */
-export enum CallErrorCode {
-  /**
-   * @generated from enum value: CALL_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * CALL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
-   *
-   * @generated from enum value: CALL_ERROR_CODE_NO_CONNECTION = 1;
-   */
-  NO_CONNECTION = 1,
-
-  /**
-   * CALL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one. A row that
-   * fails after its first data frame is ALL_FAILED with that one connection.
-   *
-   * @generated from enum value: CALL_ERROR_CODE_ALL_FAILED = 2;
-   */
-  ALL_FAILED = 2,
-
-  /**
-   * CALL_ERROR_CODE_STOPPED is a request that is wrong in itself, and the failure names the connection.
-   *
-   * @generated from enum value: CALL_ERROR_CODE_STOPPED = 3;
-   */
-  STOPPED = 3,
-}
-
-/**
- * Describes the enum numen.v1.CallErrorCode.
- */
-export const CallErrorCodeSchema: GenEnum<CallErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_connectioncall, 0);
-
-/**
  * ConnectionCallService carries out the operations a caller asks for, through the rows of a plugin. The window
  * serves it to a plugin view, which names the plugin whose rows serve the call. The host endpoint serves it to a
  * plugin process, which is the plugin its token names: the request names no plugin, or that one, and the host
- * refuses a request that names another. The core takes the connections from the rows of the settings of the
+ * rejects a request that names another. The core takes the connections from the rows of the settings of the
  * plugin; a plugin that holds connections:use:<operation> uses every connection that serves that operation,
  * which none of its settings of rows lists. The payload and the frames are bytes of the contract the operation
  * belongs to.

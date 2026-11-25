@@ -37,7 +37,7 @@ func TestListVersionItems_OfDeleteTextIsEveryVersionOfTheFile(t *testing.T) {
 		titles = append(titles, one.GetId()+" "+one.GetTitle())
 	}
 	want := []string{"org.example.ears/ears transcript (current)", "org.example.viewer/edit-1 transcript"}
-	if list.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || !reflect.DeepEqual(titles, want) {
+	if list.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || !reflect.DeepEqual(titles, want) {
 		t.Errorf("got %v %v, want %v", list.GetError(), titles, want)
 	}
 }
@@ -52,7 +52,7 @@ func TestDeleteVersion_OfDeleteTextDeletesTheVersionPicked(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED ||
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED ||
 		!reflect.DeepEqual(items.deleted, []string{"talks/a.mp3 org.example.viewer/edit-1"}) {
 		t.Errorf("got %v, deleted %v", res.Msg.GetError(), items.deleted)
 	}
@@ -68,7 +68,7 @@ func TestDeleteVersion_OfDeleteTextNeedsAnItem(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS || len(items.deleted) != 0 {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INVALID || len(items.deleted) != 0 {
 		t.Errorf("got %v, deleted %v", res.Msg.GetError(), items.deleted)
 	}
 }

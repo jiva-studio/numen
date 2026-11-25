@@ -67,37 +67,24 @@ func readSearchCallError(err error) error {
 	return readError(err)
 }
 
-func readSearchError(code v1.HostSearchErrorCode) error {
+func readSearchError(code v1.ErrorCode) error {
 	switch code {
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED:
+	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
 		return nil
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT:
+	case v1.ErrorCode_ERROR_CODE_NO_VAULT:
 		return ErrNoVault
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL:
+	case v1.ErrorCode_ERROR_CODE_NO_MODEL:
 		return ErrNoModel
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH:
+	case v1.ErrorCode_ERROR_CODE_RECIPE_MISMATCH:
 		return ErrRecipeMismatch
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_FLOOR:
-		return ErrInvalidFloor
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED:
+	case v1.ErrorCode_ERROR_CODE_LIMIT_EXCEEDED:
 		return ErrLimitExceeded
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED:
+	case v1.ErrorCode_ERROR_CODE_UNAVAILABLE:
 		return ErrEmbeddingFailed
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY:
+	case v1.ErrorCode_ERROR_CODE_INVALID:
 		return ErrInvalidQuery
-	default:
-		return readSearchRunError(code)
-	}
-}
-
-func readSearchRunError(code v1.HostSearchErrorCode) error {
-	switch code {
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND:
+	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
 		return ErrSearchNotFound
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES:
-		return ErrTooManySearches
-	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN:
-		return ErrInvalidPageToken
 	default:
 		return fmt.Errorf("host: rejected with code %s", code)
 	}
@@ -285,6 +272,9 @@ func (c *SearchClient) SetSearchFloor(ctx context.Context, recipe string, floor 
 	res, err := c.rpc.SetSearchFloor(ctx, newSearchRequest(c, &v1.SetSearchFloorRequest{Recipe: recipe, Floor: floor}))
 	if err != nil {
 		return readSearchCallError(err)
+	}
+	if res.Msg.GetError() == v1.ErrorCode_ERROR_CODE_INVALID {
+		return ErrInvalidFloor
 	}
 	return readSearchError(res.Msg.GetError())
 }

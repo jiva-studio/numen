@@ -199,24 +199,24 @@ func getDetail(err error) string {
 	)
 }
 
-func getErrorCode(err error) (v1.ProviderConnectionErrorCode, bool) {
+func getErrorCode(err error) (v1.ErrorCode, bool) {
 	switch {
 	case errors.Is(err, connection.ErrNotFound):
-		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND, true
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, connections.ErrNameTaken):
-		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN, true
+		return v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, true
 	case errors.Is(err, connections.ErrInvalidField):
-		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD, true
+		return v1.ErrorCode_ERROR_CODE_INVALID, true
 	case errors.Is(err, connection.ErrTypeUnavailable):
-		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE, true
+		return v1.ErrorCode_ERROR_CODE_TYPE_UNAVAILABLE, true
 	case errors.Is(err, connection.ErrKeyStore):
-		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED, true
+		return v1.ErrorCode_ERROR_CODE_KEY_STORE_FAILED, true
 	case errors.Is(err, connection.ErrStaleRevision):
-		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION, true
+		return v1.ErrorCode_ERROR_CODE_CONFLICT, true
 	case errors.Is(err, connections.ErrProviderUnavailable):
-		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE, true
+		return v1.ErrorCode_ERROR_CODE_UNAVAILABLE, true
 	case errors.Is(err, connections.ErrNoOptions):
-		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD, true
+		return v1.ErrorCode_ERROR_CODE_INVALID, true
 	}
-	return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED, false
+	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
 }

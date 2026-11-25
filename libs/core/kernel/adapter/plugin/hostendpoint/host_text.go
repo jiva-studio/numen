@@ -55,25 +55,25 @@ func (e *textEndpoint) begin(header http.Header, permission string) (textCall, e
 	return call, nil
 }
 
-func answerText(ctx context.Context, err error) (v1.TextErrorCode, error) {
+func answerText(ctx context.Context, err error) (v1.ErrorCode, error) {
 	if err == nil {
-		return v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED, nil
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, nil
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	switch {
 	case errors.Is(err, text.ErrNoText):
-		return v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND, nil
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, nil
 	case errors.Is(err, text.ErrInvalidVersion):
-		return v1.TextErrorCode_TEXT_ERROR_CODE_INVALID, nil
+		return v1.ErrorCode_ERROR_CODE_INVALID, nil
 	case errors.Is(err, text.ErrNotTextPlugin):
-		return v1.TextErrorCode_TEXT_ERROR_CODE_NOT_OWNER, nil
+		return v1.ErrorCode_ERROR_CODE_NOT_OWNER, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
 
-const noTexts = v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT
+const noTexts = v1.ErrorCode_ERROR_CODE_NO_VAULT
 
 func (e *textEndpoint) PutTextVersion(
 	ctx context.Context, req *connect.Request[v1.PutTextVersionRequest],
@@ -96,7 +96,7 @@ func (e *textEndpoint) PutTextVersion(
 		return nil, err
 	}
 	res := &v1.PutTextVersionResponse{Error: code}
-	if code == v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED {
+	if code == v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		res.Version = writeVersion(version)
 	}
 	return connect.NewResponse(res), nil

@@ -12,13 +12,15 @@ import type { SearchResult } from "./search_pb.js";
 import { file_numen_v1_search } from "./search_pb.js";
 import type { ChunkMatch, SearchPlace } from "./search_source_pb.js";
 import { file_numen_v1_search_source } from "./search_source_pb.js";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostsearch.proto.
  */
 export const file_numen_v1_hostsearch: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0c2VhcmNoLnByb3RvEghudW1lbi52MSIaChhHZXRFbWJlZGRpbmdTdGF0ZVJlcXVlc3QiuwEKGUdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg4KBnJlY2lwZRgCIAEoCRINCgVtb2RlbBgDIAEoCRISCgpmbG9vcl9oaW50GAQgASgBEhMKC2NodW5rX2NvdW50GAUgASgDEhYKDmVtYmVkZGVkX2NvdW50GAYgASgDEhAKCGlzX3JlYWR5GAcgASgIIhYKFEdldEluZGV4U3RhdHNSZXF1ZXN0Ik4KDkV4dGVuc2lvblN0YXRzEhEKCWV4dGVuc2lvbhgBIAEoCRIUCgxzb3VyY2VfY291bnQYAiABKAMSEwoLY2h1bmtfY291bnQYAyABKAMilQIKFUdldEluZGV4U3RhdHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEg0KBW1vZGVsGAMgASgJEhIKCmRpbWVuc2lvbnMYBCABKAMSEwoLY2h1bmtfY291bnQYBSABKAMSFAoMdmVjdG9yX2NvdW50GAYgASgDEhQKDHNvdXJjZV9jb3VudBgHIAEoAxIsCgpleHRlbnNpb25zGAggAygLMhgubnVtZW4udjEuRXh0ZW5zaW9uU3RhdHMSFgoOZGF0YWJhc2VfYnl0ZXMYCSABKAMSFAoMdmVjdG9yX2J5dGVzGAogASgDIiIKEUVtYmVkVGV4dHNSZXF1ZXN0Eg0KBXRleHRzGAEgAygJInoKEkVtYmVkVGV4dHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEiYKB3ZlY3RvcnMYAyADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciJGCg9TaW1pbGFyaXR5UXVlcnkSJQoGdmVjdG9yGAEgASgLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISDAoEcGF0aBgCIAEoCSJXChlTYW1wbGVTaW1pbGFyaXRpZXNSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRIqCgdxdWVyaWVzGAIgAygLMhkubnVtZW4udjEuU2ltaWxhcml0eVF1ZXJ5Ih8KDVNpbWlsYXJpdHlSb3cSDgoGdmFsdWVzGAEgAygBIpwBChpTYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSEwoLY2h1bmtfY291bnQYAiABKAUSFAoMc291cmNlX2NvdW50GAMgASgFEiUKBHJvd3MYBCADKAsyFy5udW1lbi52MS5TaW1pbGFyaXR5Um93IjkKGEdldEJlc3RTaW1pbGFyaXR5UmVxdWVzdBIOCgZyZWNpcGUYASABKAkSDQoFcXVlcnkYAiADKAIiXQoZR2V0QmVzdFNpbWlsYXJpdHlSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSEgoKc2ltaWxhcml0eRgCIAEoASKSAQoYRmluZE5lYXJlc3RDaHVua3NSZXF1ZXN0EiQKBXBsYWNlGAEgASgLMhUubnVtZW4udjEuU2VhcmNoUGxhY2USDgoGdmVjdG9yGAIgAygCEg0KBWxpbWl0GAMgASgFEg0KBWtpbmRzGAQgAygJEhMKC3BhdGhfcHJlZml4GAUgASgJEg0KBWZsb29yGAYgASgBInAKGUZpbmROZWFyZXN0Q2h1bmtzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEiUKB21hdGNoZXMYAiADKAsyFC5udW1lbi52MS5DaHVua01hdGNoIicKFUdldFNlYXJjaEZsb29yUmVxdWVzdBIOCgZyZWNpcGUYASABKAkiwwEKFkdldFNlYXJjaEZsb29yUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg0KBWZsb29yGAIgASgBEisKBnNvdXJjZRgDIAEoDjIbLm51bWVuLnYxLlNlYXJjaEZsb29yU291cmNlEhQKDHN0b3JlZF9mbG9vchgEIAEoARISCgpoaW50X2Zsb29yGAUgASgBEhUKDWRlZmF1bHRfZmxvb3IYBiABKAEiNgoVU2V0U2VhcmNoRmxvb3JSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVmbG9vchgCIAEoASJGChZTZXRTZWFyY2hGbG9vclJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZSKCAQoiSG9zdFNlYXJjaFNlcnZpY2VTZWFyY2hUZXh0UmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRINCgVraW5kcxgDIAMoCRITCgtwYXRoX3ByZWZpeBgEIAEoCRIaChJyZXN1bHRzX3Blcl9zb3VyY2UYBSABKAUifAojSG9zdFNlYXJjaFNlcnZpY2VTZWFyY2hUZXh0UmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEicKB3Jlc3VsdHMYAiADKAsyFi5udW1lbi52MS5TZWFyY2hSZXN1bHQiYAoSU3RhcnRTZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEiQKCHByaW9yaXR5GAIgASgOMhIubnVtZW4udjEuUHJpb3JpdHkSFQoNaXNfYmFja2dyb3VuZBgDIAEoCCJPChNTdGFydFNlYXJjaFJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZRIKCgJpZBgCIAEoCSJWChBHZXRTZWFyY2hSZXF1ZXN0EgoKAmlkGAEgASgJEg8KB3dhaXRfbXMYAiABKAMSEQoJcGFnZV9zaXplGAMgASgFEhIKCnBhZ2VfdG9rZW4YBCABKAkiaAoRR2V0U2VhcmNoUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEiUKBnNlYXJjaBgCIAEoCzIVLm51bWVuLnYxLlNlYXJjaFN0YXRlIvkCCgtTZWFyY2hTdGF0ZRIKCgJpZBgBIAEoCRISCgppc19ydW5uaW5nGAIgASgIEhIKCmlzX3BhcnRpYWwYAyABKAgSEAoIaXNfc3RhbGUYBCABKAgSKgoIcHJvZ3Jlc3MYBSABKAsyGC5udW1lbi52MS5TZWFyY2hQcm9ncmVzcxInCgdyZXN1bHRzGAYgAygLMhYubnVtZW4udjEuU2VhcmNoUmVzdWx0EicKBmVycm9ycxgHIAMoCzIXLm51bWVuLnYxLlNlYXJjaFByb2JsZW0SEAoId2FybmluZ3MYCCADKAkSFwoPbmV4dF9wYWdlX3Rva2VuGAkgASgJEhUKDXRvdGFsX3Jlc3VsdHMYCiABKAUSJwoHcmVyYW5rcxgLIAMoCzIWLm51bWVuLnYxLlNlYXJjaFJlcmFuaxISCgpzY29yZV9raW5kGAwgASgJEg0KBWZsb29yGA0gASgBEhgKEGluZGV4X2dlbmVyYXRpb24YDiABKAkiHgoOU2VhcmNoUHJvZ3Jlc3MSDAoEc3RlcBgBIAEoCSJ4Cg1TZWFyY2hQcm9ibGVtEgwKBGxpbmUYASABKAUSDgoGY29sdW1uGAIgASgFEg8KB21lc3NhZ2UYAyABKAkSEgoKc3VnZ2VzdGlvbhgEIAEoCRIQCghlbmRfbGluZRgFIAEoBRISCgplbmRfY29sdW1uGAYgASgFIlEKDFNlYXJjaFJlcmFuaxIXCg9jb25uZWN0aW9uX25hbWUYASABKAkSEgoKc2VudF9jb3VudBgCIAEoBRIUCgxyZXVzZWRfY291bnQYAyABKAUiIQoTRGVsZXRlU2VhcmNoUmVxdWVzdBIKCgJpZBgBIAEoCSJEChREZWxldGVTZWFyY2hSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUiHAoaTGlzdFNlYXJjaEZ1bmN0aW9uc1JlcXVlc3QiigEKG0xpc3RTZWFyY2hGdW5jdGlvbnNSZXNwb25zZRIsCgVlcnJvchgDIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSKwoJZnVuY3Rpb25zGAEgAygLMhgubnVtZW4udjEuU2VhcmNoRnVuY3Rpb24SEAoIcmV2aXNpb24YAiABKAkihgEKDlNlYXJjaEZ1bmN0aW9uEgwKBG5hbWUYASABKAkSDAoEa2luZBgCIAEoCRINCgVsZXZlbBgDIAEoCRISCgpzaWduYXR1cmVzGAQgAygJEhMKC2Rlc2NyaXB0aW9uGAUgASgJEg8KB2V4YW1wbGUYBiABKAkSDwoHc3VtbWFyeRgHIAEoCSrpAwoTSG9zdFNlYXJjaEVycm9yQ29kZRImCiJIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9OT19WQVVMVBABEiMKH0hPU1RfU0VBUkNIX0VSUk9SX0NPREVfTk9fTU9ERUwQAhIqCiZIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1JFQ0lQRV9NSVNNQVRDSBADEigKJEhPU1RfU0VBUkNIX0VSUk9SX0NPREVfSU5WQUxJRF9GTE9PUhAEEikKJUhPU1RfU0VBUkNIX0VSUk9SX0NPREVfTElNSVRfRVhDRUVERUQQBRIrCidIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0VNQkVERElOR19GQUlMRUQQBhIoCiRIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0lOVkFMSURfUVVFUlkQBxIrCidIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1NFQVJDSF9OT1RfRk9VTkQQChIsCihIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1RPT19NQU5ZX1NFQVJDSEVTEAsSLQopSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9JTlZBTElEX1BBR0VfVE9LRU4QDCqdAQoRU2VhcmNoRmxvb3JTb3VyY2USIwofU0VBUkNIX0ZMT09SX1NPVVJDRV9VTlNQRUNJRklFRBAAEh4KGlNFQVJDSF9GTE9PUl9TT1VSQ0VfU1RPUkVEEAESIgoeU0VBUkNIX0ZMT09SX1NPVVJDRV9NT0RFTF9ISU5UEAISHwobU0VBUkNIX0ZMT09SX1NPVVJDRV9ERUZBVUxUEAMygwkKEUhvc3RTZWFyY2hTZXJ2aWNlElwKEUdldEVtYmVkZGluZ1N0YXRlEiIubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXF1ZXN0GiMubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXNwb25zZRJQCg1HZXRJbmRleFN0YXRzEh4ubnVtZW4udjEuR2V0SW5kZXhTdGF0c1JlcXVlc3QaHy5udW1lbi52MS5HZXRJbmRleFN0YXRzUmVzcG9uc2USRwoKRW1iZWRUZXh0cxIbLm51bWVuLnYxLkVtYmVkVGV4dHNSZXF1ZXN0GhwubnVtZW4udjEuRW1iZWRUZXh0c1Jlc3BvbnNlEl8KElNhbXBsZVNpbWlsYXJpdGllcxIjLm51bWVuLnYxLlNhbXBsZVNpbWlsYXJpdGllc1JlcXVlc3QaJC5udW1lbi52MS5TYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRJcChFHZXRCZXN0U2ltaWxhcml0eRIiLm51bWVuLnYxLkdldEJlc3RTaW1pbGFyaXR5UmVxdWVzdBojLm51bWVuLnYxLkdldEJlc3RTaW1pbGFyaXR5UmVzcG9uc2USXAoRRmluZE5lYXJlc3RDaHVua3MSIi5udW1lbi52MS5GaW5kTmVhcmVzdENodW5rc1JlcXVlc3QaIy5udW1lbi52MS5GaW5kTmVhcmVzdENodW5rc1Jlc3BvbnNlEmkKClNlYXJjaFRleHQSLC5udW1lbi52MS5Ib3N0U2VhcmNoU2VydmljZVNlYXJjaFRleHRSZXF1ZXN0Gi0ubnVtZW4udjEuSG9zdFNlYXJjaFNlcnZpY2VTZWFyY2hUZXh0UmVzcG9uc2USUwoOR2V0U2VhcmNoRmxvb3ISHy5udW1lbi52MS5HZXRTZWFyY2hGbG9vclJlcXVlc3QaIC5udW1lbi52MS5HZXRTZWFyY2hGbG9vclJlc3BvbnNlElMKDlNldFNlYXJjaEZsb29yEh8ubnVtZW4udjEuU2V0U2VhcmNoRmxvb3JSZXF1ZXN0GiAubnVtZW4udjEuU2V0U2VhcmNoRmxvb3JSZXNwb25zZRJKCgtTdGFydFNlYXJjaBIcLm51bWVuLnYxLlN0YXJ0U2VhcmNoUmVxdWVzdBodLm51bWVuLnYxLlN0YXJ0U2VhcmNoUmVzcG9uc2USRAoJR2V0U2VhcmNoEhoubnVtZW4udjEuR2V0U2VhcmNoUmVxdWVzdBobLm51bWVuLnYxLkdldFNlYXJjaFJlc3BvbnNlEk0KDERlbGV0ZVNlYXJjaBIdLm51bWVuLnYxLkRlbGV0ZVNlYXJjaFJlcXVlc3QaHi5udW1lbi52MS5EZWxldGVTZWFyY2hSZXNwb25zZRJiChNMaXN0U2VhcmNoRnVuY3Rpb25zEiQubnVtZW4udjEuTGlzdFNlYXJjaEZ1bmN0aW9uc1JlcXVlc3QaJS5udW1lbi52MS5MaXN0U2VhcmNoRnVuY3Rpb25zUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding, file_numen_v1_provider, file_numen_v1_search, file_numen_v1_search_source]);
+  fileDesc("ChludW1lbi92MS9ob3N0c2VhcmNoLnByb3RvEghudW1lbi52MSIaChhHZXRFbWJlZGRpbmdTdGF0ZVJlcXVlc3QisQEKGUdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEg0KBW1vZGVsGAMgASgJEhIKCmZsb29yX2hpbnQYBCABKAESEwoLY2h1bmtfY291bnQYBSABKAMSFgoOZW1iZWRkZWRfY291bnQYBiABKAMSEAoIaXNfcmVhZHkYByABKAgiFgoUR2V0SW5kZXhTdGF0c1JlcXVlc3QiTgoORXh0ZW5zaW9uU3RhdHMSEQoJZXh0ZW5zaW9uGAEgASgJEhQKDHNvdXJjZV9jb3VudBgCIAEoAxITCgtjaHVua19jb3VudBgDIAEoAyKLAgoVR2V0SW5kZXhTdGF0c1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg4KBnJlY2lwZRgCIAEoCRINCgVtb2RlbBgDIAEoCRISCgpkaW1lbnNpb25zGAQgASgDEhMKC2NodW5rX2NvdW50GAUgASgDEhQKDHZlY3Rvcl9jb3VudBgGIAEoAxIUCgxzb3VyY2VfY291bnQYByABKAMSLAoKZXh0ZW5zaW9ucxgIIAMoCzIYLm51bWVuLnYxLkV4dGVuc2lvblN0YXRzEhYKDmRhdGFiYXNlX2J5dGVzGAkgASgDEhQKDHZlY3Rvcl9ieXRlcxgKIAEoAyIiChFFbWJlZFRleHRzUmVxdWVzdBINCgV0ZXh0cxgBIAMoCSJwChJFbWJlZFRleHRzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEiYKB3ZlY3RvcnMYAyADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciJGCg9TaW1pbGFyaXR5UXVlcnkSJQoGdmVjdG9yGAEgASgLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISDAoEcGF0aBgCIAEoCSJXChlTYW1wbGVTaW1pbGFyaXRpZXNSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRIqCgdxdWVyaWVzGAIgAygLMhkubnVtZW4udjEuU2ltaWxhcml0eVF1ZXJ5Ih8KDVNpbWlsYXJpdHlSb3cSDgoGdmFsdWVzGAEgAygBIpIBChpTYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRITCgtjaHVua19jb3VudBgCIAEoBRIUCgxzb3VyY2VfY291bnQYAyABKAUSJQoEcm93cxgEIAMoCzIXLm51bWVuLnYxLlNpbWlsYXJpdHlSb3ciOQoYR2V0QmVzdFNpbWlsYXJpdHlSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVxdWVyeRgCIAMoAiJTChlHZXRCZXN0U2ltaWxhcml0eVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEhIKCnNpbWlsYXJpdHkYAiABKAEikgEKGEZpbmROZWFyZXN0Q2h1bmtzUmVxdWVzdBIkCgVwbGFjZRgBIAEoCzIVLm51bWVuLnYxLlNlYXJjaFBsYWNlEg4KBnZlY3RvchgCIAMoAhINCgVsaW1pdBgDIAEoBRINCgVraW5kcxgEIAMoCRITCgtwYXRoX3ByZWZpeBgFIAEoCRINCgVmbG9vchgGIAEoASJmChlGaW5kTmVhcmVzdENodW5rc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEiUKB21hdGNoZXMYAiADKAsyFC5udW1lbi52MS5DaHVua01hdGNoIicKFUdldFNlYXJjaEZsb29yUmVxdWVzdBIOCgZyZWNpcGUYASABKAkiuQEKFkdldFNlYXJjaEZsb29yUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDQoFZmxvb3IYAiABKAESKwoGc291cmNlGAMgASgOMhsubnVtZW4udjEuU2VhcmNoRmxvb3JTb3VyY2USFAoMc3RvcmVkX2Zsb29yGAQgASgBEhIKCmhpbnRfZmxvb3IYBSABKAESFQoNZGVmYXVsdF9mbG9vchgGIAEoASI2ChVTZXRTZWFyY2hGbG9vclJlcXVlc3QSDgoGcmVjaXBlGAEgASgJEg0KBWZsb29yGAIgASgBIjwKFlNldFNlYXJjaEZsb29yUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiggEKIkhvc3RTZWFyY2hTZXJ2aWNlU2VhcmNoVGV4dFJlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUSDQoFa2luZHMYAyADKAkSEwoLcGF0aF9wcmVmaXgYBCABKAkSGgoScmVzdWx0c19wZXJfc291cmNlGAUgASgFInIKI0hvc3RTZWFyY2hTZXJ2aWNlU2VhcmNoVGV4dFJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEicKB3Jlc3VsdHMYAiADKAsyFi5udW1lbi52MS5TZWFyY2hSZXN1bHQiYAoSU3RhcnRTZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEiQKCHByaW9yaXR5GAIgASgOMhIubnVtZW4udjEuUHJpb3JpdHkSFQoNaXNfYmFja2dyb3VuZBgDIAEoCCJFChNTdGFydFNlYXJjaFJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEgoKAmlkGAIgASgJIlYKEEdldFNlYXJjaFJlcXVlc3QSCgoCaWQYASABKAkSDwoHd2FpdF9tcxgCIAEoAxIRCglwYWdlX3NpemUYAyABKAUSEgoKcGFnZV90b2tlbhgEIAEoCSJeChFHZXRTZWFyY2hSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIlCgZzZWFyY2gYAiABKAsyFS5udW1lbi52MS5TZWFyY2hTdGF0ZSL5AgoLU2VhcmNoU3RhdGUSCgoCaWQYASABKAkSEgoKaXNfcnVubmluZxgCIAEoCBISCgppc19wYXJ0aWFsGAMgASgIEhAKCGlzX3N0YWxlGAQgASgIEioKCHByb2dyZXNzGAUgASgLMhgubnVtZW4udjEuU2VhcmNoUHJvZ3Jlc3MSJwoHcmVzdWx0cxgGIAMoCzIWLm51bWVuLnYxLlNlYXJjaFJlc3VsdBInCgZlcnJvcnMYByADKAsyFy5udW1lbi52MS5TZWFyY2hQcm9ibGVtEhAKCHdhcm5pbmdzGAggAygJEhcKD25leHRfcGFnZV90b2tlbhgJIAEoCRIVCg10b3RhbF9yZXN1bHRzGAogASgFEicKB3JlcmFua3MYCyADKAsyFi5udW1lbi52MS5TZWFyY2hSZXJhbmsSEgoKc2NvcmVfa2luZBgMIAEoCRINCgVmbG9vchgNIAEoARIYChBpbmRleF9nZW5lcmF0aW9uGA4gASgJIh4KDlNlYXJjaFByb2dyZXNzEgwKBHN0ZXAYASABKAkieAoNU2VhcmNoUHJvYmxlbRIMCgRsaW5lGAEgASgFEg4KBmNvbHVtbhgCIAEoBRIPCgdtZXNzYWdlGAMgASgJEhIKCnN1Z2dlc3Rpb24YBCABKAkSEAoIZW5kX2xpbmUYBSABKAUSEgoKZW5kX2NvbHVtbhgGIAEoBSJRCgxTZWFyY2hSZXJhbmsSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEhIKCnNlbnRfY291bnQYAiABKAUSFAoMcmV1c2VkX2NvdW50GAMgASgFIiEKE0RlbGV0ZVNlYXJjaFJlcXVlc3QSCgoCaWQYASABKAkiOgoURGVsZXRlU2VhcmNoUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiHAoaTGlzdFNlYXJjaEZ1bmN0aW9uc1JlcXVlc3QigAEKG0xpc3RTZWFyY2hGdW5jdGlvbnNSZXNwb25zZRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIrCglmdW5jdGlvbnMYASADKAsyGC5udW1lbi52MS5TZWFyY2hGdW5jdGlvbhIQCghyZXZpc2lvbhgCIAEoCSKGAQoOU2VhcmNoRnVuY3Rpb24SDAoEbmFtZRgBIAEoCRIMCgRraW5kGAIgASgJEg0KBWxldmVsGAMgASgJEhIKCnNpZ25hdHVyZXMYBCADKAkSEwoLZGVzY3JpcHRpb24YBSABKAkSDwoHZXhhbXBsZRgGIAEoCRIPCgdzdW1tYXJ5GAcgASgJKp0BChFTZWFyY2hGbG9vclNvdXJjZRIjCh9TRUFSQ0hfRkxPT1JfU09VUkNFX1VOU1BFQ0lGSUVEEAASHgoaU0VBUkNIX0ZMT09SX1NPVVJDRV9TVE9SRUQQARIiCh5TRUFSQ0hfRkxPT1JfU09VUkNFX01PREVMX0hJTlQQAhIfChtTRUFSQ0hfRkxPT1JfU09VUkNFX0RFRkFVTFQQAzKDCQoRSG9zdFNlYXJjaFNlcnZpY2USXAoRR2V0RW1iZWRkaW5nU3RhdGUSIi5udW1lbi52MS5HZXRFbWJlZGRpbmdTdGF0ZVJlcXVlc3QaIy5udW1lbi52MS5HZXRFbWJlZGRpbmdTdGF0ZVJlc3BvbnNlElAKDUdldEluZGV4U3RhdHMSHi5udW1lbi52MS5HZXRJbmRleFN0YXRzUmVxdWVzdBofLm51bWVuLnYxLkdldEluZGV4U3RhdHNSZXNwb25zZRJHCgpFbWJlZFRleHRzEhsubnVtZW4udjEuRW1iZWRUZXh0c1JlcXVlc3QaHC5udW1lbi52MS5FbWJlZFRleHRzUmVzcG9uc2USXwoSU2FtcGxlU2ltaWxhcml0aWVzEiMubnVtZW4udjEuU2FtcGxlU2ltaWxhcml0aWVzUmVxdWVzdBokLm51bWVuLnYxLlNhbXBsZVNpbWlsYXJpdGllc1Jlc3BvbnNlElwKEUdldEJlc3RTaW1pbGFyaXR5EiIubnVtZW4udjEuR2V0QmVzdFNpbWlsYXJpdHlSZXF1ZXN0GiMubnVtZW4udjEuR2V0QmVzdFNpbWlsYXJpdHlSZXNwb25zZRJcChFGaW5kTmVhcmVzdENodW5rcxIiLm51bWVuLnYxLkZpbmROZWFyZXN0Q2h1bmtzUmVxdWVzdBojLm51bWVuLnYxLkZpbmROZWFyZXN0Q2h1bmtzUmVzcG9uc2USaQoKU2VhcmNoVGV4dBIsLm51bWVuLnYxLkhvc3RTZWFyY2hTZXJ2aWNlU2VhcmNoVGV4dFJlcXVlc3QaLS5udW1lbi52MS5Ib3N0U2VhcmNoU2VydmljZVNlYXJjaFRleHRSZXNwb25zZRJTCg5HZXRTZWFyY2hGbG9vchIfLm51bWVuLnYxLkdldFNlYXJjaEZsb29yUmVxdWVzdBogLm51bWVuLnYxLkdldFNlYXJjaEZsb29yUmVzcG9uc2USUwoOU2V0U2VhcmNoRmxvb3ISHy5udW1lbi52MS5TZXRTZWFyY2hGbG9vclJlcXVlc3QaIC5udW1lbi52MS5TZXRTZWFyY2hGbG9vclJlc3BvbnNlEkoKC1N0YXJ0U2VhcmNoEhwubnVtZW4udjEuU3RhcnRTZWFyY2hSZXF1ZXN0Gh0ubnVtZW4udjEuU3RhcnRTZWFyY2hSZXNwb25zZRJECglHZXRTZWFyY2gSGi5udW1lbi52MS5HZXRTZWFyY2hSZXF1ZXN0GhsubnVtZW4udjEuR2V0U2VhcmNoUmVzcG9uc2USTQoMRGVsZXRlU2VhcmNoEh0ubnVtZW4udjEuRGVsZXRlU2VhcmNoUmVxdWVzdBoeLm51bWVuLnYxLkRlbGV0ZVNlYXJjaFJlc3BvbnNlEmIKE0xpc3RTZWFyY2hGdW5jdGlvbnMSJC5udW1lbi52MS5MaXN0U2VhcmNoRnVuY3Rpb25zUmVxdWVzdBolLm51bWVuLnYxLkxpc3RTZWFyY2hGdW5jdGlvbnNSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_embedding, file_numen_v1_provider, file_numen_v1_search, file_numen_v1_search_source, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetEmbeddingStateRequest
@@ -38,9 +40,9 @@ export const GetEmbeddingStateRequestSchema: GenMessage<GetEmbeddingStateRequest
  */
 export type GetEmbeddingStateResponse = Message<"numen.v1.GetEmbeddingStateResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * The recipe of the model in use. Every vector the host returns, and every
@@ -145,9 +147,9 @@ export const ExtensionStatsSchema: GenMessage<ExtensionStats> = /*@__PURE__*/
  */
 export type GetIndexStatsResponse = Message<"numen.v1.GetIndexStatsResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * The recipe, the name and the dimension count of the model in use.
@@ -236,9 +238,9 @@ export const EmbedTextsRequestSchema: GenMessage<EmbedTextsRequest> = /*@__PURE_
  */
 export type EmbedTextsResponse = Message<"numen.v1.EmbedTextsResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * The recipe of the model that made the vectors.
@@ -337,9 +339,9 @@ export const SimilarityRowSchema: GenMessage<SimilarityRow> = /*@__PURE__*/
  */
 export type SampleSimilaritiesResponse = Message<"numen.v1.SampleSimilaritiesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * How many chunks the host sampled, and how many sources they come from.
@@ -395,9 +397,9 @@ export const GetBestSimilarityRequestSchema: GenMessage<GetBestSimilarityRequest
  */
 export type GetBestSimilarityResponse = Message<"numen.v1.GetBestSimilarityResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: double similarity = 2;
@@ -467,9 +469,9 @@ export const FindNearestChunksRequestSchema: GenMessage<FindNearestChunksRequest
  */
 export type FindNearestChunksResponse = Message<"numen.v1.FindNearestChunksResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * Nearest first. The score is the cosine similarity.
@@ -508,9 +510,9 @@ export const GetSearchFloorRequestSchema: GenMessage<GetSearchFloorRequest> = /*
  */
 export type GetSearchFloorResponse = Message<"numen.v1.GetSearchFloorResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * The floor a search applies when its query names none.
@@ -583,9 +585,9 @@ export const SetSearchFloorRequestSchema: GenMessage<SetSearchFloorRequest> = /*
  */
 export type SetSearchFloorResponse = Message<"numen.v1.SetSearchFloorResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -649,9 +651,9 @@ export const HostSearchServiceSearchTextRequestSchema: GenMessage<HostSearchServ
  */
 export type HostSearchServiceSearchTextResponse = Message<"numen.v1.HostSearchServiceSearchTextResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * Matching search results, best first, at most results_per_source of one
@@ -707,9 +709,9 @@ export const StartSearchRequestSchema: GenMessage<StartSearchRequest> = /*@__PUR
  */
 export type StartSearchResponse = Message<"numen.v1.StartSearchResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string id = 2;
@@ -765,9 +767,9 @@ export const GetSearchRequestSchema: GenMessage<GetSearchRequest> = /*@__PURE__*
  */
 export type GetSearchResponse = Message<"numen.v1.GetSearchResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: numen.v1.SearchState search = 2;
@@ -996,9 +998,9 @@ export const DeleteSearchRequestSchema: GenMessage<DeleteSearchRequest> = /*@__P
  */
 export type DeleteSearchResponse = Message<"numen.v1.DeleteSearchResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -1026,9 +1028,9 @@ export const ListSearchFunctionsRequestSchema: GenMessage<ListSearchFunctionsReq
  */
 export type ListSearchFunctionsResponse = Message<"numen.v1.ListSearchFunctionsResponse"> & {
   /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 3;
+   * @generated from field: numen.v1.ErrorCode error = 3;
    */
-  error: HostSearchErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.SearchFunction functions = 1;
@@ -1106,95 +1108,6 @@ export const SearchFunctionSchema: GenMessage<SearchFunction> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostsearch, 33);
 
 /**
- * HostSearchErrorCode is why a call on the search index failed. The zero
- * value means it was not.
- *
- * @generated from enum numen.v1.HostSearchErrorCode
- */
-export enum HostSearchErrorCode {
-  /**
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The host is showing no vault.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_NO_VAULT = 1;
-   */
-  NO_VAULT = 1,
-
-  /**
-   * The installation has no search source.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_NO_MODEL = 2;
-   */
-  NO_MODEL = 2,
-
-  /**
-   * The recipe is not the one of the model in use.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH = 3;
-   */
-  RECIPE_MISMATCH = 3,
-
-  /**
-   * The floor is not a cosine similarity above zero and at most one.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_INVALID_FLOOR = 4;
-   */
-  INVALID_FLOOR = 4,
-
-  /**
-   * The call names more texts, or longer ones, than one call embeds.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED = 5;
-   */
-  LIMIT_EXCEEDED = 5,
-
-  /**
-   * The embedding model could not answer.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED = 6;
-   */
-  EMBEDDING_FAILED = 6,
-
-  /**
-   * A query vector has a dimension count other than the one of the vectors in the index.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_INVALID_QUERY = 7;
-   */
-  INVALID_QUERY = 7,
-
-  /**
-   * The plugin started no search with the id, or it was removed or expired.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND = 10;
-   */
-  SEARCH_NOT_FOUND = 10,
-
-  /**
-   * The most searches kept are all running.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES = 11;
-   */
-  TOO_MANY_SEARCHES = 11,
-
-  /**
-   * The page token is not one of this search.
-   *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN = 12;
-   */
-  INVALID_PAGE_TOKEN = 12,
-}
-
-/**
- * Describes the enum numen.v1.HostSearchErrorCode.
- */
-export const HostSearchErrorCodeSchema: GenEnum<HostSearchErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_hostsearch, 0);
-
-/**
  * SearchFloorSource is where the floor a search applies comes from.
  *
  * @generated from enum numen.v1.SearchFloorSource
@@ -1231,7 +1144,7 @@ export enum SearchFloorSource {
  * Describes the enum numen.v1.SearchFloorSource.
  */
 export const SearchFloorSourceSchema: GenEnum<SearchFloorSource> = /*@__PURE__*/
-  enumDesc(file_numen_v1_hostsearch, 1);
+  enumDesc(file_numen_v1_hostsearch, 0);
 
 /**
  * HostSearchService is the search index and the search floor of a vault, as a

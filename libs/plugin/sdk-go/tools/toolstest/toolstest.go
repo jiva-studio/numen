@@ -68,16 +68,16 @@ func writeEffect(effect tools.Effect) v1.ToolEffect {
 	return v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED
 }
 
-func writeErrorCode(code tools.ErrorCode) v1.ToolErrorCode {
+func writeErrorCode(code tools.ErrorCode) v1.ErrorCode {
 	switch code {
 	case tools.ErrorCodeUnknownTool:
-		return v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND
 	case tools.ErrorCodeBadArguments:
-		return v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS
+		return v1.ErrorCode_ERROR_CODE_INVALID
 	case tools.ErrorCodeUnspecified:
-		return v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED
 	}
-	return v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED
+	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func writeToolInfo(t *tools.ToolInfo) *v1.PluginTool {

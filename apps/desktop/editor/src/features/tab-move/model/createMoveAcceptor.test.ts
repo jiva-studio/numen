@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
+import { WIRE_ERROR_CODE } from '@numen/core-client'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createMoveAcceptor } from './tabMove'
 
-const answerAccept = (accept = vi.fn(() => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }))) => {
+const answerAccept = (accept = vi.fn(() => ({ error: WIRE_ERROR_CODE.UNSPECIFIED }))) => {
   const api = createAnsweredApi({ workspace: { acceptTabMove: accept } })
   return { accept, acceptTabMove: api.tabs.tabMove.acceptTabMove }
 }
@@ -31,7 +31,7 @@ describe('accepting a moved tab', () => {
   })
 
   it('answers the error of a move the core refused', async () => {
-    const { acceptTabMove } = answerAccept(vi.fn(() => ({ error: TAB_MOVE_ERROR_CODE.TIMEOUT })))
+    const { acceptTabMove } = answerAccept(vi.fn(() => ({ error: WIRE_ERROR_CODE.TIMEOUT })))
 
     const result = await createMoveAcceptor(acceptTabMove, 'window-a', () => Promise.resolve())(
       'plex:2',

@@ -58,17 +58,17 @@ func newStoreRequest[T any](c *StoreClient, msg *T) *connect.Request[T] {
 	return req
 }
 
-func readStoreError(code v1.HostStoreErrorCode) error {
+func readStoreError(code v1.ErrorCode) error {
 	switch code {
-	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED:
+	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
 		return nil
-	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT:
+	case v1.ErrorCode_ERROR_CODE_NO_VAULT:
 		return ErrNoVault
-	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND:
+	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
 		return ErrNotExist
-	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT:
+	case v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT:
 		return ErrOutside
-	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER:
+	case v1.ErrorCode_ERROR_CODE_LOCKED:
 		return ErrLockedByAnother
 	}
 	return fmt.Errorf("host: rejected with code %s", code)

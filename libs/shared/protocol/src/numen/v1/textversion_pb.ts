@@ -4,15 +4,17 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { CommandErrorCode, CommandItem } from "./plugincommand_pb.js";
+import type { CommandItem } from "./plugincommand_pb.js";
 import { file_numen_v1_plugincommand } from "./plugincommand_pb.js";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/textversion.proto.
  */
 export const file_numen_v1_textversion: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS90ZXh0dmVyc2lvbi5wcm90bxIIbnVtZW4udjEiJwoXTGlzdFZlcnNpb25JdGVtc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJ8ChhMaXN0VmVyc2lvbkl0ZW1zUmVzcG9uc2USJAoFaXRlbXMYASADKAsyFS5udW1lbi52MS5Db21tYW5kSXRlbRIpCgVlcnJvchgCIAEoDjIaLm51bWVuLnYxLkNvbW1hbmRFcnJvckNvZGUSDwoHbWVzc2FnZRgDIAEoCSI4ChREZWxldGVWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEhIKCnZlcnNpb25faWQYAiABKAkiUwoVRGVsZXRlVmVyc2lvblJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJMsEBChJUZXh0VmVyc2lvblNlcnZpY2USWQoQTGlzdFZlcnNpb25JdGVtcxIhLm51bWVuLnYxLkxpc3RWZXJzaW9uSXRlbXNSZXF1ZXN0GiIubnVtZW4udjEuTGlzdFZlcnNpb25JdGVtc1Jlc3BvbnNlElAKDURlbGV0ZVZlcnNpb24SHi5udW1lbi52MS5EZWxldGVWZXJzaW9uUmVxdWVzdBofLm51bWVuLnYxLkRlbGV0ZVZlcnNpb25SZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugincommand]);
+  fileDesc("ChpudW1lbi92MS90ZXh0dmVyc2lvbi5wcm90bxIIbnVtZW4udjEiJwoXTGlzdFZlcnNpb25JdGVtc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJ1ChhMaXN0VmVyc2lvbkl0ZW1zUmVzcG9uc2USJAoFaXRlbXMYASADKAsyFS5udW1lbi52MS5Db21tYW5kSXRlbRIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIPCgdtZXNzYWdlGAMgASgJIjgKFERlbGV0ZVZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSEgoKdmVyc2lvbl9pZBgCIAEoCSJMChVEZWxldGVWZXJzaW9uUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCTLBAQoSVGV4dFZlcnNpb25TZXJ2aWNlElkKEExpc3RWZXJzaW9uSXRlbXMSIS5udW1lbi52MS5MaXN0VmVyc2lvbkl0ZW1zUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RWZXJzaW9uSXRlbXNSZXNwb25zZRJQCg1EZWxldGVWZXJzaW9uEh4ubnVtZW4udjEuRGVsZXRlVmVyc2lvblJlcXVlc3QaHy5udW1lbi52MS5EZWxldGVWZXJzaW9uUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_plugincommand, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListVersionItemsRequest
@@ -45,9 +47,9 @@ export type ListVersionItemsResponse = Message<"numen.v1.ListVersionItemsRespons
   /**
    * Set when the versions could not be listed; the message then says why.
    *
-   * @generated from field: numen.v1.CommandErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: CommandErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string message = 3;
@@ -93,9 +95,9 @@ export const DeleteVersionRequestSchema: GenMessage<DeleteVersionRequest> = /*@_
  */
 export type DeleteVersionResponse = Message<"numen.v1.DeleteVersionResponse"> & {
   /**
-   * @generated from field: numen.v1.CommandErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: CommandErrorCode;
+  error: ErrorCode;
 
   /**
    * What a person reads about a failure.

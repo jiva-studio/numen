@@ -5,7 +5,7 @@
 import type { Client } from '@connectrpc/connect'
 import type { ThemeService } from '@numen/protocol'
 import { asFailure, asValue, type Failure, type Result } from '@numen/result'
-import { THEME_MODE, THEME_ORIGIN, type ThemeModeCode, type ThemeOriginCode } from '../clients'
+import { THEME_MODE, THEME_ORIGIN, WIRE_ERROR_CODE, type ThemeModeCode, type ThemeOriginCode } from '../clients'
 
 /** Which half of a `light-dark()` pair every token is read as. */
 export type ThemeMode = 'system' | 'light' | 'dark'
@@ -116,9 +116,9 @@ export function createThemeClient(rpc: ThemeRpc): ThemeClient {
     },
     readTheme: async (name) => (await rpc.readTheme({ name })).css,
     writeAppearance: async (name, mode) => {
-      const { error } = await rpc.writeAppearance({ name, mode: CODES[mode] })
-      if (error === '') return asValue(undefined)
-      return asFailure({ error: 'notWritten', message: error })
+      const { error, detail } = await rpc.writeAppearance({ name, mode: CODES[mode] })
+      if (error === WIRE_ERROR_CODE.UNSPECIFIED) return asValue(undefined)
+      return asFailure({ error: 'notWritten', message: detail })
     },
     watchThemes: async function* (signal) {
       for await (const update of rpc.watchThemes({}, { signal })) yield update.names

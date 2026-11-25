@@ -147,54 +147,6 @@ func (PluginContributionKind) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{0}
 }
 
-// value means it did not.
-type PluginEventErrorCode int32
-
-const (
-	PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED PluginEventErrorCode = 0
-	// The plugin's event handler answered an error, which detail carries.
-	PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED PluginEventErrorCode = 1
-)
-
-// Enum value maps for PluginEventErrorCode.
-var (
-	PluginEventErrorCode_name = map[int32]string{
-		0: "PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED",
-		1: "PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED",
-	}
-	PluginEventErrorCode_value = map[string]int32{
-		"PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED":    0,
-		"PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED": 1,
-	}
-)
-
-func (x PluginEventErrorCode) Enum() *PluginEventErrorCode {
-	p := new(PluginEventErrorCode)
-	*p = x
-	return p
-}
-
-func (x PluginEventErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (PluginEventErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_plugin_proto_enumTypes[1].Descriptor()
-}
-
-func (PluginEventErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_plugin_proto_enumTypes[1]
-}
-
-func (x PluginEventErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use PluginEventErrorCode.Descriptor instead.
-func (PluginEventErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{1}
-}
-
 type PingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1513,8 +1465,9 @@ func (x *RetryPluginRequest) GetPluginId() string {
 
 type RetryPluginResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when the plugin failed to start again, in words a person reads.
-	Failure       string `protobuf:"bytes,1,opt,name=failure,proto3" json:"failure,omitempty"`
+	// Set when the plugin failed to start again; detail carries the reason.
+	Error         ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Detail        string    `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1549,9 +1502,16 @@ func (*RetryPluginResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{21}
 }
 
-func (x *RetryPluginResponse) GetFailure() string {
+func (x *RetryPluginResponse) GetError() ErrorCode {
 	if x != nil {
-		return x.Failure
+		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *RetryPluginResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
 	}
 	return ""
 }
@@ -1854,7 +1814,7 @@ func (x *DeliverEventRequest) GetEvent() string {
 
 type DeliverEventResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         PluginEventErrorCode   `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.PluginEventErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1890,11 +1850,11 @@ func (*DeliverEventResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *DeliverEventResponse) GetError() PluginEventErrorCode {
+func (x *DeliverEventResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *DeliverEventResponse) GetDetail() string {
@@ -1908,7 +1868,7 @@ var File_numen_v1_plugin_proto protoreflect.FileDescriptor
 
 const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/plugin.proto\x12\bnumen.v1\x1a\x15numen/v1/health.proto\"\r\n" +
+	"\x15numen/v1/plugin.proto\x12\bnumen.v1\x1a\x15numen/v1/health.proto\x1a\x15numen/v1/shared.proto\"\r\n" +
 	"\vPingRequest\"*\n" +
 	"\fPingResponse\x12\x1a\n" +
 	"\bprotocol\x18\x01 \x01(\x05R\bprotocol\"\x11\n" +
@@ -2010,9 +1970,10 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\aplugins\x18\x01 \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"\x1d\n" +
 	"\x1bWatchPluginProcessesRequest\"1\n" +
 	"\x12RetryPluginRequest\x12\x1b\n" +
-	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\"/\n" +
-	"\x13RetryPluginResponse\x12\x18\n" +
-	"\afailure\x18\x01 \x01(\tR\afailure\"w\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\"X\n" +
+	"\x13RetryPluginResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"w\n" +
 	"\x1cWatchPluginProcessesResponse\x125\n" +
 	"\tprocesses\x18\x01 \x03(\v2\x17.numen.v1.PluginProcessR\tprocesses\x12 \n" +
 	"\ftime_unix_ms\x18\x02 \x01(\x03R\n" +
@@ -2038,9 +1999,9 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\trequester\x18\x01 \x01(\tR\trequester\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\"+\n" +
 	"\x13DeliverEventRequest\x12\x14\n" +
-	"\x05event\x18\x01 \x01(\tR\x05event\"d\n" +
-	"\x14DeliverEventResponse\x124\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.v1.PluginEventErrorCodeR\x05error\x12\x16\n" +
+	"\x05event\x18\x01 \x01(\tR\x05event\"Y\n" +
+	"\x14DeliverEventResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail*\xd3\b\n" +
 	"\x16PluginContributionKind\x12(\n" +
 	"$PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED\x10\x00\x12%\n" +
@@ -2069,10 +2030,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"*PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS\x10\x15\x12-\n" +
 	")PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS\x10\x17\x12\"\n" +
 	"\x1ePLUGIN_CONTRIBUTION_KIND_TOOLS\x10\x18\x12.\n" +
-	"*PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS\x10\x19*k\n" +
-	"\x14PluginEventErrorCode\x12'\n" +
-	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12*\n" +
-	"&PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED\x10\x012\xd8\x01\n" +
+	"*PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS\x10\x192\xd8\x01\n" +
 	"\x16PluginLifecycleService\x125\n" +
 	"\x04Ping\x12\x15.numen.v1.PingRequest\x1a\x16.numen.v1.PingResponse\x12A\n" +
 	"\bShutdown\x12\x19.numen.v1.ShutdownRequest\x1a\x1a.numen.v1.ShutdownResponse\x12D\n" +
@@ -2097,83 +2055,84 @@ func file_numen_v1_plugin_proto_rawDescGZIP() []byte {
 	return file_numen_v1_plugin_proto_rawDescData
 }
 
-var file_numen_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_numen_v1_plugin_proto_goTypes = []any{
 	(PluginContributionKind)(0),          // 0: numen.v1.PluginContributionKind
-	(PluginEventErrorCode)(0),            // 1: numen.v1.PluginEventErrorCode
-	(*PingRequest)(nil),                  // 2: numen.v1.PingRequest
-	(*PingResponse)(nil),                 // 3: numen.v1.PingResponse
-	(*ShutdownRequest)(nil),              // 4: numen.v1.ShutdownRequest
-	(*ShutdownResponse)(nil),             // 5: numen.v1.ShutdownResponse
-	(*ConfigureRequest)(nil),             // 6: numen.v1.ConfigureRequest
-	(*ConfigureResponse)(nil),            // 7: numen.v1.ConfigureResponse
-	(*PluginSetting)(nil),                // 8: numen.v1.PluginSetting
-	(*PluginSettingOption)(nil),          // 9: numen.v1.PluginSettingOption
-	(*PluginSettingOptions)(nil),         // 10: numen.v1.PluginSettingOptions
-	(*PluginSettingOptionsBy)(nil),       // 11: numen.v1.PluginSettingOptionsBy
-	(*PluginSettingCondition)(nil),       // 12: numen.v1.PluginSettingCondition
-	(*PluginInfo)(nil),                   // 13: numen.v1.PluginInfo
-	(*PluginContribution)(nil),           // 14: numen.v1.PluginContribution
-	(*PluginContributionItem)(nil),       // 15: numen.v1.PluginContributionItem
-	(*PluginSettingGroup)(nil),           // 16: numen.v1.PluginSettingGroup
-	(*PluginSettingsView)(nil),           // 17: numen.v1.PluginSettingsView
-	(*PluginReader)(nil),                 // 18: numen.v1.PluginReader
-	(*ListPluginsRequest)(nil),           // 19: numen.v1.ListPluginsRequest
-	(*ListPluginsResponse)(nil),          // 20: numen.v1.ListPluginsResponse
-	(*WatchPluginProcessesRequest)(nil),  // 21: numen.v1.WatchPluginProcessesRequest
-	(*RetryPluginRequest)(nil),           // 22: numen.v1.RetryPluginRequest
-	(*RetryPluginResponse)(nil),          // 23: numen.v1.RetryPluginResponse
-	(*WatchPluginProcessesResponse)(nil), // 24: numen.v1.WatchPluginProcessesResponse
-	(*PluginProcess)(nil),                // 25: numen.v1.PluginProcess
-	(*PluginLeaseHolder)(nil),            // 26: numen.v1.PluginLeaseHolder
-	(*DeliverEventRequest)(nil),          // 27: numen.v1.DeliverEventRequest
-	(*DeliverEventResponse)(nil),         // 28: numen.v1.DeliverEventResponse
-	nil,                                  // 29: numen.v1.ConfigureRequest.ValuesEntry
-	nil,                                  // 30: numen.v1.PluginSettingOptionsBy.OptionsEntry
+	(*PingRequest)(nil),                  // 1: numen.v1.PingRequest
+	(*PingResponse)(nil),                 // 2: numen.v1.PingResponse
+	(*ShutdownRequest)(nil),              // 3: numen.v1.ShutdownRequest
+	(*ShutdownResponse)(nil),             // 4: numen.v1.ShutdownResponse
+	(*ConfigureRequest)(nil),             // 5: numen.v1.ConfigureRequest
+	(*ConfigureResponse)(nil),            // 6: numen.v1.ConfigureResponse
+	(*PluginSetting)(nil),                // 7: numen.v1.PluginSetting
+	(*PluginSettingOption)(nil),          // 8: numen.v1.PluginSettingOption
+	(*PluginSettingOptions)(nil),         // 9: numen.v1.PluginSettingOptions
+	(*PluginSettingOptionsBy)(nil),       // 10: numen.v1.PluginSettingOptionsBy
+	(*PluginSettingCondition)(nil),       // 11: numen.v1.PluginSettingCondition
+	(*PluginInfo)(nil),                   // 12: numen.v1.PluginInfo
+	(*PluginContribution)(nil),           // 13: numen.v1.PluginContribution
+	(*PluginContributionItem)(nil),       // 14: numen.v1.PluginContributionItem
+	(*PluginSettingGroup)(nil),           // 15: numen.v1.PluginSettingGroup
+	(*PluginSettingsView)(nil),           // 16: numen.v1.PluginSettingsView
+	(*PluginReader)(nil),                 // 17: numen.v1.PluginReader
+	(*ListPluginsRequest)(nil),           // 18: numen.v1.ListPluginsRequest
+	(*ListPluginsResponse)(nil),          // 19: numen.v1.ListPluginsResponse
+	(*WatchPluginProcessesRequest)(nil),  // 20: numen.v1.WatchPluginProcessesRequest
+	(*RetryPluginRequest)(nil),           // 21: numen.v1.RetryPluginRequest
+	(*RetryPluginResponse)(nil),          // 22: numen.v1.RetryPluginResponse
+	(*WatchPluginProcessesResponse)(nil), // 23: numen.v1.WatchPluginProcessesResponse
+	(*PluginProcess)(nil),                // 24: numen.v1.PluginProcess
+	(*PluginLeaseHolder)(nil),            // 25: numen.v1.PluginLeaseHolder
+	(*DeliverEventRequest)(nil),          // 26: numen.v1.DeliverEventRequest
+	(*DeliverEventResponse)(nil),         // 27: numen.v1.DeliverEventResponse
+	nil,                                  // 28: numen.v1.ConfigureRequest.ValuesEntry
+	nil,                                  // 29: numen.v1.PluginSettingOptionsBy.OptionsEntry
+	(ErrorCode)(0),                       // 30: numen.v1.ErrorCode
 	(HealthSeverity)(0),                  // 31: numen.v1.HealthSeverity
 }
 var file_numen_v1_plugin_proto_depIdxs = []int32{
-	29, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
-	9,  // 1: numen.v1.PluginSetting.options:type_name -> numen.v1.PluginSettingOption
-	11, // 2: numen.v1.PluginSetting.options_by:type_name -> numen.v1.PluginSettingOptionsBy
-	12, // 3: numen.v1.PluginSetting.when:type_name -> numen.v1.PluginSettingCondition
-	9,  // 4: numen.v1.PluginSetting.active_options:type_name -> numen.v1.PluginSettingOption
-	9,  // 5: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
-	30, // 6: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
-	8,  // 7: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
-	18, // 8: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
-	17, // 9: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
-	14, // 10: numen.v1.PluginInfo.contributions:type_name -> numen.v1.PluginContribution
-	16, // 11: numen.v1.PluginInfo.setting_groups:type_name -> numen.v1.PluginSettingGroup
+	28, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
+	8,  // 1: numen.v1.PluginSetting.options:type_name -> numen.v1.PluginSettingOption
+	10, // 2: numen.v1.PluginSetting.options_by:type_name -> numen.v1.PluginSettingOptionsBy
+	11, // 3: numen.v1.PluginSetting.when:type_name -> numen.v1.PluginSettingCondition
+	8,  // 4: numen.v1.PluginSetting.active_options:type_name -> numen.v1.PluginSettingOption
+	8,  // 5: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
+	29, // 6: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
+	7,  // 7: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
+	17, // 8: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
+	16, // 9: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
+	13, // 10: numen.v1.PluginInfo.contributions:type_name -> numen.v1.PluginContribution
+	15, // 11: numen.v1.PluginInfo.setting_groups:type_name -> numen.v1.PluginSettingGroup
 	0,  // 12: numen.v1.PluginContribution.kind:type_name -> numen.v1.PluginContributionKind
-	15, // 13: numen.v1.PluginContribution.items:type_name -> numen.v1.PluginContributionItem
-	13, // 14: numen.v1.ListPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
-	25, // 15: numen.v1.WatchPluginProcessesResponse.processes:type_name -> numen.v1.PluginProcess
-	31, // 16: numen.v1.PluginProcess.health:type_name -> numen.v1.HealthSeverity
-	26, // 17: numen.v1.PluginProcess.started_by:type_name -> numen.v1.PluginLeaseHolder
-	26, // 18: numen.v1.PluginProcess.holders:type_name -> numen.v1.PluginLeaseHolder
-	1,  // 19: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
-	10, // 20: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
-	2,  // 21: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
-	4,  // 22: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
-	6,  // 23: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
-	19, // 24: numen.v1.PluginService.ListPlugins:input_type -> numen.v1.ListPluginsRequest
-	21, // 25: numen.v1.PluginProcessService.WatchPluginProcesses:input_type -> numen.v1.WatchPluginProcessesRequest
-	22, // 26: numen.v1.PluginProcessService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
-	27, // 27: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
-	3,  // 28: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
-	5,  // 29: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
-	7,  // 30: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
-	20, // 31: numen.v1.PluginService.ListPlugins:output_type -> numen.v1.ListPluginsResponse
-	24, // 32: numen.v1.PluginProcessService.WatchPluginProcesses:output_type -> numen.v1.WatchPluginProcessesResponse
-	23, // 33: numen.v1.PluginProcessService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
-	28, // 34: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
-	28, // [28:35] is the sub-list for method output_type
-	21, // [21:28] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	14, // 13: numen.v1.PluginContribution.items:type_name -> numen.v1.PluginContributionItem
+	12, // 14: numen.v1.ListPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
+	30, // 15: numen.v1.RetryPluginResponse.error:type_name -> numen.v1.ErrorCode
+	24, // 16: numen.v1.WatchPluginProcessesResponse.processes:type_name -> numen.v1.PluginProcess
+	31, // 17: numen.v1.PluginProcess.health:type_name -> numen.v1.HealthSeverity
+	25, // 18: numen.v1.PluginProcess.started_by:type_name -> numen.v1.PluginLeaseHolder
+	25, // 19: numen.v1.PluginProcess.holders:type_name -> numen.v1.PluginLeaseHolder
+	30, // 20: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.ErrorCode
+	9,  // 21: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
+	1,  // 22: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
+	3,  // 23: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
+	5,  // 24: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
+	18, // 25: numen.v1.PluginService.ListPlugins:input_type -> numen.v1.ListPluginsRequest
+	20, // 26: numen.v1.PluginProcessService.WatchPluginProcesses:input_type -> numen.v1.WatchPluginProcessesRequest
+	21, // 27: numen.v1.PluginProcessService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
+	26, // 28: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
+	2,  // 29: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
+	4,  // 30: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
+	6,  // 31: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
+	19, // 32: numen.v1.PluginService.ListPlugins:output_type -> numen.v1.ListPluginsResponse
+	23, // 33: numen.v1.PluginProcessService.WatchPluginProcesses:output_type -> numen.v1.WatchPluginProcessesResponse
+	22, // 34: numen.v1.PluginProcessService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
+	27, // 35: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
+	29, // [29:36] is the sub-list for method output_type
+	22, // [22:29] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_plugin_proto_init() }
@@ -2182,13 +2141,14 @@ func file_numen_v1_plugin_proto_init() {
 		return
 	}
 	file_numen_v1_health_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_plugin_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_plugin_proto_rawDesc), len(file_numen_v1_plugin_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   4,

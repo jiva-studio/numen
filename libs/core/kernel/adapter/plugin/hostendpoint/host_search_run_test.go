@@ -119,7 +119,7 @@ func TestASearchRoundTripsItsStateAndAnotherPluginCannotReadIt(t *testing.T) {
 	}
 	other := newSearchClient(t, fakeCallers, "token-c")
 	read, err := other.GetSearch(ctx, connect.NewRequest(&v1.GetSearchRequest{Id: started.Msg.GetId()}))
-	if err != nil || read.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND {
+	if err != nil || read.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("read by another plugin %v (%v), want SEARCH_NOT_FOUND", read.Msg, err)
 	}
 	removed, err := client.DeleteSearch(ctx, connect.NewRequest(&v1.DeleteSearchRequest{Id: started.Msg.GetId()}))
@@ -174,7 +174,7 @@ func TestAHostWithoutSearchesAnswersNoModel(t *testing.T) {
 	fakeCallers := newSearchCallers(&recordingSearch{})
 	client := newSearchClient(t, fakeCallers, "token-a")
 	got, err := client.StartSearch(t.Context(), connect.NewRequest(&v1.StartSearchRequest{Query: `words("tide")`}))
-	if err != nil || got.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL {
+	if err != nil || got.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_MODEL {
 		t.Fatalf("start %v (%v), want NO_MODEL", got.Msg, err)
 	}
 }

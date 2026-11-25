@@ -22,30 +22,30 @@ var (
 	errNoTrash     = errors.New("a plugin removes a vault from the list and leaves its folder")
 )
 
-func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
+func getVaultsErrorCode(err error) (v1.ErrorCode, bool) {
 	switch {
 	case errors.Is(err, vaultdomain.ErrUnreadable):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE, true
+		return v1.ErrorCode_ERROR_CODE_UNREADABLE, true
 	case errors.Is(err, vaultdomain.ErrCopy):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY, true
+		return v1.ErrorCode_ERROR_CODE_VAULT_COPY, true
 	case errors.Is(err, domain.ErrOverlaps):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS, true
+		return v1.ErrorCode_ERROR_CODE_VAULT_OVERLAPS, true
 	case errors.Is(err, vaultdomain.ErrNameTaken):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN, true
+		return v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, true
 	case errors.Is(err, vaultdomain.ErrLastVault):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
+		return v1.ErrorCode_ERROR_CODE_LAST_VAULT, true
 	case errors.Is(err, vaultdomain.ErrShowing):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true
+		return v1.ErrorCode_ERROR_CODE_VAULT_CURRENT, true
 	case errors.Is(err, vaultdomain.ErrUnknown), errors.Is(err, vaultdomain.ErrNoName):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND, true
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, plugin.ErrUnsavedChanges):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, true
+		return v1.ErrorCode_ERROR_CODE_UNSAVED, true
 	default:
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED, false
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
 	}
 }
 
-func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr error) {
+func getVaultsResult(err error) (code v1.ErrorCode, detail string, callErr error) {
 	if err == nil {
 		return 0, "", nil
 	}
@@ -126,7 +126,7 @@ func (e *vaultsCalls) AddVault(
 		return nil, err
 	}
 	if code != 0 {
-		return connect.NewResponse(&v1.AddVaultResponse{Error: &code, Detail: detail}), nil
+		return connect.NewResponse(&v1.AddVaultResponse{Error: code, Detail: detail}), nil
 	}
 	return connect.NewResponse(&v1.AddVaultResponse{Vault: writeVault(vault)}), nil
 }
@@ -144,7 +144,7 @@ func (e *vaultsCalls) RenameVault(
 		return nil, err
 	}
 	if code != 0 {
-		return connect.NewResponse(&v1.RenameVaultResponse{Error: &code, Detail: detail}), nil
+		return connect.NewResponse(&v1.RenameVaultResponse{Error: code, Detail: detail}), nil
 	}
 	return connect.NewResponse(&v1.RenameVaultResponse{Vault: writeVault(vault)}), nil
 }
@@ -170,7 +170,7 @@ func (e *vaultsCalls) RemoveVault(
 		return nil, err
 	}
 	if code != 0 {
-		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &code, Detail: detail}), nil
+		return connect.NewResponse(&v1.RemoveVaultResponse{Error: code, Detail: detail}), nil
 	}
 	return connect.NewResponse(&v1.RemoveVaultResponse{Path: entry.Path}), nil
 }
@@ -194,7 +194,7 @@ func (e *vaultsCalls) OpenVault(
 		return nil, err
 	}
 	if code != 0 {
-		return connect.NewResponse(&v1.OpenVaultResponse{Error: &code, Detail: detail}), nil
+		return connect.NewResponse(&v1.OpenVaultResponse{Error: code, Detail: detail}), nil
 	}
 	return connect.NewResponse(&v1.OpenVaultResponse{}), nil
 }

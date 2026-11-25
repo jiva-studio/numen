@@ -77,7 +77,8 @@ func (x *FetchModelFileRequest) GetSha256() string {
 type FetchModelFileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,9 +120,16 @@ func (x *FetchModelFileResponse) GetPath() string {
 	return ""
 }
 
-func (x *FetchModelFileResponse) GetError() string {
+func (x *FetchModelFileResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *FetchModelFileResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
 	}
 	return ""
 }
@@ -130,13 +138,14 @@ var File_numen_v1_hostdependency_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostdependency_proto_rawDesc = "" +
 	"\n" +
-	"\x1dnumen/v1/hostdependency.proto\x12\bnumen.v1\"A\n" +
+	"\x1dnumen/v1/hostdependency.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"A\n" +
 	"\x15FetchModelFileRequest\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
-	"\x06sha256\x18\x02 \x01(\tR\x06sha256\"B\n" +
+	"\x06sha256\x18\x02 \x01(\tR\x06sha256\"o\n" +
 	"\x16FetchModelFileResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error2l\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail2l\n" +
 	"\x15HostDependencyService\x12S\n" +
 	"\x0eFetchModelFile\x12\x1f.numen.v1.FetchModelFileRequest\x1a .numen.v1.FetchModelFileResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -156,15 +165,17 @@ var file_numen_v1_hostdependency_proto_msgTypes = make([]protoimpl.MessageInfo, 
 var file_numen_v1_hostdependency_proto_goTypes = []any{
 	(*FetchModelFileRequest)(nil),  // 0: numen.v1.FetchModelFileRequest
 	(*FetchModelFileResponse)(nil), // 1: numen.v1.FetchModelFileResponse
+	(ErrorCode)(0),                 // 2: numen.v1.ErrorCode
 }
 var file_numen_v1_hostdependency_proto_depIdxs = []int32{
-	0, // 0: numen.v1.HostDependencyService.FetchModelFile:input_type -> numen.v1.FetchModelFileRequest
-	1, // 1: numen.v1.HostDependencyService.FetchModelFile:output_type -> numen.v1.FetchModelFileResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: numen.v1.FetchModelFileResponse.error:type_name -> numen.v1.ErrorCode
+	0, // 1: numen.v1.HostDependencyService.FetchModelFile:input_type -> numen.v1.FetchModelFileRequest
+	1, // 2: numen.v1.HostDependencyService.FetchModelFile:output_type -> numen.v1.FetchModelFileResponse
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostdependency_proto_init() }
@@ -172,6 +183,7 @@ func file_numen_v1_hostdependency_proto_init() {
 	if File_numen_v1_hostdependency_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -175,10 +175,10 @@ func (h registryHandler) CallTool(
 	}
 	r.mu.RUnlock()
 	if index < 0 {
-		return connect.NewResponse(&v1.CallToolResponse{Error: v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL}), nil
+		return connect.NewResponse(&v1.CallToolResponse{Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND}), nil
 	}
 	if arguments := req.Msg.GetArguments(); len(arguments) > 0 && !isObject(arguments) {
-		return connect.NewResponse(&v1.CallToolResponse{Error: v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS}), nil
+		return connect.NewResponse(&v1.CallToolResponse{Error: v1.ErrorCode_ERROR_CODE_INVALID}), nil
 	}
 	ctx = context.WithValue(ctx, callContextKey{}, req.Msg.GetContext())
 	ctx = context.WithValue(ctx, vaultKey{}, req.Msg.GetVaultId())

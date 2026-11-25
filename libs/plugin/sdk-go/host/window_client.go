@@ -20,13 +20,13 @@ func readWindowCallError(err error) error {
 	return err
 }
 
-func readWindowError(code v1.HostWindowErrorCode) error {
+func readWindowError(code v1.ErrorCode) error {
 	switch code {
-	case v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED:
+	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
 		return nil
-	case v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW:
+	case v1.ErrorCode_ERROR_CODE_NO_WINDOW:
 		return ErrNoWindow
-	case v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND:
+	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
 		return ErrNotExist
 	}
 	return fmt.Errorf("host: rejected with code %s", code)

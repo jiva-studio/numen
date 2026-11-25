@@ -155,7 +155,7 @@ message ManifestSearchFunction {
   string name = 1;
   // args are the positional arguments of the function.
   repeated ManifestSearchFunctionArg args = 2;
-  // level is "document"; version 1 refuses "chunk".
+  // level is "document"; version 1 rejects "chunk".
   string level = 3;
   // description is one line an agent reads about the function.
   string description = 4;

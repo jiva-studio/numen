@@ -129,7 +129,7 @@ func TestHostSearchAnswersEveryCallAndChecksItsPermission(t *testing.T) {
 		t.Fatalf("floor %v (%v)", floor.Msg, err)
 	}
 	set, err := client.SetSearchFloor(ctx, connect.NewRequest(&v1.SetSearchFloorRequest{Recipe: "r", Floor: 0.6}))
-	if err != nil || set.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED {
+	if err != nil || set.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("set %v (%v)", set.Msg, err)
 	}
 	if !slices.Equal(search.recipes, []string{"r"}) || len(search.queries) != 2 || search.queries[0].Path != "a.md" ||
@@ -213,28 +213,28 @@ func TestHostSearchAnswersACodeForWhatItCannotServe(t *testing.T) {
 	noVault := newCallers()
 	noVault.search = searchOf(&recordingSearch{})
 	state, err := newSearchClient(t, noVault, "token-a").GetEmbeddingState(ctx, connect.NewRequest(&v1.GetEmbeddingStateRequest{}))
-	if err != nil || state.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT {
+	if err != nil || state.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Errorf("a host showing no vault answered %v (%v)", state.Msg, err)
 	}
 
 	noSearch := newCallers()
 	noSearch.vault = vaultOf(newMemoryVault(nil))
 	embedded, err := newSearchClient(t, noSearch, "token-a").EmbedTexts(ctx, connect.NewRequest(&v1.EmbedTextsRequest{Texts: []string{"a"}}))
-	if err != nil || embedded.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL {
+	if err != nil || embedded.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_MODEL {
 		t.Errorf("a host with no search answered %v (%v)", embedded.Msg, err)
 	}
 
 	for _, tc := range []struct {
 		name string
 		err  error
-		want v1.HostSearchErrorCode
+		want v1.ErrorCode
 	}{
-		{"no model", plugin.ErrNoModel, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL},
-		{"a recipe mismatch", plugin.ErrRecipeMismatch, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH},
-		{"an invalid floor", plugin.ErrInvalidFloor, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_FLOOR},
-		{"a limit exceeded", plugin.ErrLimitExceeded, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED},
-		{"an embedding failure", plugin.ErrEmbeddingFailed, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED},
-		{"an invalid query", plugin.ErrInvalidQuery, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY},
+		{"no model", plugin.ErrNoModel, v1.ErrorCode_ERROR_CODE_NO_MODEL},
+		{"a recipe mismatch", plugin.ErrRecipeMismatch, v1.ErrorCode_ERROR_CODE_RECIPE_MISMATCH},
+		{"an invalid floor", plugin.ErrInvalidFloor, v1.ErrorCode_ERROR_CODE_INVALID},
+		{"a limit exceeded", plugin.ErrLimitExceeded, v1.ErrorCode_ERROR_CODE_LIMIT_EXCEEDED},
+		{"an embedding failure", plugin.ErrEmbeddingFailed, v1.ErrorCode_ERROR_CODE_UNAVAILABLE},
+		{"an invalid query", plugin.ErrInvalidQuery, v1.ErrorCode_ERROR_CODE_INVALID},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			client := newSearchClient(t, newSearchCallers(&recordingSearch{err: tc.err}), "token-a")
@@ -285,7 +285,7 @@ func TestHostSearchAnswersTheIndexStatistics(t *testing.T) {
 
 	failing := newSearchClient(t, newSearchCallers(&recordingSearch{err: plugin.ErrNoModel}), "token-a")
 	noModel, err := failing.GetIndexStats(ctx, connect.NewRequest(&v1.GetIndexStatsRequest{}))
-	if err != nil || noModel.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL || noModel.Msg.GetChunkCount() != 0 {
+	if err != nil || noModel.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_MODEL || noModel.Msg.GetChunkCount() != 0 {
 		t.Errorf("an installation with no model answered %v (%v)", noModel.Msg, err)
 	}
 }

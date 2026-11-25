@@ -148,7 +148,7 @@ func TestRunCommandSendsFileAndArgumentsAndReturnsPluginResult(t *testing.T) {
 
 func TestRunCommand_FailureCarriesPluginMessage(t *testing.T) {
 	plugin := &commandPlugin{reply: &v1.RunCommandResponse{
-		Error: v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, Message: "the disk is full",
+		Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Message: "the disk is full",
 	}}
 	host := &commandHost{
 		plugins:   []catalogmanifest.DiscoveredPlugin{declaring("md.numen.a", "make")},

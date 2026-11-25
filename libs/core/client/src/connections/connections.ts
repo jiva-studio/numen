@@ -6,7 +6,7 @@ import type { Client } from '@connectrpc/connect'
 import { fromJson, toJson, type JsonValue } from '@bufbuild/protobuf'
 import { ValueSchema, type Value } from '@bufbuild/protobuf/wkt'
 import {
-  ProviderConnectionErrorCode,
+  ErrorCode as ProtoErrorCode,
   type ProviderConnectionService,
   type ManifestConnectionField,
   type ProviderConnection,
@@ -259,29 +259,31 @@ const readConnection = (connection: ProviderConnection): ConnectionInfo => {
   }
 }
 
-const readErrorCode = (code: ProviderConnectionErrorCode): ConnectionErrorCode | undefined => {
+const readErrorCode = (code: ProtoErrorCode): ConnectionErrorCode | undefined => {
   switch (code) {
-    case ProviderConnectionErrorCode.UNSPECIFIED:
+    case ProtoErrorCode.UNSPECIFIED:
       return undefined
-    case ProviderConnectionErrorCode.NOT_FOUND:
+    case ProtoErrorCode.NOT_FOUND:
       return 'notFound'
-    case ProviderConnectionErrorCode.NAME_TAKEN:
+    case ProtoErrorCode.ALREADY_EXISTS:
       return 'nameTaken'
-    case ProviderConnectionErrorCode.INVALID_FIELD:
+    case ProtoErrorCode.INVALID:
       return 'invalidField'
-    case ProviderConnectionErrorCode.TYPE_UNAVAILABLE:
+    case ProtoErrorCode.TYPE_UNAVAILABLE:
       return 'typeUnavailable'
-    case ProviderConnectionErrorCode.KEY_STORE_FAILED:
+    case ProtoErrorCode.KEY_STORE_FAILED:
       return 'keyStoreFailed'
-    case ProviderConnectionErrorCode.STALE_REVISION:
+    case ProtoErrorCode.CONFLICT:
       return 'staleRevision'
-    case ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE:
+    case ProtoErrorCode.UNAVAILABLE:
       return 'providerUnavailable'
+    default:
+      return undefined
   }
 }
 
 const readFailure = (
-  code: ProviderConnectionErrorCode,
+  code: ProtoErrorCode,
   detail: string,
 ): ConnectionFailure | undefined => {
   const error = readErrorCode(code)
@@ -289,7 +291,7 @@ const readFailure = (
 }
 
 const readAnswer = (answer: {
-  error: ProviderConnectionErrorCode
+  error: ProtoErrorCode
   detail: string
   connection?: ProviderConnection | undefined
 }): Result<ConnectionInfo, ConnectionFailure> => {

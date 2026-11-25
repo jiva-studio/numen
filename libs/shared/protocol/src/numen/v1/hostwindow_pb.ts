@@ -2,9 +2,9 @@
 // @generated from file numen/v1/hostwindow.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Range } from "./shared_pb.js";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode, Range } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostwindow.proto.
  */
 export const file_numen_v1_hostwindow: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiQAoQRm9jdXNGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEh4KBXNwYW5zGAIgAygLMg8ubnVtZW4udjEuUmFuZ2UiQQoRRm9jdXNGaWxlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlIk8KB09wZW5UYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEg0KBXBsYWNlGAUgASgJIiYKJEhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdCKJAQolSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RXaW5kb3dFcnJvckNvZGUSHwoEdGFicxgCIAMoCzIRLm51bWVuLnYxLk9wZW5UYWISEQoJYWN0aXZlX2lkGAMgASgJIiQKEkFjdGl2YXRlVGFiUmVxdWVzdBIOCgZ0YWJfaWQYASABKAkidgoTQWN0aXZhdGVUYWJSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RXaW5kb3dFcnJvckNvZGUSHgoDdGFiGAIgASgLMhEubnVtZW4udjEuT3BlblRhYhIRCglhY3RpdmVfaWQYAyABKAkqiQEKE0hvc3RXaW5kb3dFcnJvckNvZGUSJgoiSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiQKIEhPU1RfV0lORE9XX0VSUk9SX0NPREVfTk9fV0lORE9XEAESJAogSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9OT1RfRk9VTkQQAjLcAgoRSG9zdFdpbmRvd1NlcnZpY2USRAoJRm9jdXNOb3RlEhoubnVtZW4udjEuRm9jdXNOb3RlUmVxdWVzdBobLm51bWVuLnYxLkZvY3VzTm90ZVJlc3BvbnNlEkQKCUZvY3VzRmlsZRIaLm51bWVuLnYxLkZvY3VzRmlsZVJlcXVlc3QaGy5udW1lbi52MS5Gb2N1c0ZpbGVSZXNwb25zZRJvCgxSZWFkT3BlblRhYnMSLi5udW1lbi52MS5Ib3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1JlcXVlc3QaLy5udW1lbi52MS5Ib3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1Jlc3BvbnNlEkoKC0FjdGl2YXRlVGFiEhwubnVtZW4udjEuQWN0aXZhdGVUYWJSZXF1ZXN0Gh0ubnVtZW4udjEuQWN0aXZhdGVUYWJSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoRRm9jdXNOb3RlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDAoEcGF0aBgCIAEoCRINCgV0aXRsZRgDIAEoCRIKCgJpZBgEIAEoCSJAChBGb2N1c0ZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSHgoFc3BhbnMYAiADKAsyDy5udW1lbi52MS5SYW5nZSI3ChFGb2N1c0ZpbGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZSJPCgdPcGVuVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRINCgVwbGFjZRgFIAEoCSImCiRIb3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1JlcXVlc3QifwolSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIfCgR0YWJzGAIgAygLMhEubnVtZW4udjEuT3BlblRhYhIRCglhY3RpdmVfaWQYAyABKAkiJAoSQWN0aXZhdGVUYWJSZXF1ZXN0Eg4KBnRhYl9pZBgBIAEoCSJsChNBY3RpdmF0ZVRhYlJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEh4KA3RhYhgCIAEoCzIRLm51bWVuLnYxLk9wZW5UYWISEQoJYWN0aXZlX2lkGAMgASgJMtwCChFIb3N0V2luZG93U2VydmljZRJECglGb2N1c05vdGUSGi5udW1lbi52MS5Gb2N1c05vdGVSZXF1ZXN0GhsubnVtZW4udjEuRm9jdXNOb3RlUmVzcG9uc2USRAoJRm9jdXNGaWxlEhoubnVtZW4udjEuRm9jdXNGaWxlUmVxdWVzdBobLm51bWVuLnYxLkZvY3VzRmlsZVJlc3BvbnNlEm8KDFJlYWRPcGVuVGFicxIuLm51bWVuLnYxLkhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdBovLm51bWVuLnYxLkhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVzcG9uc2USSgoLQWN0aXZhdGVUYWISHC5udW1lbi52MS5BY3RpdmF0ZVRhYlJlcXVlc3QaHS5udW1lbi52MS5BY3RpdmF0ZVRhYlJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.FocusNoteRequest
@@ -36,9 +36,9 @@ export const FocusNoteRequestSchema: GenMessage<FocusNoteRequest> = /*@__PURE__*
  */
 export type FocusNoteResponse = Message<"numen.v1.FocusNoteResponse"> & {
   /**
-   * @generated from field: numen.v1.HostWindowErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostWindowErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string path = 2;
@@ -92,9 +92,9 @@ export const FocusFileRequestSchema: GenMessage<FocusFileRequest> = /*@__PURE__*
  */
 export type FocusFileResponse = Message<"numen.v1.FocusFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostWindowErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostWindowErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -173,9 +173,9 @@ export const HostWindowServiceReadOpenTabsRequestSchema: GenMessage<HostWindowSe
  */
 export type HostWindowServiceReadOpenTabsResponse = Message<"numen.v1.HostWindowServiceReadOpenTabsResponse"> & {
   /**
-   * @generated from field: numen.v1.HostWindowErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostWindowErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.OpenTab tabs = 2;
@@ -217,9 +217,9 @@ export const ActivateTabRequestSchema: GenMessage<ActivateTabRequest> = /*@__PUR
  */
 export type ActivateTabResponse = Message<"numen.v1.ActivateTabResponse"> & {
   /**
-   * @generated from field: numen.v1.HostWindowErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostWindowErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: numen.v1.OpenTab tab = 2;
@@ -240,40 +240,8 @@ export const ActivateTabResponseSchema: GenMessage<ActivateTabResponse> = /*@__P
   messageDesc(file_numen_v1_hostwindow, 8);
 
 /**
- * HostWindowErrorCode is the reason a window call was not served. UNSPECIFIED means success.
- *
- * @generated from enum numen.v1.HostWindowErrorCode
- */
-export enum HostWindowErrorCode {
-  /**
-   * @generated from enum value: HOST_WINDOW_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * NO_WINDOW means the host has no window.
-   *
-   * @generated from enum value: HOST_WINDOW_ERROR_CODE_NO_WINDOW = 1;
-   */
-  NO_WINDOW = 1,
-
-  /**
-   * NOT_FOUND means a path with no note or file in the vault, or a tab id with no tab in the window.
-   *
-   * @generated from enum value: HOST_WINDOW_ERROR_CODE_NOT_FOUND = 2;
-   */
-  NOT_FOUND = 2,
-}
-
-/**
- * Describes the enum numen.v1.HostWindowErrorCode.
- */
-export const HostWindowErrorCodeSchema: GenEnum<HostWindowErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_hostwindow, 0);
-
-/**
  * HostWindowService exposes the main window of the plugin's vault to plugins.
- * Every call needs window:focus. A host with no window returns HOST_WINDOW_ERROR_CODE_NO_WINDOW.
+ * Every call needs window:focus. A host with no window returns ERROR_CODE_NO_WINDOW.
  * With several windows, the main window of the vault is used.
  *
  * @generated from service numen.v1.HostWindowService

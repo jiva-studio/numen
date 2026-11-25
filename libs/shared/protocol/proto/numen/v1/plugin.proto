@@ -3,6 +3,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/health.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -246,8 +247,9 @@ message RetryPluginRequest {
 }
 
 message RetryPluginResponse {
-  // Set when the plugin failed to start again, in words a person reads.
-  string failure = 1;
+  // Set when the plugin failed to start again; detail carries the reason.
+  ErrorCode error = 1;
+  string detail = 2;
 }
 
 message WatchPluginProcessesResponse {
@@ -310,7 +312,7 @@ message PluginLeaseHolder {
 }
 
 // PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.
-// A plugin serves it only when it takes events. A plugin that takes the event and refuses it answers
+// A plugin serves it only when it takes events. A plugin that takes the event and rejects it answers
 // with error set; a status code means the call was not served or failed.
 service PluginEventService {
   rpc DeliverEvent(DeliverEventRequest) returns (DeliverEventResponse);
@@ -322,14 +324,6 @@ message DeliverEventRequest {
 }
 
 message DeliverEventResponse {
-  PluginEventErrorCode error = 1;
+  ErrorCode error = 1;
   string detail = 2;
-}
-
-// value means it did not.
-enum PluginEventErrorCode {
-  PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED = 0;
-
-  // The plugin's event handler answered an error, which detail carries.
-  PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED = 1;
 }

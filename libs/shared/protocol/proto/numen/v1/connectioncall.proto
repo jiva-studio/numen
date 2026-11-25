@@ -4,13 +4,14 @@ package numen.v1;
 
 import "numen/v1/provider.proto";
 import "numen/v1/settings.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // ConnectionCallService carries out the operations a caller asks for, through the rows of a plugin. The window
 // serves it to a plugin view, which names the plugin whose rows serve the call. The host endpoint serves it to a
 // plugin process, which is the plugin its token names: the request names no plugin, or that one, and the host
-// refuses a request that names another. The core takes the connections from the rows of the settings of the
+// rejects a request that names another. The core takes the connections from the rows of the settings of the
 // plugin; a plugin that holds connections:use:<operation> uses every connection that serves that operation,
 // which none of its settings of rows lists. The payload and the frames are bytes of the contract the operation
 // belongs to.
@@ -35,18 +36,6 @@ service ConnectionCallService {
   rpc ListRowOptions(ConnectionCallServiceListRowOptionsRequest) returns (ConnectionCallServiceListRowOptionsResponse);
 }
 
-// CallErrorCode is the reason a call did not succeed.
-enum CallErrorCode {
-  CALL_ERROR_CODE_UNSPECIFIED = 0;
-  // CALL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
-  CALL_ERROR_CODE_NO_CONNECTION = 1;
-  // CALL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one. A row that
-  // fails after its first data frame is ALL_FAILED with that one connection.
-  CALL_ERROR_CODE_ALL_FAILED = 2;
-  // CALL_ERROR_CODE_STOPPED is a request that is wrong in itself, and the failure names the connection.
-  CALL_ERROR_CODE_STOPPED = 3;
-}
-
 // CallRowFailure is one row that did not answer. reason is the words the person reads and code the reason
 // a program reads; a row the core set aside for a reason outside the enum has the code UNAVAILABLE.
 message CallRowFailure {
@@ -57,7 +46,7 @@ message CallRowFailure {
 
 // CallFailure ends a call that did not succeed.
 message CallFailure {
-  CallErrorCode error = 1;
+  ErrorCode error = 1;
   string detail = 2;
   repeated CallRowFailure failures = 3;
 }

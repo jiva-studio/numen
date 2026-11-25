@@ -129,55 +129,6 @@ func (CatalogIncompatibility) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_catalog_proto_rawDescGZIP(), []int{1}
 }
 
-// CatalogErrorCode is why a call was served without an entry.
-type CatalogErrorCode int32
-
-const (
-	// CATALOG_ERROR_CODE_UNSPECIFIED is a call that was served in full.
-	CatalogErrorCode_CATALOG_ERROR_CODE_UNSPECIFIED CatalogErrorCode = 0
-	// CATALOG_ERROR_CODE_NOT_FOUND is no plugin of the id, or none providing the kind of tab.
-	CatalogErrorCode_CATALOG_ERROR_CODE_NOT_FOUND CatalogErrorCode = 1
-)
-
-// Enum value maps for CatalogErrorCode.
-var (
-	CatalogErrorCode_name = map[int32]string{
-		0: "CATALOG_ERROR_CODE_UNSPECIFIED",
-		1: "CATALOG_ERROR_CODE_NOT_FOUND",
-	}
-	CatalogErrorCode_value = map[string]int32{
-		"CATALOG_ERROR_CODE_UNSPECIFIED": 0,
-		"CATALOG_ERROR_CODE_NOT_FOUND":   1,
-	}
-)
-
-func (x CatalogErrorCode) Enum() *CatalogErrorCode {
-	p := new(CatalogErrorCode)
-	*p = x
-	return p
-}
-
-func (x CatalogErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (CatalogErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_catalog_proto_enumTypes[2].Descriptor()
-}
-
-func (CatalogErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_catalog_proto_enumTypes[2]
-}
-
-func (x CatalogErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use CatalogErrorCode.Descriptor instead.
-func (CatalogErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_catalog_proto_rawDescGZIP(), []int{2}
-}
-
 // CatalogEntry is one plugin as the catalog knows it.
 type CatalogEntry struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
@@ -487,7 +438,7 @@ func (x *GetCatalogEntryRequest) GetId() string {
 type GetCatalogEntryResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// error is set when no entry is returned.
-	Error         CatalogErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CatalogErrorCode" json:"error,omitempty"`
+	Error         ErrorCode             `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Entry         *CatalogEntry         `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
 	SourceErrors  []*CatalogSourceError `protobuf:"bytes,3,rep,name=source_errors,json=sourceErrors,proto3" json:"source_errors,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -524,11 +475,11 @@ func (*GetCatalogEntryResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_catalog_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetCatalogEntryResponse) GetError() CatalogErrorCode {
+func (x *GetCatalogEntryResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return CatalogErrorCode_CATALOG_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetCatalogEntryResponse) GetEntry() *CatalogEntry {
@@ -681,7 +632,7 @@ func (x *FindCatalogEntryByTabKindRequest) GetKind() string {
 type FindCatalogEntryByTabKindResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// error is set when no entry is returned.
-	Error         CatalogErrorCode      `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CatalogErrorCode" json:"error,omitempty"`
+	Error         ErrorCode             `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Entry         *CatalogEntry         `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
 	SourceErrors  []*CatalogSourceError `protobuf:"bytes,3,rep,name=source_errors,json=sourceErrors,proto3" json:"source_errors,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -718,11 +669,11 @@ func (*FindCatalogEntryByTabKindResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_catalog_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *FindCatalogEntryByTabKindResponse) GetError() CatalogErrorCode {
+func (x *FindCatalogEntryByTabKindResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return CatalogErrorCode_CATALOG_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *FindCatalogEntryByTabKindResponse) GetEntry() *CatalogEntry {
@@ -743,7 +694,7 @@ var File_numen_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_numen_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/catalog.proto\x12\bnumen.v1\x1a\x17numen/v1/manifest.proto\"\x94\x03\n" +
+	"\x16numen/v1/catalog.proto\x12\bnumen.v1\x1a\x17numen/v1/manifest.proto\x1a\x15numen/v1/shared.proto\"\x94\x03\n" +
 	"\fCatalogEntry\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -764,9 +715,9 @@ const file_numen_v1_catalog_proto_rawDesc = "" +
 	"\aentries\x18\x01 \x03(\v2\x16.numen.v1.CatalogEntryR\aentries\x12A\n" +
 	"\rsource_errors\x18\x02 \x03(\v2\x1c.numen.v1.CatalogSourceErrorR\fsourceErrors\"(\n" +
 	"\x16GetCatalogEntryRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xbc\x01\n" +
-	"\x17GetCatalogEntryResponse\x120\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.CatalogErrorCodeR\x05error\x12,\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xb5\x01\n" +
+	"\x17GetCatalogEntryResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12,\n" +
 	"\x05entry\x18\x02 \x01(\v2\x16.numen.v1.CatalogEntryR\x05entry\x12A\n" +
 	"\rsource_errors\x18\x03 \x03(\v2\x1c.numen.v1.CatalogSourceErrorR\fsourceErrors\")\n" +
 	"\x17GetCatalogReadmeRequest\x12\x0e\n" +
@@ -774,9 +725,9 @@ const file_numen_v1_catalog_proto_rawDesc = "" +
 	"\x18GetCatalogReadmeResponse\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\"6\n" +
 	" FindCatalogEntryByTabKindRequest\x12\x12\n" +
-	"\x04kind\x18\x01 \x01(\tR\x04kind\"\xc6\x01\n" +
-	"!FindCatalogEntryByTabKindResponse\x120\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.CatalogErrorCodeR\x05error\x12,\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\"\xbf\x01\n" +
+	"!FindCatalogEntryByTabKindResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12,\n" +
 	"\x05entry\x18\x02 \x01(\v2\x16.numen.v1.CatalogEntryR\x05entry\x12A\n" +
 	"\rsource_errors\x18\x03 \x03(\v2\x1c.numen.v1.CatalogSourceErrorR\fsourceErrors*\x83\x01\n" +
 	"\fCatalogState\x12\x1d\n" +
@@ -787,10 +738,7 @@ const file_numen_v1_catalog_proto_rawDesc = "" +
 	"\x16CatalogIncompatibility\x12'\n" +
 	"#CATALOG_INCOMPATIBILITY_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eCATALOG_INCOMPATIBILITY_TARGET\x10\x01\x12$\n" +
-	" CATALOG_INCOMPATIBILITY_PROTOCOL\x10\x02*X\n" +
-	"\x10CatalogErrorCode\x12\"\n" +
-	"\x1eCATALOG_ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
-	"\x1cCATALOG_ERROR_CODE_NOT_FOUND\x10\x012\x85\x03\n" +
+	" CATALOG_INCOMPATIBILITY_PROTOCOL\x10\x022\x85\x03\n" +
 	"\x0eCatalogService\x12J\n" +
 	"\vListCatalog\x12\x1c.numen.v1.ListCatalogRequest\x1a\x1d.numen.v1.ListCatalogResponse\x12V\n" +
 	"\x0fGetCatalogEntry\x12 .numen.v1.GetCatalogEntryRequest\x1a!.numen.v1.GetCatalogEntryResponse\x12t\n" +
@@ -809,44 +757,44 @@ func file_numen_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_numen_v1_catalog_proto_rawDescData
 }
 
-var file_numen_v1_catalog_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_numen_v1_catalog_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_catalog_proto_goTypes = []any{
 	(CatalogState)(0),                         // 0: numen.v1.CatalogState
 	(CatalogIncompatibility)(0),               // 1: numen.v1.CatalogIncompatibility
-	(CatalogErrorCode)(0),                     // 2: numen.v1.CatalogErrorCode
-	(*CatalogEntry)(nil),                      // 3: numen.v1.CatalogEntry
-	(*CatalogSourceError)(nil),                // 4: numen.v1.CatalogSourceError
-	(*ListCatalogRequest)(nil),                // 5: numen.v1.ListCatalogRequest
-	(*ListCatalogResponse)(nil),               // 6: numen.v1.ListCatalogResponse
-	(*GetCatalogEntryRequest)(nil),            // 7: numen.v1.GetCatalogEntryRequest
-	(*GetCatalogEntryResponse)(nil),           // 8: numen.v1.GetCatalogEntryResponse
-	(*GetCatalogReadmeRequest)(nil),           // 9: numen.v1.GetCatalogReadmeRequest
-	(*GetCatalogReadmeResponse)(nil),          // 10: numen.v1.GetCatalogReadmeResponse
-	(*FindCatalogEntryByTabKindRequest)(nil),  // 11: numen.v1.FindCatalogEntryByTabKindRequest
-	(*FindCatalogEntryByTabKindResponse)(nil), // 12: numen.v1.FindCatalogEntryByTabKindResponse
-	(*ManifestContributes)(nil),               // 13: numen.v1.ManifestContributes
+	(*CatalogEntry)(nil),                      // 2: numen.v1.CatalogEntry
+	(*CatalogSourceError)(nil),                // 3: numen.v1.CatalogSourceError
+	(*ListCatalogRequest)(nil),                // 4: numen.v1.ListCatalogRequest
+	(*ListCatalogResponse)(nil),               // 5: numen.v1.ListCatalogResponse
+	(*GetCatalogEntryRequest)(nil),            // 6: numen.v1.GetCatalogEntryRequest
+	(*GetCatalogEntryResponse)(nil),           // 7: numen.v1.GetCatalogEntryResponse
+	(*GetCatalogReadmeRequest)(nil),           // 8: numen.v1.GetCatalogReadmeRequest
+	(*GetCatalogReadmeResponse)(nil),          // 9: numen.v1.GetCatalogReadmeResponse
+	(*FindCatalogEntryByTabKindRequest)(nil),  // 10: numen.v1.FindCatalogEntryByTabKindRequest
+	(*FindCatalogEntryByTabKindResponse)(nil), // 11: numen.v1.FindCatalogEntryByTabKindResponse
+	(*ManifestContributes)(nil),               // 12: numen.v1.ManifestContributes
+	(ErrorCode)(0),                            // 13: numen.v1.ErrorCode
 }
 var file_numen_v1_catalog_proto_depIdxs = []int32{
-	13, // 0: numen.v1.CatalogEntry.contributes:type_name -> numen.v1.ManifestContributes
+	12, // 0: numen.v1.CatalogEntry.contributes:type_name -> numen.v1.ManifestContributes
 	0,  // 1: numen.v1.CatalogEntry.state:type_name -> numen.v1.CatalogState
 	1,  // 2: numen.v1.CatalogEntry.incompatibility:type_name -> numen.v1.CatalogIncompatibility
-	3,  // 3: numen.v1.ListCatalogResponse.entries:type_name -> numen.v1.CatalogEntry
-	4,  // 4: numen.v1.ListCatalogResponse.source_errors:type_name -> numen.v1.CatalogSourceError
-	2,  // 5: numen.v1.GetCatalogEntryResponse.error:type_name -> numen.v1.CatalogErrorCode
-	3,  // 6: numen.v1.GetCatalogEntryResponse.entry:type_name -> numen.v1.CatalogEntry
-	4,  // 7: numen.v1.GetCatalogEntryResponse.source_errors:type_name -> numen.v1.CatalogSourceError
-	2,  // 8: numen.v1.FindCatalogEntryByTabKindResponse.error:type_name -> numen.v1.CatalogErrorCode
-	3,  // 9: numen.v1.FindCatalogEntryByTabKindResponse.entry:type_name -> numen.v1.CatalogEntry
-	4,  // 10: numen.v1.FindCatalogEntryByTabKindResponse.source_errors:type_name -> numen.v1.CatalogSourceError
-	5,  // 11: numen.v1.CatalogService.ListCatalog:input_type -> numen.v1.ListCatalogRequest
-	7,  // 12: numen.v1.CatalogService.GetCatalogEntry:input_type -> numen.v1.GetCatalogEntryRequest
-	11, // 13: numen.v1.CatalogService.FindCatalogEntryByTabKind:input_type -> numen.v1.FindCatalogEntryByTabKindRequest
-	9,  // 14: numen.v1.CatalogService.GetCatalogReadme:input_type -> numen.v1.GetCatalogReadmeRequest
-	6,  // 15: numen.v1.CatalogService.ListCatalog:output_type -> numen.v1.ListCatalogResponse
-	8,  // 16: numen.v1.CatalogService.GetCatalogEntry:output_type -> numen.v1.GetCatalogEntryResponse
-	12, // 17: numen.v1.CatalogService.FindCatalogEntryByTabKind:output_type -> numen.v1.FindCatalogEntryByTabKindResponse
-	10, // 18: numen.v1.CatalogService.GetCatalogReadme:output_type -> numen.v1.GetCatalogReadmeResponse
+	2,  // 3: numen.v1.ListCatalogResponse.entries:type_name -> numen.v1.CatalogEntry
+	3,  // 4: numen.v1.ListCatalogResponse.source_errors:type_name -> numen.v1.CatalogSourceError
+	13, // 5: numen.v1.GetCatalogEntryResponse.error:type_name -> numen.v1.ErrorCode
+	2,  // 6: numen.v1.GetCatalogEntryResponse.entry:type_name -> numen.v1.CatalogEntry
+	3,  // 7: numen.v1.GetCatalogEntryResponse.source_errors:type_name -> numen.v1.CatalogSourceError
+	13, // 8: numen.v1.FindCatalogEntryByTabKindResponse.error:type_name -> numen.v1.ErrorCode
+	2,  // 9: numen.v1.FindCatalogEntryByTabKindResponse.entry:type_name -> numen.v1.CatalogEntry
+	3,  // 10: numen.v1.FindCatalogEntryByTabKindResponse.source_errors:type_name -> numen.v1.CatalogSourceError
+	4,  // 11: numen.v1.CatalogService.ListCatalog:input_type -> numen.v1.ListCatalogRequest
+	6,  // 12: numen.v1.CatalogService.GetCatalogEntry:input_type -> numen.v1.GetCatalogEntryRequest
+	10, // 13: numen.v1.CatalogService.FindCatalogEntryByTabKind:input_type -> numen.v1.FindCatalogEntryByTabKindRequest
+	8,  // 14: numen.v1.CatalogService.GetCatalogReadme:input_type -> numen.v1.GetCatalogReadmeRequest
+	5,  // 15: numen.v1.CatalogService.ListCatalog:output_type -> numen.v1.ListCatalogResponse
+	7,  // 16: numen.v1.CatalogService.GetCatalogEntry:output_type -> numen.v1.GetCatalogEntryResponse
+	11, // 17: numen.v1.CatalogService.FindCatalogEntryByTabKind:output_type -> numen.v1.FindCatalogEntryByTabKindResponse
+	9,  // 18: numen.v1.CatalogService.GetCatalogReadme:output_type -> numen.v1.GetCatalogReadmeResponse
 	15, // [15:19] is the sub-list for method output_type
 	11, // [11:15] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
@@ -860,12 +808,13 @@ func file_numen_v1_catalog_proto_init() {
 		return
 	}
 	file_numen_v1_manifest_proto_init()
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_catalog_proto_rawDesc), len(file_numen_v1_catalog_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      2,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,

@@ -155,7 +155,7 @@ func TestAStoredThemeOfADisabledPluginFallsBackToTheDefault(t *testing.T) {
 	}
 	written, err := service.WriteAppearance(t.Context(),
 		connect.NewRequest(&v1.WriteAppearanceRequest{Name: name, Mode: v1.Mode_MODE_SYSTEM}))
-	if err != nil || written.Msg.GetError() != "" {
+	if err != nil || written.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("written: %v %v", written, err)
 	}
 	cfg.Preferences.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})

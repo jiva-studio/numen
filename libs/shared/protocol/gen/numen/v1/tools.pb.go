@@ -74,58 +74,6 @@ func (ToolEffect) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_tools_proto_rawDescGZIP(), []int{0}
 }
 
-// ToolErrorCode is why a call was served and not run.
-type ToolErrorCode int32
-
-const (
-	ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED ToolErrorCode = 0
-	// The plugin lists no tool of that name.
-	ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL ToolErrorCode = 1
-	// The arguments are not a JSON object.
-	ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS ToolErrorCode = 2
-)
-
-// Enum value maps for ToolErrorCode.
-var (
-	ToolErrorCode_name = map[int32]string{
-		0: "TOOL_ERROR_CODE_UNSPECIFIED",
-		1: "TOOL_ERROR_CODE_UNKNOWN_TOOL",
-		2: "TOOL_ERROR_CODE_BAD_ARGUMENTS",
-	}
-	ToolErrorCode_value = map[string]int32{
-		"TOOL_ERROR_CODE_UNSPECIFIED":   0,
-		"TOOL_ERROR_CODE_UNKNOWN_TOOL":  1,
-		"TOOL_ERROR_CODE_BAD_ARGUMENTS": 2,
-	}
-)
-
-func (x ToolErrorCode) Enum() *ToolErrorCode {
-	p := new(ToolErrorCode)
-	*p = x
-	return p
-}
-
-func (x ToolErrorCode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ToolErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_tools_proto_enumTypes[1].Descriptor()
-}
-
-func (ToolErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_tools_proto_enumTypes[1]
-}
-
-func (x ToolErrorCode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ToolErrorCode.Descriptor instead.
-func (ToolErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{1}
-}
-
 type ListToolsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -415,7 +363,7 @@ type CallToolResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the call could not be served: the tool is not one the plugin
 	// lists, or its arguments are not a JSON object. The result is then unset.
-	Error ToolErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ToolErrorCode" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// What the tool answered, for an agent to read.
 	Result        *ToolResult `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -452,11 +400,11 @@ func (*CallToolResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_tools_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *CallToolResponse) GetError() ToolErrorCode {
+func (x *CallToolResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *CallToolResponse) GetResult() *ToolResult {
@@ -536,7 +484,7 @@ var File_numen_v1_tools_proto protoreflect.FileDescriptor
 
 const file_numen_v1_tools_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/tools.proto\x12\bnumen.v1\"\x12\n" +
+	"\x14numen/v1/tools.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x12\n" +
 	"\x10ListToolsRequest\"?\n" +
 	"\x11ListToolsResponse\x12*\n" +
 	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\"\x8e\x02\n" +
@@ -558,9 +506,9 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\rconnection_id\x18\x05 \x01(\tR\fconnectionId\x1a:\n" +
 	"\fContextEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"o\n" +
-	"\x10CallToolResponse\x12-\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.ToolErrorCodeR\x05error\x12,\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"k\n" +
+	"\x10CallToolResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12,\n" +
 	"\x06result\x18\x02 \x01(\v2\x14.numen.v1.ToolResultR\x06result\"[\n" +
 	"\n" +
 	"ToolResult\x12\x12\n" +
@@ -573,11 +521,7 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"ToolEffect\x12\x1b\n" +
 	"\x17TOOL_EFFECT_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15TOOL_EFFECT_READ_ONLY\x10\x01\x12\x1a\n" +
-	"\x16TOOL_EFFECT_READ_WRITE\x10\x02*u\n" +
-	"\rToolErrorCode\x12\x1f\n" +
-	"\x1bTOOL_ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
-	"\x1cTOOL_ERROR_CODE_UNKNOWN_TOOL\x10\x01\x12!\n" +
-	"\x1dTOOL_ERROR_CODE_BAD_ARGUMENTS\x10\x022\x9c\x01\n" +
+	"\x16TOOL_EFFECT_READ_WRITE\x10\x022\x9c\x01\n" +
 	"\x11PluginToolService\x12D\n" +
 	"\tListTools\x12\x1a.numen.v1.ListToolsRequest\x1a\x1b.numen.v1.ListToolsResponse\x12A\n" +
 	"\bCallTool\x12\x19.numen.v1.CallToolRequest\x1a\x1a.numen.v1.CallToolResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
@@ -594,29 +538,29 @@ func file_numen_v1_tools_proto_rawDescGZIP() []byte {
 	return file_numen_v1_tools_proto_rawDescData
 }
 
-var file_numen_v1_tools_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_tools_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_tools_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_tools_proto_goTypes = []any{
 	(ToolEffect)(0),           // 0: numen.v1.ToolEffect
-	(ToolErrorCode)(0),        // 1: numen.v1.ToolErrorCode
-	(*ListToolsRequest)(nil),  // 2: numen.v1.ListToolsRequest
-	(*ListToolsResponse)(nil), // 3: numen.v1.ListToolsResponse
-	(*PluginTool)(nil),        // 4: numen.v1.PluginTool
-	(*CallToolRequest)(nil),   // 5: numen.v1.CallToolRequest
-	(*CallToolResponse)(nil),  // 6: numen.v1.CallToolResponse
-	(*ToolResult)(nil),        // 7: numen.v1.ToolResult
-	nil,                       // 8: numen.v1.CallToolRequest.ContextEntry
+	(*ListToolsRequest)(nil),  // 1: numen.v1.ListToolsRequest
+	(*ListToolsResponse)(nil), // 2: numen.v1.ListToolsResponse
+	(*PluginTool)(nil),        // 3: numen.v1.PluginTool
+	(*CallToolRequest)(nil),   // 4: numen.v1.CallToolRequest
+	(*CallToolResponse)(nil),  // 5: numen.v1.CallToolResponse
+	(*ToolResult)(nil),        // 6: numen.v1.ToolResult
+	nil,                       // 7: numen.v1.CallToolRequest.ContextEntry
+	(ErrorCode)(0),            // 8: numen.v1.ErrorCode
 }
 var file_numen_v1_tools_proto_depIdxs = []int32{
-	4, // 0: numen.v1.ListToolsResponse.tools:type_name -> numen.v1.PluginTool
+	3, // 0: numen.v1.ListToolsResponse.tools:type_name -> numen.v1.PluginTool
 	0, // 1: numen.v1.PluginTool.effect:type_name -> numen.v1.ToolEffect
-	8, // 2: numen.v1.CallToolRequest.context:type_name -> numen.v1.CallToolRequest.ContextEntry
-	1, // 3: numen.v1.CallToolResponse.error:type_name -> numen.v1.ToolErrorCode
-	7, // 4: numen.v1.CallToolResponse.result:type_name -> numen.v1.ToolResult
-	2, // 5: numen.v1.PluginToolService.ListTools:input_type -> numen.v1.ListToolsRequest
-	5, // 6: numen.v1.PluginToolService.CallTool:input_type -> numen.v1.CallToolRequest
-	3, // 7: numen.v1.PluginToolService.ListTools:output_type -> numen.v1.ListToolsResponse
-	6, // 8: numen.v1.PluginToolService.CallTool:output_type -> numen.v1.CallToolResponse
+	7, // 2: numen.v1.CallToolRequest.context:type_name -> numen.v1.CallToolRequest.ContextEntry
+	8, // 3: numen.v1.CallToolResponse.error:type_name -> numen.v1.ErrorCode
+	6, // 4: numen.v1.CallToolResponse.result:type_name -> numen.v1.ToolResult
+	1, // 5: numen.v1.PluginToolService.ListTools:input_type -> numen.v1.ListToolsRequest
+	4, // 6: numen.v1.PluginToolService.CallTool:input_type -> numen.v1.CallToolRequest
+	2, // 7: numen.v1.PluginToolService.ListTools:output_type -> numen.v1.ListToolsResponse
+	5, // 8: numen.v1.PluginToolService.CallTool:output_type -> numen.v1.CallToolResponse
 	7, // [7:9] is the sub-list for method output_type
 	5, // [5:7] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
@@ -629,12 +573,13 @@ func file_numen_v1_tools_proto_init() {
 	if File_numen_v1_tools_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_tools_proto_rawDesc), len(file_numen_v1_tools_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,

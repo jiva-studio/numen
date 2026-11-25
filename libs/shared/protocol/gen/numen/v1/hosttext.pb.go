@@ -308,7 +308,7 @@ func (x *PutTextVersionRequest) GetSourceProperty() *TextSourceProperty {
 type PutTextVersionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Version       *TextVersion           `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	Error         TextErrorCode          `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -350,11 +350,11 @@ func (x *PutTextVersionResponse) GetVersion() *TextVersion {
 	return nil
 }
 
-func (x *PutTextVersionResponse) GetError() TextErrorCode {
+func (x *PutTextVersionResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 type ListTextVersionsRequest struct {
@@ -405,8 +405,8 @@ type ListTextVersionsResponse struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Versions []*TextVersion         `protobuf:"bytes,1,rep,name=versions,proto3" json:"versions,omitempty"`
 	// live_version_id is the version shown and indexed, and empty where none is live.
-	LiveVersionId string        `protobuf:"bytes,2,opt,name=live_version_id,json=liveVersionId,proto3" json:"live_version_id,omitempty"`
-	Error         TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	LiveVersionId string    `protobuf:"bytes,2,opt,name=live_version_id,json=liveVersionId,proto3" json:"live_version_id,omitempty"`
+	Error         ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -455,11 +455,11 @@ func (x *ListTextVersionsResponse) GetLiveVersionId() string {
 	return ""
 }
 
-func (x *ListTextVersionsResponse) GetError() TextErrorCode {
+func (x *ListTextVersionsResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 type ReadTextRequest struct {
@@ -549,8 +549,8 @@ type ReadTextResponse struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Segments []*TextSegment         `protobuf:"bytes,1,rep,name=segments,proto3" json:"segments,omitempty"`
 	// next_page_token is empty on the last page.
-	NextPageToken string        `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	Error         TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	NextPageToken string    `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	Error         ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// For a ranged read: the start of the first segment returned in the whole
 	// text, and the size of the whole text in bytes.
 	Start         int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
@@ -603,11 +603,11 @@ func (x *ReadTextResponse) GetNextPageToken() string {
 	return ""
 }
 
-func (x *ReadTextResponse) GetError() TextErrorCode {
+func (x *ReadTextResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ReadTextResponse) GetStart() int64 {
@@ -628,7 +628,7 @@ var File_numen_v1_hosttext_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/hosttext.proto\x12\bnumen.v1\x1a\x1anumen/v1/textsegment.proto\"<\n" +
+	"\x17numen/v1/hosttext.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x1anumen/v1/textsegment.proto\"<\n" +
 	"\x12TextSourceProperty\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"\xe6\x02\n" +
@@ -654,16 +654,16 @@ const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\n" +
 	"input_hash\x18\x05 \x01(\tR\tinputHash\x12\x12\n" +
 	"\x04file\x18\x06 \x01(\tR\x04file\x12E\n" +
-	"\x0fsource_property\x18\a \x01(\v2\x1c.numen.v1.TextSourcePropertyR\x0esourceProperty\"x\n" +
+	"\x0fsource_property\x18\a \x01(\v2\x1c.numen.v1.TextSourcePropertyR\x0esourceProperty\"t\n" +
 	"\x16PutTextVersionResponse\x12/\n" +
-	"\aversion\x18\x01 \x01(\v2\x15.numen.v1.TextVersionR\aversion\x12-\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"-\n" +
+	"\aversion\x18\x01 \x01(\v2\x15.numen.v1.TextVersionR\aversion\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"-\n" +
 	"\x17ListTextVersionsRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xa4\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xa0\x01\n" +
 	"\x18ListTextVersionsResponse\x121\n" +
 	"\bversions\x18\x01 \x03(\v2\x15.numen.v1.TextVersionR\bversions\x12&\n" +
-	"\x0flive_version_id\x18\x02 \x01(\tR\rliveVersionId\x12-\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\xa1\x01\n" +
+	"\x0flive_version_id\x18\x02 \x01(\tR\rliveVersionId\x12)\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"\xa1\x01\n" +
 	"\x0fReadTextRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
@@ -672,11 +672,11 @@ const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\x12\x14\n" +
 	"\x05start\x18\x04 \x01(\x03R\x05start\x12\x1b\n" +
 	"\x06length\x18\x05 \x01(\x03H\x00R\x06length\x88\x01\x01B\t\n" +
-	"\a_length\"\xc6\x01\n" +
+	"\a_length\"\xc2\x01\n" +
 	"\x10ReadTextResponse\x121\n" +
 	"\bsegments\x18\x01 \x03(\v2\x15.numen.v1.TextSegmentR\bsegments\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12-\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\x12\x14\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12)\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x14\n" +
 	"\x05start\x18\x04 \x01(\x03R\x05start\x12\x12\n" +
 	"\x04size\x18\x05 \x01(\x03R\x04size2\x84\x02\n" +
 	"\x0fHostTextService\x12S\n" +
@@ -706,18 +706,18 @@ var file_numen_v1_hosttext_proto_goTypes = []any{
 	(*ListTextVersionsResponse)(nil), // 5: numen.v1.ListTextVersionsResponse
 	(*ReadTextRequest)(nil),          // 6: numen.v1.ReadTextRequest
 	(*ReadTextResponse)(nil),         // 7: numen.v1.ReadTextResponse
-	(TextErrorCode)(0),               // 8: numen.v1.TextErrorCode
+	(ErrorCode)(0),                   // 8: numen.v1.ErrorCode
 	(*TextSegment)(nil),              // 9: numen.v1.TextSegment
 }
 var file_numen_v1_hosttext_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.TextVersion.source_property:type_name -> numen.v1.TextSourceProperty
 	0,  // 1: numen.v1.PutTextVersionRequest.source_property:type_name -> numen.v1.TextSourceProperty
 	1,  // 2: numen.v1.PutTextVersionResponse.version:type_name -> numen.v1.TextVersion
-	8,  // 3: numen.v1.PutTextVersionResponse.error:type_name -> numen.v1.TextErrorCode
+	8,  // 3: numen.v1.PutTextVersionResponse.error:type_name -> numen.v1.ErrorCode
 	1,  // 4: numen.v1.ListTextVersionsResponse.versions:type_name -> numen.v1.TextVersion
-	8,  // 5: numen.v1.ListTextVersionsResponse.error:type_name -> numen.v1.TextErrorCode
+	8,  // 5: numen.v1.ListTextVersionsResponse.error:type_name -> numen.v1.ErrorCode
 	9,  // 6: numen.v1.ReadTextResponse.segments:type_name -> numen.v1.TextSegment
-	8,  // 7: numen.v1.ReadTextResponse.error:type_name -> numen.v1.TextErrorCode
+	8,  // 7: numen.v1.ReadTextResponse.error:type_name -> numen.v1.ErrorCode
 	2,  // 8: numen.v1.HostTextService.PutTextVersion:input_type -> numen.v1.PutTextVersionRequest
 	4,  // 9: numen.v1.HostTextService.ListTextVersions:input_type -> numen.v1.ListTextVersionsRequest
 	6,  // 10: numen.v1.HostTextService.ReadText:input_type -> numen.v1.ReadTextRequest
@@ -736,6 +736,7 @@ func file_numen_v1_hosttext_proto_init() {
 	if File_numen_v1_hosttext_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_textsegment_proto_init()
 	file_numen_v1_hosttext_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}

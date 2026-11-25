@@ -188,22 +188,22 @@ func (s *callStream) readEnd() error {
 func readFailure(failure *v1.CallFailure) error {
 	failures := failure.GetFailures()
 	switch failure.GetError() {
-	case v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION:
+	case v1.ErrorCode_ERROR_CODE_NO_CONNECTION:
 		return ErrNoConnection
-	case v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED:
+	case v1.ErrorCode_ERROR_CODE_ALL_FAILED:
 		all := &AllFailedError{Failures: make([]Failure, len(failures))}
 		for i, one := range failures {
 			all.Failures[i] = Failure{ConnectionName: one.GetConnectionName(), Reason: one.GetReason(), Code: readReason(one.GetCode())}
 		}
 		return all
-	case v1.CallErrorCode_CALL_ERROR_CODE_STOPPED:
+	case v1.ErrorCode_ERROR_CODE_STOPPED:
 		stopped := &StoppedError{}
 		if len(failures) > 0 {
 			stopped.ConnectionName, stopped.Reason = failures[0].GetConnectionName(), failures[0].GetReason()
 			stopped.Code = readReason(failures[0].GetCode())
 		}
 		return stopped
-	case v1.CallErrorCode_CALL_ERROR_CODE_UNSPECIFIED:
+	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
 	}
 	return fmt.Errorf("connection: unknown error code %d: %s", failure.GetError(), failure.GetDetail())
 }
