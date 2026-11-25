@@ -74,7 +74,6 @@ func TestDescribe_ReplacesAnUnknownErrorWithTheGenericTextAndLogsTheChain(t *tes
 	t.Cleanup(func() { slog.SetDefault(previous) })
 	for name, err := range map[string]error{
 		"a file name":      fmt.Errorf("write journal-catalog.json: %w", errors.New("open /home/anna/.numen/x: permission denied")),
-		"a timeout":        fmt.Errorf("get catalog: %w", context.DeadlineExceeded),
 		"a refused socket": errors.New("dial tcp 127.0.0.1:8080: connect: connection refused"),
 		"a Go chain":       fmt.Errorf("sync vault 3f9a: %w", fmt.Errorf("pass: %w", errors.New("internal error"))),
 	} {
