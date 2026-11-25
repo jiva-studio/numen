@@ -34,7 +34,6 @@ const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
     signal?.addEventListener('abort', onAbort, { once: true })
   })
 
-/** Polls the core for the restored identity until it appears, the signal aborts or the limit of a minute passes. */
 const waitForIdentity = async (
   api: IdentityApi,
   signal: AbortSignal | undefined,
