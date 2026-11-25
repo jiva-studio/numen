@@ -19,7 +19,6 @@
   --mac-pad-inline: calc(0.75 * var(--numen-chrome-unit));
   --mac-button-size: calc(0.75 * var(--numen-chrome-unit));
   position: relative;
-  top: var(--numen-window-edge);
   z-index: 1;
   display: flex;
   flex: none;
