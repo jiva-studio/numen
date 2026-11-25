@@ -6,20 +6,16 @@ Feature: End the access to a shared folder
   I want to stop another person from getting more of my notes of one folder
   So that the notes I write later stay mine
 
-  Background:
-    Given the empty vault "Test"
-    And a sync server runs
-    And the person creates an identity
-    And the application "editor" starts
-    And the person syncs the vault "Test"
-    And the person writes the note "Food/Shopping list" with the text "milk" in the vault "Test"
-    And the person writes the note "Plan" with the text "tea" in the vault "Test"
-    And the reader sets up an identity
-
-  Rule: The person ends the access of a device
-
     Scenario: The reader keeps what it has and gets no more
-      Given the person shares the folder "Food" of the vault "Test" with the reader
+      Given the empty vault "Test"
+      And a sync server runs
+      And the person creates an identity
+      And the application "editor" starts
+      And the person syncs the vault "Test"
+      And the person writes the note "Food/Shopping list" with the text "milk" in the vault "Test"
+      And the person writes the note "Plan" with the text "tea" in the vault "Test"
+      And the reader sets up an identity
+      And the person shares the folder "Food" of the vault "Test" with the reader
       And the reader has the note "Shopping list" with the text "milk" in the shared vault "Food"
       When the person removes the access of the device of the reader to the folder "Food"
       And the person writes the note "Food/Menu" with the text "soup" in the vault "Test"

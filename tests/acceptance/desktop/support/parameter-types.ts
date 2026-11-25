@@ -206,3 +206,9 @@ defineParameterType({
   regexp: / without telling the computers|/,
   transformer: (telling: string) => telling === '',
 })
+
+defineParameterType({
+  name: 'signed',
+  regexp: /signed in|not signed in/,
+  transformer: (signed: string) => signed === 'signed in',
+})
