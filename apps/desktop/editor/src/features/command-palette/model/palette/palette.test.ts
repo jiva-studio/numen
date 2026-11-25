@@ -6,6 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
+import { Folder } from '@lucide/vue'
 import { runSupport } from './runSupport'
 import type { StepGroup } from '@/shared/model/command'
 import type { NoteLookup, PaletteLists } from '../../types'
@@ -690,6 +691,14 @@ describe('a command that offers a list the window holds', () => {
     commands.palette.startCommand(THEME_ID, front())
 
     expect(commands.view.findItemIcon()).toBe(findIcon(THEME_ID))
+  })
+
+  it('draws a vault of this device with the folder icon in the vault step', () => {
+    const { commands } = createPalette({}, [], target)
+
+    commands.palette.startCommand('app:vault.open', front())
+
+    expect(commands.view.findItemIcon()).toBe(Folder)
   })
 
   it('offers each command the list it holds for that command', () => {

@@ -42,10 +42,9 @@ export function useVaultList(sources: VaultListSources): VaultList {
   const popup = computed<VaultListPopup>(() => ({
     items: [
       ...getVaults().vaults.map(({ id, name }) => ({ id, text: name })),
-      ...(getVaults().cloud ?? []).map(({ id, name, detail }) => ({
+      ...(getVaults().cloud ?? []).map(({ id, name }) => ({
         id,
         text: name,
-        detail,
         group: TITLE_BAR_WORDS.cloud,
       })),
       ...(canCreate()

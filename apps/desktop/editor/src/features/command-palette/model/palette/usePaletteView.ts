@@ -2,6 +2,7 @@
  * What the palette draws: the groups of the current step, and the kind and icon of a row.
  */
 import { computed, type Component } from 'vue'
+import { Folder } from '@lucide/vue'
 import type { Vault } from '@/entities/vault'
 import { findIcon } from '@/shared/model/command'
 import { getPaletteView } from '../view/view'
@@ -36,9 +37,10 @@ export function usePaletteView(session: PaletteSession) {
   /** The icon a command declares, and nothing for one that declares none. */
   const findCommandIcon = (id: string): Component | null => byId.value.get(id)?.icon ?? null
 
-  /** The icon of the command whose items the palette lists, drawn on each item; none outside that step. */
+  /** The icon drawn on each item of the step that lists items, or a vault of this device; none outside those steps. */
   const findItemIcon = (): Component | null => {
     const step = steps.here.value
+    if (step?.step === 'vault') return Folder
     if (step?.step !== 'items') return null
     return step.command.icon ?? findIcon(step.command.id)
   }

@@ -149,10 +149,18 @@
   box-shadow: inset 0 0 0 var(--focus-ring-width) var(--numen-accent);
 }
 
-/* The mark before the name of a vault that is in the cloud and not on this device. */
-.title-bar__cloud-icon {
+/* The mark before the name of a vault: a folder on this device, a cloud off it. */
+.title-bar__vault-icon {
   --size: calc(1.25 * var(--numen-chrome-unit));
   flex: none;
   inline-size: var(--size);
   block-size: var(--size);
+  color: var(--numen-hushed);
+}
+
+/* The size of a vault in the cloud, at the end of its row. */
+.title-bar__vault-size {
+  flex: none;
+  font-size: var(--numen-text-1);
+  color: var(--numen-hushed);
 }

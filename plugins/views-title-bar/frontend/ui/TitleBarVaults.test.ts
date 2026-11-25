@@ -300,14 +300,27 @@ describe('the cloud vaults in the list', () => {
     expect(document.body.querySelector('.searchable-list__heading')?.textContent?.trim()).toBe(
       'Cloud',
     )
-    expect(document.body.querySelector('.title-bar__cloud-icon')).not.toBeNull()
+    expect(document.body.querySelector('.title-bar__vault-icon')).not.toBeNull()
+  })
+
+  it('draws every row as one line with an icon, the size at the end of a cloud row', async () => {
+    await open(mountBar(WITH_CLOUD))
+
+    const rows = getOptions().filter((one) => one.textContent?.includes('Create') === false)
+    expect(rows).toHaveLength(4)
+    for (const row of rows) {
+      expect(row.querySelectorAll('.title-bar__vault-icon')).toHaveLength(1)
+      expect(row.querySelector('.searchable-list__detail')).toBeNull()
+    }
+    expect(rows[0]?.querySelector('.title-bar__vault-size')).toBeNull()
+    expect(rows[3]?.lastElementChild?.textContent).toBe('1.9 GB')
   })
 
   it('shows no group when there is no cloud vault', async () => {
     await open(mountBar({ ...VAULTS, cloud: [] }))
 
     expect(getLabels()).toStrictEqual(['Orchard notes', 'Greenhouse log', 'Cellar book'])
-    expect(document.body.querySelector('.title-bar__cloud-icon')).toBeNull()
+    expect(document.body.querySelector('.searchable-list__heading')).toBeNull()
   })
 
   it('switches to the id of the row that was chosen', async () => {
