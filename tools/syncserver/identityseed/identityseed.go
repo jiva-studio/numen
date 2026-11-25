@@ -1,6 +1,7 @@
 // Package identityseed makes the test identities of the acceptance scenarios: one person with recovery words and three
 // computers that hold the keys of the account, and the saved state of the fake sync server that knows that account.
-// Everything is made from fixed seeds, so a run of Generate always gives the same bytes. The keys are for tests only.
+// The words and the keys come from fixed seeds, so the account and the devices are always the same; the sealed parts hold
+// random nonces. The keys are for tests only.
 package identityseed
 
 import (
@@ -165,7 +166,9 @@ func Write(folder string, seed Seed) error {
 // ErrOutOfDate says that the saved seed is not what the code makes now.
 var ErrOutOfDate = errors.New("the test identities are out of date: run npm run acceptance:identity")
 
-// Check loads the seed in the folder the way the application and the fake server do, and compares it with what Generate makes now.
+// Check loads the seed in the folder the way the application and the fake server do: the words give the account of the
+// chain, every record opens for its device in the chain, and the server state restores. The sealed parts hold random
+// nonces, so two runs of Generate differ in bytes and only a load can tell a stale file.
 func Check(folder string) error {
 	saved, err := load(folder)
 	if err != nil {
@@ -173,13 +176,6 @@ func Check(folder string) error {
 	}
 	if err := verify(saved); err != nil {
 		return fmt.Errorf("%w (%w)", ErrOutOfDate, err)
-	}
-	made, err := Generate()
-	if err != nil {
-		return err
-	}
-	if !same(saved, made) {
-		return fmt.Errorf("%w (the files differ from what the code makes)", ErrOutOfDate)
 	}
 	return nil
 }
@@ -202,6 +198,17 @@ func verify(seed Seed) error {
 	if err != nil {
 		return err
 	}
+	words, err := identity.ParseRecoveryWords(seed.Identity.Words)
+	if err != nil {
+		return err
+	}
+	root, err := words.DeriveRecoveryKey()
+	if err != nil {
+		return err
+	}
+	if root.Public().Fingerprint().String() != seed.Identity.Fingerprint || chain.Root().Fingerprint().String() != seed.Identity.Fingerprint {
+		return errors.New("the words and the chain are of different accounts")
+	}
 	if err := chain.Verify(); err != nil {
 		return err
 	}
@@ -223,10 +230,4 @@ func verify(seed Seed) error {
 		}
 	}
 	return fakeserver.New(fakeserver.Config{}).Restore(seed.Server)
-}
-
-func same(a, b Seed) bool {
-	left, errLeft := json.Marshal(a.Identity)
-	right, errRight := json.Marshal(b.Identity)
-	return errLeft == nil && errRight == nil && bytes.Equal(left, right) && bytes.Equal(a.Server, b.Server)
 }
