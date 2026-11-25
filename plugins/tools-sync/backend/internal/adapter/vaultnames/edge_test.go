@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"golang.org/x/text/unicode/norm"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
@@ -15,13 +13,10 @@ import (
 )
 
 const (
-	vaultID domain.VaultID = "garden"
-	plain                  = "Plan.md"
-)
-
-var (
-	composed   = norm.NFC.String("Йога и ёж.md")
-	decomposed = norm.NFD.String("Йога и ёж.md")
+	vaultID    domain.VaultID = "garden"
+	plain      string         = "Plan.md"
+	composed   string         = "\u0419ога и \u0451ж.md"
+	decomposed string         = "\u0418\u0306ога и \u0435\u0308ж.md"
 )
 
 func listPaths(t *testing.T, files ports.Files) []string {
@@ -41,10 +36,10 @@ func listPaths(t *testing.T, files ports.Files) []string {
 	return paths
 }
 
-func TestFiles_ListsAFileOfADecomposedNameUnderItsComposedName(t *testing.T) {
+func TestFiles_ListsADecomposedNameAsTheComposedName(t *testing.T) {
 	vault := hosttest.New(string(vaultID))
 	vault.WriteFile(decomposed, "one")
-	files := vaultnames.New().Files(vaultID, vault.With(vaultID))
+	files := vaultnames.New().GetFiles(vaultID, vault.With(vaultID))
 
 	paths := listPaths(t, files)
 
@@ -56,7 +51,7 @@ func TestFiles_ListsAFileOfADecomposedNameUnderItsComposedName(t *testing.T) {
 func TestFiles_ReadsAFileOfADecomposedNameByItsComposedNameAfterARestart(t *testing.T) {
 	vault := hosttest.New(string(vaultID))
 	vault.WriteFile(decomposed, "one")
-	files := vaultnames.New().Files(vaultID, vault.With(vaultID))
+	files := vaultnames.New().GetFiles(vaultID, vault.With(vaultID))
 
 	content, stat, err := files.Read(t.Context(), composed)
 
@@ -68,7 +63,7 @@ func TestFiles_ReadsAFileOfADecomposedNameByItsComposedNameAfterARestart(t *test
 func TestFiles_WritesOverTheFileOfADecomposedNameAndMakesNoSecondFile(t *testing.T) {
 	vault := hosttest.New(string(vaultID))
 	vault.WriteFile(decomposed, "one")
-	files := vaultnames.New().Files(vaultID, vault.With(vaultID))
+	files := vaultnames.New().GetFiles(vaultID, vault.With(vaultID))
 	_, stat, err := files.Read(t.Context(), composed)
 	if err != nil {
 		t.Fatal(err)
@@ -89,7 +84,7 @@ func TestFiles_WritesOverTheFileOfADecomposedNameAndMakesNoSecondFile(t *testing
 func TestFiles_RefusesToCreateAFileOfTheComposedNameOverOneOfTheDecomposedName(t *testing.T) {
 	vault := hosttest.New(string(vaultID))
 	vault.WriteFile(decomposed, "one")
-	files := vaultnames.New().Files(vaultID, vault.With(vaultID))
+	files := vaultnames.New().GetFiles(vaultID, vault.With(vaultID))
 
 	err := files.Create(t.Context(), composed, []byte("two"))
 
@@ -101,10 +96,10 @@ func TestFiles_RefusesToCreateAFileOfTheComposedNameOverOneOfTheDecomposedName(t
 	}
 }
 
-func TestFiles_FollowsAFileThatAnotherProgramRemovedAndMadeAgainUnderTheComposedName(t *testing.T) {
+func TestFiles_FollowsAFileRemadeWithTheComposedName(t *testing.T) {
 	vault := hosttest.New(string(vaultID))
 	vault.WriteFile(decomposed, "one")
-	files := vaultnames.New().Files(vaultID, vault.With(vaultID))
+	files := vaultnames.New().GetFiles(vaultID, vault.With(vaultID))
 	if _, err := files.StatFile(t.Context(), composed); err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +115,7 @@ func TestFiles_FollowsAFileThatAnotherProgramRemovedAndMadeAgainUnderTheComposed
 
 func TestFiles_ReportsAFileThatIsNotThereAsNotThere(t *testing.T) {
 	vault := hosttest.New(string(vaultID))
-	files := vaultnames.New().Files(vaultID, vault.With(vaultID))
+	files := vaultnames.New().GetFiles(vaultID, vault.With(vaultID))
 
 	_, err := files.StatFile(t.Context(), composed)
 
@@ -133,7 +128,7 @@ func TestFiles_DoesNotReadTheFeedForAPlainName(t *testing.T) {
 	vault := hosttest.New(string(vaultID))
 	vault.WriteFile(plain, "one")
 	spy := &feedSpy{Files: vault.With(vaultID)}
-	files := vaultnames.New().Files(vaultID, spy)
+	files := vaultnames.New().GetFiles(vaultID, spy)
 
 	if _, err := files.StatFile(t.Context(), "Missing.md"); !errors.Is(err, host.ErrNotExist) {
 		t.Fatal(err)
@@ -161,8 +156,8 @@ func TestTransfers_ReadsMovesAndRemovesAFileOfADecomposedNameByItsComposedName(t
 	vault := hosttest.New(string(vaultID))
 	vault.WriteFile(decomposed, "one")
 	edge := vaultnames.New()
-	files := edge.Files(vaultID, vault.With(vaultID))
-	transfers := edge.Transfers(vaultID, files, vault.With(vaultID))
+	files := edge.GetFiles(vaultID, vault.With(vaultID))
+	transfers := edge.GetTransfers(vaultID, files, vault.With(vaultID))
 
 	part, err := transfers.ReadBytes(t.Context(), composed, 0, 10)
 	if err != nil || string(part.Content) != "one" || part.Stat.Path != composed {
@@ -180,8 +175,8 @@ func TestTransfers_RemovesAFileOfADecomposedNameByItsComposedName(t *testing.T) 
 	vault := hosttest.New(string(vaultID))
 	vault.WriteFile(decomposed, "one")
 	edge := vaultnames.New()
-	files := edge.Files(vaultID, vault.With(vaultID))
-	transfers := edge.Transfers(vaultID, files, vault.With(vaultID))
+	files := edge.GetFiles(vaultID, vault.With(vaultID))
+	transfers := edge.GetTransfers(vaultID, files, vault.With(vaultID))
 
 	if _, err := transfers.RemoveFile(t.Context(), composed, nil); err != nil {
 		t.Fatal(err)

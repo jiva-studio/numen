@@ -13,8 +13,8 @@ type transfers struct {
 	names *table
 }
 
-// Transfers returns what the host does with the bytes of the files of the vault, over the paths of the notes.
-func (e *Edge) Transfers(id domain.VaultID, files ports.Files, inner ports.Transfers) ports.Transfers {
+// GetTransfers returns what the host does with the bytes of the files of the vault, over the paths of the notes.
+func (e *Edge) GetTransfers(id domain.VaultID, files ports.Files, inner ports.Transfers) ports.Transfers {
 	return &transfers{inner: inner, names: e.getTable(id, files)}
 }
 

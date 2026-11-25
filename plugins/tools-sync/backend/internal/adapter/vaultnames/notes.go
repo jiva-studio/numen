@@ -14,8 +14,8 @@ type notes struct {
 	names *table
 }
 
-// Notes returns what the host does with the notes of the vault in its index and its trash, over the paths of the notes.
-func (e *Edge) Notes(id domain.VaultID, files ports.Files, inner ports.Notes) ports.Notes {
+// GetNotes returns what the host does with the notes of the vault in its index and its trash, over the paths of the notes.
+func (e *Edge) GetNotes(id domain.VaultID, files ports.Files, inner ports.Notes) ports.Notes {
 	return &notes{inner: inner, names: e.getTable(id, files)}
 }
 

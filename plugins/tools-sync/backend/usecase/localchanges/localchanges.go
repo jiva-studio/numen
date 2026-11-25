@@ -137,15 +137,15 @@ func (u *ScanLocalChanges) scanFile(ctx context.Context, files ports.Files, path
 		return nil, errUnreadable
 	}
 	now := u.deps.Clock.Now()
-	seen[path] = getSighting(seen[path], stat, now)
+	seen[path] = updateSnapshot(seen[path], stat, now)
 	if stat.Hash == bases[path] || !seen[path].IsSettled(now, settleTime) {
 		return nil, nil
 	}
 	return &transfer.Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()}, nil
 }
 
-// getSighting is the snapshot of the file as the stat found it, keeping the time of the first sight of the same content.
-func getSighting(before note.FileSnapshot, stat domain.FileStat, now time.Time) note.FileSnapshot {
+// updateSnapshot is the snapshot of the file as the stat found it, keeping the time of the first sight of the same content.
+func updateSnapshot(before note.FileSnapshot, stat domain.FileStat, now time.Time) note.FileSnapshot {
 	seenAt := now.UnixNano()
 	if before.Hash == stat.Hash && before.ModifiedAt == stat.ModTime.UnixNano() && before.SeenAt != 0 {
 		seenAt = before.SeenAt
@@ -175,6 +175,6 @@ func applyChanges(seen map[string]note.FileSnapshot, batch []host.FileChange) {
 			delete(seen, old)
 		}
 		bySource[change.SourceID] = change.Path
-		seen[change.Path] = note.FileSnapshot{Hash: change.Hash, Size: change.Size, ModifiedAt: change.ModifiedAt, SourceID: change.SourceID}
+		seen[change.Path] = note.FileSnapshot{Hash: change.Hash, Size: change.Size, ModifiedAt: change.ModifiedAt, SourceID: change.SourceID, SeenAt: 0}
 	}
 }

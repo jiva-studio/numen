@@ -101,7 +101,7 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 	if err := r.applyContent(ctx, stored, meta, record, isKnown); err != nil {
 		return err
 	}
-	r.retries.succeed(r.getRetryKey(stored))
+	r.retries.forget(r.getRetryKey(stored))
 	return nil
 }
 

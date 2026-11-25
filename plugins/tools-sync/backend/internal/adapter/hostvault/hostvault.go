@@ -28,11 +28,11 @@ func (v *Vaults) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 }
 
 func (v *Vaults) GetFiles(id domain.VaultID) ports.Files {
-	return v.names.Files(id, v.client.With(id))
+	return v.names.GetFiles(id, v.client.With(id))
 }
 
 func (v *Vaults) GetNotes(id domain.VaultID) ports.Notes {
-	return v.names.Notes(id, v.client.With(id), v.client.With(id))
+	return v.names.GetNotes(id, v.client.With(id), v.client.With(id))
 }
 
 // Store returns the store folder of the plugin in the vault.
@@ -40,12 +40,12 @@ func (v *Vaults) Store(id domain.VaultID) ports.Store { return v.store.With(id) 
 
 // GetAbsent returns the files of the vault that the device lists and does not hold.
 func (v *Vaults) GetAbsent(id domain.VaultID) ports.Absent {
-	return v.names.Absent(id, v.client.With(id), v.client.With(id))
+	return v.names.GetAbsent(id, v.client.With(id), v.client.With(id))
 }
 
 // GetTransfers returns what the host does with the bytes of the files of the vault.
 func (v *Vaults) GetTransfers(id domain.VaultID) ports.Transfers {
-	return v.names.Transfers(id, v.client.With(id), v.client.With(id))
+	return v.names.GetTransfers(id, v.client.With(id), v.client.With(id))
 }
 
 // AddManagedVault adds the folder as a vault that only the plugin with the id managedBy writes.

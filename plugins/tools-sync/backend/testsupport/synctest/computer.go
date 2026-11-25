@@ -67,21 +67,21 @@ func (h Host) GetFiles(id domain.VaultID) ports.Files {
 	if h.Names == nil {
 		return h.Root.With(id)
 	}
-	return h.Names.Files(id, h.Root.With(id))
+	return h.Names.GetFiles(id, h.Root.With(id))
 }
 
 func (h Host) GetNotes(id domain.VaultID) ports.Notes {
 	if h.Names == nil {
 		return h.Root.With(id)
 	}
-	return h.Names.Notes(id, h.Root.With(id), h.Root.With(id))
+	return h.Names.GetNotes(id, h.Root.With(id), h.Root.With(id))
 }
 
 func (h Host) GetAbsent(id domain.VaultID) ports.Absent {
 	if h.Names == nil {
 		return h.Root.With(id)
 	}
-	return h.Names.Absent(id, h.Root.With(id), h.Root.With(id))
+	return h.Names.GetAbsent(id, h.Root.With(id), h.Root.With(id))
 }
 
 // Store returns the store folder of the plugin in the vault.
@@ -92,7 +92,7 @@ func (h Host) GetTransfers(id domain.VaultID) ports.Transfers {
 	if h.Names == nil {
 		return h.Root.With(id)
 	}
-	return h.Names.Transfers(id, h.Root.With(id), h.Root.With(id))
+	return h.Names.GetTransfers(id, h.Root.With(id), h.Root.With(id))
 }
 
 // Computer is one computer of the person: an identity held by a host, a health host, vaults, a clock and the
@@ -199,7 +199,8 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: host, Notes: host,
 		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil,
-		LazyHeavy: false, Folders: folders.NewReceivedFolders(func() string { return receivedRoot }), token: atomic.Value{}, network: network, downloadsOnce: sync.Once{}, downloads: nil, retries: pull.NewRetries(),
+		LazyHeavy: false, Folders: folders.NewReceivedFolders(func() string { return receivedRoot }), token: atomic.Value{},
+		network: network, downloadsOnce: sync.Once{}, downloads: nil, retries: pull.NewRetries(),
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,

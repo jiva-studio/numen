@@ -13,8 +13,8 @@ type absent struct {
 	names *table
 }
 
-// Absent returns the files of the vault that the device lists and does not hold, over the paths of the notes.
-func (e *Edge) Absent(id domain.VaultID, files ports.Files, inner ports.Absent) ports.Absent {
+// GetAbsent returns the files of the vault that the device lists and does not hold, over the paths of the notes.
+func (e *Edge) GetAbsent(id domain.VaultID, files ports.Files, inner ports.Absent) ports.Absent {
 	return &absent{inner: inner, names: e.getTable(id, files)}
 }
 

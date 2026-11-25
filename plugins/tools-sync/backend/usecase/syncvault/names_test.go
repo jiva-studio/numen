@@ -3,15 +3,13 @@ package syncvault_test
 import (
 	"testing"
 
-	"golang.org/x/text/unicode/norm"
-
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
-var (
-	composedName   = norm.NFC.String("Йога и ёж.md")
-	decomposedName = norm.NFD.String("Йога и ёж.md")
+const (
+	composedName   = "\u0419ога и \u0451ж.md"
+	decomposedName = "\u0418\u0306ога и \u0435\u0308ж.md"
 )
 
 func TestSyncVault_ANoteNamedInDecomposedFormIsSentOnceAndNotAgain(t *testing.T) {
@@ -50,7 +48,7 @@ func TestSyncVault_ADecomposedNoteChangedLaterIsSentAsOneEdit(t *testing.T) {
 	wantNote(t, p.b, target, composedName, "two")
 }
 
-func TestSyncVault_ANoteReceivedUnderTheComposedNameLandsOnTheDecomposedFile(t *testing.T) {
+func TestSyncVault_ANoteReceivedAsComposedLandsOnTheDecomposedFile(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.b.WriteNote(target, decomposedName, "one")
 	sync(t, p.b, target)

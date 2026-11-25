@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 )
 
-func TestFileSnapshot_IsSettledWhenItsTimeIsOldEnoughOrItWasSeenLongEnoughWhileItsTimeIsInTheFuture(t *testing.T) {
+func TestFileSnapshot_IsSettled(t *testing.T) {
 	now := time.Date(2026, 11, 25, 12, 0, 0, 0, time.UTC)
 	const settle = 10 * time.Second
 	at := func(offset time.Duration) int64 { return now.Add(offset).UnixNano() }

@@ -98,7 +98,7 @@ func (t *table) refresh(ctx context.Context) error {
 		return t.load(ctx)
 	}
 	for {
-		page, err := t.feed.ListFileChanges(ctx, host.FileChangeQuery{Since: t.cursor, Events: allEvents, Limit: 0})
+		page, err := t.feed.ListFileChanges(ctx, host.FileChangeQuery{Since: t.cursor, Events: getAllEvents(), Limit: 0})
 		if err != nil {
 			return err
 		}
@@ -113,7 +113,9 @@ func (t *table) refresh(ctx context.Context) error {
 	}
 }
 
-var allEvents = []string{host.EventFileAdded, host.EventFileChanged, host.EventFileMoved, host.EventFileRemoved}
+func getAllEvents() []string {
+	return []string{host.EventFileAdded, host.EventFileChanged, host.EventFileMoved, host.EventFileRemoved}
+}
 
 func (t *table) load(ctx context.Context) error {
 	added := []string{host.EventFileAdded}

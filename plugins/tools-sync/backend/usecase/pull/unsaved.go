@@ -86,7 +86,7 @@ func (r *Retries) fail(key retryKey, rev string, now time.Time) {
 	r.held[key] = one
 }
 
-func (r *Retries) succeed(key retryKey) {
+func (r *Retries) forget(key retryKey) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.held, key)

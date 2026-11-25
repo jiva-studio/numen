@@ -196,7 +196,7 @@ func TestDetectMoves_DoesNotListAFileThatIsInTheVaultAsRemoved(t *testing.T) {
 	}
 }
 
-func TestDetectMoves_CallsAFileWithATimeInTheFutureAMoveOnceItWasSeenForTenSeconds(t *testing.T) {
+func TestDetectMoves_CallsAFileFromTheFutureAMoveTenSecondsAfterFirstSight(t *testing.T) {
 	c := newComputer(t)
 	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/Old report.pdf", "pdf bytes")

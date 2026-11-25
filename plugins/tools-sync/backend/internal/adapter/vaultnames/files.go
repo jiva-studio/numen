@@ -13,9 +13,9 @@ type files struct {
 	names *table
 }
 
-// Files returns the files of the vault with the paths of the notes: the paths the feed lists are in normal form C,
+// GetFiles returns the files of the vault with the paths of the notes: the paths the feed lists are in normal form C,
 // and a path of a call reaches the file by its disk name.
-func (e *Edge) Files(id domain.VaultID, inner ports.Files) ports.Files {
+func (e *Edge) GetFiles(id domain.VaultID, inner ports.Files) ports.Files {
 	return &files{inner: inner, names: e.getTable(id, inner)}
 }
 

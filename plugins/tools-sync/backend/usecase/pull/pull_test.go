@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -355,9 +356,13 @@ func TestPullChanges_DownloadsANoteAgainAfterAStopBetweenTheBaseAndTheWrite(t *t
 	deps := p.b.PullDeps()
 	deps.Host = powerLossHost{Host: p.b.Host}
 	deps.State = &recordsLostAfterOneWrite{State: deps.State}
-	if _, err := pull.NewPullChanges(deps).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll}); err == nil {
-		t.Fatal("pull reported no error for a write that stopped")
+	if _, err := pull.NewPullChanges(deps).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll}); err != nil {
+		t.Fatalf("pull = %v, want the file the host could not write skipped and no error", err)
 	}
+	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "milk" {
+		t.Fatalf("note after the stop = %q, want milk", text)
+	}
+	p.b.Clock.Advance(time.Hour)
 
 	result := p.pull(t, trustAll)
 

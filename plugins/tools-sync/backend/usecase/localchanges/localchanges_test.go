@@ -332,7 +332,7 @@ func TestScanLocalChanges_ReturnsTheErrorOfTheContextWhenItEndsWhileTheNotesAreR
 	}
 }
 
-func TestScanLocalChanges_ListsANoteWithATimeInTheFutureOnceItWasSeenForTenSeconds(t *testing.T) {
+func TestScanLocalChanges_ListsANoteFromTheFutureTenSecondsAfterFirstSight(t *testing.T) {
 	c := newComputer(t)
 	scan(t, c, nil)
 	c.WriteNote(vault, "Restored.md", "from an archive")
