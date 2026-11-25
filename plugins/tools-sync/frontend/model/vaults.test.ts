@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Vault, VaultsClient } from '../api/vaults'
-import { useVaults } from './vaults'
+import { getSyncPercent, useVaults } from './vaults'
 import { ReportedError } from '@numen/plugin-sdk'
 
 const NOW = new Date('2026-11-23T12:00:00Z')
@@ -112,13 +112,68 @@ describe('useVaults', () => {
 
   it('says nothing about files on demand when none stay in the cloud', async () => {
     const client = createClient([
-      createVault({ state: 'connected', onDemandFiles: 0, totalBytes: 1_048_576, remoteId: 'bb22' }),
+      createVault({
+        state: 'connected',
+        onDemandFiles: 0,
+        totalBytes: 1_048_576,
+        remoteId: 'bb22',
+      }),
     ])
     const model = createModel(client)
 
     await model.actions.load()
 
     expect(model.state.rows.value.at(0)?.size).not.toContain('on demand')
+  })
+
+  it('leaves the files on demand out of the progress of a syncing vault', async () => {
+    const client = createClient([
+      createVault({
+        state: 'connected',
+        syncing: true,
+        syncedBytes: 1_000,
+        totalBytes: 5_000,
+        onDemandBytes: 3_000,
+        onDemandFiles: 2,
+      }),
+    ])
+    const model = createModel(client)
+
+    await model.actions.load()
+
+    expect(model.state.rows.value.at(0)).toMatchObject({ progress: 0.5, isTransferring: true })
+  })
+
+  it('reaches the full progress when everything meant to download is downloaded', async () => {
+    const client = createClient([
+      createVault({
+        state: 'connected',
+        syncing: true,
+        syncedBytes: 2_000,
+        totalBytes: 5_000,
+        onDemandBytes: 3_000,
+      }),
+    ])
+    const model = createModel(client)
+
+    await model.actions.load()
+
+    expect(model.state.rows.value.at(0)?.progress).toBe(1)
+  })
+
+  it('counts the percent over the syncing vaults without their files on demand', () => {
+    const vaults = [
+      createVault({
+        id: 'a',
+        syncing: true,
+        syncedBytes: 100,
+        totalBytes: 1_100,
+        onDemandBytes: 1_000,
+      }),
+      createVault({ id: 'b', syncing: true, syncedBytes: 0, totalBytes: 100 }),
+    ]
+
+    expect(getSyncPercent(vaults)).toBe(50)
   })
 
   it('says one minute in the singular and less than a minute for a fresh sync', async () => {
