@@ -20,9 +20,9 @@ const maxSealPlain = 32 << 10
 var errDataSize = errors.New("the data to seal has at most 32 KiB")
 
 type pendingRestore struct {
-	recovery     identity.RecoveryKey
-	device       identity.DeviceKey
-	revokeOthers bool
+	recovery identity.RecoveryKey
+	device   identity.DeviceKey
+	rotates  bool
 }
 
 func newPendingRestore(t *testing.T, words []string) *pendingRestore {
@@ -171,14 +171,14 @@ func joinRestore(restore *pendingRestore, chainBytes []byte, now time.Time) (fak
 	if err != nil {
 		return fakeIdentity{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
-	if restore.revokeOthers {
-		return revokeOthersOf(restore, chain, keys, now)
+	if restore.rotates {
+		return rotateAfterJoin(restore, chain, keys, now)
 	}
 	return appendDevice(restore, chain, keys, now)
 }
 
-// revokeOthersOf is the restore of the core: the device joins, and the recovery key revokes every other device and starts a new epoch of keys.
-func revokeOthersOf(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (fakeIdentity, error) {
+// rotateAfterJoin is the restore of the core: the device joins, and the recovery key starts a new epoch of keys for every device.
+func rotateAfterJoin(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (fakeIdentity, error) {
 	history, err := chain.OpenKeyHistory(keys)
 	if err != nil {
 		return fakeIdentity{}, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
@@ -187,7 +187,7 @@ func revokeOthersOf(restore *pendingRestore, chain identity.Chain, keys identity
 	if err != nil {
 		return fakeIdentity{}, connect.NewError(connect.CodeInternal, err)
 	}
-	rotated, fresh, err := joined.RevokeOthers(restore.recovery, history, restore.device.SignerKey(), rand.Reader, now)
+	rotated, fresh, err := joined.RotateKeys(restore.recovery, history, rand.Reader, now)
 	if err != nil {
 		return fakeIdentity{}, connect.NewError(connect.CodeInternal, err)
 	}

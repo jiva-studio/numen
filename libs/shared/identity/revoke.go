@@ -69,25 +69,6 @@ func (c Chain) RotateKeys(by RecoveryKey, current AccountKeys, random io.Reader,
 	return c.appendKeys(by, KindRotateKeys, revoke, current, fresh, at)
 }
 
-// RevokeOthers returns a chain that starts the next epoch of keys for the one device and revokes every other active device; the receiver is
-// not changed. Only the recovery key signs it: a restore from the words uses it, because the chain a restore reads may list devices that
-// the person no longer holds or never revoked.
-func (c Chain) RevokeOthers(by RecoveryKey, current AccountKeys, keep ed25519.PublicKey, random io.Reader, at time.Time) (Chain, AccountKeys, error) {
-	if len(c.entries) == 0 {
-		return Chain{}, AccountKeys{}, fmt.Errorf("%w: the chain has no genesis", ErrMalformed)
-	}
-	state := c.replay()
-	index := state.indexOf(keep)
-	if index < 0 {
-		return Chain{}, AccountKeys{}, ErrUnknownDevice
-	}
-	revoke, fresh, err := c.makeKeys(current, []Device{state.active[index]}, random)
-	if err != nil {
-		return Chain{}, AccountKeys{}, err
-	}
-	return c.appendKeys(by, KindRotateKeys, revoke, current, fresh, at)
-}
-
 func (c Chain) appendKeys(by Signer, kind EntryKind, revoke *Revoke, current, fresh AccountKeys, at time.Time) (Chain, AccountKeys, error) {
 	last := c.entries[len(c.entries)-1]
 	entry := Entry{
@@ -283,15 +264,9 @@ func (r *Revoke) getWrapFor(sign ed25519.PublicKey) (WrappedAccountKeys, bool) {
 // GetRevokedSince returns the signing keys revoked by the entries after the prefix.
 func (c Chain) GetRevokedSince(prefix Chain) []ed25519.PublicKey {
 	var revoked []ed25519.PublicKey
-	state := newRoster(c.Root().Sign)
-	for i, entry := range c.entries[min(1, len(c.entries)):] {
-		before := len(state.revoked)
-		state.apply(entry)
-		if i+1 < len(prefix.entries) {
-			continue
-		}
-		for _, device := range state.revoked[before:] {
-			revoked = append(revoked, slices.Clone(device.Public.Sign))
+	for i := len(prefix.entries); i < len(c.entries); i++ {
+		if entry := c.entries[i]; entry.Kind == KindRevokeDevice && entry.Revoke != nil {
+			revoked = append(revoked, slices.Clone(entry.Revoke.Device))
 		}
 	}
 	return revoked

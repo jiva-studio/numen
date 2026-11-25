@@ -107,12 +107,12 @@ func (f *Fake) StartRestore(words []string) {
 	f.pending = restore
 }
 
-// StartRestoreAsCore is StartRestore for a host that completes the restore as the core does: the recovery key revokes every other
-// device of the chain and starts a new epoch of keys for this device alone.
+// StartRestoreAsCore is StartRestore for a host that completes the restore as the core does: the recovery key starts a new epoch of keys
+// for every device of the chain.
 func (f *Fake) StartRestoreAsCore(words []string) {
 	f.t.Helper()
 	restore := newPendingRestore(f.t, words)
-	restore.revokeOthers = true
+	restore.rotates = true
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.record = nil

@@ -23,9 +23,8 @@ func NewCompleteRestore(d Deps) *CompleteRestore {
 
 // Execute joins the account of chainBytes: the chain must verify, have the root of the pending words and contain the chain mark of the
 // kit when one was given, the recovery key unwraps the account keys of the latest epoch and they must be the keys of the account box of the
-// chain. This device is appended and the recovery key starts a new epoch of keys for this device alone and revokes every other device of the
-// chain, which only the words can do: a device that was stolen and never revoked loses its access, and the person links the devices they
-// still own again. What the chain wrapped for the words is not the keys in use. Empty chainBytes means the server has no such account, and the
+// chain. This device is appended and the recovery key starts a new epoch of keys for every device of the chain, which only the words can
+// do, so what the chain wrapped for the words is not the keys in use. Empty chainBytes means the server has no such account, and the
 // result is a new identity of the words, unless the kit named a chain mark. The record is written with one SetKey and the pending restore
 // is cleared. ErrNoPendingRestore, ErrInvalidChain, ErrIdentityExists and ErrChainOutdated refuse it; after
 // ErrChainOutdated the restore is over and GetIdentity reports the refusal.
@@ -95,7 +94,7 @@ func (c restoreCompletion) buildRestoredState(ctx context.Context, restore *pend
 	if err != nil {
 		return identitylib.State{}, err
 	}
-	chain, _, err = chain.RevokeOthers(restore.recovery, account, restore.device.SignerKey(), c.builder.random, now)
+	chain, _, err = chain.RotateKeys(restore.recovery, account, c.builder.random, now)
 	if err != nil {
 		return identitylib.State{}, err
 	}

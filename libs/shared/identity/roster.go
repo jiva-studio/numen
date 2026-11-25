@@ -48,7 +48,6 @@ func (r *roster) apply(entry Entry) {
 		}
 		r.epoch = entry.Revoke.Epoch
 	case entry.Kind == KindRotateKeys && entry.Revoke != nil:
-		r.dropUnwrapped(entry.Revoke.Wrapped)
 		r.epoch = entry.Revoke.Epoch
 	}
 }
@@ -118,36 +117,7 @@ func (r *roster) verifyRotate(entry Entry, i int) error {
 	if !bytes.Equal(entry.Signer, r.root) {
 		return fmt.Errorf("%w: entry %d is not signed by the recovery key", ErrUnknownSigner, i)
 	}
-	remaining, ok := r.listNamedDevices(revoke.Wrapped)
-	if !ok {
-		return fmt.Errorf("%w: entry %d", ErrWrappedSet, i)
-	}
-	return r.verifyKeys(revoke, remaining, i)
-}
-
-// listNamedDevices returns the active devices that the wraps name, in the order of the roster; ok is false when a wrap names another device.
-func (r *roster) listNamedDevices(wraps []DeviceWrap) (kept []Device, ok bool) {
-	next := 0
-	for _, device := range r.active {
-		if next < len(wraps) && bytes.Equal(wraps[next].Device, device.Public.Sign) {
-			kept = append(kept, device)
-			next++
-		}
-	}
-	return kept, next == len(wraps)
-}
-
-func (r *roster) dropUnwrapped(wraps []DeviceWrap) {
-	kept, ok := r.listNamedDevices(wraps)
-	if !ok || len(kept) == len(r.active) {
-		return
-	}
-	for _, device := range r.active {
-		if !slices.ContainsFunc(kept, func(k Device) bool { return bytes.Equal(k.Public.Sign, device.Public.Sign) }) {
-			r.revoked = append(r.revoked, device)
-		}
-	}
-	r.active = kept
+	return r.verifyKeys(revoke, r.active, i)
 }
 
 func (r *roster) verifyKeys(revoke *Revoke, remaining []Device, i int) error {
