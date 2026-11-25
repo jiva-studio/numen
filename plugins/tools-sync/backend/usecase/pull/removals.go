@@ -1,4 +1,4 @@
- || len(r.removals) == 0package pull
+package pull
 
 import (
 	"context"
