@@ -131,7 +131,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       editing,
       window,
       vaults,
-      cloud: vault.cloud.fresh,
+      cloud: vaults.cloud.fresh,
       hostPort,
       frame,
       log,

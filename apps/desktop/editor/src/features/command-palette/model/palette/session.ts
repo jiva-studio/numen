@@ -3,7 +3,7 @@
  * command and the invocation a command makes.
  */
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue'
-import { createRequestGuard as latest } from '@numen/ui'
+import { createRequestGuard as latest, reportFailure, runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import type { Vault } from '@/entities/vault'
 import type { Command } from '@/entities/command'
@@ -225,7 +225,7 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     onDrop: state.drop,
     onLights: applyItemPreview,
     onLists: () => {
-      void deps.core.cloudVaults?.refresh()
+      if (deps.core.cloudVaults) runInBackground(deps.core.cloudVaults.refresh(), reportFailure)
       loadVaults().catch((error: unknown) => {
         state.results.failureMessage.value = formatError(error)
       })

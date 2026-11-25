@@ -13,14 +13,20 @@ export interface FileIcons {
   findFileIcon?(this: void, path: string): Component | undefined
 }
 
+/** The icon of a row that stands for a choice and not for a note, a file or a command. */
+const findMarkIcon = (id: string): Component | undefined => {
+  if (id.endsWith(KEEP_SUFFIX)) return Undo2
+  return findCloudRemoteId(id) ? Cloud : undefined
+}
+
 export function findRowIcon(
   id: string,
   commands: Commands,
   search: SearchState,
   findFileIcon?: (path: string) => Component | undefined,
 ) {
-  if (id.endsWith(KEEP_SUFFIX)) return Undo2
-  if (findCloudRemoteId(id)) return Cloud
+  const mark = findMarkIcon(id)
+  if (mark) return mark
   if (commands.palette.open.value) {
     const picked = commands.view.findTabKind(id)
     return picked === null

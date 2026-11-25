@@ -57,7 +57,7 @@ export function createWindowBase(api: WindowApi) {
       files: { files: api.vault.file, notes, writeMessage },
       vaults: {
         vaults: api.vault.vaults,
-        cloud: { known: vault.cloud, remote: api.vault.remoteVaults, ask: picker },
+        cloud: { known: vaults.cloud, remote: api.vault.remoteVaults, ask: picker },
         clearTrash: api.vault.file.emptyTrash,
         tabsHold: tabParts.openTabs,
         setVaultName: vaults.setVaultName,

@@ -36,12 +36,7 @@ export const createRemoteVaults = (client: WindowClients['remoteVaults']): Remot
     try {
       const answer = await client.listRemoteVaults()
       if (!answer.ok) return []
-      return answer.value.map((one) => ({
-        remoteId: one.remoteId,
-        name: one.name,
-        sizeBytes: Number(one.sizeBytes),
-        vaultId: one.vaultId,
-      }))
+      return answer.value
     } catch {
       return []
     }
@@ -57,6 +52,6 @@ export const createRemoteVaults = (client: WindowClients['remoteVaults']): Remot
     guard(async () => {
       const answer = await client.openRemoteVault(remoteId, path)
       if (!answer.ok) return asFailed(answer)
-      return { ok: true, value: answer.value.vaultId }
+      return { ok: true, value: answer.value }
     }),
 })
