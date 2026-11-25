@@ -78,7 +78,10 @@ func (p *shelfPlugin) FindDocuments(ctx context.Context, call searchquerydomain.
 
 func getShelfCatalog() searchquerydomain.Catalog {
 	return searchquerydomain.MergeCatalog(searchquerydomain.GetBuiltinCatalog(), []searchquerydomain.Function{
-		{Name: "shelved", Args: []searchquerydomain.ValueType{searchquerydomain.TypeString}, ArgNames: []string{"shelf"}, Result: searchquerydomain.TypeBool, Level: searchquerydomain.LevelDocument, PluginID: shelfPluginID},
+		{
+			Name: "shelved", Args: []searchquerydomain.ValueType{searchquerydomain.TypeString}, ArgNames: []string{"shelf"},
+			Result: searchquerydomain.TypeBool, Level: searchquerydomain.LevelDocument, PluginID: shelfPluginID,
+		},
 		{Name: "isShelved", Args: []searchquerydomain.ValueType{}, ArgNames: []string{}, Result: searchquerydomain.TypeBool, Level: searchquerydomain.LevelDocument, PluginID: shelfPluginID},
 	})
 }

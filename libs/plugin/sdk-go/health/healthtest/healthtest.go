@@ -81,7 +81,9 @@ func (h *service) ReportHealth(
 		return nil, err
 	}
 	if utf8.RuneCountInString(in.GetText()) > health.MaxTextLength || utf8.RuneCountInString(in.GetDetail()) > health.MaxDetailLength {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid health item: the text of the item %q is longer than %d characters or its detail longer than %d", in.GetKey(), health.MaxTextLength, health.MaxDetailLength))
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf(
+			"invalid health item: the text of the item %q is longer than %d characters or its detail longer than %d",
+			in.GetKey(), health.MaxTextLength, health.MaxDetailLength))
 	}
 	item := health.Item{Key: in.GetKey(), Severity: readSeverity(in.GetSeverity()), Text: in.GetText(), Detail: in.GetDetail()}
 	if action := in.GetAction(); action != nil {
