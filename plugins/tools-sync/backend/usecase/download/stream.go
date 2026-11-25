@@ -71,6 +71,7 @@ func getChunkLog2(header [56]byte) byte {
 }
 
 func (r *run) findPosition(ctx context.Context) (*position, error) {
+	defer r.use.lockEntries(r.in.Vault)()
 	fresh := &position{header: [56]byte{}, next: 0, hasher: r.deps.Digests.Create(), state: nil}
 	entries, err := r.deps.Entries.ReadDownloads(ctx, r.in.Vault)
 	if err != nil {
@@ -203,6 +204,7 @@ func (r *run) keepStarted(ctx context.Context, at *position) error {
 }
 
 func (r *run) keep(ctx context.Context, at *position) error {
+	defer r.use.lockEntries(r.in.Vault)()
 	entries, err := r.deps.Entries.ReadDownloads(ctx, r.in.Vault)
 	if err != nil {
 		return err

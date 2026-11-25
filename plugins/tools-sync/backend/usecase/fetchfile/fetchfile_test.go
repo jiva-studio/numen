@@ -2,6 +2,7 @@ package fetchfile_test
 
 import (
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -159,5 +160,47 @@ func TestFetchFile_ReturnsAnErrorForAFileThatIsNotListedAsAbsent(t *testing.T) {
 
 	if err := w.Fetch(t.Context(), "Shopping list.md"); err == nil {
 		t.Error("a file that is held was downloaded again")
+	}
+}
+
+func listFetchFiles(t *testing.T, w *synctest.PhoneWorld) []string {
+	t.Helper()
+	files, err := w.Phone.Host.Store(synctest.PhoneVault).List(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, file := range files {
+		if strings.HasPrefix(file.Name, "fetch-") {
+			names = append(names, file.Name)
+		}
+	}
+	return names
+}
+
+func TestFetchFile_LeavesNoFileOfItsOwnInTheStoreAfterThePlacement(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	w.WriteGuide(t, guidePath)
+
+	if err := w.Fetch(t.Context(), guidePath); err != nil {
+		t.Fatal(err)
+	}
+
+	if left := listFetchFiles(t, w); len(left) != 0 {
+		t.Errorf("the store keeps %v after the placement", left)
+	}
+}
+
+func TestFetchFile_LeavesNoFileOfItsOwnInTheStoreAfterDamagedBytes(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	w.WriteGuide(t, guidePath)
+	w.Server.SetBlobCorruption(true)
+
+	if err := w.Fetch(t.Context(), guidePath); err == nil {
+		t.Fatal("damaged bytes were placed")
+	}
+
+	if left := listFetchFiles(t, w); len(left) != 0 {
+		t.Errorf("the store keeps %v after the damaged download", left)
 	}
 }

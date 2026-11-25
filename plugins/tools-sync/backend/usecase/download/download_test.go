@@ -399,3 +399,26 @@ func TestDownloadFile_KeepsThePositionOfEveryWholeChunkItTook(t *testing.T) {
 		}
 	}
 }
+
+func TestDownloadFile_SweepKeepsAStagedFileWhileItIsHeldAndDeletesItAfter(t *testing.T) {
+	w := newWorld(t)
+	store := w.p.B.Host.Store(synctest.SecondVault)
+	if err := store.Write(t.Context(), "fetch-0bad.part", []byte("coming in")); err != nil {
+		t.Fatal(err)
+	}
+
+	release := w.use.Hold(synctest.SecondVault, "fetch-0bad.part")
+	if err := w.use.Sweep(t.Context(), synctest.SecondVault); err != nil {
+		t.Fatal(err)
+	}
+	if _, isThere := w.getStagedSize(t, "fetch-0bad.part"); !isThere {
+		t.Fatal("a staged file that is held was swept")
+	}
+	release()
+	if err := w.use.Sweep(t.Context(), synctest.SecondVault); err != nil {
+		t.Fatal(err)
+	}
+	if _, isThere := w.getStagedSize(t, "fetch-0bad.part"); isThere {
+		t.Error("a staged file that is not held any more is still there")
+	}
+}

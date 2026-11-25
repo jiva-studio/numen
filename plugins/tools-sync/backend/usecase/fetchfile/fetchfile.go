@@ -46,6 +46,8 @@ type State interface {
 type Stager interface {
 	Execute(ctx context.Context, in transfer.DownloadInput) (string, error)
 	Forget(ctx context.Context, vault domain.VaultID, fileID []byte) error
+	// Hold keeps the staged file of the name in the vault from being swept until the returned function is called.
+	Hold(vault domain.VaultID, name string) func()
 }
 
 // Deps are what the use case needs.
@@ -121,8 +123,10 @@ func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) err
 		return err
 	}
 	if rev.GetBlobSize() > note.BigFileLimit {
+		defer u.deps.Stage.Hold(id, note.GetStoredName(t.record.FileID))()
 		return u.runLarge(ctx, t, rev, meta)
 	}
+	defer u.deps.Stage.Hold(id, getPartName(rev))()
 	blob, err := u.readBlob(ctx, t, rev)
 	if err != nil {
 		return err
@@ -137,7 +141,7 @@ func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) err
 		return err
 	}
 	fillErr := u.deps.Host.GetAbsent(id).FillFile(ctx, path, name)
-	return errors.Join(fillErr, store.Write(ctx, name, nil), u.dropPart(ctx, t, rev, nil))
+	return errors.Join(fillErr, store.Delete(ctx, name), u.dropPart(ctx, t, rev, nil))
 }
 
 func (u *FetchFile) runLarge(ctx context.Context, t target, rev *syncv1.Revision, meta note.Meta) error {
@@ -251,7 +255,7 @@ func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision
 }
 
 func (u *FetchFile) dropPart(ctx context.Context, t target, rev *syncv1.Revision, cause error) error {
-	return errors.Join(cause, u.deps.Host.Store(t.id).Write(ctx, getPartName(rev), nil))
+	return errors.Join(cause, u.deps.Host.Store(t.id).Delete(ctx, getPartName(rev)))
 }
 
 func (u *FetchFile) readRange(ctx context.Context, t target, rev *syncv1.Revision, from, length int64) ([]byte, error) {

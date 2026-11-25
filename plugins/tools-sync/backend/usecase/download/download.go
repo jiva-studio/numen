@@ -9,6 +9,7 @@ import (
 	"errors"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
@@ -37,15 +38,59 @@ type Deps struct {
 }
 
 // DownloadFile stages the body of a file.
-type DownloadFile struct{ deps Deps }
+type DownloadFile struct {
+	deps Deps
+
+	mu     sync.Mutex
+	held   map[domain.VaultID]map[string]int
+	vaults map[domain.VaultID]*sync.Mutex
+}
 
 // NewDownloadFile returns the use case over the dependencies.
-func NewDownloadFile(deps Deps) *DownloadFile { return &DownloadFile{deps: deps} }
+func NewDownloadFile(deps Deps) *DownloadFile {
+	return &DownloadFile{deps: deps, mu: sync.Mutex{}, held: map[domain.VaultID]map[string]int{}, vaults: map[domain.VaultID]*sync.Mutex{}}
+}
+
+// Hold keeps Sweep from deleting the staged file of the name in the vault until the returned function is called.
+func (u *DownloadFile) Hold(vault domain.VaultID, name string) func() {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if u.held[vault] == nil {
+		u.held[vault] = map[string]int{}
+	}
+	u.held[vault][name]++
+	return func() {
+		u.mu.Lock()
+		defer u.mu.Unlock()
+		if u.held[vault][name]--; u.held[vault][name] <= 0 {
+			delete(u.held[vault], name)
+		}
+	}
+}
+
+func (u *DownloadFile) isHeld(vault domain.VaultID, name string) bool {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return u.held[vault][name] > 0
+}
+
+func (u *DownloadFile) lockEntries(vault domain.VaultID) func() {
+	u.mu.Lock()
+	lock, isKnown := u.vaults[vault]
+	if !isKnown {
+		lock = &sync.Mutex{}
+		u.vaults[vault] = lock
+	}
+	u.mu.Unlock()
+	lock.Lock()
+	return lock.Unlock
+}
 
 // Execute brings the file down into a staged file of the store folder, checks it against the hash of its blob and
 // its plain hash, and returns the name of the staged file.
 func (u *DownloadFile) Execute(ctx context.Context, in transfer.DownloadInput) (string, error) {
-	r := &run{deps: u.deps, in: in, name: note.GetStoredName(in.FileID), store: u.deps.Host.Store(in.Vault)}
+	r := &run{use: u, deps: u.deps, in: in, name: note.GetStoredName(in.FileID), store: u.deps.Host.Store(in.Vault)}
+	defer u.Hold(in.Vault, r.name)()
 	var err error
 	if in.BlobSize <= note.BigFileLimit {
 		err = r.stageWhole(ctx)
@@ -60,6 +105,7 @@ func (u *DownloadFile) Execute(ctx context.Context, in transfer.DownloadInput) (
 
 // Forget drops the kept state of the download of a file once it is placed.
 func (u *DownloadFile) Forget(ctx context.Context, vault domain.VaultID, fileID []byte) error {
+	defer u.lockEntries(vault)()
 	entries, err := u.deps.Entries.ReadDownloads(ctx, vault)
 	if err != nil {
 		return err
@@ -73,7 +119,7 @@ func (u *DownloadFile) Forget(ctx context.Context, vault domain.VaultID, fileID 
 
 // Discard deletes the staged file of a download and its state.
 func (u *DownloadFile) Discard(ctx context.Context, vault domain.VaultID, fileID []byte) error {
-	r := &run{deps: u.deps, in: transfer.DownloadInput{
+	r := &run{use: u, deps: u.deps, in: transfer.DownloadInput{
 		Vault: vault, RemoteID: nil, FileID: fileID, Path: "", BlobID: nil, BlobHash: nil, BlobSize: 0, Key: [32]byte{}, Hash: "", Size: 0, HeadRev: nil, Baseline: nil,
 	}, name: note.GetStoredName(fileID), store: u.deps.Host.Store(vault)}
 	return r.discard(ctx)
@@ -81,19 +127,21 @@ func (u *DownloadFile) Discard(ctx context.Context, vault domain.VaultID, fileID
 
 // Sweep deletes the staged files of the vault that no kept download names.
 func (u *DownloadFile) Sweep(ctx context.Context, vault domain.VaultID) error {
-	entries, err := u.deps.Entries.ReadDownloads(ctx, vault)
+	store := u.deps.Host.Store(vault)
+	files, err := store.List(ctx)
 	if err != nil {
 		return err
 	}
-	store := u.deps.Host.Store(vault)
-	files, err := store.List(ctx)
+	defer u.lockEntries(vault)()
+	entries, err := u.deps.Entries.ReadDownloads(ctx, vault)
 	if err != nil {
 		return err
 	}
 	var failure error
 	for _, file := range files {
 		isStaged := strings.HasSuffix(file.Name, ".part")
-		if isStaged && !slices.ContainsFunc(entries, func(e transfer.DownloadEntry) bool { return e.StagedName == file.Name }) {
+		isNamed := slices.ContainsFunc(entries, func(e transfer.DownloadEntry) bool { return e.StagedName == file.Name })
+		if isStaged && !isNamed && !u.isHeld(vault, file.Name) {
 			failure = errors.Join(failure, store.Delete(ctx, file.Name))
 		}
 	}
@@ -105,6 +153,7 @@ func withoutFile(entries []transfer.DownloadEntry, fileID []byte) []transfer.Dow
 }
 
 type run struct {
+	use   *DownloadFile
 	deps  Deps
 	in    transfer.DownloadInput
 	name  string
@@ -112,6 +161,7 @@ type run struct {
 }
 
 func (r *run) discard(ctx context.Context) error {
+	defer r.use.lockEntries(r.in.Vault)()
 	entries, err := r.deps.Entries.ReadDownloads(ctx, r.in.Vault)
 	if err != nil {
 		return err
