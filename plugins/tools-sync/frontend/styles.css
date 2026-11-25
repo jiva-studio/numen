@@ -8,7 +8,7 @@
   --chip-glyph: calc(0.4375 * var(--numen-chrome-unit));
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--chip-pad) / 2);
+  gap: var(--chip-pad);
   box-sizing: border-box;
   height: var(--chip-height);
   margin-inline: calc(var(--numen-chrome-inset) / 4);
