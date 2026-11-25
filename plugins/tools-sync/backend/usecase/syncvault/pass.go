@@ -155,12 +155,10 @@ func (p *pass) restore(ctx context.Context, records, removals []transfer.FileRec
 }
 
 func (p *pass) rewind(ctx context.Context) error {
-	link, err := p.use.deps.State.ReadLink(ctx, p.id)
-	if err != nil {
-		return err
-	}
-	link.ServerSeq = 0
-	return p.use.deps.State.WriteLink(ctx, p.id, link)
+	return p.use.deps.State.UpdateLink(ctx, p.id, func(link *vaultlink.Link) error {
+		link.ServerSeq = 0
+		return nil
+	})
 }
 
 func (p *pass) sendMoves(ctx context.Context, vault transfer.Vault, records []transfer.FileRecord, moves []transfer.Move) ([]transfer.FileRecord, bool, error) {
@@ -194,16 +192,21 @@ func (p *pass) sendRemovals(ctx context.Context, vault transfer.Vault, records, 
 }
 
 func (p *pass) keepRemoved(ctx context.Context, outcomes []transfer.Outcome) error {
-	link, err := p.use.deps.State.ReadLink(ctx, p.id)
-	if err != nil {
-		return err
-	}
+	var removed []vaultlink.RemovedFile
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
-			link.AddRemoved(vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1})
+			removed = append(removed, vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1})
 		}
 	}
-	return p.use.deps.State.WriteLink(ctx, p.id, link)
+	if len(removed) == 0 {
+		return nil
+	}
+	return p.use.deps.State.UpdateLink(ctx, p.id, func(link *vaultlink.Link) error {
+		for _, one := range removed {
+			link.AddRemoved(one)
+		}
+		return nil
+	})
 }
 
 func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []transfer.FileRecord, changes []transfer.Change) ([]transfer.FileRecord, bool, error) {

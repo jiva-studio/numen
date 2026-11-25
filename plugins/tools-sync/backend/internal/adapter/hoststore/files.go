@@ -110,6 +110,10 @@ func (s *State) WriteAbsences(ctx context.Context, id domain.VaultID, absent map
 }
 
 func (s *State) delete(ctx context.Context, id domain.VaultID, name string) error {
+	files := s.getVault(id)
+	files.mu.Lock()
+	defer files.mu.Unlock()
+	delete(files.digests, name)
 	if err := s.host.Store(id).Delete(ctx, name); err != nil && !errors.Is(err, host.ErrNotExist) {
 		return fmt.Errorf("delete %s: %w", name, err)
 	}

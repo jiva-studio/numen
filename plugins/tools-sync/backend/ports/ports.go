@@ -122,6 +122,12 @@ type Host interface {
 type Links interface {
 	ReadLink(ctx context.Context, id domain.VaultID) (vaultlink.Link, error)
 	WriteLink(ctx context.Context, id domain.VaultID, link vaultlink.Link) error
+	UpdateLink(ctx context.Context, id domain.VaultID, change func(*vaultlink.Link) error) error
+}
+
+// VaultLocker lets one pass at a time work on a vault. Lock waits for the vault and returns the function that releases it.
+type VaultLocker interface {
+	LockVault(ctx context.Context, id domain.VaultID) (func(), error)
 }
 
 // Records keeps what is known of the synced notes of each vault.

@@ -122,7 +122,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,
 		Host: p.vaults, Notes: p.vaults, State: p.state, Progress: p.state, Health: p.getHealth(), Clock: p.clock, Random: loops.NewRandom(),
 		Subscriptions: cloudSide, Shop: cloudSide, Pauses: p.state, Shares: cloudSide, ShareStates: p.state, Box: p.identity, Vaults: p.vaults,
-		Folders: folders.NewReceived(r.received.Get), Forget: p.state, Cloud: cloudSide,
+		Folders: folders.NewReceived(r.received.Get), Forget: p.state, Cloud: cloudSide, Locker: p.state,
 		Restore: syncvault.RestoreDeps{Address: address, Epochs: cloudSide, Mirror: p.state},
 	}
 	wired := syncwire.Deps{

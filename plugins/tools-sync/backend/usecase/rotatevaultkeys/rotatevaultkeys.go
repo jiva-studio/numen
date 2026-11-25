@@ -76,6 +76,9 @@ func (u *RotateVaultKeys) rotate(ctx context.Context, id domain.VaultID, own ses
 	if err != nil {
 		return false, err
 	}
+	if isRotatedFor(target.link, own) {
+		return false, nil
+	}
 	for range maxTries {
 		isRotated, isDone, err := u.tryRotate(ctx, &target, own)
 		if err != nil || isDone {
@@ -149,7 +152,10 @@ func (u *RotateVaultKeys) store(ctx context.Context, target *connected, keys []v
 		return err
 	}
 	target.link.SealedKey, target.link.LaterKeys = first, later
-	return u.deps.State.WriteLink(ctx, target.id, target.link)
+	return u.deps.State.UpdateLink(ctx, target.id, func(fresh *vaultlink.Link) error {
+		fresh.SealedKey, fresh.LaterKeys = first, later
+		return nil
+	})
 }
 
 func getLastEntry(entries []*syncv1.CatalogEntry, vaultID []byte) *syncv1.CatalogEntry {
@@ -234,4 +240,12 @@ func (u *Loop) Execute(ctx context.Context) error {
 			return errors.Join(err, failure)
 		}
 	}
+}
+
+func isRotatedFor(link vaultlink.Link, own session.Identity) bool {
+	newest := uint32(0)
+	if len(link.LaterKeys) > 0 {
+		newest = link.LaterKeys[len(link.LaterKeys)-1].Epoch
+	}
+	return newest >= own.KeyEpoch
 }

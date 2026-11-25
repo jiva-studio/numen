@@ -3,6 +3,7 @@ package localchanges
 import (
 	"context"
 	"errors"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -81,6 +82,9 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 		} else if isGone {
 			scan.Removals = append(scan.Removals, record)
 		}
+	}
+	if maps.Equal(absent, kept) {
+		return scan, nil
 	}
 	return scan, u.deps.State.WriteAbsences(ctx, in.VaultID, kept)
 }

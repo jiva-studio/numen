@@ -16,7 +16,7 @@ import (
 
 const (
 	publishInterval  = time.Second
-	adoptEvery       = 5
+	adoptEvery       = 30
 	noticeKey        = "device-revoked-others"
 	publishFailedKey = "chain-publish-failed"
 	// publishFailedText names what failed and not that the plugin cannot sync: the vaults sync on their own.

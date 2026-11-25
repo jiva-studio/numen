@@ -60,8 +60,10 @@ func (u *RenameRemoteVault) rename(ctx context.Context, vault domain.Vault, link
 	if err := u.reader.appendEntry(ctx, entryInput{vaultID: remoteID, isCreating: false, body: body}); err != nil {
 		return err
 	}
-	link.CatalogName = vault.Name
-	return u.reader.deps.State.WriteLink(ctx, vault.ID, link)
+	return u.reader.deps.State.UpdateLink(ctx, vault.ID, func(fresh *vaultlink.Link) error {
+		fresh.CatalogName = vault.Name
+		return nil
+	})
 }
 
 func (u *RenameRemoteVault) readKeys(ctx context.Context, remoteID []byte) ([]vaultlink.VaultKey, error) {

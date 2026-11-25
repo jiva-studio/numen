@@ -4,6 +4,7 @@ package localchanges
 import (
 	"context"
 	"errors"
+	"maps"
 	"slices"
 	"time"
 
@@ -40,11 +41,15 @@ func (u *ScanLocalChanges) Execute(ctx context.Context, in transfer.ScanInput) (
 	if err != nil {
 		return nil, err
 	}
+	before := maps.Clone(seen)
 	files := u.deps.Host.GetFiles(in.VaultID)
 	if seen, err = u.follow(ctx, in.VaultID, files, seen); err != nil {
 		return nil, err
 	}
 	found := u.list(ctx, files, seen, in.Bases)
+	if maps.Equal(before, seen) {
+		return found, nil
+	}
 	return found, u.deps.State.WriteSightings(ctx, in.VaultID, seen)
 }
 

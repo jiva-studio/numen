@@ -152,7 +152,11 @@ func (r *run) save(ctx context.Context) error {
 	if len(r.removals) > 0 {
 		r.link.ServerSeq = min(r.link.ServerSeq, r.removalSeq-1)
 	}
-	return r.deps.State.WriteLink(ctx, r.in.VaultID, r.link)
+	return r.deps.State.UpdateLink(ctx, r.in.VaultID, func(fresh *vaultlink.Link) error {
+		fresh.ServerSeq = r.link.ServerSeq
+		fresh.MergeRetired(r.link.Retired)
+		return nil
+	})
 }
 
 func (r *run) hold(seq uint64) {

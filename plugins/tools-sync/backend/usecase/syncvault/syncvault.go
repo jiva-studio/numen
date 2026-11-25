@@ -62,6 +62,7 @@ type Deps struct {
 	Vaults        ports.VaultList
 	Folders       ports.Folders
 	Forget        ports.Forgetter
+	Locker        ports.VaultLocker
 	Cloud         ports.CloudVaults
 }
 
@@ -186,6 +187,11 @@ func NewSyncVault(deps Deps, steps Steps) *SyncVault {
 // Execute pulls, then pushes, and keeps the warnings of the vault. It returns ErrNotConnected for a vault that is
 // not connected.
 func (u *SyncVault) Execute(ctx context.Context, id domain.VaultID) error {
+	unlock, err := u.deps.Locker.LockVault(ctx, id)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	link, err := u.deps.State.ReadLink(ctx, id)
 	if err != nil {
 		return err

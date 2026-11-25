@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
@@ -115,5 +116,25 @@ func TestExecute_SecondDeviceRotatesOnceAndFirstAdoptsItsKey(t *testing.T) {
 	}
 	if len(keysOfFirst) != 2 || len(keysOfSecond) != 2 || !bytes.Equal(keysOfFirst[1].Key, keysOfSecond[1].Key) || keysOfFirst[1].Epoch != 1 {
 		t.Errorf("keys of the first = %d, of the second = %d, want the same key of epoch 1 on both", len(keysOfFirst), len(keysOfSecond))
+	}
+}
+
+func TestExecute_AVaultAlreadyRotatedCostsNoCallToTheServer(t *testing.T) {
+	t.Parallel()
+	c := newComputer(t)
+	if err := c.Fake.AdvanceEpoch(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rotatevaultkeys.NewRotateVaultKeys(c.RotateDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	reads := c.Server.Fake.CountCalls(syncv1connect.CatalogServiceGetCatalogProcedure)
+
+	if _, err := rotatevaultkeys.NewRotateVaultKeys(c.RotateDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := c.Server.Fake.CountCalls(syncv1connect.CatalogServiceGetCatalogProcedure); got != reads {
+		t.Errorf("catalog reads %d -> %d, want none for a vault whose key is of the epoch of the account", reads, got)
 	}
 }

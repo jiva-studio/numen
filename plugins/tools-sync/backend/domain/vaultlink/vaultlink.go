@@ -304,3 +304,14 @@ type FolderMissingError struct {
 func (e FolderMissingError) Error() string {
 	return fmt.Sprintf("the folder %s of the vault %s is missing", e.Path, e.Name)
 }
+
+// MergeRetired records each removal of the list unless the link already holds a removal of the same file at a version
+// that is not lower.
+func (l *Link) MergeRetired(others []RetiredFile) {
+	for _, one := range others {
+		at := slices.IndexFunc(l.Retired, func(old RetiredFile) bool { return bytes.Equal(old.FileID, one.FileID) })
+		if at < 0 || l.Retired[at].Version < one.Version {
+			l.AddRetired(one)
+		}
+	}
+}
