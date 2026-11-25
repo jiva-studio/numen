@@ -4,8 +4,10 @@ package chaincourier
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 	"sync"
 	"time"
 
@@ -35,6 +37,8 @@ type Deps struct {
 	Health   ports.Health
 	Clock    ports.Clock
 	IsIdle   func() bool
+	// Sightings keeps when this device first saw each entry of the chain, which the notices count their cooling-off from.
+	Sightings ports.EntrySightings
 }
 
 // Endorser signs the heads the devices of a revoke wrote, so the revoke does not make them unverified.
@@ -95,11 +99,13 @@ type Adopt struct {
 	mu       sync.Mutex
 	isRaised bool
 	isClean  bool
+	seen     map[string]int64
+	isFresh  bool
 }
 
 // NewAdopt returns the use case over the dependencies.
 func NewAdopt(deps Deps) *Adopt {
-	return &Adopt{deps: deps, mu: sync.Mutex{}, isRaised: false, isClean: false}
+	return &Adopt{deps: deps, mu: sync.Mutex{}, isRaised: false, isClean: false, seen: nil, isFresh: false}
 }
 
 // Execute returns whether the core took a chain.
@@ -133,7 +139,8 @@ func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) er
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	var text string
-	for _, candidate := range listNotices(chain, own, u.deps.Clock.Now()) {
+	now := u.deps.Clock.Now()
+	for _, candidate := range listNotices(chain, own, now, u.recordSightings(ctx, chain, now)) {
 		text = candidate
 	}
 	switch {
@@ -147,19 +154,67 @@ func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) er
 	return nil
 }
 
-func listNotices(chain identity.Chain, own []byte, now time.Time) []string {
+// recordSightings notes the time this device first saw each entry that a device signed, and returns the times by entry. The first look of a
+// device that has no record takes the entries already in the chain at the time their signers gave them: the person who linked the device
+// saw them. Every entry that appears after that counts from the moment this device saw it, whatever time its signer wrote in it.
+func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now time.Time) map[string]int64 {
+	if u.seen == nil {
+		stored, err := u.deps.Sightings.ReadEntrySightings(ctx)
+		u.seen, u.isFresh = stored, err == nil && stored == nil
+		if u.seen == nil {
+			u.seen = map[string]int64{}
+		}
+	}
+	isChanged := u.isFresh
+	for id, signed := range listEntries(chain) {
+		if _, isKnown := u.seen[id]; isKnown {
+			continue
+		}
+		u.seen[id] = now.Unix()
+		if u.isFresh {
+			u.seen[id] = min(signed.Unix(), now.Unix())
+		}
+		isChanged = true
+	}
+	u.isFresh = false
+	if isChanged {
+		_ = u.deps.Sightings.WriteEntrySightings(ctx, maps.Clone(u.seen))
+	}
+	return u.seen
+}
+
+// listEntries returns the time its signer gave to each entry that a device signed, by the hex of the hash of the entry.
+func listEntries(chain identity.Chain) map[string]time.Time {
+	found := map[string]time.Time{}
+	for _, revocation := range chain.ListDeviceRevocations() {
+		found[hex.EncodeToString(revocation.ID[:])] = revocation.At
+	}
+	for _, addition := range chain.ListDeviceAdditions() {
+		found[hex.EncodeToString(addition.ID[:])] = addition.At
+	}
+	return found
+}
+
+func listNotices(chain identity.Chain, own []byte, now time.Time, seen map[string]int64) []string {
 	var found []string
 	for _, revocation := range chain.ListDeviceRevocations() {
-		if !bytes.Equal(revocation.By, own) && now.Sub(revocation.At) < identity.CoolingOff {
-			found = append(found, getRevokedNotice(revocation.At))
+		at, isRecent := getSightingAt(seen, revocation.ID, now)
+		if !bytes.Equal(revocation.By, own) && isRecent {
+			found = append(found, getRevokedNotice(at))
 		}
 	}
 	for _, addition := range chain.ListDeviceAdditions() {
-		if !bytes.Equal(addition.By, own) && !bytes.Equal(addition.Device, own) && now.Sub(addition.At) < identity.CoolingOff {
-			found = append(found, getAddedNotice(addition.At))
+		at, isRecent := getSightingAt(seen, addition.ID, now)
+		if !bytes.Equal(addition.By, own) && !bytes.Equal(addition.Device, own) && isRecent {
+			found = append(found, getAddedNotice(at))
 		}
 	}
 	return found
+}
+
+func getSightingAt(seen map[string]int64, id [32]byte, now time.Time) (at time.Time, isRecent bool) {
+	at = time.Unix(seen[hex.EncodeToString(id[:])], 0).UTC()
+	return at, now.Sub(at) < identity.CoolingOff
 }
 
 // Loop runs the two couriers for as long as the plugin runs: a pending chain goes to the server at once, and the chain of the server

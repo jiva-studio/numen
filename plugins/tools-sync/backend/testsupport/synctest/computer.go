@@ -381,7 +381,7 @@ func (c *Computer) RotateDeps() rotatevaultkeys.Deps {
 // ChainDeps are the dependencies of the couriers of the chain.
 func (c *Computer) ChainDeps() chaincourier.Deps {
 	return chaincourier.Deps{
-		Identity: c.Account, Core: c.Client, Chain: c.Cloud, Health: c.NewHealth(), Clock: c.Clock, IsIdle: nil, Endorse: endorse.NewEndorse(c.EndorseDeps()),
+		Identity: c.Account, Core: c.Client, Chain: c.Cloud, Health: c.NewHealth(), Clock: c.Clock, Sightings: c.State, IsIdle: nil, Endorse: endorse.NewEndorse(c.EndorseDeps()),
 	}
 }
 

@@ -76,7 +76,7 @@ func TestListNotices_RaisesNothingInATwoDeviceChain(t *testing.T) {
 	c.add(t, c.devices["A"], "B")
 
 	for _, own := range []string{"A", "B"} {
-		if got := listNotices(c.chain, c.getSign(own), c.at.Add(time.Hour)); len(got) != 0 {
+		if got := listNotices(c.chain, c.getSign(own), c.at.Add(time.Hour), signedTimes(c.chain)); len(got) != 0 {
 			t.Errorf("device %s: notices = %+v, want none", own, got)
 		}
 	}
@@ -90,12 +90,21 @@ func TestListNotices_RaisesTheAddedNoticeOnlyOnTheDeviceThatNeitherAddedNorWasAd
 	c.add(t, c.devices["B"], "C")
 	now := c.at.Add(time.Hour)
 
-	if got := listNotices(c.chain, c.getSign("A"), now); len(got) != 1 || !strings.Contains(got[0], "added another device") {
+	if got := listNotices(c.chain, c.getSign("A"), now, signedTimes(c.chain)); len(got) != 1 || !strings.Contains(got[0], "added another device") {
 		t.Errorf("device A: notices = %+v, want the added notice", got)
 	}
 	for _, own := range []string{"B", "C"} {
-		if got := listNotices(c.chain, c.getSign(own), now); len(got) != 0 {
+		if got := listNotices(c.chain, c.getSign(own), now, signedTimes(c.chain)); len(got) != 0 {
 			t.Errorf("device %s: notices = %+v, want none", own, got)
 		}
 	}
+}
+
+// signedTimes is the sightings of a device that saw each entry at the time its signer gave it.
+func signedTimes(chain identity.Chain) map[string]int64 {
+	seen := map[string]int64{}
+	for id, at := range listEntries(chain) {
+		seen[id] = at.Unix()
+	}
+	return seen
 }
