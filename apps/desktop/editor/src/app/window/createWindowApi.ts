@@ -5,7 +5,7 @@
  */
 import { createFrameRuntimeLoader } from '@numen/plugin-loader'
 import { createConnectionApi } from '@/entities/connection'
-import { createFileApi } from '@/entities/file'
+import { createDownloads, createFileApi } from '@/entities/file'
 import { createAccountApi, createDevicesApi, createDeviceLinkApi } from '@/entities/identity'
 import { createKeyFileApi } from '@/entities/key-file'
 import { createLicenseApi } from '@/entities/license'
@@ -55,12 +55,14 @@ export function createWindowApi(transports: WindowTransports) {
   const linkApi = createLinkApi(vaultClients.notes)
   const vaults = createVaults(vaultClients.vaultsService, vaultClients.folderDialog)
   const windowVaultApi = createShownVaultApi(workspaceClients.windowService)
+  const file = createFileApi(vaultClients.files)
   return {
     vault: {
       note: createNoteApi(vaultClients.notes),
       links: linkApi,
       relations: createRelations(vaultClients.notes, linkApi.resolveLinks),
-      file: createFileApi(vaultClients.files),
+      file,
+      downloads: createDownloads(file.fetchFile),
       vaults,
       remoteVaults: createRemoteVaults(vaultClients.remoteVaults),
       vaultState: createVaultStateApi(vaultClients.vault),

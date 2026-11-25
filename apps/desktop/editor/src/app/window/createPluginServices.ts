@@ -59,6 +59,7 @@ export function createPluginAccess(deps: PluginAccessDeps) {
   return createVaultAccess({
     notes: deps.api.note,
     files: deps.api.file,
+    downloads: deps.api.downloads,
     relations: deps.api.relations,
     search: deps.api.search,
     making: deps.making,

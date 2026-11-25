@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef, type VNode } from 'vue'
+import { Cloud } from '@lucide/vue'
+import { Spinner } from '@/shared/ui/spinner'
 import { useRenameFocus } from '../model/useRenameFocus'
 import type { RowId } from '../lib/row'
 import type { TreeRowProps } from './TreeRow.types'
@@ -40,7 +42,7 @@ useRenameFocus(() => props.isRenaming, field)
     :data-tree-row="row.id"
     :data-selected="isSelected && !isRenaming ? '' : undefined"
     :data-renaming="isRenaming ? '' : undefined"
-    :data-muted="row.isMuted || undefined"
+    :data-muted="row.isMuted ? '' : undefined"
     :data-dragged="isDragged || undefined"
     :data-last="row.isLast || undefined"
     :data-into="isDropInside || undefined"
@@ -50,6 +52,16 @@ useRenameFocus(() => props.isRenaming, field)
   >
     <span class="tree__icon flex shrink-0 items-center">
       <slot />
+      <span
+        v-if="row.badge"
+        class="tree__badge"
+        role="img"
+        :aria-label="row.badge.label"
+        :data-badge="row.badge.kind"
+      >
+        <Spinner v-if="row.badge.kind === 'loading'" class="tree__spinner" />
+        <Cloud v-else class="tree__cloud" aria-hidden="true" />
+      </span>
     </span>
 
     <TreeField
@@ -130,7 +142,37 @@ useRenameFocus(() => props.isRenaming, field)
   background: var(--numen-ring);
 }
 
+.tree__badge {
+  --badge: 0.625rem;
+  position: absolute;
+  inset-inline-end: -0.25rem;
+  inset-block-end: -0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--badge);
+  block-size: var(--badge);
+  border-radius: var(--numen-radius-pill);
+  background: var(--tree-row-bg);
+  color: var(--numen-hushed);
+}
+
+.tree__row[data-selected] .tree__badge {
+  color: var(--numen-accent-ink);
+}
+
+.tree__cloud {
+  inline-size: var(--badge);
+  block-size: var(--badge);
+}
+
+.tree__spinner {
+  --spinner-size: var(--badge);
+  --spinner-thickness: 0.125rem;
+}
+
 .tree__icon {
+  position: relative;
   margin-inline-end: var(--gap);
 }
 

@@ -123,3 +123,17 @@ describe('a muted row', () => {
     expect(row.attributes('data-muted')).toBe('')
   })
 })
+
+describe('a row badge', () => {
+  it('is a named cloud or a named loading ring at the icon, and none otherwise', async () => {
+    const row = mountRow()
+    expect(row.find('[data-badge]').exists()).toBe(false)
+
+    await row.setProps({ row: { ...ROW, badge: { kind: 'cloud', label: 'Not here' } } })
+    expect(row.get('[data-badge="cloud"]').attributes('aria-label')).toBe('Not here')
+
+    await row.setProps({ row: { ...ROW, badge: { kind: 'loading', label: 'Coming' } } })
+    expect(row.get('[data-badge="loading"]').attributes('aria-label')).toBe('Coming')
+    expect(row.find('[data-badge="cloud"]').exists()).toBe(false)
+  })
+})

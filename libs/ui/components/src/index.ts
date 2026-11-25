@@ -100,4 +100,4 @@ export { Tooltip, useTooltip } from './shared/ui/tooltip'
 export { isPageMove, useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
 export { Tree } from './features/tree'
-export type { Row, RowMarker } from './features/tree'
+export type { Row, RowBadge, RowMarker } from './features/tree'

@@ -33,6 +33,7 @@ export interface Entry {
   /** The bytes are not on this device; `provider` is the plugin that can bring them. */
   readonly isAbsent?: boolean
   readonly provider?: string
+  readonly isDownloading?: boolean
 }
 
 /** Where a note was filed, or why none was made. */

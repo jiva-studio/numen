@@ -4,7 +4,7 @@
  */
 import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceIcons } from '@numen/plugin-loader'
-import type { FileApi } from '@/entities/file'
+import type { Downloads, FileApi } from '@/entities/file'
 import { COMMAND, findIcon, type CommandTarget } from '@/shared/model/command'
 import type { NoteCreator } from '@/entities/note'
 import { getEntryIcon } from './window/entryIcon'
@@ -12,6 +12,7 @@ import { getEntryIcon } from './window/entryIcon'
 /** What the files of the vault are listed, made and moved through. */
 export interface VaultFilesDeps {
   readonly listFiles: FileApi['listFiles']
+  readonly downloads: Downloads
   readonly making: NoteCreator
   readonly getTarget: () => CommandTarget
   readonly runCommand: (id: string, target: CommandTarget, name: string) => Promise<void>
@@ -20,7 +21,14 @@ export interface VaultFilesDeps {
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
   const { making, getTarget, runCommand: run } = deps
   return {
-    list: (folder) => deps.listFiles(folder),
+    list: async (folder) =>
+      (await deps.listFiles(folder)).map((one) =>
+        deps.downloads.isRunning(one.path) ? { ...one, isDownloading: true } : one,
+      ),
+    watchDownloads: (handler) => {
+      const stop = deps.downloads.watch((path) => handler([path]))
+      return { dispose: stop }
+    },
     move: (from, to) => run(COMMAND.moveFile, { ...getTarget(), path: from }, to),
     createFolder: (path) => run(COMMAND.createFolder, getTarget(), path),
     createNote: (folder) => making.createUntitledNote(folder),

@@ -21,7 +21,11 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const mountFiles = async () => {
   const list = createFileTree({
-    list: async () => [file('Lecture.mp4', { isAbsent: true }), file('Cover.png')],
+    list: async () => [
+      file('Lecture.mp4', { isAbsent: true }),
+      file('Film.mp4', { isAbsent: true, isDownloading: true }),
+      file('Cover.png'),
+    ],
   })
   const tab = useFilesTab(list, {
     window: {
@@ -53,13 +57,19 @@ describe('a file that is not on this device', () => {
   it('names its icon as not on this device', async () => {
     const row = (await mountFiles()).get('[data-tree-row="Lecture.mp4"]')
 
-    expect(row.get('[aria-label="Not on this device"]').exists()).toBe(true)
+    expect(row.get('[data-badge="cloud"]').attributes('aria-label')).toBe('Not on this device')
+  })
+
+  it('names its download while it runs', async () => {
+    const row = (await mountFiles()).get('[data-tree-row="Film.mp4"]')
+
+    expect(row.get('[data-badge="loading"]').attributes('aria-label')).toBe('Downloading…')
   })
 
   it('leaves a file that is here as any other', async () => {
     const row = (await mountFiles()).get('[data-tree-row="Cover.png"]')
 
     expect(row.attributes('data-muted')).toBeUndefined()
-    expect(row.find('[aria-label]').exists()).toBe(false)
+    expect(row.find('[data-badge]').exists()).toBe(false)
   })
 })

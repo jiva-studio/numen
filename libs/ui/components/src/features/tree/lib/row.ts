@@ -13,6 +13,12 @@ export type RowId = string
  * One row: what it is called, and whether it can hold other rows. What is
  * rendered beside the name belongs to the component that renders the tree.
  */
+/** What a row carries at the corner of its icon, with the text that names it. */
+export interface RowBadge {
+  readonly kind: 'cloud' | 'loading'
+  readonly label: string
+}
+
 export interface Row {
   readonly id: RowId
   readonly name: string
@@ -20,6 +26,8 @@ export interface Row {
   readonly rows?: readonly Row[]
   /** Whether the name is drawn in the muted ink. */
   readonly isMuted?: boolean
+  /** A small mark at the corner of the icon: a cloud for what is not here, a turning ring while it comes. */
+  readonly badge?: RowBadge
 }
 
 /**
@@ -52,6 +60,7 @@ export interface ShownRow {
   readonly hasRows: boolean
   readonly isOpen: boolean
   readonly isMuted?: boolean
+  readonly badge?: RowBadge
 }
 
 /**
@@ -76,6 +85,7 @@ export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonl
         hasRows: inside.length > 0,
         isOpen: isOpened,
         ...(row.isMuted ? { isMuted: true } : {}),
+        ...(row.badge ? { badge: row.badge } : {}),
       })
 
       if (isOpened) walk(inside, row.id, level + 1)

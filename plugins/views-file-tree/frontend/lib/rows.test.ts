@@ -64,3 +64,19 @@ describe('a file that is not on this device', () => {
     expect(rows.map((one) => one.isMuted)).toStrictEqual([true, undefined])
   })
 })
+
+describe('the badge of a row', () => {
+  it('is a cloud for a file not on this device, a loading ring while it is brought, and none for a file here', () => {
+    const rows = getRows([
+      { entry: { ...entry('a.mp4'), isAbsent: true }, rows: [] },
+      { entry: { ...entry('b.mp4'), isAbsent: true, isDownloading: true }, rows: [] },
+      createListingRow('c.png'),
+    ])
+
+    expect(rows.map((one) => one.badge)).toStrictEqual([
+      { kind: 'cloud', label: 'Not on this device' },
+      { kind: 'loading', label: 'Downloading…' },
+      undefined,
+    ])
+  })
+})

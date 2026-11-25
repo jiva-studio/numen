@@ -1,5 +1,5 @@
 import type { Component, Ref } from 'vue'
-import type { JsonValue, TextRange } from './types'
+import type { Disposable, JsonValue, TextRange } from './types'
 import type { Selector } from './texts'
 import type { Severity } from './notices'
 import type { ErrorCode, Result } from '@numen/result'
@@ -248,6 +248,8 @@ export interface VaultEntry {
   // plugin that can bring them.
   readonly isAbsent?: boolean
   readonly provider?: string
+  // Whether the window is bringing the bytes of the file now.
+  readonly isDownloading?: boolean
 }
 
 // VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.
@@ -257,6 +259,8 @@ export interface VaultFiles {
   createFolder(path: string): Promise<void>
   // Each answers with the path of what was made, and empty where nothing was.
   createNote(folder: string): Promise<string>
+  // Calls the handler with the paths whose download starts or ends; the files of those paths are listed again.
+  watchDownloads?(handler: (paths: readonly string[]) => void): Disposable
 }
 
 // PathRename is a file move: the previous path and the new path.

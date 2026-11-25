@@ -7,6 +7,8 @@ export const WORDS = {
   empty: 'No files in this vault',
   /** The name of the cloud icon and the hint of a file whose bytes are not on this device. */
   absent: 'Not on this device',
+  /** The hint of a file whose bytes are being brought. */
+  downloading: 'Downloading…',
   /** What the tab itself offers in the menu on a row. */
   rename: 'Rename',
   new: 'New',
