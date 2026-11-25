@@ -1,14 +1,8 @@
 syntax = "proto3";
 
-// What a client may ask about the file a person configures this installation
-// in.
-//
-// The settings belong to the installation and not to a vault: the same file
-//
-// They travel as the file's own text. Their sections belong to whichever
-// adapters an installation is composed of, so the core does not know the whole
-// shape and does not describe it, and a setting is written by naming the path
-// through the file. It is the only tree here that goes undescribed.
+// Installation-wide settings stored as JSON.
+// Sections are owned by app or plugin ids; individual settings are written by
+// key path.
 package numen.v1;
 
 import "numen/v1/plugin.proto";
@@ -17,7 +11,6 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 
 // SettingsService answers about that file, one setting at a time.
 service SettingsService {
-  // GetSettings is every setting of the file.
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
 
   // WriteSettings writes settings into that file. The file is patched as an
@@ -99,14 +92,12 @@ message WriteSettingsResponse {
 
 message ChoosePluginPathRequest {
   string plugin_id = 1;
-  // The key of the setting.
   string key = 2;
 }
 
 message ChoosePluginPathResponse {
   // The path the person chose, empty when they chose none.
   string path = 1;
-  // Set when the person chose a path.
   bool is_chosen = 2;
   // Why the setting does not accept the path, in words a person reads. Empty where it was written.
   string problem = 3;
@@ -128,7 +119,6 @@ message Options {
   bool is_partial = 2;
 }
 
-// Option is one value of a field.
 message Option {
   string value = 1;
   // title is shown in place of the value; empty shows the value.

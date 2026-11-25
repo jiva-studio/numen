@@ -62,7 +62,6 @@ enum FailureReason {
   FAILURE_REASON_INVALID_REQUEST = 5;
 }
 
-// ProviderFailure is a call that was served and failed.
 message ProviderFailure {
   FailureKind kind = 1;
   FailureReason reason = 2;

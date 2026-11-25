@@ -144,8 +144,7 @@ func (LinkDirection) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{1}
 }
 
-// Role is what kind of relationship a link is. The list is closed: navigation
-// and drawing read it, so a role no one has decided on has no behaviour.
+// Role is the kind of relationship a link declares.
 type Role int32
 
 const (
@@ -204,9 +203,8 @@ func (Role) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{2}
 }
 
-// Marker is what is drawn at the end of a link that points at its target. The
-// list is closed: a value is introduced together with the code that draws it.
-// MARKER_UNSPECIFIED draws nothing.
+// Marker is what is drawn at the target end of a link. MARKER_UNSPECIFIED draws
+// nothing.
 type Marker int32
 
 const (
@@ -748,8 +746,8 @@ type ResolveAddressesRequest struct {
 	// to it, so a caller with no note to name gets the priority that is left.
 	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	// The addresses to answer about. A scheme written before `://` is read as
-	// one — `name://Entropy`, `note://<identifier>` — and everything else is a
-	// name, so what a file carries between its brackets is taken currently.
+	// one — `name://Entropy`, `note://<identifier>` — and everything else is
+	// taken as a name.
 	Addresses []string `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`
 	// A text whose wikilinks are answered about beside `addresses`. Each one is
 	// asked about by its address as `scheme://value`, the form `links` carries.
@@ -1170,11 +1168,10 @@ func (x *NoteHeadings) GetHeadings() []*Heading {
 type Heading struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Text  string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	// The line it relies on, counted from the first line of the prose.
+	// One-based line number in the note prose.
 	Line int32 `protobuf:"varint,2,opt,name=line,proto3" json:"line,omitempty"`
-	// How deep it sits, from one for the shallowest a note can carry. Zero where
-	// the answer does not say: a name that matched carries the heading's words
-	// and at its current position, and nothing about its depth.
+	// Heading depth starting at 1. Zero where depth is omitted (for example in
+	// NameMatch).
 	Level         int32 `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1278,8 +1275,7 @@ func (x *ReadNoteRequest) GetPath() string {
 type ReadNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The prose below the frontmatter, with line endings as LF.
-	Body string `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`
-	// Set when the note was not read, and why.
+	Body          string    `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`
 	Error         ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	FileStat      *FileStat `protobuf:"bytes,3,opt,name=file_stat,json=fileStat,proto3,oneof" json:"file_stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1460,14 +1456,13 @@ func (x *WriteNoteRequest) GetBaseline() *ReadBaseline {
 
 type WriteNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was written, and why.
-	Error ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	FileStat *FileStat `protobuf:"bytes,2,opt,name=file_stat,json=fileStat,proto3,oneof" json:"file_stat,omitempty"`
 	// Set when the prose is on disk and the index could not be updated for it.
 	// The write happened and `file_stat` stands; search answers about this note as it
-	// read it last, until a walk goes past.
+	// read it last, until the next index scan.
 	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -1681,12 +1676,11 @@ func (x *CreateNoteRequest) GetLinks() []*Link {
 type CreateNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the note is filed. Empty when nothing was made.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Set when nothing was made, and why.
+	Path  string    `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the note is on disk and the index could not be updated for it.
 	// The note was made and `path` stands; search does not answer about it until
-	// a walk goes past.
+	// the next index scan.
 	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	// Set when no title was given and every numbered untitled name is taken.
 	IsNameExhausted bool `protobuf:"varint,4,opt,name=is_name_exhausted,json=isNameExhausted,proto3" json:"is_name_exhausted,omitempty"`
@@ -2557,8 +2551,7 @@ func (x *CreateRelatedNoteRequest) GetMarker() Marker {
 type CreateRelatedNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the note is filed. Empty when nothing was made.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Set when nothing was made, and why.
+	Path  string    `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the note is on disk and the index could not be updated for it.
 	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
@@ -2813,8 +2806,7 @@ func (x *ListBacklinksResponse) GetBacklinks() []*Backlink {
 
 type RenameNoteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The note to rename.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// What the note is called from now on. The file is named after it.
 	Title         string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -2867,23 +2859,22 @@ func (x *RenameNoteRequest) GetTitle() string {
 
 type RenameNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Where the note is filed. Empty when the note was never opened. The note is
-	// path the note still has.
+	// Where the note is filed. Empty when the note could not be opened.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// What the note is called. Empty when the note was never opened.
+	// What the note is called. Empty when the note could not be opened.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// Which of the three names the note, and so which the rename brought into
-	// line. NAME_SOURCE_UNSPECIFIED when the note was never opened.
+	// Which name source the rename updated. NAME_SOURCE_UNSPECIFIED when the note
+	// could not be opened.
 	NameSource NameSource `protobuf:"varint,3,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
-	// What the file did. Absent when it kept its position.
+	// Absent when the file did not move.
 	MoveResult *MoveResult `protobuf:"bytes,4,opt,name=move_result,json=moveResult,proto3,oneof" json:"move_result,omitempty"`
 	// Set when the rename did not finish, and why. The note may already have been
-	// written: `path`, `title` and `by` say what stands. A note holding prose the
+	// written: `path`, `title` and `name_source` say what stands. A note holding prose the
 	// caller never saw is ERROR_CODE_CONFLICT, and nothing was written at all.
 	Error ErrorCode `protobuf:"varint,5,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the rename reached the vault and the index could not be updated
-	// with it. Search answers about these files as it read them last, until a
-	// walk goes past.
+	// with it. Search answers about these files as it read them last, until the
+	// next index scan.
 	IsIndexOutdated bool `protobuf:"varint,6,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	// The text of the error where it carries more than the code does.
 	Detail        string `protobuf:"bytes,7,opt,name=detail,proto3" json:"detail,omitempty"`
@@ -3011,8 +3002,7 @@ type WatchEditsResponse struct {
 	// The change this reports on. Every report of one change carries the same
 	// name, and no two changes carry one.
 	Change string `protobuf:"bytes,1,opt,name=change,proto3" json:"change,omitempty"`
-	// The note being changed.
-	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	Path   string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The run being replaced, counted the way a client counts text: in UTF-16
 	// code units over the prose a read answers with.
 	Range *Range `protobuf:"bytes,3,opt,name=range,proto3" json:"range,omitempty"`

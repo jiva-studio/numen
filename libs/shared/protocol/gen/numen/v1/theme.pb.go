@@ -151,9 +151,7 @@ type Theme struct {
 	// for again.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Title is what the file is called, without the origin.
-	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// Which origin it comes from: what this installation ships, and what a person
-	// put in their own folder.
+	Title  string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Origin Origin `protobuf:"varint,3,opt,name=origin,proto3,enum=numen.v1.Origin" json:"origin,omitempty"`
 	// Set for a theme that declares `color-scheme` itself. Light and dark are
 	// the theme's own, and the mode has nothing left to choose.
@@ -278,9 +276,8 @@ func (*ListThemesRequest) Descriptor() ([]byte, []int) {
 type ListThemesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every theme, the shipped ones first and each origin by name.
-	Themes []*Theme `protobuf:"bytes,1,rep,name=themes,proto3" json:"themes,omitempty"`
-	// The theme that is applied, by its name.
-	AppliedTheme string `protobuf:"bytes,2,opt,name=applied_theme,json=appliedTheme,proto3" json:"applied_theme,omitempty"`
+	Themes       []*Theme `protobuf:"bytes,1,rep,name=themes,proto3" json:"themes,omitempty"`
+	AppliedTheme string   `protobuf:"bytes,2,opt,name=applied_theme,json=appliedTheme,proto3" json:"applied_theme,omitempty"`
 	// Which half of a pair the tokens resolve to.
 	Mode Mode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`
 	// How large the interface is drawn, and how large the text a person reads is
@@ -375,9 +372,8 @@ func (x *ListThemesResponse) GetTextScaleBounds() *Bounds {
 }
 
 type ReadThemeRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The theme, by its name.
-	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -467,7 +463,7 @@ func (x *ReadThemeResponse) GetCss() string {
 
 type WriteAppearanceRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// the settings are left as they are.
+	// Theme name to apply. Empty leaves the current theme unchanged.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Which half of a pair the tokens resolve to from now on.
 	Mode Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=numen.v1.Mode" json:"mode,omitempty"`
@@ -539,9 +535,8 @@ func (x *WriteAppearanceRequest) GetTextScale() float64 {
 }
 
 type WriteAppearanceResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Error is why the settings were not written, when they were not.
-	Error         string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         string                 `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

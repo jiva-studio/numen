@@ -4,10 +4,7 @@
 // 	protoc        (unknown)
 // source: numen/v1/search.proto
 
-// What a client may ask of a vault by typing into it.
-//
-// things: SearchNames answers with names, and SearchText with the search
-// results of text a vault holds. A client drawing them apart asks each of them.
+// SearchService answers name queries (SearchNames) and text queries (SearchText).
 
 package numenv1
 
@@ -28,9 +25,6 @@ const (
 
 // SearchMode is how a search is asked. Each mode is an order of its own, and a
 // hybrid search fuses them into one.
-//
-// The theme's `Mode` already holds that name in this package, so the search's
-// own carries what it is a mode of.
 type SearchMode int32
 
 const (
@@ -502,8 +496,8 @@ type SearchResult struct {
 	// What the source's own numbering calls the place, empty when the format
 	// offered none.
 	PlaceLabel string `protobuf:"bytes,5,opt,name=place_label,json=placeLabel,proto3" json:"place_label,omitempty"`
-	// counted in bytes. With the path above it is the place this opens, and a hit
-	// in a note carries it as every other hit does.
+	// Byte range of the match in the source. Together with path, it identifies
+	// the target location.
 	ByteRange *Range `protobuf:"bytes,6,opt,name=byte_range,json=byteRange,proto3" json:"byte_range,omitempty"`
 	// Where the chunk that matched stands, counted from the first line of the
 	// source's prose. It is the line a note opens on, and the caret stands there.

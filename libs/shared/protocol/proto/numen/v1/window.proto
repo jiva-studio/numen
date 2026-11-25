@@ -16,7 +16,6 @@ service WindowService {
   // the title, subject and progress of each.
   //
   // The whole list is sent on every change, and the first list is sent at once.
-  // It is a stream because tasks can start without a request from the window.
   rpc WatchTasks(WatchTasksRequest) returns (stream WatchTasksResponse);
 
   // WatchWindowClose streams a message when the window is about to close. A caller
@@ -28,9 +27,7 @@ service WindowService {
   // about the work.
   rpc ReportPendingWork(ReportPendingWorkRequest) returns (ReportPendingWorkResponse);
 
-  // GetCurrentVault is which vault this window has in front of the person. Two
-  // windows are open on one installation and each shows what it shows, so it is
-  // the window that is asked and not the list of vaults.
+  // GetCurrentVault returns the vault open in this window.
   rpc GetCurrentVault(GetCurrentVaultRequest) returns (GetCurrentVaultResponse);
 
   // CancelTask stops one task that WatchTasks lists as cancellable. The task
@@ -47,14 +44,11 @@ message WatchTasksRequest {
 }
 
 message WatchTasksResponse {
-  // Everything being done now, in the order the work began. The list arrives
-  // whole, because what is being done is a list and not a set of differences to
-  // apply.
+  // Active tasks, in the order they began. Each message carries the full list.
   repeated Task tasks = 1;
 }
 
-// A Task is one piece of work the application runs for the window. Every kind of
-// work is a Task, so a new kind adds an entry to the list and no new field.
+// Task is one piece of work the application runs for the window.
 message Task {
   // Id identifies the work. A task reported again with the same id replaces the
   // earlier one.
@@ -70,13 +64,12 @@ message Task {
   int64 completed_count = 4;
   int64 total_count = 5;
 
-  // The reason the work failed. Empty when it did not fail.
   string failure_reason = 6;
 
   // Set for work a person started and is waiting on.
   bool is_user_started = 7;
 
-  // Unit is what done and total are counted in.
+  // Unit of completed_count and total_count.
   Unit unit = 8;
 
   // The plugin that reported the task, as the core knows the caller, and its
@@ -91,7 +84,6 @@ message Task {
   TaskKind kind = 12;
 }
 
-// TaskKind is what an entry of the list of tasks is.
 enum TaskKind {
   // Work that runs, stops, or fails.
   TASK_KIND_UNSPECIFIED = 0;

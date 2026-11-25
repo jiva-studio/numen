@@ -115,8 +115,8 @@ type DescribeSearchSourceResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The text a person knows the data of the source by.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// An opaque string. Two vectors made under different recipes cannot be compared, so a vector kept
-	// under another recipe is stale.
+	// An opaque string. Vectors produced under different recipes cannot be
+	// compared.
 	Recipe string `protobuf:"bytes,2,opt,name=recipe,proto3" json:"recipe,omitempty"`
 	// How many values one vector of the source holds.
 	Width int32 `protobuf:"varint,3,opt,name=width,proto3" json:"width,omitempty"`
@@ -384,8 +384,7 @@ type SearchSourceServiceSearchChunksRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Place *SearchPlace           `protobuf:"bytes,1,opt,name=place,proto3" json:"place,omitempty"`
 	Query string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	// The most chunks to answer.
-	Limit int32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	Limit int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	// The kinds of source to search, "note" or "file". Empty means every kind.
 	Kinds []string `protobuf:"bytes,4,rep,name=kinds,proto3" json:"kinds,omitempty"`
 	// Limits the search to the sources whose path starts with it, relative to the vault.

@@ -16,8 +16,7 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // The endpoint checks the permission of each call: a call that reads needs
 // vault:read and one that changes anything needs vault:write.
 //
-// Numen-Vault works the vault of that identity instead of the vault the host
-// shows.
+// Numen-Vault selects the vault by identity; without it a call targets the active vault.
 //
 // Every path is relative to the vault root and written with forward slashes.
 service HostNoteService {
@@ -123,8 +122,8 @@ message NoteFrontmatterWrite {
   string path = 1;
   // values is a JSON object; a key with the value null is removed.
   bytes values = 2;
-  // baseline is the file state the caller read; a note changed since is left
-  // unchanged (stale).
+  // baseline is the file state the caller read; a note changed since returns
+  // CONFLICT.
   FileStat baseline = 3;
 }
 
@@ -151,7 +150,6 @@ message NoteFrontmatter {
 }
 
 message HostNoteServiceRenameNoteRequest {
-  // The note to rename.
   string path = 1;
   // What the note is called from now on. The file is named after it.
   string title = 2;
@@ -159,13 +157,11 @@ message HostNoteServiceRenameNoteRequest {
 
 message HostNoteServiceRenameNoteResponse {
   ErrorCode error = 1;
-  // Where the note is filed after the rename.
   string path = 2;
-  // What the note is called.
   string title = 3;
-  // Which of the three names the note, and so which the rename brought into line.
+  // Which name source the rename updated.
   NameSource name_source = 4;
-  // What the file did. Absent when it kept its position.
+  // Absent when the file did not move.
   optional MoveResult move_result = 5;
   // The text of the error where it carries more than the code does.
   string detail = 6;
@@ -182,7 +178,6 @@ message HostNoteServiceMoveNotesRequest {
 message HostNoteMove {
   // From is always set; to only when the note moved.
   MoveResult move = 1;
-  // Why this note did not move.
   ErrorCode error = 2;
   // The core's error text where this note did not move, empty on success.
   string detail = 3;
@@ -202,9 +197,7 @@ message HostNoteServiceRemoveNotesRequest {
 // HostNoteRemoval is the outcome of removing one note.
 message HostNoteRemoval {
   string path = 1;
-  // The path of the file in the trash.
   string trash_path = 2;
-  // The notes whose links are now broken.
   repeated string broken_links = 3;
   // Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
   // file that is not a note, or INTERNAL.

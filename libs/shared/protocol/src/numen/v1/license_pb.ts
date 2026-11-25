@@ -330,8 +330,6 @@ export const WatchLicensesResponseSchema: GenMessage<WatchLicensesResponse> = /*
   messageDesc(file_numen_v1_license, 10);
 
 /**
- * LicenseStatus is the state of a license on this machine.
- *
  * @generated from enum numen.v1.LicenseStatus
  */
 export enum LicenseStatus {
@@ -411,8 +409,6 @@ export enum LicenseErrorCode {
   ACTIVATION_LIMIT_REACHED = 3,
 
   /**
-   * LICENSE_ERROR_CODE_EXPIRED is a key whose subscription or validity period has expired.
-   *
    * @generated from enum value: LICENSE_ERROR_CODE_EXPIRED = 4;
    */
   EXPIRED = 4,
@@ -425,8 +421,6 @@ export enum LicenseErrorCode {
   DISABLED = 5,
 
   /**
-   * LICENSE_ERROR_CODE_PRODUCT_MISMATCH is a key that belongs to another product.
-   *
    * @generated from enum value: LICENSE_ERROR_CODE_PRODUCT_MISMATCH = 6;
    */
   PRODUCT_MISMATCH = 6,

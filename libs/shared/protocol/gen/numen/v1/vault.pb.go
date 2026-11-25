@@ -4,7 +4,6 @@
 // 	protoc        (unknown)
 // source: numen/v1/vault.proto
 
-//
 // What the vault is and what has changed in it: the questions that are about
 // the vault itself and not about anything filed in it. Its files are
 // file.proto, its notes note.proto and its text search.proto.
@@ -62,7 +61,6 @@ func (*GetVaultStateRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{0}
 }
 
-// being done behind that window is Tasks.
 type GetVaultStateResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Id is the identity the folder carries, and how this vault is asked for
@@ -70,7 +68,7 @@ type GetVaultStateResponse struct {
 	// itself with. The list says both of a vault the same way.
 	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Where the vault relies on this disk.
+	// Absolute path of the vault on disk.
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// How far indexing the vault has got.
 	Scan          *Scan `protobuf:"bytes,4,opt,name=scan,proto3" json:"scan,omitempty"`
@@ -138,11 +136,9 @@ func (x *GetVaultStateResponse) GetScan() *Scan {
 
 // Scan is how far indexing a vault has got, and what stopped it.
 type Scan struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// IsReady is set when the scan has finished.
-	IsReady bool `protobuf:"varint,1,opt,name=is_ready,json=isReady,proto3" json:"is_ready,omitempty"`
-	// Error is why the scan stopped, when it stopped for a reason.
-	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	IsReady bool                   `protobuf:"varint,1,opt,name=is_ready,json=isReady,proto3" json:"is_ready,omitempty"`
+	Error   string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	// Why the vault is not being followed, when it is not. Changes will only
 	// appear when something asks for them again.
 	WatchError    string `protobuf:"bytes,3,opt,name=watch_error,json=watchError,proto3" json:"watch_error,omitempty"`

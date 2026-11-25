@@ -291,8 +291,8 @@ export type NoteFrontmatterWrite = Message<"numen.v1.NoteFrontmatterWrite"> & {
   values: Uint8Array;
 
   /**
-   * baseline is the file state the caller read; a note changed since is left
-   * unchanged (stale).
+   * baseline is the file state the caller read; a note changed since returns
+   * CONFLICT.
    *
    * @generated from field: numen.v1.FileStat baseline = 3;
    */
@@ -396,8 +396,6 @@ export const NoteFrontmatterSchema: GenMessage<NoteFrontmatter> = /*@__PURE__*/
  */
 export type HostNoteServiceRenameNoteRequest = Message<"numen.v1.HostNoteServiceRenameNoteRequest"> & {
   /**
-   * The note to rename.
-   *
    * @generated from field: string path = 1;
    */
   path: string;
@@ -427,28 +425,24 @@ export type HostNoteServiceRenameNoteResponse = Message<"numen.v1.HostNoteServic
   error: ErrorCode;
 
   /**
-   * Where the note is filed after the rename.
-   *
    * @generated from field: string path = 2;
    */
   path: string;
 
   /**
-   * What the note is called.
-   *
    * @generated from field: string title = 3;
    */
   title: string;
 
   /**
-   * Which of the three names the note, and so which the rename brought into line.
+   * Which name source the rename updated.
    *
    * @generated from field: numen.v1.NameSource name_source = 4;
    */
   nameSource: NameSource;
 
   /**
-   * What the file did. Absent when it kept its position.
+   * Absent when the file did not move.
    *
    * @generated from field: optional numen.v1.MoveResult move_result = 5;
    */
@@ -509,8 +503,6 @@ export type HostNoteMove = Message<"numen.v1.HostNoteMove"> & {
   move?: MoveResult | undefined;
 
   /**
-   * Why this note did not move.
-   *
    * @generated from field: numen.v1.ErrorCode error = 2;
    */
   error: ErrorCode;
@@ -585,15 +577,11 @@ export type HostNoteRemoval = Message<"numen.v1.HostNoteRemoval"> & {
   path: string;
 
   /**
-   * The path of the file in the trash.
-   *
    * @generated from field: string trash_path = 2;
    */
   trashPath: string;
 
   /**
-   * The notes whose links are now broken.
-   *
    * @generated from field: repeated string broken_links = 3;
    */
   brokenLinks: string[];
@@ -653,8 +641,7 @@ export const HostNoteServiceRemoveNotesResponseSchema: GenMessage<HostNoteServic
  * The endpoint checks the permission of each call: a call that reads needs
  * vault:read and one that changes anything needs vault:write.
  *
- * Numen-Vault works the vault of that identity instead of the vault the host
- * shows.
+ * Numen-Vault selects the vault by identity; without it a call targets the active vault.
  *
  * Every path is relative to the vault root and written with forward slashes.
  *

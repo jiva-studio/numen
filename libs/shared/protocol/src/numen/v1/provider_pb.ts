@@ -85,8 +85,6 @@ export const ProviderSecretSchema: GenMessage<ProviderSecret> = /*@__PURE__*/
   messageDesc(file_numen_v1_provider, 1);
 
 /**
- * ProviderFailure is a call that was served and failed.
- *
  * @generated from message numen.v1.ProviderFailure
  */
 export type ProviderFailure = Message<"numen.v1.ProviderFailure"> & {

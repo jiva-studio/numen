@@ -83,8 +83,6 @@ export const ListVaultsRequestSchema: GenMessage<ListVaultsRequest> = /*@__PURE_
  */
 export type ListVaultsResponse = Message<"numen.v1.ListVaultsResponse"> & {
   /**
-   * Every vault the installation holds.
-   *
    * @generated from field: repeated numen.v1.Vault vaults = 1;
    */
   vaults: Vault[];
@@ -136,8 +134,6 @@ export type AddVaultResponse = Message<"numen.v1.AddVaultResponse"> & {
   vault?: Vault | undefined;
 
   /**
-   * Set when nothing was added, and why.
-   *
    * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
    */
   error?: VaultsErrorCode | undefined;
@@ -162,15 +158,11 @@ export const AddVaultResponseSchema: GenMessage<AddVaultResponse> = /*@__PURE__*
  */
 export type RenameVaultRequest = Message<"numen.v1.RenameVaultRequest"> & {
   /**
-   * The vault to rename, by its identity.
-   *
    * @generated from field: string id = 1;
    */
   id: string;
 
   /**
-   * What the vault is called from now on.
-   *
    * @generated from field: string name = 2;
    */
   name: string;
@@ -189,15 +181,13 @@ export const RenameVaultRequestSchema: GenMessage<RenameVaultRequest> = /*@__PUR
 export type RenameVaultResponse = Message<"numen.v1.RenameVaultResponse"> & {
   /**
    * The vault under its new name. Absent when it was not renamed. The name a
-   * vault already has is not a change and answers with the vault currently.
+   * vault already has is not a change and answers with the unchanged vault.
    *
    * @generated from field: optional numen.v1.Vault vault = 1;
    */
   vault?: Vault | undefined;
 
   /**
-   * Set when the vault was not renamed, and why.
-   *
    * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
    */
   error?: VaultsErrorCode | undefined;
@@ -222,16 +212,13 @@ export const RenameVaultResponseSchema: GenMessage<RenameVaultResponse> = /*@__P
  */
 export type RemoveVaultRequest = Message<"numen.v1.RemoveVaultRequest"> & {
   /**
-   * The vault to remove, by its identity.
-   *
    * @generated from field: string id = 1;
    */
   id: string;
 
   /**
-   * is_folder_trashed sends the folder to the trash of this machine, where a person
-   * deleted. A folder no longer carrying this vault's identity stays where it
-   * is and the vault stays on the list.
+   * Moves the vault folder to the system trash. A folder no longer carrying
+   * this vault's identity is left untouched and the vault stays on the list.
    *
    * @generated from field: bool is_folder_trashed = 2;
    */
@@ -284,8 +271,6 @@ export const RemoveVaultResponseSchema: GenMessage<RemoveVaultResponse> = /*@__P
  */
 export type OpenVaultRequest = Message<"numen.v1.OpenVaultRequest"> & {
   /**
-   * The vault to show, by its identity.
-   *
    * @generated from field: string id = 1;
    */
   id: string;
@@ -380,8 +365,6 @@ export enum VaultsErrorCode {
   CURRENT = 6,
 
   /**
-   * No vault of that identity is on the list.
-   *
    * @generated from enum value: VAULTS_ERROR_CODE_NOT_FOUND = 7;
    */
   NOT_FOUND = 7,
@@ -466,8 +449,7 @@ export const VaultsService: GenService<{
   },
   /**
    * OpenVault shows another vault in this window. What the window was showing
-   * is release, and everything a client asked about it is asked again of the
-   * vault that arrives.
+   * is released, and callers re-query the new vault.
    *
    * @generated from rpc numen.v1.VaultsService.OpenVault
    */

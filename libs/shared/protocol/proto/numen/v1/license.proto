@@ -25,7 +25,6 @@ service LicenseService {
   rpc WatchLicenses(WatchLicensesRequest) returns (stream WatchLicensesResponse);
 }
 
-// LicenseStatus is the state of a license on this machine.
 enum LicenseStatus {
   LICENSE_STATUS_UNSPECIFIED = 0;
   // LICENSE_STATUS_INACTIVE is a license with no key activated on this machine.
@@ -50,11 +49,9 @@ enum LicenseErrorCode {
   LICENSE_ERROR_CODE_INVALID_KEY = 2;
   // LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED is a key that has used all of its machine slots.
   LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED = 3;
-  // LICENSE_ERROR_CODE_EXPIRED is a key whose subscription or validity period has expired.
   LICENSE_ERROR_CODE_EXPIRED = 4;
   // LICENSE_ERROR_CODE_DISABLED is a key that the provider has disabled or revoked.
   LICENSE_ERROR_CODE_DISABLED = 5;
-  // LICENSE_ERROR_CODE_PRODUCT_MISMATCH is a key that belongs to another product.
   LICENSE_ERROR_CODE_PRODUCT_MISMATCH = 6;
   // LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that could not be reached or returned a
   // transient error.

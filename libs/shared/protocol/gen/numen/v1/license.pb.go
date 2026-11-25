@@ -21,7 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// LicenseStatus is the state of a license on this machine.
 type LicenseStatus int32
 
 const (
@@ -95,11 +94,9 @@ const (
 	LicenseErrorCode_LICENSE_ERROR_CODE_INVALID_KEY LicenseErrorCode = 2
 	// LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED is a key that has used all of its machine slots.
 	LicenseErrorCode_LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED LicenseErrorCode = 3
-	// LICENSE_ERROR_CODE_EXPIRED is a key whose subscription or validity period has expired.
-	LicenseErrorCode_LICENSE_ERROR_CODE_EXPIRED LicenseErrorCode = 4
+	LicenseErrorCode_LICENSE_ERROR_CODE_EXPIRED                  LicenseErrorCode = 4
 	// LICENSE_ERROR_CODE_DISABLED is a key that the provider has disabled or revoked.
-	LicenseErrorCode_LICENSE_ERROR_CODE_DISABLED LicenseErrorCode = 5
-	// LICENSE_ERROR_CODE_PRODUCT_MISMATCH is a key that belongs to another product.
+	LicenseErrorCode_LICENSE_ERROR_CODE_DISABLED         LicenseErrorCode = 5
 	LicenseErrorCode_LICENSE_ERROR_CODE_PRODUCT_MISMATCH LicenseErrorCode = 6
 	// LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that could not be reached or returned a
 	// transient error.

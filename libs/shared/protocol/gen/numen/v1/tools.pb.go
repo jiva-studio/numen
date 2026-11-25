@@ -211,10 +211,8 @@ func (x *ListToolsResponse) GetTools() []*PluginTool {
 // PluginTool is one tool as an agent receives it.
 type PluginTool struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The name an agent calls the tool by.
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// What a person reads the tool as.
-	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Title string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	// What the tool is for and when an agent reaches for it.
 	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	// The JSON schema of the arguments, as a JSON object.
@@ -466,7 +464,6 @@ func (x *CallToolResponse) GetResult() *ToolResult {
 	return nil
 }
 
-// ToolResult is what a tool answered.
 type ToolResult struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The words an agent reads.

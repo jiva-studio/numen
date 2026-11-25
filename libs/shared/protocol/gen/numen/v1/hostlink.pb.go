@@ -470,8 +470,7 @@ func (x *ResolveLinksResponse) GetLinks() map[string]*HostLink {
 type HostLinkAddition struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note the link is written in.
-	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	// The note as the caller read it.
+	From     string    `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	Baseline *FileStat `protobuf:"bytes,2,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	// The target as written, e.g. "Rivers" or "note://01H...".
 	To    string `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
@@ -613,7 +612,7 @@ type HostLinkAdded struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note after the write; unset when nothing was written.
 	Stat *FileStat `protobuf:"bytes,1,opt,name=stat,proto3" json:"stat,omitempty"`
-	// Why the link was not written: CONFLICT for a stale baseline, NOT_FOUND,
+	// Why the link was not written: CONFLICT for an outdated baseline, NOT_FOUND,
 	// NOT_A_NOTE, UNREADABLE, INTERNAL and the other per-note codes.
 	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text where the link was not written, empty on success.
@@ -731,8 +730,7 @@ type HostLinkServiceUpdateLinksRequest struct {
 	// The note the links are written in.
 	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	// The target as written.
-	To string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
-	// The note as the caller read it.
+	To            string    `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	Baseline      *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	Role          Role      `protobuf:"varint,4,opt,name=role,proto3,enum=numen.v1.Role" json:"role,omitempty"`
 	Type          string    `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
@@ -824,8 +822,7 @@ func (x *HostLinkServiceUpdateLinksRequest) GetNote() string {
 type HostLinkServiceUpdateLinksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
-	// The note after the write.
-	Stat *FileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
+	Stat  *FileStat              `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
 	// The core's error text where nothing was written, empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -888,8 +885,7 @@ type HostLinkServiceRemoveLinksRequest struct {
 	// The note the links are written in.
 	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	// The target as written.
-	To string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
-	// The note as the caller read it.
+	To       string    `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	Baseline *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	// Only the links of this role. ROLE_UNSPECIFIED removes the links of every
 	// role.
@@ -959,8 +955,7 @@ func (x *HostLinkServiceRemoveLinksRequest) GetRole() Role {
 type HostLinkServiceRemoveLinksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
-	// The note after the write.
-	Stat *FileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
+	Stat  *FileStat              `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
 	// The core's error text where nothing was written, empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields

@@ -43,9 +43,7 @@ export const WatchTasksRequestSchema: GenMessage<WatchTasksRequest> = /*@__PURE_
  */
 export type WatchTasksResponse = Message<"numen.v1.WatchTasksResponse"> & {
   /**
-   * Everything being done now, in the order the work began. The list arrives
-   * whole, because what is being done is a list and not a set of differences to
-   * apply.
+   * Active tasks, in the order they began. Each message carries the full list.
    *
    * @generated from field: repeated numen.v1.Task tasks = 1;
    */
@@ -60,8 +58,7 @@ export const WatchTasksResponseSchema: GenMessage<WatchTasksResponse> = /*@__PUR
   messageDesc(file_numen_v1_window, 1);
 
 /**
- * A Task is one piece of work the application runs for the window. Every kind of
- * work is a Task, so a new kind adds an entry to the list and no new field.
+ * Task is one piece of work the application runs for the window.
  *
  * @generated from message numen.v1.Task
  */
@@ -101,8 +98,6 @@ export type Task = Message<"numen.v1.Task"> & {
   totalCount: bigint;
 
   /**
-   * The reason the work failed. Empty when it did not fail.
-   *
    * @generated from field: string failure_reason = 6;
    */
   failureReason: string;
@@ -115,7 +110,7 @@ export type Task = Message<"numen.v1.Task"> & {
   isUserStarted: boolean;
 
   /**
-   * Unit is what done and total are counted in.
+   * Unit of completed_count and total_count.
    *
    * @generated from field: numen.v1.Unit unit = 8;
    */
@@ -333,8 +328,6 @@ export const CancelTaskResponseSchema: GenMessage<CancelTaskResponse> = /*@__PUR
   messageDesc(file_numen_v1_window, 10);
 
 /**
- * TaskKind is what an entry of the list of tasks is.
- *
  * @generated from enum numen.v1.TaskKind
  */
 export enum TaskKind {
@@ -449,7 +442,6 @@ export const WindowService: GenService<{
    * the title, subject and progress of each.
    *
    * The whole list is sent on every change, and the first list is sent at once.
-   * It is a stream because tasks can start without a request from the window.
    *
    * @generated from rpc numen.v1.WindowService.WatchTasks
    */
@@ -482,9 +474,7 @@ export const WindowService: GenService<{
     output: typeof ReportPendingWorkResponseSchema;
   },
   /**
-   * GetCurrentVault is which vault this window has in front of the person. Two
-   * windows are open on one installation and each shows what it shows, so it is
-   * the window that is asked and not the list of vaults.
+   * GetCurrentVault returns the vault open in this window.
    *
    * @generated from rpc numen.v1.WindowService.GetCurrentVault
    */

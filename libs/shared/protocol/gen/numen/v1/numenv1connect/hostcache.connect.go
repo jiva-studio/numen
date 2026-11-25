@@ -43,10 +43,7 @@ const (
 
 // HostCacheServiceClient is a client for the numen.v1.HostCacheService service.
 type HostCacheServiceClient interface {
-	// ReadCache reads what the plugin kept for this vault under a name. The cache
-	// belongs to the installation and not to the vault, and can be made again.
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
-	// WriteCache replaces what the plugin keeps for this vault under a name.
 	WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error)
 }
 
@@ -94,10 +91,7 @@ func (c *hostCacheServiceClient) WriteCache(ctx context.Context, req *connect.Re
 
 // HostCacheServiceHandler is an implementation of the numen.v1.HostCacheService service.
 type HostCacheServiceHandler interface {
-	// ReadCache reads what the plugin kept for this vault under a name. The cache
-	// belongs to the installation and not to the vault, and can be made again.
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
-	// WriteCache replaces what the plugin keeps for this vault under a name.
 	WriteCache(context.Context, *connect.Request[v1.WriteCacheRequest]) (*connect.Response[v1.WriteCacheResponse], error)
 }
 

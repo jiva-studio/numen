@@ -21,7 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// LogLevel is the severity of a log entry. The zero value means nothing.
 type LogLevel int32
 
 const (
@@ -248,8 +247,7 @@ type LogEntry struct {
 	TimeUnixMs int64    `protobuf:"varint,1,opt,name=time_unix_ms,json=timeUnixMs,proto3" json:"time_unix_ms,omitempty"`
 	Level      LogLevel `protobuf:"varint,2,opt,name=level,proto3,enum=numen.v1.LogLevel" json:"level,omitempty"`
 	// Who wrote the entry: "core", "sql", "rpc", "window", or the id of a plugin.
-	Source string `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
-	// The summary line of the entry.
+	Source  string `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
 	Message string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
 	// The structured properties of the entry, each value encoded as JSON.
 	PropertiesJson map[string]string `protobuf:"bytes,5,rep,name=properties_json,json=propertiesJson,proto3" json:"properties_json,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`

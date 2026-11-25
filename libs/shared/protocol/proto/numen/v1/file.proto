@@ -1,10 +1,6 @@
 syntax = "proto3";
 
-// What a client may ask about the tree a vault is filed in.
-//
-// A path is what the vault calls a file or a folder, and what is here is the
-// moving one, removing one, making one. What is inside a note is note.proto,
-// and the bytes a file of the person's own holds are asset.proto.
+// File and folder operations on the vault tree.
 package numen.v1;
 
 import "google/protobuf/struct.proto";
@@ -60,7 +56,7 @@ message Entry {
   // slashes.
   string path = 1;
 
-  // The last segment of the path, which is what the row shows.
+  // The last segment of the path.
   string name = 2;
 
   // Whether the entry holds other entries. A folder carries no source and
@@ -97,7 +93,6 @@ message ListFileKindsResponse {
 message FileKind {
   string path = 1;
 
-  // Whether a note is at the path.
   bool is_note = 5;
 
   // The `type` key of the note's frontmatter, which says what the note is. Empty for an
@@ -115,47 +110,36 @@ message FileKind {
 }
 
 message MoveFileRequest {
-  // The file or folder to move, as the vault calls it.
   string from = 1;
-
-  // Where it is filed from now on. The last segment is what it is called.
   string to = 2;
 }
 
 message MoveFileResponse {
-  // What the file did. Absent when nothing was moved.
+  // Absent when nothing was moved.
   optional MoveResult move_result = 1;
 
-  // Set when nothing was moved, and why.
   ErrorCode error = 2;
 
   // Set when the move reached the vault and the index could not be updated for
-  // it. Search answers about these files as it read them last, until a walk
-  // goes past.
+  // it. Search answers about these files as it read them last, until the next
+  // index scan.
   bool is_index_outdated = 3;
 }
 
 // MoveResult is a file under a different name, and what that did to the links
 // written by the name it had.
 message MoveResult {
-  // Where the file was.
   string from = 1;
-
-  // Where it is now.
   string to = 2;
 
   // The notes whose link stopped resolving and was written again, by name.
   repeated string repaired_notes = 3;
 
-  // The notes whose link stopped resolving and could not be written again, by
-  // name. Each of them still points at the name the file left, and nothing
-  // returns to it: a move that reports only what it repaired reports a
-  // vault it did not leave behind.
+  // The notes whose links stopped resolving and could not be updated, by name.
   repeated string dangling_notes = 4;
 }
 
 message RemoveFileRequest {
-  // The file or folder to remove.
   string path = 1;
 }
 
@@ -167,17 +151,16 @@ message EmptyTrashResponse {
 }
 
 message RemoveFileResponse {
-  // and when nothing was removed.
+  // Path of the removed entry in the trash. Empty when nothing was removed.
   string trash_path = 1;
 
   // The notes whose links pointed at what was removed and now reach nothing.
   repeated string dangling_notes = 2;
 
-  // Set when nothing was removed, and why.
   ErrorCode error = 3;
 
   // Set when the file no longer exists and the index could not be updated for it.
-  // Search answers about it as it read it last, until a walk goes past.
+  // Search answers about it as it read it last, until the next index scan.
   bool is_index_outdated = 4;
 }
 
@@ -188,6 +171,5 @@ message CreateFolderRequest {
 }
 
 message CreateFolderResponse {
-  // Set when nothing was made, and why.
   ErrorCode error = 1;
 }

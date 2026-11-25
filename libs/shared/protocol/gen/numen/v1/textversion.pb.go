@@ -182,10 +182,9 @@ func (x *DeleteVersionRequest) GetVersionId() string {
 }
 
 type DeleteVersionResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Error CommandErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CommandErrorCode" json:"error,omitempty"`
-	// What a person reads about a failure.
-	Message       string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         CommandErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CommandErrorCode" json:"error,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

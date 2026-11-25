@@ -28,8 +28,7 @@ type ProviderConnectionErrorCode int32
 
 const (
 	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED ProviderConnectionErrorCode = 0
-	// PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND is a connection that is not in the list.
-	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND ProviderConnectionErrorCode = 1
+	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND   ProviderConnectionErrorCode = 1
 	// PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN is a name another connection has, ignoring case.
 	ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN ProviderConnectionErrorCode = 2
 	// PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD is a name, a value or an address the type does not
@@ -100,18 +99,16 @@ func (ProviderConnectionErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_providerconnection_proto_rawDescGZIP(), []int{0}
 }
 
-// ProviderConnectionType is a kind of connection one plugin provides.
 type ProviderConnectionType struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// type_id is the plugin id, a slash and the id the plugin gives the type.
-	TypeId      string `protobuf:"bytes,1,opt,name=type_id,json=typeId,proto3" json:"type_id,omitempty"`
-	PluginId    string `protobuf:"bytes,2,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	PluginName  string `protobuf:"bytes,3,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
-	Title       string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	// operations are the names of the operations the type serves.
-	Operations []string                   `protobuf:"bytes,6,rep,name=operations,proto3" json:"operations,omitempty"`
-	Fields     []*ManifestConnectionField `protobuf:"bytes,7,rep,name=fields,proto3" json:"fields,omitempty"`
+	TypeId      string                     `protobuf:"bytes,1,opt,name=type_id,json=typeId,proto3" json:"type_id,omitempty"`
+	PluginId    string                     `protobuf:"bytes,2,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	PluginName  string                     `protobuf:"bytes,3,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
+	Title       string                     `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	Description string                     `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	Operations  []string                   `protobuf:"bytes,6,rep,name=operations,proto3" json:"operations,omitempty"`
+	Fields      []*ManifestConnectionField `protobuf:"bytes,7,rep,name=fields,proto3" json:"fields,omitempty"`
 	// row_fields are the values a row that names a connection of the type holds besides the connection.
 	RowFields []*ManifestConnectionField `protobuf:"bytes,9,rep,name=row_fields,json=rowFields,proto3" json:"row_fields,omitempty"`
 	// is_available is whether the plugin is installed and enabled.
@@ -961,9 +958,8 @@ type ListRowOptionsRequest struct {
 	// field is the key of the row field.
 	Field string `protobuf:"bytes,2,opt,name=field,proto3" json:"field,omitempty"`
 	// options are the values the row holds so far.
-	Options map[string]string `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// operations are the operations the setting of rows is used for.
-	Operations    []string `protobuf:"bytes,4,rep,name=operations,proto3" json:"operations,omitempty"`
+	Options       map[string]string `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Operations    []string          `protobuf:"bytes,4,rep,name=operations,proto3" json:"operations,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -4,15 +4,9 @@
 // 	protoc        (unknown)
 // source: numen/v1/settings.proto
 
-// What a client may ask about the file a person configures this installation
-// in.
-//
-// The settings belong to the installation and not to a vault: the same file
-//
-// They travel as the file's own text. Their sections belong to whichever
-// adapters an installation is composed of, so the core does not know the whole
-// shape and does not describe it, and a setting is written by naming the path
-// through the file. It is the only tree here that goes undescribed.
+// Installation-wide settings stored as JSON.
+// Sections are owned by app or plugin ids; individual settings are written by
+// key path.
 
 package numenv1
 
@@ -400,10 +394,9 @@ func (x *WriteSettingsResponse) GetVersion() uint64 {
 }
 
 type ChoosePluginPathRequest struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	// The key of the setting.
-	Key           string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -455,9 +448,8 @@ func (x *ChoosePluginPathRequest) GetKey() string {
 type ChoosePluginPathResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The path the person chose, empty when they chose none.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Set when the person chose a path.
-	IsChosen bool `protobuf:"varint,2,opt,name=is_chosen,json=isChosen,proto3" json:"is_chosen,omitempty"`
+	Path     string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	IsChosen bool   `protobuf:"varint,2,opt,name=is_chosen,json=isChosen,proto3" json:"is_chosen,omitempty"`
 	// Why the setting does not accept the path, in words a person reads. Empty where it was written.
 	Problem       string `protobuf:"bytes,3,opt,name=problem,proto3" json:"problem,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -625,7 +617,6 @@ func (x *Options) GetIsPartial() bool {
 	return false
 }
 
-// Option is one value of a field.
 type Option struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Value string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`

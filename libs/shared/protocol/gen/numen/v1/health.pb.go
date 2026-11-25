@@ -21,7 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// HealthSeverity is how bad a health item is.
 type HealthSeverity int32
 
 const (

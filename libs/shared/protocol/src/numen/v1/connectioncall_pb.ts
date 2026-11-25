@@ -183,8 +183,6 @@ export const CallRowSchema: GenMessage<CallRow> = /*@__PURE__*/
  */
 export type ConnectionCallServiceCallRequest = Message<"numen.v1.ConnectionCallServiceCallRequest"> & {
   /**
-   * plugin_id is the plugin whose rows serve the call.
-   *
    * @generated from field: string plugin_id = 1;
    */
   pluginId: string;
@@ -207,7 +205,7 @@ export type ConnectionCallServiceCallRequest = Message<"numen.v1.ConnectionCallS
   priority: Priority;
 
   /**
-   * preferred is unset for the rows in their order.
+   * Unset uses the rows in their declared order.
    *
    * @generated from field: numen.v1.PreferredRow preferred_row = 5;
    */
@@ -271,8 +269,6 @@ export const ConnectionCallServiceCallResponseSchema: GenMessage<ConnectionCallS
  */
 export type CancelCallRequest = Message<"numen.v1.CancelCallRequest"> & {
   /**
-   * plugin_id is the plugin the call was made for.
-   *
    * @generated from field: string plugin_id = 1;
    */
   pluginId: string;
@@ -308,8 +304,6 @@ export const CancelCallResponseSchema: GenMessage<CancelCallResponse> = /*@__PUR
  */
 export type ConnectionCallServiceListRowsRequest = Message<"numen.v1.ConnectionCallServiceListRowsRequest"> & {
   /**
-   * plugin_id is the plugin whose rows are listed.
-   *
    * @generated from field: string plugin_id = 1;
    */
   pluginId: string;
@@ -446,7 +440,7 @@ export const CallErrorCodeSchema: GenEnum<CallErrorCode> = /*@__PURE__*/
  * ConnectionCallService carries out the operations a caller asks for, through the rows of a plugin. The window
  * serves it to a plugin view, which names the plugin whose rows serve the call. The host endpoint serves it to a
  * plugin process, which is the plugin its token names: the request names no plugin, or that one, and the host
- * refuses a request that names another. The core takes the connections from the rows of the settings of the
+ * rejects a request that names another. The core takes the connections from the rows of the settings of the
  * plugin; a plugin that holds connections:use:<operation> uses every connection that serves that operation,
  * which none of its settings of rows lists. The payload and the frames are bytes of the contract the operation
  * belongs to.

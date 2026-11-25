@@ -254,8 +254,6 @@ export type HostLinkAddition = Message<"numen.v1.HostLinkAddition"> & {
   from: string;
 
   /**
-   * The note as the caller read it.
-   *
    * @generated from field: numen.v1.FileStat baseline = 2;
    */
   baseline?: FileStat | undefined;
@@ -330,7 +328,7 @@ export type HostLinkAdded = Message<"numen.v1.HostLinkAdded"> & {
   stat?: FileStat | undefined;
 
   /**
-   * Why the link was not written: CONFLICT for a stale baseline, NOT_FOUND,
+   * Why the link was not written: CONFLICT for an outdated baseline, NOT_FOUND,
    * NOT_A_NOTE, UNREADABLE, INTERNAL and the other per-note codes.
    *
    * @generated from field: numen.v1.ErrorCode error = 2;
@@ -395,8 +393,6 @@ export type HostLinkServiceUpdateLinksRequest = Message<"numen.v1.HostLinkServic
   to: string;
 
   /**
-   * The note as the caller read it.
-   *
    * @generated from field: numen.v1.FileStat baseline = 3;
    */
   baseline?: FileStat | undefined;
@@ -439,8 +435,6 @@ export type HostLinkServiceUpdateLinksResponse = Message<"numen.v1.HostLinkServi
   error: ErrorCode;
 
   /**
-   * The note after the write.
-   *
    * @generated from field: numen.v1.FileStat stat = 2;
    */
   stat?: FileStat | undefined;
@@ -479,8 +473,6 @@ export type HostLinkServiceRemoveLinksRequest = Message<"numen.v1.HostLinkServic
   to: string;
 
   /**
-   * The note as the caller read it.
-   *
    * @generated from field: numen.v1.FileStat baseline = 3;
    */
   baseline?: FileStat | undefined;
@@ -511,8 +503,6 @@ export type HostLinkServiceRemoveLinksResponse = Message<"numen.v1.HostLinkServi
   error: ErrorCode;
 
   /**
-   * The note after the write.
-   *
    * @generated from field: numen.v1.FileStat stat = 2;
    */
   stat?: FileStat | undefined;
@@ -540,8 +530,7 @@ export const HostLinkServiceRemoveLinksResponseSchema: GenMessage<HostLinkServic
  * The endpoint checks the permission of each call: a call that reads needs
  * vault:read and one that changes anything needs vault:write.
  *
- * Numen-Vault works the vault of that identity instead of the vault the host
- * shows.
+ * Numen-Vault selects the vault by identity; without it a call targets the active vault.
  *
  * Every path is relative to the vault root and written with forward slashes.
  *

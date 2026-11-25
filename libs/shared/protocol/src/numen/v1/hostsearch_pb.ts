@@ -51,8 +51,6 @@ export type GetEmbeddingStateResponse = Message<"numen.v1.GetEmbeddingStateRespo
   recipe: string;
 
   /**
-   * The name of the model in use.
-   *
    * @generated from field: string model = 3;
    */
   model: string;
@@ -119,8 +117,6 @@ export type ExtensionStats = Message<"numen.v1.ExtensionStats"> & {
   extension: string;
 
   /**
-   * How many sources have the extension.
-   *
    * @generated from field: int64 source_count = 2;
    */
   sourceCount: bigint;
@@ -427,8 +423,6 @@ export type FindNearestChunksRequest = Message<"numen.v1.FindNearestChunksReques
   vector: number[];
 
   /**
-   * The most chunks to answer.
-   *
    * @generated from field: int32 limit = 3;
    */
   limit: number;
@@ -859,8 +853,6 @@ export type SearchState = Message<"numen.v1.SearchState"> & {
   scoreKind: string;
 
   /**
-   * The similarity floor the search used.
-   *
    * @generated from field: double floor = 13;
    */
   floor: number;
@@ -1106,8 +1098,7 @@ export const SearchFunctionSchema: GenMessage<SearchFunction> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostsearch, 33);
 
 /**
- * HostSearchErrorCode is why a call on the search index failed. The zero
- * value means it was not.
+ * HostSearchErrorCode is why a search index call failed. Zero means success.
  *
  * @generated from enum numen.v1.HostSearchErrorCode
  */

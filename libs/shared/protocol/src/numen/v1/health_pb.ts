@@ -204,8 +204,6 @@ export const WatchHealthResponseSchema: GenMessage<WatchHealthResponse> = /*@__P
   messageDesc(file_numen_v1_health, 7);
 
 /**
- * HealthSeverity is how bad a health item is.
- *
  * @generated from enum numen.v1.HealthSeverity
  */
 export enum HealthSeverity {

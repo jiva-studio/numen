@@ -46,7 +46,6 @@ type PluginToolServiceClient interface {
 	// ListTools lists the tools the plugin offers. A tool is named by the plugin
 	// alone; a name another plugin or the host already serves is not offered.
 	ListTools(context.Context, *connect.Request[v1.ListToolsRequest]) (*connect.Response[v1.ListToolsResponse], error)
-	// CallTool runs one tool the plugin listed.
 	CallTool(context.Context, *connect.Request[v1.CallToolRequest]) (*connect.Response[v1.CallToolResponse], error)
 }
 
@@ -97,7 +96,6 @@ type PluginToolServiceHandler interface {
 	// ListTools lists the tools the plugin offers. A tool is named by the plugin
 	// alone; a name another plugin or the host already serves is not offered.
 	ListTools(context.Context, *connect.Request[v1.ListToolsRequest]) (*connect.Response[v1.ListToolsResponse], error)
-	// CallTool runs one tool the plugin listed.
 	CallTool(context.Context, *connect.Request[v1.CallToolRequest]) (*connect.Response[v1.CallToolResponse], error)
 }
 
