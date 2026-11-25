@@ -27,6 +27,7 @@ type Config struct {
 	Storage *http.Client
 	Roots   Roots
 	Now     func() time.Time
+	Serials epochtrust.Serials
 }
 
 // Cloud is the sync server at an address.
@@ -46,6 +47,10 @@ type Cloud struct {
 
 // New returns the server of the config.
 func New(cfg Config) *Cloud {
+	restore := syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token, cfg.Roots, cfg.Now)
+	if cfg.Serials != nil {
+		restore.WithSerials(cfg.Serials)
+	}
 	return &Cloud{
 		http:         cfg.HTTP,
 		storage:      cmp.Or(cfg.Storage, cfg.HTTP),
@@ -55,7 +60,7 @@ func New(cfg Config) *Cloud {
 		blobs:        syncclient.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
 		account:      syncclient.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
 		subscription: syncclient.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
-		restore:      syncclient.NewRestoreClient(cfg.Address, cfg.HTTP, cfg.Token, cfg.Roots, cfg.Now),
+		restore:      restore,
 		watch:        syncclient.NewWatchClient(cfg.Address, cfg.Stream, cfg.Token),
 		shares:       syncclient.NewShareClient(cfg.Address, cfg.HTTP, cfg.Token),
 	}

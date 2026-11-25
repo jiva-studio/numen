@@ -4,6 +4,7 @@
 package epochtrust
 
 import (
+	"context"
 	"crypto/ed25519"
 	"encoding/binary"
 	"errors"
@@ -87,6 +88,31 @@ func VerifyCert(roots []ed25519.PublicKey, cert Cert, now time.Time) error {
 func VerifyAnnouncement(cert Cert, epoch *syncv1.RestoreEpoch) error {
 	if err := syncprotocol.CheckRestoreEpoch(cert.EpochKey, epoch); err != nil {
 		return fmt.Errorf("%w: %w", ErrUntrusted, err)
+	}
+	return nil
+}
+
+// Serials keeps the highest certificate serial this client has accepted; it lives as long as the installation.
+type Serials interface {
+	// ReadSerial returns the highest accepted serial, or 0 when none was kept.
+	ReadSerial(ctx context.Context) (uint64, error)
+	WriteSerial(ctx context.Context, serial uint64) error
+}
+
+// CheckSerial refuses a certificate whose serial is lower than the highest kept one, and keeps a higher one.
+func CheckSerial(ctx context.Context, serials Serials, cert Cert) error {
+	highest, err := serials.ReadSerial(ctx)
+	if err != nil {
+		return fmt.Errorf("read the highest certificate serial: %w", err)
+	}
+	if cert.Serial < highest {
+		return fmt.Errorf("%w: the serial %d is lower than %d seen before", ErrUntrusted, cert.Serial, highest)
+	}
+	if cert.Serial == highest {
+		return nil
+	}
+	if err := serials.WriteSerial(ctx, cert.Serial); err != nil {
+		return fmt.Errorf("keep the highest certificate serial: %w", err)
 	}
 	return nil
 }

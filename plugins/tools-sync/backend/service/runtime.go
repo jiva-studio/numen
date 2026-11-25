@@ -116,7 +116,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	cloudSide := cloud.New(cloud.Config{
 		Address: address, HTTP: newHTTPClient(), Token: keep.GetToken, Refresh: keep.Refresh, Stream: newStreamHTTPClient(),
 		Storage: syncclient.NewBlobHTTPClient(address, requestTimeout),
-		Roots:   roots, Now: p.clock.Now,
+		Roots:   roots, Now: p.clock.Now, Serials: cloud.NewSerials(p.state, address),
 	})
 	deps := syncvault.Deps{
 		Catalog: cloudSide, Chain: cloudSide, Revisions: cloudSide, Blobs: cloudSide, Crypto: p.identity, Identity: p.identity,

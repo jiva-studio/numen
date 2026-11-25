@@ -16,10 +16,14 @@ import (
 
 // RestoreClient calls the restore service of one server with the bearer of the session.
 type RestoreClient struct {
-	rpc   syncv1connect.RestoreServiceClient
-	roots []ed25519.PublicKey
-	now   func() time.Time
+	rpc     syncv1connect.RestoreServiceClient
+	roots   []ed25519.PublicKey
+	now     func() time.Time
+	serials epochtrust.Serials
 }
+
+// WithSerials makes the client refuse a certificate with a lower serial than the highest one the log holds, and keep a higher one.
+func (c *RestoreClient) WithSerials(serials epochtrust.Serials) { c.serials = serials }
 
 // NewRestoreClient returns the client of the server at address. token returns the session token and is read
 // again for each call. roots are the keys that may sign the certificate of the epoch key; now is the clock the
@@ -42,6 +46,11 @@ func (c *RestoreClient) GetRestoreEpoch(ctx context.Context) (*syncv1.RestoreEpo
 	}
 	if err := epochtrust.VerifyCert(c.roots, cert, c.now()); err != nil {
 		return nil, nil, err
+	}
+	if c.serials != nil {
+		if err := epochtrust.CheckSerial(ctx, c.serials, cert); err != nil {
+			return nil, nil, err
+		}
 	}
 	epoch := response.Msg.GetEpoch()
 	if epoch == nil {
