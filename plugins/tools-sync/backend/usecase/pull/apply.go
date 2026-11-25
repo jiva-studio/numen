@@ -45,6 +45,7 @@ type run struct {
 	removalSeq uint64
 	isListing  bool
 	rolledBack []string
+	jumped     []string
 	failures   []error
 	unsaved    []string
 	retries    *Retries
@@ -87,6 +88,9 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 	record, isKnown := r.getRecord(rev.GetFileId())
 	if isKnown && bytes.Equal(record.HeadRev, stored.GetRevId()) {
 		return nil
+	}
+	if isJump(rev, r.link.GetFloor(rev.GetFileId()), record, isKnown) {
+		return r.skipJump(stored, meta)
 	}
 	if (isKnown || !rev.GetDeleted()) && r.isRegressed(rev, record, isKnown) {
 		return r.recordRollback(meta, rev)

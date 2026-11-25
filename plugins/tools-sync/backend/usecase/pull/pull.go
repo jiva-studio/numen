@@ -102,10 +102,10 @@ func (u *PullChanges) Execute(ctx context.Context, in ports.PullInput) (restore.
 		keys: keys, link: link, records: records,
 		result:  restore.PullResult{Verdict: restore.Same, EpochID: nil, Applied: nil, Conflicts: nil, Unverified: 0, Resolved: nil},
 		holdSeq: 0, isHeld: false, next: 0,
-		listed: nil, removals: nil, removalSeq: 0, isListing: false, rolledBack: nil, failures: nil, unsaved: nil, retries: u.retries,
+		listed: nil, removals: nil, removalSeq: 0, isListing: false, rolledBack: nil, jumped: nil, failures: nil, unsaved: nil, retries: u.retries,
 	}
 	if err = r.execute(ctx); err == nil && r.result.Verdict == restore.Same {
-		err = r.reportRollbacks(ctx)
+		err = errors.Join(r.reportRollbacks(ctx), r.reportJumps(ctx))
 	}
 	return r.result, err
 }
@@ -193,6 +193,7 @@ func (r *run) save(ctx context.Context) error {
 	return r.deps.State.UpdateLink(ctx, r.in.VaultID, func(fresh *vaultlink.Link) error {
 		fresh.ServerSeq = r.link.ServerSeq
 		fresh.MergeRetired(r.link.Retired)
+		fresh.PruneFloors(r.deps.Clock.Now())
 		return nil
 	})
 }

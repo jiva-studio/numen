@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 )
 
 const (
@@ -121,17 +122,13 @@ type RemovedFile struct {
 	Path    string `json:"path"`
 	HeadRev []byte `json:"headRev"`
 	Version uint64 `json:"version"`
+	At      int64  `json:"at,omitempty"`
 }
 
-const maxRemoved = 1000
-
-// AddRemoved records a removal in place of an older one of the same file and drops the oldest beyond maxRemoved.
+// AddRemoved records a removal in place of an older one of the same file.
 func (l *Link) AddRemoved(one RemovedFile) {
 	l.Removed = slices.DeleteFunc(l.Removed, func(old RemovedFile) bool { return bytes.Equal(old.FileID, one.FileID) })
 	l.Removed = append(l.Removed, one)
-	if len(l.Removed) > maxRemoved {
-		l.Removed = l.Removed[len(l.Removed)-maxRemoved:]
-	}
 }
 
 // RecoveryProgress is what a recovery of one vault has still to examine: the ids of the files, 16 bytes each.
@@ -257,17 +254,36 @@ func (r *ShareRecord) RecordRevision(fileID, revID []byte, version uint64) {
 type RetiredFile struct {
 	FileID  []byte `json:"fileId"`
 	Version uint64 `json:"version"`
+	At      int64  `json:"at,omitempty"`
 }
 
-const maxRetired = 10000
-
-// AddRetired records the removal of a file in place of an older one and drops the oldest beyond maxRetired.
+// AddRetired records the removal of a file in place of an older one.
 func (l *Link) AddRetired(one RetiredFile) {
 	l.Retired = slices.DeleteFunc(l.Retired, func(old RetiredFile) bool { return bytes.Equal(old.FileID, one.FileID) })
 	l.Retired = append(l.Retired, one)
-	if len(l.Retired) > maxRetired {
-		l.Retired = l.Retired[len(l.Retired)-maxRetired:]
+}
+
+// FloorRetention is how long a device keeps the version at which a file was removed. It is longer than a device stays
+// offline in practice, so an old signed revision of a removed file is refused for as long as one could still come back.
+const FloorRetention = 2 * 365 * 24 * time.Hour
+
+// PruneFloors dates the floors that have no date as of now and drops the ones older than FloorRetention. Nothing else
+// drops a floor.
+func (l *Link) PruneFloors(now time.Time) {
+	stamp := now.Unix()
+	limit := now.Add(-FloorRetention).Unix()
+	for i := range l.Removed {
+		if l.Removed[i].At == 0 {
+			l.Removed[i].At = stamp
+		}
 	}
+	for i := range l.Retired {
+		if l.Retired[i].At == 0 {
+			l.Retired[i].At = stamp
+		}
+	}
+	l.Removed = slices.DeleteFunc(l.Removed, func(one RemovedFile) bool { return one.At < limit })
+	l.Retired = slices.DeleteFunc(l.Retired, func(one RetiredFile) bool { return one.At < limit })
 }
 
 // GetFloor returns the highest signed version at which this device saw the file removed, or 0 for a file it never saw
