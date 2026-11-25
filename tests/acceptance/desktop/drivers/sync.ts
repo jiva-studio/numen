@@ -13,7 +13,7 @@ import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { expect } from 'playwright/test'
 import { Gate } from './gate.js'
-import { getSeedServerFile, SERVER_FILE } from './identity-seed.js'
+import { writeSeedServerState } from './identity-seed.js'
 import type { IdentityDriver } from './identity.js'
 import { getDeviceFingerprint } from './link.js'
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
@@ -223,16 +223,13 @@ export class SyncDriver {
     await this.setPlugin(this.scenario)
   }
 
-  isRunning(): boolean {
-    return this.running !== undefined
-  }
+  isRunning(): boolean { return this.running !== undefined }
 
-  /** Makes the server know the account of the test identities, as if the person had set it up on it: the server runs again over a state that holds the account. */
+  /** Makes the server know the account of the test identities: it runs again over a state that holds the account. */
   async learnAccount(): Promise<void> {
-    const state = this.stateDir
-    if (state === undefined) throw new Error('no sync server ran: begin with a sync server runs')
+    if (this.stateDir === undefined) throw new Error('no sync server ran: begin with a sync server runs')
     await this.pause()
-    fs.copyFileSync(getSeedServerFile(), path.join(state, SERVER_FILE))
+    writeSeedServerState(this.stateDir)
     await this.resume()
   }
 

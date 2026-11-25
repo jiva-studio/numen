@@ -13,7 +13,7 @@ const FOLDER = path.resolve(here, '../assets/identities')
 const SYNCSERVER = path.resolve(here, '../../../../tools/syncserver')
 const GENERATOR = path.join(SYNCSERVER, 'bin', 'seedidentity')
 const IDENTITY_FILE = 'identity.json'
-export const SERVER_FILE = 'server.json'
+const SERVER_FILE = 'server.json'
 export const OUT_OF_DATE = 'the test identities are out of date: run npm run acceptance:identity'
 
 export type IdentityComputer = 'first' | 'second' | 'third'
@@ -46,7 +46,10 @@ export const getSeedWords = (): readonly string[] => readSeed().words
 
 export const getSeedFingerprint = (): string => readSeed().fingerprint
 
-export const getSeedServerFile = (): string => path.join(FOLDER, SERVER_FILE)
+/** Puts the state of the fake sync server that knows the account into its state folder. */
+export const writeSeedServerState = (stateFolder: string): void => {
+  fs.copyFileSync(path.join(FOLDER, SERVER_FILE), path.join(stateFolder, SERVER_FILE))
+}
 
 /** Puts the keys of a computer where the application reads them at its start: the credentials file and the chain file next to the settings. */
 export const writeSeedKeys = (settingsFolder: string, computer: IdentityComputer): void => {
@@ -68,6 +71,6 @@ export const checkSeedIsCurrent = (): void => {
     execFileSync(GENERATOR, ['-check', '-out', FOLDER], { stdio: 'pipe' })
   } catch (error) {
     const detail = String((error as { stderr?: Buffer }).stderr ?? '').trim()
-    throw new Error(`${OUT_OF_DATE}${detail === '' ? '' : `\n${detail}`}`)
+    throw new Error(`${OUT_OF_DATE}${detail === '' ? '' : `\n${detail}`}`, { cause: error })
   }
 }

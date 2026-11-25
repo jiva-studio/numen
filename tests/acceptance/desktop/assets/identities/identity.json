@@ -1,0 +1,42 @@
+{
+  "purpose": "TEST ONLY: keys of the acceptance scenarios, never used for a real identity. Regenerate with npm run acceptance:identity.",
+  "words": [
+    "earn",
+    "struggle",
+    "team",
+    "desert",
+    "cruise",
+    "morning",
+    "endless",
+    "grow",
+    "aspect",
+    "album",
+    "broom",
+    "total"
+  ],
+  "fingerprint": "0F0E 0A83 3C48 0410 704D E666 A9F2 66B5",
+  "chain": "BNwCAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaVW5AD5+aK47cjb4P4yiCXwknPTQJW+dsP5C04DshKYYTphFPn5orjtyNvg/jKIJfCSc9NAlb52w/kLTgOyEphhOmEUDaCWNIlhBHmYNIDc98eerkZOGu0+b8oq8wk2+AyvlQDinjLHM1EnyWjeGPI8rMz+zZQBzIx5gPus92dBYrWMBcFUuU/toxMH6IWlp4BhzlpyuHO51q+OmNH23qyu0/wZrs+IVXB1I7VSkw0+2ldkT5YTlsouWlf+4q6Iu9WUGT423mTZX+ZyZWH2kSYejkrCN/rQWMh1+H7ttmOBl2XPQuXuqFEHDMurro2r9ficy/RUXgKrYVbpOiwVuOLi88zak4JeaX/dwQsKnKkFvHoPCfdUmZ2gcyIiIvqmKhqphymeDiDIcS1E378dzwjz7uhQA2gEBAgELcyjxjEQXcYLjpnqcwrKoXrTlyfMgDg48QqeA176B3wAAAABpVbk8Pn5orjtyNvg/jKIJfCSc9NAlb52w/kLTgOyEphhOmEWNnDVhMs5nLDWct2jFrDUnu8eJUUzRK0XgsW1ae9TiP+hZIkI6IwEL1VRrVnGqgRMvHnQR5W97wdKV/4JpaMpjDkZpcnN0IGNvbXB1dGVy75EJtv8MfqNH52pENUyHX7/aU3jUr79Zz4oUm2tEHq+l4qmSkhgABxLwNxNub10KTebObjQ/HVUjIuaQnc81AtsBAQICEruqqEZ73jFzK/381y1D9Zt8enWT8V+czayvP0uY3KYAAAAAaVW5eD5+aK47cjb4P4yiCXwknPTQJW+dsP5C04DshKYYTphFyZn6bxnhMXnA8JsPiWbennARqjS5PRvgUSM9clH3xSgWpPKoRRr24pBC+UnZWmhM6FlkndEUufxh9vADmTX8RA9TZWNvbmQgY29tcHV0ZXLYyp7ucwluKjEeVc28kiYGzfeRUsoU6VCRbhU2BPR/GGaRjxn0f3GtI28b1SL0cuCbNPv4c72bOCEnCnhA6O0J2gEBAgMeY2ziLgfo1oB5eLfUuzrTBwx9F9uVjZwonoYAmkuEkgAAAABpVbm0Pn5orjtyNvg/jKIJfCSc9NAlb52w/kLTgOyEphhOmEWDNopHER+4RijWGkzCF/YFPGvwJyyyRGpQB8ydU6IJEuwDHCu/inLouYEZebCB2q5GxXCV/zd8B+2j3X+NULMpDlRoaXJkIGNvbXB1dGVyLzvDjZNLCwy22p1QXpZ/OA7LQdHTkus7Xx/IVnYrxDhQkM+7owRrahqQnE/iDWb2HCzNpAo+nbVNHcnnFdxJCw==",
+  "computers": {
+    "first": {
+      "deviceFingerprint": "CD24 19FD 1808 611D 3B2A CB54 B782 2EED",
+      "credentials": {
+        "chain-length-0F0E 0A83 3C48 0410 704D E666 A9F2 66B5": "4",
+        "identity": "Ah7_jzkZxjFu9pqxN48SxigtruvUmFz9CARXMMvq28FecMSFUZgH8vL1nESWFAlQcfGAlcLVnZc-rXWNMueff4pPJIO4m8nS7Z_PhtMIUvq4oBFFNGA4FjXUlVU3rT5XXRu1L5Be5ESZV_gXxBUL-w5hSqw0CQsNET_bIXzh0f9eMGIscrnB_Cz9kKGGepakil8"
+      }
+    },
+    "second": {
+      "deviceFingerprint": "4E1D 36B8 53B3 8A98 4558 BF89 CA6F A1FC",
+      "credentials": {
+        "chain-length-0F0E 0A83 3C48 0410 704D E666 A9F2 66B5": "4",
+        "identity": "AmpTe6d7svHJ5pQhutKFVUR6dMFvypu_hZGFpUnwUqHVcHu5P223DpG_XoergH-eoguD0laU-hWb-69gYZLWRMxhsL4jSEXXJnDz7FCmkXSsuOkmRvipBGlujM0K4xwAK9YWhIzdyJveus9cbWLDJQ5VaJRDCJDYyLqc3_LO-45RsEDDijdtBibtolisc_3uB5o"
+      }
+    },
+    "third": {
+      "deviceFingerprint": "1298 B271 497D 4FA4 B0F4 5167 0B7D 9C24",
+      "credentials": {
+        "chain-length-0F0E 0A83 3C48 0410 704D E666 A9F2 66B5": "4",
+        "identity": "AgdQNeiqXp7X5pmaPeRFcqddFPiUdJJzkf5CEYaNvLN0cGbVbT-CtjlFi-1Cy9e75aCUW1egE6i-PGoY1K4_ZyRlEcCgqeFQuBIyQgHQT7p1grSuLPbDrHk7ZFl7V0H4wc-cCKbafPbFtCUP6JSvpPSgraGIJXxp4ItQ5eYMTc7JUPwewUYh3Smnd2ASD4kl1S0"
+      }
+    }
+  }
+}
