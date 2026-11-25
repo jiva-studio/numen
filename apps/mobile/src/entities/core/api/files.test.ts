@@ -50,84 +50,79 @@ describe('listing the files of a folder', () => {
   })
 })
 
-interface SyncCall {
+interface FileCall {
   readonly url: string
   readonly authorization: string | null
-  readonly vault: string | null
   readonly body: unknown
 }
 
-function answerSync(status: number, answer: object) {
-  const calls: SyncCall[] = []
+function answerFileService(status: number, answer: object) {
+  const calls: FileCall[] = []
   vi.stubGlobal('fetch', async (input: unknown, init?: RequestInit) => {
-    const url = String(input)
-    if (url.includes('VaultService')) {
-      return new Response(JSON.stringify({ id: 'v-test' }), {
-        headers: { 'content-type': 'application/json' },
-      })
-    }
-    const headers = new Headers(init?.headers)
+    const request = input instanceof Request ? input : new Request(String(input), init)
     calls.push({
-      url,
-      authorization: headers.get('Authorization'),
-      vault: headers.get('Numen-Vault'),
-      body: JSON.parse(String(init?.body)),
+      url: request.url,
+      authorization: request.headers.get('Authorization'),
+      body: await request.json(),
     })
-    return new Response(JSON.stringify(answer), { status })
+    return new Response(JSON.stringify(answer), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    })
   })
-  const transport = createBearerTransport('http://127.0.0.1:1', 't0ken')
-  return { api: createFileApi(transport, { baseUrl: 'http://127.0.0.1:1', token: 't0ken' }), calls }
+  return { api: createFileApi(createBearerTransport('http://127.0.0.1:1', 't0ken')), calls }
 }
 
 describe('downloading a file and removing its download', () => {
-  it('asks the sync plugin to download the file of the vault', async () => {
-    const { api, calls } = answerSync(200, {})
+  it('asks the core to download the file', async () => {
+    const { api, calls } = answerFileService(200, {})
 
     const answer = await api.fetchFile('Books/Guide.pdf')
 
     expect(answer).toStrictEqual({ ok: true, value: null })
     expect(calls).toStrictEqual([
       {
-        url: 'http://127.0.0.1:1/md.numen.tools.sync/FetchFile',
+        url: 'http://127.0.0.1:1/numen.v1.FileService/FetchFile',
         authorization: 'Bearer t0ken',
-        vault: 'v-test',
-        body: { vaultId: 'v-test', path: 'Books/Guide.pdf' },
+        body: { path: 'Books/Guide.pdf' },
       },
     ])
   })
 
-  it('asks the sync plugin to remove the download of the file', async () => {
-    const { api, calls } = answerSync(200, {})
+  it('asks the core to remove the download of the file', async () => {
+    const { api, calls } = answerFileService(200, {})
 
     const answer = await api.dropDownload('Books/Guide.pdf')
 
     expect(answer).toStrictEqual({ ok: true, value: null })
     expect(calls.map((call) => call.url)).toStrictEqual([
-      'http://127.0.0.1:1/md.numen.tools.sync/DropDownload',
+      'http://127.0.0.1:1/numen.v1.FileService/DropDownload',
     ])
+    expect(calls[0]?.body).toStrictEqual({ path: 'Books/Guide.pdf' })
   })
 
-  it('returns the message of the plugin when it refuses', async () => {
-    const { api } = answerSync(412, { message: 'The file has changes that are not sent' })
+  it('returns the message of the core when it refuses', async () => {
+    const { api } = answerFileService(400, {
+      code: 'failed_precondition',
+      message: 'The file has changes that are not sent',
+    })
 
     const answer = await api.dropDownload('Books/Guide.pdf')
 
     expect(answer).toStrictEqual({ ok: false, error: 'The file has changes that are not sent' })
   })
 
-  it('names the status when the plugin gives no message', async () => {
-    const { api } = answerSync(503, {})
+  it('returns the message of the core when no plugin can fill the file', async () => {
+    const { api } = answerFileService(400, {
+      code: 'failed_precondition',
+      message: 'the plugin for files.provider is not installed',
+    })
 
     const answer = await api.fetchFile('Books/Guide.pdf')
 
-    expect(answer).toStrictEqual({ ok: false, error: 'The core answered 503' })
-  })
-
-  it('says the sync is not on the phone when no endpoint is given', async () => {
-    const api = createFileApi(createBearerTransport('http://127.0.0.1:1', 't0ken'))
-
-    const answer = await api.fetchFile('Books/Guide.pdf')
-
-    expect(answer).toStrictEqual({ ok: false, error: 'The sync is not on this phone' })
+    expect(answer).toStrictEqual({
+      ok: false,
+      error: 'the plugin for files.provider is not installed',
+    })
   })
 })
