@@ -1,6 +1,7 @@
 package fakeserver_test
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -152,5 +153,39 @@ func TestExportAccount_ListsTheChainAndTheVaultsOfTheAccountOnly(t *testing.T) {
 	}
 	if len(exported.Vaults) != 1 {
 		t.Errorf("the document lists %d vaults, want the 1 vault of the account", len(exported.Vaults))
+	}
+}
+
+func TestDeleteAccount_IsNotRestoredByASignInOfARevokedDevice(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	revoked := e.account.addDevice(t, "Second")
+	staleChain := e.account.chain
+	signIn(t, e.address, e.device, staleChain)
+	chain, keys, err := staleChain.RevokeDevice(e.account.root, e.account.keys, revoked.Public().Sign, rand.Reader, machineClock{}.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.account.chain, e.account.keys = chain, keys
+	signIn(t, e.address, e.device, chain)
+	if _, err := e.deleteAccount(e.signDelete); err != nil {
+		t.Fatal(err)
+	}
+	client := syncclient.NewSignInClient(e.address, http.DefaultClient, machineClock{}.Now)
+	challenge, err := client.GetChallenge(t.Context(), revoked.Public().Sign)
+	if err != nil {
+		t.Fatal(err)
+	}
+	signature := revoked.SignForPlugin(syncprotocol.SignInPluginID, challenge.Message)
+
+	_, err = client.SignIn(t.Context(), syncclient.Proof{
+		ChallengeID: challenge.ID, DeviceSignKey: revoked.Public().Sign, Signature: signature[:], Chain: staleChain.Bytes(), RestoreAccount: true,
+	})
+
+	if err == nil {
+		t.Fatal("a revoked device signed in")
+	}
+	if _, isDeleting := errors.AsType[syncprotocol.AccountDeletingError](e.signInAgain(false)); !isDeleting {
+		t.Error("a sign-in of a revoked device cancelled the deletion of the account")
 	}
 }

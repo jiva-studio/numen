@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"strings"
 	"sync"
 	"time"
 
@@ -87,10 +88,8 @@ func (u *Uploader) PutPart(ctx context.Context, up transfer.Upload, number int, 
 
 func (u *Uploader) getPartURL(ctx context.Context, up transfer.Upload, number int) (string, error) {
 	key := fmt.Sprintf("%x/%d", up.Blob, number)
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	if found, ok := u.urls[key]; ok && found.GetExpiresAt()-u.now().Unix() > int64(partURLMargin/time.Second) {
-		return found.GetUrl(), nil
+	if found, ok := u.getFreshURL(key); ok {
+		return found, nil
 	}
 	last := min(up.PartCount, number+partURLBatch-1)
 	if number < 1 || last >= math.MaxUint32 {
@@ -106,6 +105,8 @@ func (u *Uploader) getPartURL(ctx context.Context, up transfer.Upload, number in
 	if err != nil {
 		return "", err
 	}
+	u.mu.Lock()
+	defer u.mu.Unlock()
 	for _, part := range uploads {
 		u.urls[fmt.Sprintf("%x/%d", up.Blob, part.GetPartNumber())] = part
 	}
@@ -116,11 +117,33 @@ func (u *Uploader) getPartURL(ctx context.Context, up transfer.Upload, number in
 	return found.GetUrl(), nil
 }
 
+func (u *Uploader) getFreshURL(key string) (string, bool) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	found, ok := u.urls[key]
+	if !ok || found.GetExpiresAt()-u.now().Unix() <= int64(partURLMargin/time.Second) {
+		return "", false
+	}
+	return found.GetUrl(), true
+}
+
+func (u *Uploader) evictURLs(blob []byte) {
+	prefix := fmt.Sprintf("%x/", blob)
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	for key := range u.urls {
+		if strings.HasPrefix(key, prefix) {
+			delete(u.urls, key)
+		}
+	}
+}
+
 // Finish joins the parts into the blob. A body sent in one request needs nothing.
 func (u *Uploader) Finish(ctx context.Context, up transfer.Upload) error {
 	if up.URL != "" {
 		return nil
 	}
+	defer u.evictURLs(up.Blob)
 	_, err := call(ctx, u.cloud, func() (struct{}, error) {
 		return struct{}{}, u.cloud.blobs.CompleteMultipartBlob(ctx, up.Vault, up.Blob)
 	})
@@ -132,6 +155,7 @@ func (u *Uploader) Abort(ctx context.Context, up transfer.Upload) error {
 	if up.URL != "" {
 		return nil
 	}
+	defer u.evictURLs(up.Blob)
 	_, err := call(ctx, u.cloud, func() (struct{}, error) {
 		return struct{}{}, u.cloud.blobs.AbortMultipartBlob(ctx, up.Vault, up.Blob)
 	})

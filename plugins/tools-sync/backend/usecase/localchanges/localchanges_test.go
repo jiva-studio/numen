@@ -244,20 +244,30 @@ func TestScanLocalChanges_KeepsItsPositionInFeedJSON(t *testing.T) {
 
 type brokenStatHost struct {
 	ports.Host
-	path string
+	path   string
+	err    error
+	onStat func()
 }
 
 func (h brokenStatHost) GetFiles(id domain.VaultID) ports.Files {
-	return brokenStatFiles{Files: h.Host.GetFiles(id), path: h.path}
+	return brokenStatFiles{Files: h.Host.GetFiles(id), path: h.path, err: h.err, onStat: h.onStat}
 }
 
 type brokenStatFiles struct {
 	ports.Files
-	path string
+	path   string
+	err    error
+	onStat func()
 }
 
 func (f brokenStatFiles) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
 	if path == f.path {
+		if f.onStat != nil {
+			f.onStat()
+		}
+		if f.err != nil {
+			return domain.FileStat{}, f.err
+		}
 		return domain.FileStat{}, errors.New("permission denied")
 	}
 	return f.Files.StatFile(ctx, path)
@@ -303,5 +313,20 @@ func TestScanLocalChanges_ListsANoteAgainWhenTheSightingsCouldNotBeStored(t *tes
 
 	if paths := getPaths(changes); !slices.Equal(paths, []string{"Shopping list.md"}) {
 		t.Errorf("paths = %v, want the note again", paths)
+	}
+}
+
+func TestScanLocalChanges_ReturnsTheErrorOfTheContextWhenItEndsWhileTheNotesAreRead(t *testing.T) {
+	c := newComputer(t)
+	c.WriteNote(vault, "Locked.md", "secret")
+	c.WriteNote(vault, "Shopping list.md", "milk")
+	ctx, cancel := context.WithCancel(t.Context())
+	deps := c.LocalChangesDeps()
+	deps.Host = brokenStatHost{Host: c.Host, path: "Locked.md", err: context.Canceled, onStat: cancel}
+
+	_, err := localchanges.NewScanLocalChanges(deps).Execute(ctx, transfer.ScanInput{VaultID: vault})
+
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("error = %v, want context.Canceled", err)
 	}
 }

@@ -271,9 +271,6 @@ func (s *Server) openSession(req *syncv1.SignInRequest) (Session, error) {
 	if !ok {
 		return Session{}, newFailedSignIn()
 	}
-	if err := s.applyDeletion(chain.Root().Fingerprint().String(), req.GetRestoreAccount()); err != nil {
-		return Session{}, err
-	}
 	head, ok := s.mergeChain(chain)
 	if !ok {
 		return Session{}, newFailedSignIn()
@@ -283,6 +280,12 @@ func (s *Server) openSession(req *syncv1.SignInRequest) (Session, error) {
 		if head.IsKnownDevice(key) {
 			return Session{}, newDeviceRevoked(head)
 		}
+		return Session{}, newFailedSignIn()
+	}
+	if err := s.applyDeletion(head.Root().Fingerprint().String(), req.GetRestoreAccount()); err != nil {
+		return Session{}, err
+	}
+	if head, ok = s.mergeChain(chain); !ok {
 		return Session{}, newFailedSignIn()
 	}
 	session, ok := s.addSession(key, head.Root().Fingerprint().String())
