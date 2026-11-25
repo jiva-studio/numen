@@ -28,8 +28,9 @@ func readWindowError(code v1.ErrorCode) error {
 		return ErrNoWindow
 	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
 		return ErrNotExist
+	default:
+		return fmt.Errorf("host: rejected with code %s", code)
 	}
-	return fmt.Errorf("host: rejected with code %s", code)
 }
 
 func (c *Client) FocusNote(ctx context.Context, path string) (FocusedNote, error) {

@@ -65,6 +65,7 @@ func (c Commands) RunCommand(
 	case v1.ErrorCode_ERROR_CODE_UNAVAILABLE:
 		return plugin.CommandResult{}, &plugin.UnavailableError{PluginID: call.PluginID, Reason: plugin.Failed, Err: errors.New(message)}
 	case v1.ErrorCode_ERROR_CODE_INTERNAL:
+	default:
 	}
 	return plugin.CommandResult{}, &plugin.CommandFailedError{Message: message}
 }

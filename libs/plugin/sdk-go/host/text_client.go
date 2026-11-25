@@ -71,8 +71,9 @@ func failText(code v1.ErrorCode) error {
 		return ErrInvalidVersion
 	case v1.ErrorCode_ERROR_CODE_NOT_OWNER:
 		return ErrNotOwner
+	default:
+		return fmt.Errorf("host: rejected with code %s", code)
 	}
-	return fmt.Errorf("host: rejected with code %s", code)
 }
 
 func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error) {

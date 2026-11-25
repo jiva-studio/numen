@@ -70,8 +70,9 @@ func readStoreError(code v1.ErrorCode) error {
 		return ErrOutside
 	case v1.ErrorCode_ERROR_CODE_LOCKED:
 		return ErrLockedByAnother
+	default:
+		return fmt.Errorf("host: rejected with code %s", code)
 	}
-	return fmt.Errorf("host: rejected with code %s", code)
 }
 
 func (c *StoreClient) Read(ctx context.Context, name string) ([]byte, error) {

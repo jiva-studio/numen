@@ -46,6 +46,7 @@ func ConvertEventRefusal(code v1.ErrorCode, reason string) error {
 		return nil
 	case v1.ErrorCode_ERROR_CODE_INTERNAL:
 		return fmt.Errorf("%w: %s", ErrEventRefused, reason)
+	default:
+		return fmt.Errorf("%w with unknown code %d: %s", ErrEventRefused, code, reason)
 	}
-	return fmt.Errorf("%w with unknown code %d: %s", ErrEventRefused, code, reason)
 }
