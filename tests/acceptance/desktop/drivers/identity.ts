@@ -40,7 +40,13 @@ export class IdentityDriver {
     private readonly settings: SettingsDriver,
   ) {}
 
+  /** Shows the page; a dialog that is open is closed first, as a person leaves it. */
   private async showPage(): Promise<Locator> {
+    const dialog = this.scenario.page.getByRole('dialog')
+    if ((await dialog.count()) > 0) {
+      await this.scenario.page.keyboard.press('Escape')
+      await expect(dialog).toHaveCount(0)
+    }
     return this.settings.showPage(PAGE)
   }
 
