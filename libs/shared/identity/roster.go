@@ -81,6 +81,9 @@ func (r *roster) verifyAdd(entry Entry, i int) error {
 	if len(entry.AddDevice.Device.Sign) != ed25519.PublicKeySize {
 		return fmt.Errorf("%w: entry %d has a device signing key of %d bytes", ErrMalformed, i, len(entry.AddDevice.Device.Sign))
 	}
+	if err := checkBoxPublicKey(entry.AddDevice.Device.Box); err != nil {
+		return fmt.Errorf("entry %d: %w", i, err)
+	}
 	added := entry.AddDevice.Device.Sign
 	if _, ok := r.known[string(added)]; ok || bytes.Equal(added, r.root) {
 		return fmt.Errorf("%w: entry %d", ErrDuplicateDevice, i)

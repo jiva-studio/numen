@@ -4,6 +4,7 @@ import (
 	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/hpke"
+	"crypto/rand"
 	"fmt"
 	"io"
 )
@@ -196,4 +197,19 @@ func unwrapAccountKeys(boxKey [32]byte, w WrappedAccountKeys) (AccountKeys, erro
 	}
 	keys.boxPublic = public
 	return keys, nil
+}
+
+func checkBoxPublicKey(key [32]byte) error {
+	public, err := ecdh.X25519().NewPublicKey(key[:])
+	if err != nil {
+		return fmt.Errorf("%w: box key: %w", ErrMalformed, err)
+	}
+	probe, err := ecdh.X25519().GenerateKey(rand.Reader)
+	if err != nil {
+		return fmt.Errorf("identity: probe key: %w", err)
+	}
+	if _, err := probe.ECDH(public); err != nil {
+		return fmt.Errorf("%w: box key is of low order: %w", ErrMalformed, err)
+	}
+	return nil
 }

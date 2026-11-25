@@ -372,3 +372,15 @@ func TestChain_KeepsItsKeysWhenACallerChangesTheSlicesItGaveOrTook(t *testing.T)
 		t.Fatalf("Verify() after the callers changed their slices = %v", err)
 	}
 }
+
+func TestAppendDevice_RefusesABoxKeyThatCannotTakePartInAKeyAgreement(t *testing.T) {
+	t.Parallel()
+	a := newChain(t)
+	lowOrder := [32]byte{1}
+	for name, box := range map[string][32]byte{"all zero": {}, "the point of order one": lowOrder} {
+		device := identity.DevicePublicKey{Sign: newDevice(t).Public().Sign, Box: box}
+		if _, err := appended(a.chain, a.recovery, device, "Phone", epoch()); !errors.Is(err, identity.ErrMalformed) {
+			t.Errorf("%s: error = %v, want ErrMalformed", name, err)
+		}
+	}
+}

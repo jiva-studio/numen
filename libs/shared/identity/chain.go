@@ -189,6 +189,9 @@ func verifyGenesis(entry Entry) (ed25519.PublicKey, error) {
 	if !hasValidSignature(entry) {
 		return nil, fmt.Errorf("%w: entry 0", ErrBadSignature)
 	}
+	if err := checkBoxPublicKey(entry.Genesis.Recovery.Box); err != nil {
+		return nil, fmt.Errorf("entry 0: %w", err)
+	}
 	return entry.Genesis.Recovery.Sign, nil
 }
 
