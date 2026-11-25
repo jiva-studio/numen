@@ -14,6 +14,14 @@ import { WORDS as words } from '../words'
 
 const MS_PER_MINUTE = 60_000
 const REFRESH_MS = 15_000
+const MAX_SKELETON_ROWS = 5
+
+const knownRowCount = ref(1)
+
+/** Forgets the rows of the last list, as a new session does. */
+export const forgetKnownRows = (): void => {
+  knownRowCount.value = 1
+}
 
 type RowTone = 'ok' | 'warning' | 'alarm'
 
@@ -147,6 +155,7 @@ export function useVaults(options: UseVaultsOptions) {
   const canGetFromCloud = computed(
     () => hasIdentity.value && isReachable.value && cloudVaults.value.length > 0,
   )
+  const skeletonRows = computed(() => knownRowCount.value)
   const warning = computed(() => (hasIdentity.value ? '' : words.noIdentity))
 
   async function readCloud(): Promise<readonly RemoteVault[]> {
@@ -168,6 +177,7 @@ export function useVaults(options: UseVaultsOptions) {
   async function load(): Promise<void> {
     try {
       await read()
+      knownRowCount.value = Math.min(Math.max(rows.value.length, 1), MAX_SKELETON_ROWS)
       error.value = ''
       status.value = 'ready'
     } catch (failure) {
@@ -284,6 +294,7 @@ export function useVaults(options: UseVaultsOptions) {
       isReachable,
       warning,
       rows,
+      skeletonRows,
       freeVaults,
       cloudVaults,
       canGetFromCloud,

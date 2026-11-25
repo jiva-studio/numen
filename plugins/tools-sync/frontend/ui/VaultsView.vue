@@ -33,7 +33,7 @@ const model = useVaults({
   client: props.client,
   now: props.now ?? getCurrentDate,
 })
-const { status, error, warning, rows, pendingStop, pendingDelete } = model.state
+const { status, error, warning, rows, skeletonRows, pendingStop, pendingDelete } = model.state
 const {
   load,
   watch,
@@ -88,7 +88,7 @@ function report(failure: unknown): void {
 <template>
   <IslandCard class="sync-card" :title="words.vaultsTitle" :aria-label="words.vaultsTitle">
     <ul v-if="status === 'loading'" class="sync-card__list" aria-busy="true">
-      <VaultRowSkeleton v-for="index in 2" :key="index" />
+      <VaultRowSkeleton v-for="index in skeletonRows" :key="index" />
     </ul>
     <div v-else-if="status === 'error'" class="sync-card__state">
       <ErrorState :message="error === '' ? words.loadFailed : error">

@@ -1,6 +1,7 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
+import { forgetKnownRows } from '../model/vaults'
 import VaultsView from './VaultsView.vue'
 import { ReportedError } from '@numen/plugin-sdk'
 
@@ -58,6 +59,8 @@ const findButton = (wrapper: VueWrapper, text: string) =>
   wrapper.findAll('button').find((one) => one.text() === text)
 
 describe('VaultsView', () => {
+  beforeEach(forgetKnownRows)
+
   it('reads the vaults again while it stays open and stops when it closes', async () => {
     vi.useFakeTimers()
     try {
@@ -133,14 +136,14 @@ describe('VaultsView', () => {
     expect(line).toContain('1 MB in the cloud')
   })
 
-  it('shows two placeholder rows without text while the vaults load, then the rows', async () => {
+  it('shows one placeholder row without text on the first load, then the rows', async () => {
     const client = createClient({
       vaults: [createVault({ name: 'Synced', state: 'connected' })],
       remote: [],
     })
     const wrapper = mount(VaultsView, { props: { client, now: () => NOW } })
 
-    expect(wrapper.findAll('li')).toHaveLength(2)
+    expect(wrapper.findAll('li')).toHaveLength(1)
     expect(wrapper.get('ul').attributes('aria-busy')).toBe('true')
     expect(wrapper.get('ul').text()).toBe('')
 
@@ -149,6 +152,30 @@ describe('VaultsView', () => {
     expect(wrapper.findAll('li')).toHaveLength(1)
     expect(wrapper.get('ul').attributes('aria-busy')).toBeUndefined()
     expect(wrapper.text()).toContain('Synced')
+  })
+
+  it('shows as many placeholder rows as the last list had, from one to five', async () => {
+    const many = (count: number) =>
+      Array.from({ length: count }, (_, index) =>
+        createVault({ id: `v${index}`, name: `Vault ${index}`, state: 'connected' }),
+      )
+    const first = await render({ vaults: many(3), remote: [] })
+    first.wrapper.unmount()
+
+    const second = mount(VaultsView, {
+      props: { client: createClient({ vaults: many(3), remote: [] }), now: () => NOW },
+    })
+    expect(second.findAll('li')).toHaveLength(3)
+    await flushPromises()
+    expect(second.findAll('li')).toHaveLength(3)
+    second.unmount()
+
+    const big = await render({ vaults: many(8), remote: [] })
+    big.wrapper.unmount()
+    const third = mount(VaultsView, {
+      props: { client: createClient({ vaults: many(8), remote: [] }), now: () => NOW },
+    })
+    expect(third.findAll('li')).toHaveLength(5)
   })
 
   it('offers the removals that wait for an answer', async () => {
