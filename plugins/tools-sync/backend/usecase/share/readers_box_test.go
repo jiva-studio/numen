@@ -30,9 +30,7 @@ func TestAcceptInvitation_AReaderRestoredFromTheWordsOpensTheSealOfItsEarlierBox
 	if err != nil {
 		t.Fatalf("the restored device could not take the share: %v", err)
 	}
-	listed, listErr := restored.ListReceived(t.Context())
-	t.Logf("DEBUG received=%+v err=%v sync=%v", listed, listErr, restored.Sync(t.Context(), received.VaultID))
-	if got, ok := restored.ReadNote(received.VaultID, "Food/Soup.md"); !ok || got != "carrots" {
+	if got, ok := restored.ReadNote(received.VaultID, "Soup.md"); !ok || got != "carrots" {
 		t.Errorf("the note on the restored device = %q (%v), want carrots", got, ok)
 	}
 }
