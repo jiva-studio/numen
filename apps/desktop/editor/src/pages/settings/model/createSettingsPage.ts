@@ -261,14 +261,7 @@ function createInstallationLicenses(licenses: LicenseStore) {
 function createInstallationIdentity(
   identity: Pick<
     IdentityStore,
-    | 'identity'
-    | 'devices'
-    | 'load'
-    | 'generateWords'
-    | 'create'
-    | 'restore'
-    | 'delete'
-    | 'saveKit'
+    'identity' | 'devices' | 'load' | 'generateWords' | 'create' | 'restore' | 'delete' | 'saveKit'
   >,
   keyFile: KeyFileStore,
 ) {
@@ -328,7 +321,10 @@ export function createSettingsPage({
   )
   const retry = createPluginRetry({
     askPluginRetry: api.settings.retryPlugin,
-    words: { formatStopped: PLUGIN_FAILURE_WORDS.stopped, retryFailed: PLUGIN_FAILURE_WORDS.retryFailed },
+    words: {
+      formatStopped: PLUGIN_FAILURE_WORDS.stopped,
+      retryFailed: PLUGIN_FAILURE_WORDS.retryFailed,
+    },
     notify: log.getWriter('plugins'),
     refresh: () => rest.refresh(),
     getName: getPluginName,

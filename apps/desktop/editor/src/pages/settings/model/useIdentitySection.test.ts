@@ -42,7 +42,10 @@ describe('the identity section', () => {
     const host = mount(
       defineComponent({
         setup() {
-          section = useIdentitySection(() => installation, () => undefined)
+          section = useIdentitySection(
+            () => installation,
+            () => undefined,
+          )
           return () => null
         },
       }),
@@ -80,7 +83,10 @@ describe('the identity section restoring from words', () => {
     mount(
       defineComponent({
         setup() {
-          section = useIdentitySection(() => installation, () => undefined)
+          section = useIdentitySection(
+            () => installation,
+            () => undefined,
+          )
           return () => null
         },
       }),

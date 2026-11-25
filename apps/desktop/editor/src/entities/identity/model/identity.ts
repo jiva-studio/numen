@@ -79,7 +79,9 @@ const settle = async <T>(
 }
 
 /** Makes a call once more after the person answered the question that its refusal raised. */
-export type RetryAfterAsking = <T>(call: () => Promise<Result<T, string>>) => Promise<Result<T, string>>
+export type RetryAfterAsking = <T>(
+  call: () => Promise<Result<T, string>>,
+) => Promise<Result<T, string>>
 
 const retryNever: RetryAfterAsking = (call) => call()
 
