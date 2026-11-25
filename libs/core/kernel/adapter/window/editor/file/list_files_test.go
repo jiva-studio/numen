@@ -31,6 +31,7 @@ func newListHandler(open window, readers vaultport.VaultReaders) *filewindow.Han
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
 		filewindow.NewChanges(open, open, nil, nil, nil),
+		nil,
 	)
 }
 

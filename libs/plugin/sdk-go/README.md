@@ -29,6 +29,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | `account`, `account/accounttest` | signing with the key of this device and the public identity, for a plugin with the permission `identity`            |
 | `command`                        | the commands the manifest declares, served as `PluginCommandService`                                                |
 | `tools`, `toolstest`             | the tools a plugin offers an agent, served as `PluginToolService`                                                   |
+| `fileprovider`                   | the files a vault lists as absent, served as `FileProviderService`                                                  |
 | `searchsource`                   | a search source, served as `SearchSourceService`                                                                    |
 | `cache`                          | keyed values in memory and on disk, with expiration, backoff and background refresh                                 |
 | `performance`                    | the performance limits supplied by the host                                                                 |

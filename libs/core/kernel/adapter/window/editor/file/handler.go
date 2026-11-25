@@ -36,11 +36,12 @@ func getShownVault(window Vault) (domain.Vault, error) {
 type Handler struct {
 	*Folders
 	*Changes
+	*Downloads
 }
 
 // NewHandler is the handler of FileService made of its parts.
-func NewHandler(folders *Folders, changes *Changes) *Handler {
-	return &Handler{Folders: folders, Changes: changes}
+func NewHandler(folders *Folders, changes *Changes, downloads *Downloads) *Handler {
+	return &Handler{Folders: folders, Changes: changes, Downloads: downloads}
 }
 
 // Folders lists what the folders of the vault hold and makes folders.

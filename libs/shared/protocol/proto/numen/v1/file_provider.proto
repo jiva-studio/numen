@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// FileProviderService is what a plugin that declares the files.provider capability serves: it fills the
+// files its vaults list as absent and takes the bytes of its downloads off the device again. The core
+// calls it for FileService.FetchFile and FileService.DropDownload, and names no plugin to do so.
+service FileProviderService {
+  // FetchFile downloads the absent file at the path of the vault and fills it. It returns once the file
+  // holds its bytes.
+  rpc FetchFile(FileProviderServiceFetchFileRequest) returns (FileProviderServiceFetchFileResponse);
+
+  // DropDownload removes the download of the file at the path of the vault. A file with changes the
+  // provider has not kept is a failed precondition, and its bytes stay.
+  rpc DropDownload(FileProviderServiceDropDownloadRequest) returns (FileProviderServiceDropDownloadResponse);
+}
+
+message FileProviderServiceFetchFileRequest {
+  string vault_id = 1;
+  string path = 2;
+}
+
+message FileProviderServiceFetchFileResponse {}
+
+message FileProviderServiceDropDownloadRequest {
+  string vault_id = 1;
+  string path = 2;
+}
+
+message FileProviderServiceDropDownloadResponse {}

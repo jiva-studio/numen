@@ -903,6 +903,168 @@ func (x *CreateFolderResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
+type FetchFileRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The absent file to fill, as the vault calls it.
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FetchFileRequest) Reset() {
+	*x = FetchFileRequest{}
+	mi := &file_numen_v1_file_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FetchFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchFileRequest) ProtoMessage() {}
+
+func (x *FetchFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchFileRequest.ProtoReflect.Descriptor instead.
+func (*FetchFileRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *FetchFileRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type FetchFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FetchFileResponse) Reset() {
+	*x = FetchFileResponse{}
+	mi := &file_numen_v1_file_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FetchFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchFileResponse) ProtoMessage() {}
+
+func (x *FetchFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchFileResponse.ProtoReflect.Descriptor instead.
+func (*FetchFileResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_proto_rawDescGZIP(), []int{16}
+}
+
+type DropDownloadRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The downloaded file to take off this device, as the vault calls it.
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DropDownloadRequest) Reset() {
+	*x = DropDownloadRequest{}
+	mi := &file_numen_v1_file_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DropDownloadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DropDownloadRequest) ProtoMessage() {}
+
+func (x *DropDownloadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DropDownloadRequest.ProtoReflect.Descriptor instead.
+func (*DropDownloadRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *DropDownloadRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type DropDownloadResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DropDownloadResponse) Reset() {
+	*x = DropDownloadResponse{}
+	mi := &file_numen_v1_file_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DropDownloadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DropDownloadResponse) ProtoMessage() {}
+
+func (x *DropDownloadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DropDownloadResponse.ProtoReflect.Descriptor instead.
+func (*DropDownloadResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_proto_rawDescGZIP(), []int{18}
+}
+
 var File_numen_v1_file_proto protoreflect.FileDescriptor
 
 const file_numen_v1_file_proto_rawDesc = "" +
@@ -964,7 +1126,13 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x13CreateFolderRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"A\n" +
 	"\x14CreateFolderResponse\x12)\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error2\xc9\x03\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"&\n" +
+	"\x10FetchFileRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x13\n" +
+	"\x11FetchFileResponse\")\n" +
+	"\x13DropDownloadRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x16\n" +
+	"\x14DropDownloadResponse2\xde\x04\n" +
 	"\vFileService\x12D\n" +
 	"\tListFiles\x12\x1a.numen.v1.ListFilesRequest\x1a\x1b.numen.v1.ListFilesResponse\x12P\n" +
 	"\rListFileKinds\x12\x1e.numen.v1.ListFileKindsRequest\x1a\x1f.numen.v1.ListFileKindsResponse\x12A\n" +
@@ -973,7 +1141,9 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"RemoveFile\x12\x1b.numen.v1.RemoveFileRequest\x1a\x1c.numen.v1.RemoveFileResponse\x12G\n" +
 	"\n" +
 	"EmptyTrash\x12\x1b.numen.v1.EmptyTrashRequest\x1a\x1c.numen.v1.EmptyTrashResponse\x12M\n" +
-	"\fCreateFolder\x12\x1d.numen.v1.CreateFolderRequest\x1a\x1e.numen.v1.CreateFolderResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\fCreateFolder\x12\x1d.numen.v1.CreateFolderRequest\x1a\x1e.numen.v1.CreateFolderResponse\x12D\n" +
+	"\tFetchFile\x12\x1a.numen.v1.FetchFileRequest\x1a\x1b.numen.v1.FetchFileResponse\x12M\n" +
+	"\fDropDownload\x12\x1d.numen.v1.DropDownloadRequest\x1a\x1e.numen.v1.DropDownloadResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_file_proto_rawDescOnce sync.Once
@@ -987,7 +1157,7 @@ func file_numen_v1_file_proto_rawDescGZIP() []byte {
 	return file_numen_v1_file_proto_rawDescData
 }
 
-var file_numen_v1_file_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_numen_v1_file_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_numen_v1_file_proto_goTypes = []any{
 	(*ListFilesRequest)(nil),      // 0: numen.v1.ListFilesRequest
 	(*ListFilesResponse)(nil),     // 1: numen.v1.ListFilesResponse
@@ -1004,31 +1174,39 @@ var file_numen_v1_file_proto_goTypes = []any{
 	(*RemoveFileResponse)(nil),    // 12: numen.v1.RemoveFileResponse
 	(*CreateFolderRequest)(nil),   // 13: numen.v1.CreateFolderRequest
 	(*CreateFolderResponse)(nil),  // 14: numen.v1.CreateFolderResponse
-	(*structpb.Struct)(nil),       // 15: google.protobuf.Struct
-	(ErrorCode)(0),                // 16: numen.v1.ErrorCode
+	(*FetchFileRequest)(nil),      // 15: numen.v1.FetchFileRequest
+	(*FetchFileResponse)(nil),     // 16: numen.v1.FetchFileResponse
+	(*DropDownloadRequest)(nil),   // 17: numen.v1.DropDownloadRequest
+	(*DropDownloadResponse)(nil),  // 18: numen.v1.DropDownloadResponse
+	(*structpb.Struct)(nil),       // 19: google.protobuf.Struct
+	(ErrorCode)(0),                // 20: numen.v1.ErrorCode
 }
 var file_numen_v1_file_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
 	5,  // 1: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
-	15, // 2: numen.v1.FileKind.properties:type_name -> google.protobuf.Struct
+	19, // 2: numen.v1.FileKind.properties:type_name -> google.protobuf.Struct
 	8,  // 3: numen.v1.MoveFileResponse.move_result:type_name -> numen.v1.MoveResult
-	16, // 4: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
-	16, // 5: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
-	16, // 6: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
+	20, // 4: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	20, // 5: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	20, // 6: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
 	0,  // 7: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
 	3,  // 8: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
 	6,  // 9: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
 	9,  // 10: numen.v1.FileService.RemoveFile:input_type -> numen.v1.RemoveFileRequest
 	10, // 11: numen.v1.FileService.EmptyTrash:input_type -> numen.v1.EmptyTrashRequest
 	13, // 12: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
-	1,  // 13: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
-	4,  // 14: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
-	7,  // 15: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
-	12, // 16: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
-	11, // 17: numen.v1.FileService.EmptyTrash:output_type -> numen.v1.EmptyTrashResponse
-	14, // 18: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
-	13, // [13:19] is the sub-list for method output_type
-	7,  // [7:13] is the sub-list for method input_type
+	15, // 13: numen.v1.FileService.FetchFile:input_type -> numen.v1.FetchFileRequest
+	17, // 14: numen.v1.FileService.DropDownload:input_type -> numen.v1.DropDownloadRequest
+	1,  // 15: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
+	4,  // 16: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
+	7,  // 17: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
+	12, // 18: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
+	11, // 19: numen.v1.FileService.EmptyTrash:output_type -> numen.v1.EmptyTrashResponse
+	14, // 20: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
+	16, // 21: numen.v1.FileService.FetchFile:output_type -> numen.v1.FetchFileResponse
+	18, // 22: numen.v1.FileService.DropDownload:output_type -> numen.v1.DropDownloadResponse
+	15, // [15:23] is the sub-list for method output_type
+	7,  // [7:15] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -1047,7 +1225,7 @@ func file_numen_v1_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_file_proto_rawDesc), len(file_numen_v1_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

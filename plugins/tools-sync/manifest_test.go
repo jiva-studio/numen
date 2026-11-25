@@ -21,3 +21,15 @@ func TestManifestTargetsTheEditorAndThePhone(t *testing.T) {
 		}
 	}
 }
+
+func TestManifestDeclaresTheFilesItProvides(t *testing.T) {
+	var manifest struct {
+		Capabilities []string `json:"capabilities"`
+	}
+	if err := json.Unmarshal(toolssync.Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(manifest.Capabilities, "files.provider") {
+		t.Errorf("capabilities = %v, want files.provider among them", manifest.Capabilities)
+	}
+}

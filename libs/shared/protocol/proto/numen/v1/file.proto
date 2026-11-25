@@ -41,6 +41,15 @@ service FileService {
 
   // CreateFolder makes an empty folder. The folders above it are made with it.
   rpc CreateFolder(CreateFolderRequest) returns (CreateFolderResponse);
+
+  // FetchFile brings the bytes of an absent file onto this device, by the plugin that provides files. The
+  // call returns once the file is filled. A file no enabled plugin can fill is a failed call that says why.
+  rpc FetchFile(FetchFileRequest) returns (FetchFileResponse);
+
+  // DropDownload takes the bytes of a downloaded file off this device and lists the file as absent again,
+  // by the plugin that provides files. A file whose changes that plugin has not kept is a failed
+  // precondition that says so, and its bytes stay.
+  rpc DropDownload(DropDownloadRequest) returns (DropDownloadResponse);
 }
 
 message ListFilesRequest {
@@ -197,3 +206,17 @@ message CreateFolderResponse {
   // Set when nothing was made, and why.
   ErrorCode error = 1;
 }
+
+message FetchFileRequest {
+  // The absent file to fill, as the vault calls it.
+  string path = 1;
+}
+
+message FetchFileResponse {}
+
+message DropDownloadRequest {
+  // The downloaded file to take off this device, as the vault calls it.
+  string path = 1;
+}
+
+message DropDownloadResponse {}

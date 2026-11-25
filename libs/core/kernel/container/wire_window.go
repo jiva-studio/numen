@@ -13,8 +13,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/filebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
@@ -129,6 +131,7 @@ type windowPlugins struct {
 	triggers  windowsession.TriggerSource
 	startFeed func(context.Context, domain.Vault) func()
 	kinds     tabKinds
+	files     vaultport.FileProvider
 }
 
 func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex, source sourcebridge.Binding) windowPlugins {
@@ -142,6 +145,7 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 		tasks:  tasks, events: exec.Runtime.pluginEventEmitter, vault: exec.Runtime.pluginBinding,
 		triggers:  getTriggerSource(install, exec, settingsDeps, vaultDeps, db.FrontmatterChanges()),
 		startFeed: getFeedStart(exec, settingsDeps, vaultDeps, db), kinds: newTabKinds(exec, settingsDeps, vaultDeps, db),
+		files: filebridge.NewProvider(exec.Runtime.Activator, exec.Runtime.Resolver),
 	}
 }
 
@@ -199,7 +203,7 @@ func buildWindow(
 	mountVault(window)
 	mountWorkspace(window, db)
 	mountWindowState(window)
-	mountFile(window, vaultDeps, db, plugins.kinds, &notes.Place)
+	mountFile(window, vaultDeps, db, plugins.kinds, &notes.Place, plugins.files)
 	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
 	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open, editor.GetFrameDialog(opening.Frame))
 	window.plugins = windowPluginAccess{

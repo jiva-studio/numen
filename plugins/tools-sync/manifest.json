@@ -45,6 +45,7 @@
     "vault:read",
     "vault:write"
   ],
+  "capabilities": ["files.provider"],
   "services": ["md.numen.tools.sync"],
   "backend": {
     "entrypoint": "bin/tools-sync",

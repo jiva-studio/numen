@@ -19,7 +19,7 @@ import type { JsonObject, Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5IqYBCgVFbnRyeRIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJaXNfZm9sZGVyGAMgASgIEg8KB2lzX25vdGUYBiABKAgSDAoEdHlwZRgFIAEoCRIQCgh0YWJfa2luZBgHIAEoCRIYChBtb2RpZmllZF91bml4X21zGAggASgDEhEKCWlzX2Fic2VudBgJIAEoCBIQCghwcm92aWRlchgKIAEoCSIlChRMaXN0RmlsZUtpbmRzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI6ChVMaXN0RmlsZUtpbmRzUmVzcG9uc2USIQoFa2luZHMYASADKAsyEi5udW1lbi52MS5GaWxlS2luZCJ2CghGaWxlS2luZBIMCgRwYXRoGAEgASgJEg8KB2lzX25vdGUYBSABKAgSDAoEdHlwZRgDIAEoCRIrCgpwcm9wZXJ0aWVzGAYgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIQCgh0YWJfa2luZBgHIAEoCSIrCg9Nb3ZlRmlsZVJlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSKRAQoQTW92ZUZpbGVSZXNwb25zZRIuCgttb3ZlX3Jlc3VsdBgBIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgDIAEoCEIOCgxfbW92ZV9yZXN1bHQiVgoKTW92ZVJlc3VsdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhYKDnJlcGFpcmVkX25vdGVzGAMgAygJEhYKDmRhbmdsaW5nX25vdGVzGAQgAygJIiEKEVJlbW92ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiEwoRRW1wdHlUcmFzaFJlcXVlc3QiKgoSRW1wdHlUcmFzaFJlc3BvbnNlEhQKDGZhaWxlZF9wYXRocxgBIAMoCSJ/ChJSZW1vdmVGaWxlUmVzcG9uc2USEgoKdHJhc2hfcGF0aBgBIAEoCRIWCg5kYW5nbGluZ19ub3RlcxgCIAMoCRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgEIAEoCCIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiOgoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUyyQMKC0ZpbGVTZXJ2aWNlEkQKCUxpc3RGaWxlcxIaLm51bWVuLnYxLkxpc3RGaWxlc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0RmlsZXNSZXNwb25zZRJQCg1MaXN0RmlsZUtpbmRzEh4ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1JlcXVlc3QaHy5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVzcG9uc2USQQoITW92ZUZpbGUSGS5udW1lbi52MS5Nb3ZlRmlsZVJlcXVlc3QaGi5udW1lbi52MS5Nb3ZlRmlsZVJlc3BvbnNlEkcKClJlbW92ZUZpbGUSGy5udW1lbi52MS5SZW1vdmVGaWxlUmVxdWVzdBocLm51bWVuLnYxLlJlbW92ZUZpbGVSZXNwb25zZRJHCgpFbXB0eVRyYXNoEhsubnVtZW4udjEuRW1wdHlUcmFzaFJlcXVlc3QaHC5udW1lbi52MS5FbXB0eVRyYXNoUmVzcG9uc2USTQoMQ3JlYXRlRm9sZGVyEh0ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_google_protobuf_struct, file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5IqYBCgVFbnRyeRIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJaXNfZm9sZGVyGAMgASgIEg8KB2lzX25vdGUYBiABKAgSDAoEdHlwZRgFIAEoCRIQCgh0YWJfa2luZBgHIAEoCRIYChBtb2RpZmllZF91bml4X21zGAggASgDEhEKCWlzX2Fic2VudBgJIAEoCBIQCghwcm92aWRlchgKIAEoCSIlChRMaXN0RmlsZUtpbmRzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI6ChVMaXN0RmlsZUtpbmRzUmVzcG9uc2USIQoFa2luZHMYASADKAsyEi5udW1lbi52MS5GaWxlS2luZCJ2CghGaWxlS2luZBIMCgRwYXRoGAEgASgJEg8KB2lzX25vdGUYBSABKAgSDAoEdHlwZRgDIAEoCRIrCgpwcm9wZXJ0aWVzGAYgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIQCgh0YWJfa2luZBgHIAEoCSIrCg9Nb3ZlRmlsZVJlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSKRAQoQTW92ZUZpbGVSZXNwb25zZRIuCgttb3ZlX3Jlc3VsdBgBIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgDIAEoCEIOCgxfbW92ZV9yZXN1bHQiVgoKTW92ZVJlc3VsdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhYKDnJlcGFpcmVkX25vdGVzGAMgAygJEhYKDmRhbmdsaW5nX25vdGVzGAQgAygJIiEKEVJlbW92ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiEwoRRW1wdHlUcmFzaFJlcXVlc3QiKgoSRW1wdHlUcmFzaFJlc3BvbnNlEhQKDGZhaWxlZF9wYXRocxgBIAMoCSJ/ChJSZW1vdmVGaWxlUmVzcG9uc2USEgoKdHJhc2hfcGF0aBgBIAEoCRIWCg5kYW5nbGluZ19ub3RlcxgCIAMoCRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgEIAEoCCIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiOgoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiIAoQRmV0Y2hGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJIhMKEUZldGNoRmlsZVJlc3BvbnNlIiMKE0Ryb3BEb3dubG9hZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSIWChREcm9wRG93bmxvYWRSZXNwb25zZTLeBAoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEkcKCkVtcHR5VHJhc2gSGy5udW1lbi52MS5FbXB0eVRyYXNoUmVxdWVzdBocLm51bWVuLnYxLkVtcHR5VHJhc2hSZXNwb25zZRJNCgxDcmVhdGVGb2xkZXISHS5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVzcG9uc2USRAoJRmV0Y2hGaWxlEhoubnVtZW4udjEuRmV0Y2hGaWxlUmVxdWVzdBobLm51bWVuLnYxLkZldGNoRmlsZVJlc3BvbnNlEk0KDERyb3BEb3dubG9hZBIdLm51bWVuLnYxLkRyb3BEb3dubG9hZFJlcXVlc3QaHi5udW1lbi52MS5Ecm9wRG93bmxvYWRSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_google_protobuf_struct, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
@@ -469,6 +469,70 @@ export const CreateFolderResponseSchema: GenMessage<CreateFolderResponse> = /*@_
   messageDesc(file_numen_v1_file, 14);
 
 /**
+ * @generated from message numen.v1.FetchFileRequest
+ */
+export type FetchFileRequest = Message<"numen.v1.FetchFileRequest"> & {
+  /**
+   * The absent file to fill, as the vault calls it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.FetchFileRequest.
+ * Use `create(FetchFileRequestSchema)` to create a new message.
+ */
+export const FetchFileRequestSchema: GenMessage<FetchFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 15);
+
+/**
+ * @generated from message numen.v1.FetchFileResponse
+ */
+export type FetchFileResponse = Message<"numen.v1.FetchFileResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.FetchFileResponse.
+ * Use `create(FetchFileResponseSchema)` to create a new message.
+ */
+export const FetchFileResponseSchema: GenMessage<FetchFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 16);
+
+/**
+ * @generated from message numen.v1.DropDownloadRequest
+ */
+export type DropDownloadRequest = Message<"numen.v1.DropDownloadRequest"> & {
+  /**
+   * The downloaded file to take off this device, as the vault calls it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.DropDownloadRequest.
+ * Use `create(DropDownloadRequestSchema)` to create a new message.
+ */
+export const DropDownloadRequestSchema: GenMessage<DropDownloadRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 17);
+
+/**
+ * @generated from message numen.v1.DropDownloadResponse
+ */
+export type DropDownloadResponse = Message<"numen.v1.DropDownloadResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.DropDownloadResponse.
+ * Use `create(DropDownloadResponseSchema)` to create a new message.
+ */
+export const DropDownloadResponseSchema: GenMessage<DropDownloadResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 18);
+
+/**
  * FileService answers what the vault holds at a path, and moves it about.
  *
  * @generated from service numen.v1.FileService
@@ -543,6 +607,29 @@ export const FileService: GenService<{
     methodKind: "unary";
     input: typeof CreateFolderRequestSchema;
     output: typeof CreateFolderResponseSchema;
+  },
+  /**
+   * FetchFile brings the bytes of an absent file onto this device, by the plugin that provides files. The
+   * call returns once the file is filled. A file no enabled plugin can fill is a failed call that says why.
+   *
+   * @generated from rpc numen.v1.FileService.FetchFile
+   */
+  fetchFile: {
+    methodKind: "unary";
+    input: typeof FetchFileRequestSchema;
+    output: typeof FetchFileResponseSchema;
+  },
+  /**
+   * DropDownload takes the bytes of a downloaded file off this device and lists the file as absent again,
+   * by the plugin that provides files. A file whose changes that plugin has not kept is a failed
+   * precondition that says so, and its bytes stay.
+   *
+   * @generated from rpc numen.v1.FileService.DropDownload
+   */
+  dropDownload: {
+    methodKind: "unary";
+    input: typeof DropDownloadRequestSchema;
+    output: typeof DropDownloadResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_file, 0);

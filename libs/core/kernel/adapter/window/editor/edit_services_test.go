@@ -47,6 +47,6 @@ func mountFileEdit(t *testing.T, mux *http.ServeMux, installation *editor.Instal
 	t.Helper()
 	state := editor.SessionOf(t, installation)
 	changes := filewindow.NewChanges(state, state.Notices, move, remove, nil)
-	_, handler := numenv1connect.NewFileServiceHandler(filewindow.NewHandler(nil, changes))
+	_, handler := numenv1connect.NewFileServiceHandler(filewindow.NewHandler(nil, changes, nil))
 	mux.Handle(procedure, handler)
 }

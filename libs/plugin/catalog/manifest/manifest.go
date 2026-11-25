@@ -119,6 +119,7 @@ func ListPluginActivationEvents() []string {
 // a plugin by.
 func ListPluginCapabilities() []string {
 	return []string{
+		"files.provider",
 		"search.source",
 		"tools",
 	}

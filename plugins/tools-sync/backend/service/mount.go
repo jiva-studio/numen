@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/fileprovider"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -53,6 +54,7 @@ func (a *App) Mount(s *server.Server) error {
 		vaults:   vaults,
 		state:    hoststore.New(vaults),
 	})
+	fileprovider.Mount(s, newFileProvider(a.runtime))
 	service := s.NewAPI(api.Service)
 	mountMethods(service, a.runtime)
 	if err := service.Err(); err != nil {

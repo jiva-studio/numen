@@ -52,6 +52,11 @@ const (
 	// FileServiceCreateFolderProcedure is the fully-qualified name of the FileService's CreateFolder
 	// RPC.
 	FileServiceCreateFolderProcedure = "/numen.v1.FileService/CreateFolder"
+	// FileServiceFetchFileProcedure is the fully-qualified name of the FileService's FetchFile RPC.
+	FileServiceFetchFileProcedure = "/numen.v1.FileService/FetchFile"
+	// FileServiceDropDownloadProcedure is the fully-qualified name of the FileService's DropDownload
+	// RPC.
+	FileServiceDropDownloadProcedure = "/numen.v1.FileService/DropDownload"
 )
 
 // FileServiceClient is a client for the numen.v1.FileService service.
@@ -78,6 +83,13 @@ type FileServiceClient interface {
 	EmptyTrash(context.Context, *connect.Request[v1.EmptyTrashRequest]) (*connect.Response[v1.EmptyTrashResponse], error)
 	// CreateFolder makes an empty folder. The folders above it are made with it.
 	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
+	// FetchFile brings the bytes of an absent file onto this device, by the plugin that provides files. The
+	// call returns once the file is filled. A file no enabled plugin can fill is a failed call that says why.
+	FetchFile(context.Context, *connect.Request[v1.FetchFileRequest]) (*connect.Response[v1.FetchFileResponse], error)
+	// DropDownload takes the bytes of a downloaded file off this device and lists the file as absent again,
+	// by the plugin that provides files. A file whose changes that plugin has not kept is a failed
+	// precondition that says so, and its bytes stay.
+	DropDownload(context.Context, *connect.Request[v1.DropDownloadRequest]) (*connect.Response[v1.DropDownloadResponse], error)
 }
 
 // NewFileServiceClient constructs a client for the numen.v1.FileService service. By default, it
@@ -127,6 +139,18 @@ func NewFileServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(fileServiceMethods.ByName("CreateFolder")),
 			connect.WithClientOptions(opts...),
 		),
+		fetchFile: connect.NewClient[v1.FetchFileRequest, v1.FetchFileResponse](
+			httpClient,
+			baseURL+FileServiceFetchFileProcedure,
+			connect.WithSchema(fileServiceMethods.ByName("FetchFile")),
+			connect.WithClientOptions(opts...),
+		),
+		dropDownload: connect.NewClient[v1.DropDownloadRequest, v1.DropDownloadResponse](
+			httpClient,
+			baseURL+FileServiceDropDownloadProcedure,
+			connect.WithSchema(fileServiceMethods.ByName("DropDownload")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -138,6 +162,8 @@ type fileServiceClient struct {
 	removeFile    *connect.Client[v1.RemoveFileRequest, v1.RemoveFileResponse]
 	emptyTrash    *connect.Client[v1.EmptyTrashRequest, v1.EmptyTrashResponse]
 	createFolder  *connect.Client[v1.CreateFolderRequest, v1.CreateFolderResponse]
+	fetchFile     *connect.Client[v1.FetchFileRequest, v1.FetchFileResponse]
+	dropDownload  *connect.Client[v1.DropDownloadRequest, v1.DropDownloadResponse]
 }
 
 // ListFiles calls numen.v1.FileService.ListFiles.
@@ -170,6 +196,16 @@ func (c *fileServiceClient) CreateFolder(ctx context.Context, req *connect.Reque
 	return c.createFolder.CallUnary(ctx, req)
 }
 
+// FetchFile calls numen.v1.FileService.FetchFile.
+func (c *fileServiceClient) FetchFile(ctx context.Context, req *connect.Request[v1.FetchFileRequest]) (*connect.Response[v1.FetchFileResponse], error) {
+	return c.fetchFile.CallUnary(ctx, req)
+}
+
+// DropDownload calls numen.v1.FileService.DropDownload.
+func (c *fileServiceClient) DropDownload(ctx context.Context, req *connect.Request[v1.DropDownloadRequest]) (*connect.Response[v1.DropDownloadResponse], error) {
+	return c.dropDownload.CallUnary(ctx, req)
+}
+
 // FileServiceHandler is an implementation of the numen.v1.FileService service.
 type FileServiceHandler interface {
 	// ListFiles is what one folder of the vault holds. A tree asks for a folder
@@ -194,6 +230,13 @@ type FileServiceHandler interface {
 	EmptyTrash(context.Context, *connect.Request[v1.EmptyTrashRequest]) (*connect.Response[v1.EmptyTrashResponse], error)
 	// CreateFolder makes an empty folder. The folders above it are made with it.
 	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
+	// FetchFile brings the bytes of an absent file onto this device, by the plugin that provides files. The
+	// call returns once the file is filled. A file no enabled plugin can fill is a failed call that says why.
+	FetchFile(context.Context, *connect.Request[v1.FetchFileRequest]) (*connect.Response[v1.FetchFileResponse], error)
+	// DropDownload takes the bytes of a downloaded file off this device and lists the file as absent again,
+	// by the plugin that provides files. A file whose changes that plugin has not kept is a failed
+	// precondition that says so, and its bytes stay.
+	DropDownload(context.Context, *connect.Request[v1.DropDownloadRequest]) (*connect.Response[v1.DropDownloadResponse], error)
 }
 
 // NewFileServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -239,6 +282,18 @@ func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(fileServiceMethods.ByName("CreateFolder")),
 		connect.WithHandlerOptions(opts...),
 	)
+	fileServiceFetchFileHandler := connect.NewUnaryHandler(
+		FileServiceFetchFileProcedure,
+		svc.FetchFile,
+		connect.WithSchema(fileServiceMethods.ByName("FetchFile")),
+		connect.WithHandlerOptions(opts...),
+	)
+	fileServiceDropDownloadHandler := connect.NewUnaryHandler(
+		FileServiceDropDownloadProcedure,
+		svc.DropDownload,
+		connect.WithSchema(fileServiceMethods.ByName("DropDownload")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.FileService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FileServiceListFilesProcedure:
@@ -253,6 +308,10 @@ func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption
 			fileServiceEmptyTrashHandler.ServeHTTP(w, r)
 		case FileServiceCreateFolderProcedure:
 			fileServiceCreateFolderHandler.ServeHTTP(w, r)
+		case FileServiceFetchFileProcedure:
+			fileServiceFetchFileHandler.ServeHTTP(w, r)
+		case FileServiceDropDownloadProcedure:
+			fileServiceDropDownloadHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -284,4 +343,12 @@ func (UnimplementedFileServiceHandler) EmptyTrash(context.Context, *connect.Requ
 
 func (UnimplementedFileServiceHandler) CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.CreateFolder is not implemented"))
+}
+
+func (UnimplementedFileServiceHandler) FetchFile(context.Context, *connect.Request[v1.FetchFileRequest]) (*connect.Response[v1.FetchFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.FetchFile is not implemented"))
+}
+
+func (UnimplementedFileServiceHandler) DropDownload(context.Context, *connect.Request[v1.DropDownloadRequest]) (*connect.Response[v1.DropDownloadResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.DropDownload is not implemented"))
 }
