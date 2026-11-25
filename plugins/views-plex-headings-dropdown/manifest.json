@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.headings.dropdown",
   "name": "Plex Headings Dropdown",
-  "version": "2026.11.1",
+  "version": "2026.11.2",
   "protocol": 1,
   "description": "The headings of a note, listed under its node in the plex while the pointer rests on it",
   "capabilities": [],

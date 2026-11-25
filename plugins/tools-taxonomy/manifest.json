@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.taxonomy",
   "name": "Taxonomy",
-  "version": "2026.11.11",
+  "version": "2026.11.12",
   "protocol": 1,
   "description": "Reads and sets the tags of notes in their frontmatter, finds notes by tag in queries and lists the tags for agents",
   "capabilities": ["tools"],
