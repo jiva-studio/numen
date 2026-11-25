@@ -4,6 +4,7 @@
 import type {
   BufferHost,
   ConnectionHost,
+  DialogHost,
   Disposable,
   EditorExtensionHost,
   EditorSettings,
@@ -28,11 +29,7 @@ import { createExternalOpener } from '../externalOpener'
 import { limitCommands } from './guards/commandRun'
 import { requireDeclaredLicense } from './guards/declarations'
 import { checkPermission, type PermissionTarget, type RequirePermission } from './guards/permission'
-import {
-  createMountView,
-  createRegistrations,
-  type Track,
-} from './guards/registrations'
+import { createMountView, createRegistrations, type Track } from './guards/registrations'
 import { guardService } from './guards/guardService'
 import { SERVICE_RULES } from './guards/servicePermissions'
 import { createSubscriptionList, type SubscriptionList } from './guards/subscriptions'
@@ -157,8 +154,9 @@ function trackEditorExtensions(extensions: EditorExtensionHost, add: Track): Edi
 function createUi(
   pluginId: string,
   host: PluginContextHost,
-  check: RequirePermission,
+  tracking: { check: RequirePermission; add: Track },
 ): Omit<PluginUi, 'mountView'> {
+  const { check, add } = tracking
   const { ui, views } = host
   const commands = ui.getCommands()
   return pickDefinedParts<Omit<PluginUi, 'mountView'>>({
@@ -177,16 +175,17 @@ function createUi(
     slots: ui.getSlots(),
     notices: ui.forPlugin.getNotices(pluginId),
     picker: ui.prompts.getPicker(),
-    dialogs: ui.prompts.getDialogs(),
+    dialogs: trackDialogs(ui.prompts.getDialogs(), add),
   })
 }
 
 function createUiService(
   pluginId: string,
   host: PluginContextHost,
-  check: RequirePermission,
+  tracking: { check: RequirePermission; add: Track },
 ): Omit<PluginUi, 'mountView'> {
-  const ui = guardService(createUi(pluginId, host, check), SERVICE_RULES.ui, { check })
+  const { check } = tracking
+  const ui = guardService(createUi(pluginId, host, tracking), SERVICE_RULES.ui, { check })
   return pickDefinedParts<Omit<PluginUi, 'mountView'>>({
     workspace: ui.workspace,
     window: ui.window,
@@ -211,6 +210,18 @@ function trackConnections(
   const onChange = connections?.onChange?.bind(connections)
   if (!connections || !onChange) return connections
   return { ...connections, onChange: (handler) => add(onChange(handler)) }
+}
+
+function trackDialogs(dialogs: DialogHost | undefined, add: Track): DialogHost | undefined {
+  if (!dialogs) return undefined
+  return {
+    ...dialogs,
+    open: (options) => {
+      const handle = dialogs.open(options)
+      const tracked = add({ dispose: () => handle.close() })
+      return { close: () => tracked.dispose() }
+    },
+  }
 }
 
 function trackLogs(logs: LogHost | undefined, add: Track): LogHost | undefined {
@@ -278,7 +289,7 @@ function createHostServices(scope: PartsScope, host: PluginContextHost): HostSer
   return {
     vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
     tabs: guardService(createTabs(host), rules.tabs, { check }),
-    ui: addMountView(createUiService(pluginId, host, check), createMountView(host, scope)),
+    ui: addMountView(createUiService(pluginId, host, { check, add }), createMountView(host, scope)),
     work: guardService(createWork(pluginId, host, add), rules.work, { check }),
     events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
     editor: guardService(trackEditorExtensions(host.views.editorExtensions, add), rules.editor, {
