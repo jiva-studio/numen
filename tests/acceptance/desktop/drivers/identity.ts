@@ -44,7 +44,7 @@ export class IdentityDriver {
     return this.settings.showPage(PAGE)
   }
 
-  /** The dialogs of the page are in the body of the window, not in the panel of the page. */
+  /** The dialogs of the identity are in the body of the window, not in the panel of the page, and block the page while they are open. */
   private getShownWords(): Locator {
     return this.scenario.page.getByRole('list', { name: 'Recovery words' }).getByRole('listitem')
   }
@@ -66,19 +66,16 @@ export class IdentityDriver {
   }
 
   async writeWordsDown(): Promise<void> {
-    await this.showPage()
     await this.scenario.page.getByRole('button', { name: 'I wrote the words down', exact: true }).click()
   }
 
   async expectWordsAsked(count: number): Promise<void> {
-    await this.showPage()
     const { page } = this.scenario
     await expect(page.getByRole('textbox', { name: /^Word \d+$/ })).toHaveCount(count)
     await expect(page.getByRole('list', { name: 'Recovery words' })).toHaveCount(0)
   }
 
   async expectWordCount(count: number): Promise<void> {
-    await this.showPage()
     await expect(this.getShownWords()).toHaveCount(count)
   }
 
@@ -90,7 +87,6 @@ export class IdentityDriver {
   }
 
   private async confirm(mistake?: string): Promise<void> {
-    await this.showPage()
     const { page } = this.scenario
     const fields = page.getByRole('textbox', { name: /^Word \d+$/ })
     await expect(fields).toHaveCount(CONFIRMATIONS)
