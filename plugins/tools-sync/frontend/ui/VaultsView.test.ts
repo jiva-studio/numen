@@ -227,7 +227,7 @@ describe('VaultsView', () => {
     expect(client.listVaults).toHaveBeenCalledTimes(2)
   })
 
-  it('shows a syncing vault with its sizes and a progress bar, and an up-to-date vault with no bar', async () => {
+  it('shows a syncing vault with its sizes and a progress ring, and an up-to-date vault with a check and no ring', async () => {
     const { wrapper } = await render({
       vaults: [
         createVault({
@@ -245,10 +245,24 @@ describe('VaultsView', () => {
 
     const rows = wrapper.findAll('li')
     expect(rows[0]?.text()).toContain('Syncing · 1 MB of 4 MB')
-    const bar = rows[0]?.find('[role="progressbar"]')
-    expect(bar?.attributes('aria-valuenow')).toBe('25')
+    const ring = rows[0]?.find('[role="progressbar"]')
+    expect(ring?.attributes('aria-valuenow')).toBe('25')
+    expect(ring?.find('svg.vault-row__ring').exists()).toBe(true)
+    expect(rows[0]?.find('.vault-row__progress').exists()).toBe(false)
     expect(rows[1]?.text()).toContain('Up to date')
     expect(rows[1]?.find('[role="progressbar"]').exists()).toBe(false)
+    expect(rows[1]?.find('.vault-row__icon svg.lucide-check').exists()).toBe(true)
+  })
+
+  it('marks the ring indeterminate while the size of a syncing vault is unknown', async () => {
+    const { wrapper } = await render({
+      vaults: [createVault({ state: 'connected', syncing: true, syncedBytes: 0, totalBytes: 0 })],
+      remote: [],
+    })
+
+    const ring = wrapper.get('[role="progressbar"]')
+    expect(ring.attributes('aria-busy')).toBe('true')
+    expect(ring.attributes('aria-valuenow')).toBeUndefined()
   })
 
   it('lets a conflict win over syncing', async () => {

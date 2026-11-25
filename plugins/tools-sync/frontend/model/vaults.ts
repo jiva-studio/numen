@@ -33,6 +33,7 @@ export interface VaultRow {
   readonly remoteId: string
   readonly isSynced: boolean
   readonly size: string
+  readonly isTransferring: boolean
   readonly progress: number | null
 }
 
@@ -106,6 +107,7 @@ const getCloudRow = (one: RemoteVault): VaultRow => ({
   remoteId: one.remoteId,
   isSynced: false,
   size: words.sizeInCloud(formatCloudSize(one.sizeBytes)),
+  isTransferring: false,
   progress: null,
 })
 
@@ -121,6 +123,7 @@ export const getRow = (
     remoteId: vault.remoteId,
     isSynced: true,
     size: getSize(cloud, vault.remoteId),
+    isTransferring: false,
     progress: null,
   }
   const paused = getPausedLabel(vault.pausedDeletions)
@@ -141,9 +144,9 @@ export const getRow = (
     const synced = vault.syncedBytes ?? 0
     const total = vault.totalBytes ?? 0
     const size = words.syncProgress(formatCloudSize(synced), formatCloudSize(total))
-    const progress = getProgress(synced, total)
+    const progress = total > 0 ? getProgress(synced, total) : null
     const status = words.statusSyncing
-    return { ...base, status, tone: 'warning', kind: 'syncing', detail: '', canResolve: false, size, progress }
+    return { ...base, status, tone: 'warning', kind: 'syncing', detail: '', canResolve: false, size, isTransferring: true, progress }
   }
   const status = words.statusUpToDate
   return { ...base, status, tone: 'ok', kind: 'ok', detail: synced, canResolve: false }

@@ -117,6 +117,7 @@ function report(failure: unknown): void {
           :kind="row.kind"
           :status="row.status"
           :details="[row.size, row.detail]"
+          :is-transferring="row.isTransferring"
           :progress="row.progress"
         >
           <template #actions>

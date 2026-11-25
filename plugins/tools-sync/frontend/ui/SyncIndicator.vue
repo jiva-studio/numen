@@ -55,6 +55,7 @@ function onClose(): void {
           :kind="row.kind"
           :status="row.status"
           :details="[row.size, row.detail]"
+          :is-transferring="row.isTransferring"
           :progress="row.progress"
         />
       </ul>

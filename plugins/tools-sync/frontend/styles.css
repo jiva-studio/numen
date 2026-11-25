@@ -138,6 +138,60 @@
   block-size: var(--vault-row-glyph);
 }
 
+.vault-row__icon--ring {
+  position: relative;
+}
+
+.vault-row__icon .vault-row__ring {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  fill: none;
+  stroke-width: 2.5;
+  transform: rotate(-90deg);
+}
+
+.vault-row__ring-track {
+  stroke: color-mix(in srgb, var(--vault-row-tint) 22%, transparent);
+}
+
+.vault-row__ring-arc {
+  stroke: var(--vault-row-tint);
+  stroke-linecap: round;
+}
+
+.vault-row__icon--indeterminate .vault-row__ring {
+  animation: vault-row-orbit 1.6s linear infinite;
+}
+
+.vault-row__spin {
+  animation: vault-row-turn 1.6s linear infinite;
+}
+
+@keyframes vault-row-orbit {
+  from {
+    transform: rotate(-90deg);
+  }
+
+  to {
+    transform: rotate(270deg);
+  }
+}
+
+@keyframes vault-row-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vault-row__icon--indeterminate .vault-row__ring,
+  .vault-row__spin {
+    animation: none;
+  }
+}
+
 .vault-row__icon--loading {
   overflow: hidden;
   background-color: transparent;
@@ -513,22 +567,6 @@
   color: var(--numen-ink);
 }
 
-.vault-row__progress {
-  display: block;
-  overflow: hidden;
-  block-size: calc(0.25 * var(--numen-chrome-unit));
-  margin-block-start: calc(0.25 * var(--numen-chrome-unit));
-  border-radius: var(--numen-radius-pill);
-  background-color: var(--numen-rule);
-}
-
-.vault-row__progress-fill {
-  display: block;
-  block-size: 100%;
-  border-radius: var(--numen-radius-pill);
-  background-color: var(--numen-accent);
-}
-
 .sync-indicator {
   position: relative;
   display: inline-flex;
@@ -585,9 +623,4 @@
   margin: 0;
   padding-block: 0.75rem;
   color: var(--numen-hushed);
-}
-
-.sync-indicator__popover .vault-row__progress {
-  block-size: 0.25rem;
-  margin-block-start: 0.25rem;
 }
