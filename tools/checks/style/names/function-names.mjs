@@ -87,12 +87,13 @@ export function getNameFault(name, isGo) {
 }
 
 // A Go type is a thing or a role, so its last word is a noun. A gerund (`Refreshing`) and a participle (`Listed`) name
-// an action or a state. These words end in `ing` or `ed` and are nouns or adjectives. A name that starts with a verb
-// is a command and may end in a participle (`EnsureRegistered`, `SetTaskDone`).
+// an action or a state. These words end in `ing` or `ed` and are nouns or adjectives. A name that starts with a command
+// verb (`EnsureRegistered`, `SetTaskDone`) is a command type and may end in a participle.
 const TYPE_NOUNS = new Set([
   'setting', 'heading', 'binding', 'keybinding', 'encoding', 'padding', 'warning', 'rating', 'recording', 'string',
   'thing', 'ring', 'finding', 'reading', 'reasoning', 'pending', 'spring', 'ceiling', 'king', 'wing', 'bed', 'seed', 'feed', 'speed', 'need', 'embed', 'shed', 'sled',
 ])
+const COMMAND_VERBS = new Set(['ensure', 'set', 'mark', 'make', 'keep', 'leave'])
 const IRREGULAR_PARTICIPLES = new Set(['known', 'shown', 'seen', 'done', 'gone', 'given', 'taken', 'kept', 'chosen', 'hidden', 'written', 'drawn', 'spoken', 'lost', 'left', 'held', 'built', 'sent'])
 
 /** The reason a Go type name breaks the rule, or '' when the last word of the name is a noun. */
@@ -103,7 +104,7 @@ export function getTypeNameFault(name) {
   if (TYPE_NOUNS.has(last)) return ''
   if (last.length > 4 && last.endsWith('ing')) return 'gerund'
   const isParticiple = (last.length > 3 && last.endsWith('ed') && !last.endsWith('eed')) || IRREGULAR_PARTICIPLES.has(last)
-  if (isParticiple) return words.length > 1 && VERBS.has(words[0].toLowerCase()) ? '' : 'participle'
+  if (isParticiple) return words.length > 1 && COMMAND_VERBS.has(words[0].toLowerCase()) ? '' : 'participle'
   return ''
 }
 

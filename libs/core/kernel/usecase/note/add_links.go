@@ -46,8 +46,8 @@ func NewAddLinks(linking linkAdder) AddLinks {
 // addition that cannot be written is rejected on its own and costs the others
 // nothing. When ctx is canceled, the links of every note not yet written get
 // plugin.ErrNotAttempted, and the results are returned with a nil error.
-func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkAddition) ([]plugin.LinkAdded, error) {
-	results := make([]plugin.LinkAdded, len(additions))
+func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkAddition) ([]plugin.LinkResult, error) {
+	results := make([]plugin.LinkResult, len(additions))
 	groups := newLinkGroups()
 	for i, add := range additions {
 		results[i].Err = groups.add(i, add)

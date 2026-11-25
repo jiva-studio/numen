@@ -418,10 +418,12 @@ describe('Go type names of a gerund or a participle', () => {
     assertFlagged('t/c.go', 'package a\n\ntype Listed struct{}\n', 'functionNames: participle')
     assertFlagged('t/d.go', 'package a\n\ntype (\n\tName string\n\tvaultOpened struct{}\n)\n', 'functionNames: participle')
     assertFlagged('t/e.go', 'package a\n\ntype Known = map[string]int\n', 'functionNames: participle')
+    assertFlagged('t/i.go', 'package a\n\ntype LinkAdded struct{}\n', 'functionNames: participle')
+    assertFlagged('t/j.go', 'package a\n\ntype IndexChanged func()\n', 'functionNames: participle')
   })
   it('accepts a noun, a role and a command that ends in a participle', () => {
     assertClean('t/f.go', 'package a\n\ntype Refresher interface{}\n\ntype Setting struct{}\n\ntype Finding struct{}\n')
-    assertClean('t/g.go', 'package a\n\ntype EnsureRegistered struct{}\n\ntype Feed struct{}\n\ntype (\n\tName string\n\tVault struct{}\n)\n')
+    assertClean('t/g.go', 'package a\n\ntype EnsureRegistered struct{}\n\ntype SetTaskDone struct{}\n\ntype Feed struct{}\n\ntype (\n\tName string\n\tVault struct{}\n)\n')
   })
   it('reads Go only', () => {
     assertClean('t/h.ts', 'export type Listing = string\n')

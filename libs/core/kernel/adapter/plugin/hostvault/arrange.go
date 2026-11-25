@@ -97,7 +97,7 @@ func (a Arranger) GetProblems(ctx context.Context, checks []domain.Check) ([]dom
 	}
 	return a.RunChecks(ctx, v, checks...)
 }
-func (a Arranger) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
+func (a Arranger) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkResult, error) {
 	v, err := a.session.open()
 	if err != nil {
 		return nil, err

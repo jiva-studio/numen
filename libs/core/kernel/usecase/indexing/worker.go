@@ -46,16 +46,16 @@ type ReadNotes func(ctx context.Context, during func()) (vaultreading.ScanResult
 // many carry one.
 type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
-// IndexChanged is notified after a pass changed the index of a vault and left nothing pending. A pass that
+// IndexChangeHandler is notified after a pass changed the index of a vault and left nothing pending. A pass that
 // changes nothing notifies nothing.
-type IndexChanged func(ctx context.Context, v domain.Vault)
+type IndexChangeHandler func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.
 type Config struct {
 	Reading      ReadWholeVaultOpener
 	Source       searchsourceport.Source
 	VectorCounts GetVectorCounts
-	IndexChanged IndexChanged
+	IndexChanged IndexChangeHandler
 	Events       Events
 	Quiet        time.Duration
 	CreateTimer  func(time.Duration) <-chan time.Time
@@ -71,7 +71,7 @@ type Worker struct {
 	reading      ReadWholeVaultOpener
 	source       searchsourceport.Source
 	vectorCounts GetVectorCounts
-	indexChanged IndexChanged
+	indexChanged IndexChangeHandler
 	events       Events
 	debounce     time.Duration
 	createTimer  func(time.Duration) <-chan time.Time

@@ -51,7 +51,7 @@ type NoteArranger interface {
 
 // LinkEditor writes the links in the frontmatter of notes.
 type LinkEditor interface {
-	AddLinks(ctx context.Context, additions []host.LinkAddition) ([]host.LinkAdded, error)
+	AddLinks(ctx context.Context, additions []host.LinkAddition) ([]host.LinkResult, error)
 	UpdateLinks(ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat) (domain.FileStat, error)
 	RemoveLinks(ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat) (domain.FileStat, error)
 }

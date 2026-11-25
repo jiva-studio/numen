@@ -103,7 +103,7 @@ func (m *memoryVault) ReadRange(context.Context, string, int, int) (plugin.FileR
 	return plugin.FileRange{}, errors.New("not implemented")
 }
 
-func (m *memoryVault) AddLinks(context.Context, []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
+func (m *memoryVault) AddLinks(context.Context, []plugin.LinkAddition) ([]plugin.LinkResult, error) {
 	return nil, errors.New("not implemented")
 }
 

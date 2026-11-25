@@ -163,7 +163,7 @@ func TestRunPluginCommand_RunsACommandWithItemsOverTheItemPicked(t *testing.T) {
 }
 
 func TestRunPluginCommand_PassesTheItemPickedToACommandWithoutVersionItems(t *testing.T) {
-	plugins := &runRecorded{}
+	plugins := &runRecorder{}
 	handler := newHandler(newUseCases(plugins, plugins, fileTypes{}, nil).withVersions(&versionItems{}))
 
 	res, err := handler.RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{
@@ -178,13 +178,13 @@ func TestRunPluginCommand_PassesTheItemPickedToACommandWithoutVersionItems(t *te
 	}
 }
 
-// runRecorded is conditionalCommands recording the runs that reach the plugins.
-type runRecorded struct {
+// runRecorder is conditionalCommands recording the runs that reach the plugins.
+type runRecorder struct {
 	conditionalCommands
 	ran []plugin.CommandCall
 }
 
-func (p *runRecorded) RunCommand(_ context.Context, call plugin.CommandCall) (plugin.CommandResult, error) {
+func (p *runRecorder) RunCommand(_ context.Context, call plugin.CommandCall) (plugin.CommandResult, error) {
 	p.ran = append(p.ran, call)
 	return plugin.CommandResult{}, nil
 }
