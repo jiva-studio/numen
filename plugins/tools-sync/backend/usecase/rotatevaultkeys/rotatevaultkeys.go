@@ -11,6 +11,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
@@ -249,26 +250,79 @@ func (u *RotateVaultKeys) newEntry(ctx context.Context, entries []*syncv1.Catalo
 	return entry, nil
 }
 
-const roundInterval = 10 * time.Second
+const (
+	roundInterval = 10 * time.Second
+	idleInterval  = time.Minute
+	longestWait   = 5 * time.Minute
+	maxDetail     = 500
+	failedKey     = "rotate-vault-keys-failed"
+	failedText    = "Could not give a vault its new key"
+)
+
+// LoopDeps are what the loop needs besides the use case. IsIdle is optional: while it is true the loop rounds no more
+// often than once a minute.
+type LoopDeps struct {
+	Deps
+
+	Health ports.Health
+	IsIdle func() bool
+}
 
 // Loop gives the vaults the keys of a new epoch as soon as the device holds the account keys of it, and again at each round.
 type Loop struct {
-	rotate *RotateVaultKeys
-	clock  ports.Clock
+	rotate   *RotateVaultKeys
+	clock    ports.Clock
+	health   ports.Health
+	isIdle   func() bool
+	isFailed bool
+	isClean  bool
 }
 
 // NewLoop returns the loop over the dependencies and the clock it waits on.
-func NewLoop(deps Deps, clock ports.Clock) *Loop {
-	return &Loop{rotate: NewRotateVaultKeys(deps), clock: clock}
+func NewLoop(deps LoopDeps, clock ports.Clock) *Loop {
+	return &Loop{rotate: NewRotateVaultKeys(deps.Deps), clock: clock, health: deps.Health, isIdle: deps.IsIdle, isFailed: false, isClean: false}
 }
 
-// Execute runs until ctx ends and returns its error. A failed round is tried again at the next one.
+// Execute runs until ctx ends and returns its error. A failed round is shown to the person and tried again after twice
+// the wait of the round before, up to five minutes. A device with no identity is tried again the same way and shows nothing:
+// the sign-in says so.
 func (u *Loop) Execute(ctx context.Context) error {
+	wait := roundInterval
 	for {
 		_, failure := u.rotate.Execute(ctx)
-		if err := u.clock.Wait(ctx, roundInterval); err != nil {
+		u.report(ctx, failure)
+		if failure == nil {
+			wait = roundInterval
+		}
+		delay := wait
+		if u.isIdle != nil && u.isIdle() {
+			delay = max(delay, idleInterval)
+		}
+		if err := u.clock.Wait(ctx, delay); err != nil {
 			return errors.Join(err, failure)
 		}
+		if failure != nil {
+			wait = min(2*wait, longestWait)
+		}
+	}
+}
+
+func (u *Loop) report(ctx context.Context, failure error) {
+	if failure == nil {
+		if (u.isFailed || !u.isClean) && u.health.Clear(ctx, failedKey) == nil {
+			u.isFailed, u.isClean = false, true
+		}
+		return
+	}
+	if ctx.Err() != nil || errors.Is(failure, session.ErrNoIdentity) || errors.Is(failure, session.ErrUnreachable) {
+		return
+	}
+	detail := failure.Error()
+	if runes := []rune(detail); len(runes) > maxDetail {
+		detail = string(runes[:maxDetail])
+	}
+	if u.health.Report(ctx, health.Item{Key: failedKey, Severity: health.Warning, Text: failedText, Detail: detail}) == nil {
+		u.isFailed = true
 	}
 }
 

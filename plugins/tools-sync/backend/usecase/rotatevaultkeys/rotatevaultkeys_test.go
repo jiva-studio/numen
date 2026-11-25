@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
@@ -195,5 +197,57 @@ func TestExecute_StoresNoKeyOfAnEntryASignerOutsideTheAccountForged(t *testing.T
 	}
 	if after := c.Link(t, vault); !bytes.Equal(after.SealedKey, before.SealedKey) || len(after.LaterKeys) != len(before.LaterKeys) {
 		t.Error("the link stores a key of the forged entry")
+	}
+}
+
+type brokenChain struct{ ports.Chain }
+
+func (brokenChain) GetAccountChain(context.Context) ([]byte, error) {
+	return nil, errors.New("the chain is not served")
+}
+
+func TestLoop_ShowsAFailedRoundAndDoublesTheWaitUntilARoundSucceeds(t *testing.T) {
+	t.Parallel()
+	c := newComputer(t)
+	if err := c.Fake.AdvanceEpoch(); err != nil {
+		t.Fatal(err)
+	}
+	deps := c.RotateDeps()
+	deps.Chain = brokenChain{Chain: deps.Chain}
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	go func() {
+		loop := rotatevaultkeys.NewLoop(rotatevaultkeys.LoopDeps{Deps: deps, Health: c.NewHealth(), IsIdle: nil}, c.Clock)
+		if err := loop.Execute(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
+	}()
+
+	first := c.Clock.AwaitWait(t)
+	c.Clock.Advance(first)
+	second := c.Clock.AwaitWait(t)
+
+	if first != 10*time.Second || second != 20*time.Second {
+		t.Errorf("waits = %v, %v, want 10s and 20s", first, second)
+	}
+	if !c.HasItemKey("rotate-vault-keys-failed") {
+		t.Error("the failed round is not shown")
+	}
+}
+
+func TestLoop_WaitsAMinuteBetweenRoundsWhileTheApplicationIsIdle(t *testing.T) {
+	t.Parallel()
+	c := newComputer(t)
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	go func() {
+		loop := rotatevaultkeys.NewLoop(rotatevaultkeys.LoopDeps{Deps: c.RotateDeps(), Health: c.NewHealth(), IsIdle: func() bool { return true }}, c.Clock)
+		if err := loop.Execute(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
+	}()
+
+	if waited := c.Clock.AwaitWait(t); waited != time.Minute {
+		t.Errorf("waited %v, want 1m", waited)
 	}
 }

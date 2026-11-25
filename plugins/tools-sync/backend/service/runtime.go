@@ -111,8 +111,10 @@ func (r *runtime) configure(values map[string]string) {
 
 func (r *runtime) start(ctx context.Context, address string) (*Backend, map[string]func(context.Context) error) {
 	p := r.parts
+	var life *lifecycle.Lifecycle
+	isIdle := func() bool { return r.isForeground.IsOn() && (life == nil || !life.IsResumed()) }
 	serverSide := serveradapter.New(serveradapter.Config{Address: address, HTTP: newHTTPClient(), Now: p.clock.Now})
-	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.getHealth(), Clock: p.clock, Chains: p.client})
+	keep := session.NewKeep(session.Deps{Identity: p.identity, Server: serverSide, Health: p.getHealth(), Clock: p.clock, Chains: p.client, IsIdle: isIdle})
 	roots, rootsErr := cloud.GetRoots(address, r.epochRoot.Get())
 	r.settings.ReportEpochRoot(ctx, rootsErr)
 	cloudSide := cloud.New(cloud.Config{
@@ -160,7 +162,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		WithDeletions(p.state, syncwire.NewResolveDeletions(wired)).
 		WithDownloads(downloadwire.New(fetching)).
 		WithAccountData(accountdata.Deps{Identity: p.identity, Challenges: serverSide, Account: cloudSide, Deletion: keep})
-	life := lifecycle.NewLifecycle(lifecycle.Deps{
+	life = lifecycle.NewLifecycle(lifecycle.Deps{
 		Pass: pass, Loop: loop, Stream: idleStream{}, Host: p.vaults, State: p.state, Clock: p.clock,
 	})
 	backend.SetLifecycle(life)
@@ -169,12 +171,12 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		"link": linkcourier.NewCourier(linkcourier.Deps{Core: p.client, Relay: syncclient.NewLinkClient(address, newHTTPClient()), Health: p.getHealth(), Clock: p.clock, Server: address}).Execute,
 		"chain": chaincourier.NewLoop(chaincourier.Deps{
 			Identity: p.identity, Core: p.client, Chain: cloudSide, Health: p.getHealth(), Clock: p.clock, Pins: p.state,
-			IsIdle:  func() bool { return r.isForeground.IsOn() && !life.IsResumed() },
+			IsIdle:  isIdle,
 			Endorse: endorse.NewEndorse(endorse.Deps{Identity: p.identity, Host: p.vaults, State: p.state, Revisions: cloudSide}),
 		}, p.clock).Execute,
 		"share-invite": shareinvite.NewCourier(hub).Execute,
 		"lifecycle":    func(ctx context.Context) error { <-ctx.Done(); return errors.Join(ctx.Err(), life.Close()) },
-		"rotate":       rotatevaultkeys.NewLoop(rotateDeps(deps), p.clock).Execute,
+		"rotate":       rotatevaultkeys.NewLoop(rotatevaultkeys.LoopDeps{Deps: rotateDeps(deps), Health: p.getHealth(), IsIdle: isIdle}, p.clock).Execute,
 	}
 	if !r.isForeground.IsOn() {
 		loopsOf["sync"] = loop.Execute

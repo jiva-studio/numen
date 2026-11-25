@@ -35,6 +35,7 @@ type setup struct {
 	sessionTTL time.Duration
 	serverSkew time.Duration
 	leftItem   string
+	isIdle     bool
 }
 
 type kit struct {
@@ -92,6 +93,7 @@ func newKit(t *testing.T, s setup) *kit {
 		Server:   serveradapter.New(serveradapter.Config{Address: address, HTTP: http.DefaultClient, Now: k.clock.Now}),
 		Health:   health.NewClient(healthEndpoint),
 		Clock:    k.clock,
+		IsIdle:   func() bool { return s.isIdle },
 	})
 	ctx, cancel := context.WithCancel(t.Context())
 	k.cancel = cancel
@@ -166,17 +168,25 @@ func TestKeep_WithoutAnIdentityRaisesNoIdentityAndNeverCallsTheServer(t *testing
 	}
 }
 
-func TestKeep_AsksForTheIdentityAgainAfterFiveSecondsAtAFixedInterval(t *testing.T) {
+func TestKeep_AsksForTheIdentityAgainAfterFiveSecondsAndDoublesTheWaitAtEachFailure(t *testing.T) {
 	k := newKit(t, setup{noIdentity: true})
-	k.clock.awaitWait(t)
+	first := k.clock.awaitWait(t)
 
-	k.clock.Advance(5 * time.Second)
+	k.clock.Advance(first)
 	second := k.clock.awaitWait(t)
-	k.clock.Advance(5 * time.Second)
+	k.clock.Advance(second)
 	third := k.clock.awaitWait(t)
 
-	if second != 5*time.Second || third != 5*time.Second {
-		t.Errorf("waits = %v, %v, want 5s each: no backoff", second, third)
+	if first != 5*time.Second || second != 10*time.Second || third != 20*time.Second {
+		t.Errorf("waits = %v, %v, %v, want 5s, 10s and 20s", first, second, third)
+	}
+}
+
+func TestKeep_WaitsAtLeastTwoMinutesAfterAFailureWhileTheApplicationIsIdle(t *testing.T) {
+	k := newKit(t, setup{noIdentity: true, isIdle: true})
+
+	if waited := k.clock.awaitWait(t); waited != 2*time.Minute {
+		t.Errorf("waited %v, want 2m", waited)
 	}
 }
 
@@ -192,7 +202,7 @@ func TestKeep_SignsInOnceTheIdentityIsCreatedAndClearsTheItem(t *testing.T) {
 	eventually(t, "the item to clear", func() bool { _, ok := k.item("no-identity"); return !ok })
 }
 
-func TestKeep_AsksToUpdateWhenTheServerNeedsAnotherProtocolAndTriesAgainEvery30Seconds(t *testing.T) {
+func TestKeep_AsksToUpdateWhenTheServerNeedsAnotherProtocolAndTriesAgainAfter30SecondsWithBackoff(t *testing.T) {
 	k := newKit(t, setup{protocol: syncprotocol.Version + 1})
 
 	first := k.clock.awaitWait(t)
@@ -203,15 +213,15 @@ func TestKeep_AsksToUpdateWhenTheServerNeedsAnotherProtocolAndTriesAgainEvery30S
 	if item.Text != "Update Numen" {
 		t.Errorf("text = %q", item.Text)
 	}
-	if first != 30*time.Second || second != 30*time.Second {
-		t.Errorf("waits = %v, %v, want 30s each", first, second)
+	if first != 30*time.Second || second != time.Minute {
+		t.Errorf("waits = %v, %v, want 30s and 1m", first, second)
 	}
 	if len(k.server.ListSessions()) != 0 || k.identity.SignCount() != 0 {
 		t.Errorf("sessions = %d, signatures = %d, want none: a mismatch is found before anything is signed", len(k.server.ListSessions()), k.identity.SignCount())
 	}
 }
 
-func TestKeep_RaisesServerUnreachableWhenTheServerCannotBeReachedAndTriesAgainEvery30Seconds(t *testing.T) {
+func TestKeep_RaisesServerUnreachableWhenTheServerCannotBeReachedAndTriesAgainAfter30SecondsWithBackoff(t *testing.T) {
 	k := newKit(t, setup{isDown: true})
 
 	first := k.clock.awaitWait(t)
@@ -222,8 +232,8 @@ func TestKeep_RaisesServerUnreachableWhenTheServerCannotBeReachedAndTriesAgainEv
 	if item.Text != "Could not reach the sync server" {
 		t.Errorf("text = %q", item.Text)
 	}
-	if first != 30*time.Second || second != 30*time.Second {
-		t.Errorf("waits = %v, %v, want 30s each: no backoff", first, second)
+	if first != 30*time.Second || second != time.Minute {
+		t.Errorf("waits = %v, %v, want 30s and 1m", first, second)
 	}
 }
 

@@ -16,6 +16,8 @@ const (
 	retryAfterFailure    = 30 * time.Second
 	renewBeforeExpiry    = 60 * time.Second
 	shortestRenewal      = 5 * time.Second
+	longestRetry         = 5 * time.Minute
+	idleRetry            = 2 * time.Minute
 	hostCallTimeout      = 30 * time.Second
 )
 
@@ -56,13 +58,14 @@ type Chains interface {
 	AdoptChain(ctx context.Context, chain []byte) error
 }
 
-// Deps are what Keep signs in with. Chains is optional.
+// Deps are what Keep signs in with. Chains and IsIdle are optional; while IsIdle is true Keep tries again no sooner than every two minutes.
 type Deps struct {
 	Identity Identity
 	Server   Server
 	Health   Health
 	Clock    Clock
 	Chains   Chains
+	IsIdle   func() bool
 }
 
 // concern is an item of health the plugin raises, and how long it waits before it tries again.
@@ -96,13 +99,15 @@ func newSignInFailedConcern() concern {
 }
 
 // Keep signs in with the identity of this device, signs in again before the session ends, and tries
-// again at a fixed interval where it cannot.
+// again where it cannot, waiting twice as long after each failure in a row, up to five minutes.
 type Keep struct {
 	deps Deps
 
 	reportMu sync.Mutex
 	raised   string
 	isClean  bool
+
+	failures int
 
 	mu         sync.Mutex
 	token      string
@@ -112,13 +117,14 @@ type Keep struct {
 
 // NewKeep returns the use case over the dependencies.
 func NewKeep(deps Deps) *Keep {
-	return &Keep{deps: deps, reportMu: sync.Mutex{}, raised: "", isClean: false, mu: sync.Mutex{}, token: "", deleteAt: time.Time{}, isDeleting: false}
+	return &Keep{deps: deps, reportMu: sync.Mutex{}, raised: "", isClean: false, failures: 0, mu: sync.Mutex{}, token: "", deleteAt: time.Time{}, isDeleting: false}
 }
 
 // Execute runs until ctx ends and returns its error.
 func (u *Keep) Execute(ctx context.Context) error {
 	for {
-		wait := u.signIn(ctx)
+		wait, isFailed := u.signIn(ctx)
+		wait = u.backOff(wait, isFailed)
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -128,13 +134,28 @@ func (u *Keep) Execute(ctx context.Context) error {
 	}
 }
 
-func (u *Keep) signIn(ctx context.Context) time.Duration {
+func (u *Keep) signIn(ctx context.Context) (time.Duration, bool) {
 	current, err := u.open(ctx, false)
 	if err != nil {
-		return u.raise(ctx, err)
+		return u.raise(ctx, err), true
 	}
 	u.clearItems(ctx)
-	return max(current.ExpiresAt.Sub(u.deps.Clock.Now())-renewBeforeExpiry, shortestRenewal)
+	return max(current.ExpiresAt.Sub(u.deps.Clock.Now())-renewBeforeExpiry, shortestRenewal), false
+}
+
+func (u *Keep) backOff(wait time.Duration, isFailed bool) time.Duration {
+	if !isFailed {
+		u.failures = 0
+		return wait
+	}
+	for range u.failures {
+		wait = min(2*wait, longestRetry)
+	}
+	u.failures++
+	if u.deps.IsIdle != nil && u.deps.IsIdle() {
+		wait = max(wait, idleRetry)
+	}
+	return wait
 }
 
 // Refresh signs in once more and returns why it could not.
