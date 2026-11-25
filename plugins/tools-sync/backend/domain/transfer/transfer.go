@@ -218,10 +218,13 @@ const (
 	ChoiceKeep Choice = "keep"
 )
 
-// Approval is the answer of the person to a pause, kept until the next pass over the vault takes it.
+// Approval is the answer of the person to a pause, kept until the next pass over the vault takes it. It holds for the
+// files the person was shown and for no others.
 type Approval struct {
 	Direction Direction `json:"direction"`
 	Choice    Choice    `json:"choice"`
+	Files     []Removal `json:"files"`
+	GivenAt   time.Time `json:"givenAt"`
 }
 
 // Upload is one reservation on the server: its blob, the size of its parts and the parts the server holds. URL is

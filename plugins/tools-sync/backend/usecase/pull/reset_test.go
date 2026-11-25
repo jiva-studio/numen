@@ -261,7 +261,7 @@ func TestPullChanges_RemovesNothingWhenAResetOmitsMostOfTheNotes(t *testing.T) {
 			t.Errorf("note %s = %q (there: %v), want it kept: the listing carries no signed removal", path, text, isThere)
 		}
 	}
-	if p.b.HasItemKey(deletions.HealthKey) {
+	if p.b.HasItemKey(deletions.GetHealthKey(target)) {
 		t.Error("paused removals were reported although nothing was queued for removal")
 	}
 }
