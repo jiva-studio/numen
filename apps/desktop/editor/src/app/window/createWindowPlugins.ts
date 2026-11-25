@@ -43,6 +43,7 @@ export interface WindowPluginsDeps {
   readonly windowSettings: WindowBase['windowSettings']
   readonly getTarget: WindowBase['getTarget']
   readonly appCommands: WindowBase['appCommands']
+  readonly picker: WindowBase['picker']
 }
 
 interface BackgroundTaskHost {
@@ -105,7 +106,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { note } = api.vault
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
-  const { notices, picker, dialogs } = createPluginSurfaces(api.window.saveText)
+  const { notices, picker, dialogs } = createPluginSurfaces(api.window.saveText, deps.picker)
   const pluginNotes = createPluginNotes({ read: note.readNote, write: note.writeNote })
   const declarations = createPluginDeclarations({
     api: api.plugins.declaredCommands,
@@ -130,6 +131,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       editing,
       window,
       vaults,
+      cloud: vault.cloud.fresh,
       hostPort,
       frame,
       log,

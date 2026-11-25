@@ -21,7 +21,12 @@ import {
 } from '@/entities/plugin'
 import { createSettingsApi, createThemes } from '@/entities/settings'
 import { createSavedTabsApi, createTabKindPluginFinder } from '@/entities/tab'
-import { createVaultListReader, createVaults, createVaultStateApi } from '@/entities/vault'
+import {
+  createRemoteVaults,
+  createVaultListReader,
+  createVaults,
+  createVaultStateApi,
+} from '@/entities/vault'
 import {
   createFocusApi,
   createQuitApi,
@@ -57,6 +62,7 @@ export function createWindowApi(transports: WindowTransports) {
       relations: createRelations(vaultClients.notes, linkApi.resolveLinks),
       file: createFileApi(vaultClients.files),
       vaults,
+      remoteVaults: createRemoteVaults(vaultClients.remoteVaults),
       vaultState: createVaultStateApi(vaultClients.vault),
       search: createSearchCore(vaultClients.search),
       listVaults: createVaultListReader({ vaults, getShownVault: windowVaultApi.getShownVault }),

@@ -27,6 +27,7 @@ import {
   createPluginHealthRpc,
   createPluginProcessRpc,
   createProviderConnectionRpc,
+  createRemoteVaultRpc,
   createSearchRpc,
   createSettingsRpc,
   createTextRpc,
@@ -59,6 +60,7 @@ export const createVaultClients = (transport: Transport) => {
     search: createSearchRpc(createCallerTransport('search', transport)),
     vaultsService: createVaultsRpc(transport),
     folderDialog: createFolderDialogRpc(transport),
+    remoteVaults: createRemoteVaultRpc(transport),
   }
 }
 

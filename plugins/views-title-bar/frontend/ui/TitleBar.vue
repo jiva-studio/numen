@@ -6,7 +6,7 @@
  * hidden from the end of the bar.
  */
 import { computed, useTemplateRef } from 'vue'
-import { Ellipsis } from '@lucide/vue'
+import { Cloud, Ellipsis } from '@lucide/vue'
 import { SearchableListPopup } from '@numen/ui'
 import { SLOT, type SlotItem } from '@numen/plugin-sdk'
 import { CORNER_INSET, getControls, getControlsRoom } from '../lib/frame'
@@ -211,7 +211,15 @@ function onRunCommand(
       :from="trigger"
       @select="select"
       @close="close"
-    />
+    >
+      <template #leading="{ item }">
+        <Cloud
+          v-if="item.group === TITLE_BAR_WORDS.cloud"
+          class="title-bar__cloud-icon"
+          aria-hidden="true"
+        />
+      </template>
+    </SearchableListPopup>
 
     <WindowControls
       v-if="controls === 'windows'"

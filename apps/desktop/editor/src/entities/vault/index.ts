@@ -6,3 +6,13 @@ export { createVaultStateApi, type VaultStateApi } from './api/state'
 export { createVaultListReader } from './api/vaultList'
 export { useVaults } from './model/useVaults'
 export { isVaultSwapped, readShownVault, useShownVault } from './model/useShownVault'
+export {
+  findCloudRemoteId,
+  formatVaultSize,
+  getCloudRowId,
+  joinFolder,
+  type CloudVault,
+  type VaultPlace,
+} from './lib/cloudVault'
+export { createRemoteVaults, type RemoteVaults } from './api/remoteVaults'
+export { useCloudVaults, type CloudVaults } from './model/useCloudVaults'

@@ -6,7 +6,8 @@
  * words are `words.ts`, and the services
  * available while a command runs are `model/deps.ts`.
  */
-import type { VaultList } from '@/entities/vault'
+import type { Ref } from 'vue'
+import type { CloudVault, VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
 import type { StepGroup } from '@/shared/model/command'
 
@@ -18,6 +19,11 @@ export interface CommandsDeps {
   searchNames(query: string, limit: number, signal?: AbortSignal): Promise<readonly NameMatch[]>
   /** Every vault the installation holds, and which of them this window shows. */
   listVaults(): Promise<VaultList>
+  /** The cloud vaults not on this device, as last known, and the refresh that brings them up to date. */
+  readonly cloudVaults?: {
+    readonly list: Readonly<Ref<readonly CloudVault[]>>
+    refresh(): Promise<void>
+  }
 }
 
 /**

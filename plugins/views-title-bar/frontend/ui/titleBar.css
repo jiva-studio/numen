@@ -148,3 +148,11 @@
 .title-bar__title--trigger:focus-visible {
   box-shadow: inset 0 0 0 var(--focus-ring-width) var(--numen-accent);
 }
+
+/* The mark before the name of a vault that is in the cloud and not on this device. */
+.title-bar__cloud-icon {
+  --size: calc(1.25 * var(--numen-chrome-unit));
+  flex: none;
+  inline-size: var(--size);
+  block-size: var(--size);
+}

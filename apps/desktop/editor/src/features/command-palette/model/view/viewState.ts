@@ -5,7 +5,7 @@
  * under an open step is drawn as it is.
  */
 import type { Ref } from 'vue'
-import type { Vault } from '@/entities/vault'
+import type { CloudVault, Vault } from '@/entities/vault'
 import type { PendingStep } from '../../lib/step/step'
 import type { PaletteLists } from '../../types'
 import type { Command } from '@/entities/command'
@@ -23,6 +23,7 @@ export interface ViewState {
   readonly found: Readonly<Ref<readonly NameMatch[]>>
   readonly known: Readonly<Ref<readonly Vault[]>>
   readonly showing: Readonly<Ref<string>>
+  readonly getCloudVaults?: () => readonly CloudVault[]
   readonly isWorking: Readonly<Ref<boolean>>
   readonly failureMessage: Readonly<Ref<string>>
   readonly getStepTitle: (step: PendingStep) => string

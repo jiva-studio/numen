@@ -13,7 +13,7 @@ import {
 } from '@numen/plugin-loader'
 import { createNoticeQueue, type NoticeQueue, type WindowFrame } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
-import { createPickerSession } from '@/features/command-palette'
+import type { PickerSession } from '@/features/command-palette'
 import {
   createDialogStack,
   createNoticeParts,
@@ -33,10 +33,10 @@ import type { createTabsPart } from './createTabsPart'
 import type { WindowApi } from './createWindowApi'
 
 /** What the window draws for plugins besides their views: the notices and the list to pick items from. */
-export function createPluginSurfaces(saveText: TextSaver) {
+export function createPluginSurfaces(saveText: TextSaver, picker: PickerSession) {
   return {
     notices: createNoticeQueue(),
-    picker: createPickerSession(),
+    picker,
     dialogs: createDialogStack(saveText),
   }
 }

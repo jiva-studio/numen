@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
-import { File, Undo2 } from '@lucide/vue'
+import { Cloud, File, Undo2 } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
+import { findCloudRemoteId } from '@/entities/vault'
 import { findIcon } from '@/shared/model/command'
 import { KEEP_SUFFIX } from './view/stepGroups'
 import type { Commands } from './palette/palette'
@@ -19,6 +20,7 @@ export function findRowIcon(
   findFileIcon?: (path: string) => Component | undefined,
 ) {
   if (id.endsWith(KEEP_SUFFIX)) return Undo2
+  if (findCloudRemoteId(id)) return Cloud
   if (commands.palette.open.value) {
     const picked = commands.view.findTabKind(id)
     return picked === null

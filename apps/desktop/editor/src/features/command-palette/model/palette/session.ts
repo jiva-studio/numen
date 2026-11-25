@@ -225,6 +225,7 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     onDrop: state.drop,
     onLights: applyItemPreview,
     onLists: () => {
+      void deps.core.cloudVaults?.refresh()
       loadVaults().catch((error: unknown) => {
         state.results.failureMessage.value = formatError(error)
       })

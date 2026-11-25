@@ -4,7 +4,7 @@
  */
 import type { VaultChangeEvent } from '@numen/plugin-loader'
 import type { createTabNavigation, FileOpeners, WindowTabs } from '@/entities/tab'
-import { useVaults } from '@/entities/vault'
+import { useCloudVaults, useVaults } from '@/entities/vault'
 import { createCommandNotes, createNotes } from '@/features/command-palette'
 import { createNoteEditors } from '@/features/file-conflict'
 import { createNoteNavigator } from '@/features/note-commands'
@@ -31,6 +31,8 @@ export function createVaultServices(deps: VaultServicesDeps) {
   const { vault } = api
   const writeMessage = log.getWriter('command')
   const vaults = useVaults({ listVaults: vault.listVaults, log })
+  const cloud = useCloudVaults(vault.remoteVaults)
+  void cloud.refresh()
   const noteEditors = createNoteEditors({
     api: {
       notes: vault.note,
@@ -72,6 +74,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
     notes: createCommandNotes(editing.reached, windowTabs),
     window,
     vaults,
+    cloud,
     renames: renameEmitter,
     vaultChanges,
     itemLists: createCommandItemLists({

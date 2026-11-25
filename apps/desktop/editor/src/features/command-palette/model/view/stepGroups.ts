@@ -7,7 +7,7 @@
  * steps and does that.
  */
 import type { PaletteGroup, PaletteItem } from '@numen/workbench'
-import type { Vault } from '@/entities/vault'
+import { formatVaultSize, getCloudRowId, type CloudVault, type Vault } from '@/entities/vault'
 import { getPrompt, type PendingStep } from '../../lib/step/step'
 import type { StepRow } from '../../types'
 import type { Words } from '../../words'
@@ -206,7 +206,7 @@ export type StepGroupsState = Pick<ViewState, 'words' | 'lists' | 'getStepTitle'
 /** What the groups of the steps that choose a note or a vault read. */
 export type ChoiceGroupsState = Pick<
   ViewState,
-  'words' | 'found' | 'known' | 'showing' | 'isWorking' | 'failureMessage'
+  'words' | 'found' | 'known' | 'showing' | 'isWorking' | 'failureMessage' | 'getCloudVaults'
 >
 
 /** The groups of the steps that ask for a name, an argument, an item or a confirmation. */
@@ -238,7 +238,7 @@ export function createStepGroups(state: StepGroupsState) {
 
 /** The groups of the steps that choose a note or a vault, over what the search found. */
 export function createChoiceGroups(state: ChoiceGroupsState) {
-  const { words, found, known, showing, isWorking, failureMessage } = state
+  const { words, found, known, showing, isWorking, failureMessage, getCloudVaults } = state
 
   const findTabKind = (id: string): string | null => {
     const note = found.value.find((one) => one.path === id)
@@ -261,10 +261,32 @@ export function createChoiceGroups(state: ChoiceGroupsState) {
       failureMessage: failureMessage.value,
     })
 
+  const getCloudGroup = (text: string, step: PendingStep): PaletteGroup | null =>
+    createCloudGroup(getCloudVaults?.() ?? [], step, { text, words })
+
   return {
     getPickingGroup,
     getVaultsGroup,
+    getCloudGroup,
     findTabKind,
     getVaultAside: (one: Vault) => getVaultAside(one, showing.value, words),
   }
+}
+
+/** The cloud vaults under the vaults of this device, and nothing where there is none to show. */
+function createCloudGroup(
+  cloud: readonly CloudVault[],
+  step: PendingStep,
+  meta: { text: string; words: Words },
+): PaletteGroup | null {
+  const word = meta.text.trim().toLowerCase()
+  const items: PaletteItem[] = cloud
+    .filter((one) => one.name.toLowerCase().includes(word))
+    .map((one) => ({
+      id: getCloudRowId(one.remoteId),
+      title: one.name,
+      detail: formatVaultSize(one.sizeBytes),
+      actions: [{ id: step.command.id, text: step.command.text }],
+    }))
+  return items.length === 0 ? null : { id: 'cloud', title: meta.words.cloud, items }
 }

@@ -41,6 +41,7 @@ export interface Words extends EmptyWords {
   readonly overWindow: string
   readonly overSettings?: string
   readonly overVault: string
+  readonly cloud: string
   readonly noVault: string
   readonly noNote: string
   readonly command: string
@@ -91,6 +92,7 @@ export const PALETTE_WORDS = {
   overWindow: 'General',
   overSettings: 'Settings',
   overVault: 'Vault',
+  cloud: 'Cloud',
   noVault: 'No vault open',
   noNote: 'No active note',
   typeCommand: 'Type a command',

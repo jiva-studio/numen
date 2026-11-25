@@ -24,6 +24,7 @@ export function usePaletteView(session: PaletteSession) {
     found: state.results.found,
     known: state.results.known,
     showing: state.results.showing,
+    getCloudVaults: () => deps.core.cloudVaults?.list.value ?? [],
     isWorking: state.results.isWorking,
     failureMessage: state.results.failureMessage,
     getStepTitle: steps.naming.getStepTitle,

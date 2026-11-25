@@ -96,6 +96,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
     getVaultList: foundation.api.vault.listVaults,
+    cloudVaults: { list: vault.cloud.fresh, refresh: vault.cloud.refresh },
     searchCore: foundation.api.vault.search,
   })
   watchCommandLists(

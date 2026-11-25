@@ -3,11 +3,11 @@
  */
 import { computed, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/lib/paths'
-import type { Vault } from '@/entities/vault'
+import { findCloudRemoteId, type Vault } from '@/entities/vault'
 import { getPrompt, type PendingStep } from '../../lib/step/step'
 import type { NoteLookup, PaletteLists } from '../../types'
 import type { Command, PromptStep } from '@/entities/command'
-import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
+import { COMMAND, type CommandInvocation, type CommandTarget } from '@/shared/model/command'
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
 
@@ -70,6 +70,12 @@ function resolveSelectionAction(
   }
   // Stryker disable next-line ConditionalExpression: Caller guarantees step is picking or vaults.
   if (step.step === 'vault') {
+    if (findCloudRemoteId(choice.item) && step.command.id === COMMAND.openVault) {
+      return deps.createInvocation(step.command.id, {
+        ...step.on,
+        vault: { id: choice.item, name: '' },
+      })
+    }
     const one = choice.vaults.find((vault) => vault.id === choice.item)
     if (!one || choice.isAside(one)) return null
     const on = { ...step.on, vault: { id: one.id, name: one.name } }
@@ -85,7 +91,8 @@ function resolveInputOrItemAction(
   deps: StepActionDeps,
 ): CommandInvocation | null {
   const name = deps.text.value.trim()
-  if (step.step === 'name') return name ? deps.createInvocation(step.command.id, step.on, name) : null
+  if (step.step === 'name')
+    return name ? deps.createInvocation(step.command.id, step.on, name) : null
   // Stryker disable next-line ConditionalExpression: Caller guarantees step is naming or choosing.
   if (step.step === 'items') {
     const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)

@@ -184,7 +184,14 @@ export type {
   PlexBoardViewProps,
 } from './slots'
 export type { VaultFlagsHost } from './vaultFlags'
-export type { VaultSummary, VaultsState, VaultsHost, WindowState, WindowHost } from './window'
+export type {
+  CloudVaultSummary,
+  VaultSummary,
+  VaultsState,
+  VaultsHost,
+  WindowState,
+  WindowHost,
+} from './window'
 export type { DroppedData, DropRegistration, DropHost, DropRegistry } from './drops'
 export { editorNotePath } from './editorExtensions'
 export type {

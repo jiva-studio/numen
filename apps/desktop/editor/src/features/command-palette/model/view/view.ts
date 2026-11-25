@@ -10,7 +10,7 @@ import type { PaletteGroup, PaletteItem } from '@numen/workbench'
 import { getGroupCommands } from '../../lib/commands/commands'
 import type { PendingStep } from '../../lib/step/step'
 import type { Command, CommandGroup } from '@/entities/command'
-import type { CommandTarget } from '@/shared/model/command'
+import { COMMAND, type CommandTarget } from '@/shared/model/command'
 import { createChoiceGroups, createStepGroups } from './stepGroups'
 import type { ViewState } from './viewState'
 
@@ -88,6 +88,12 @@ export function getPaletteView(state: ViewState) {
     return groups
   }
 
+  /** The vaults of this device, and under them the cloud vaults where the step opens a vault. */
+  const getVaultGroups = (step: PendingStep, text: string): readonly PaletteGroup[] => {
+    const cloud = step.command.id === COMMAND.openVault ? choices.getCloudGroup(text, step) : null
+    return [choices.getVaultsGroup(text, step), ...(cloud ? [cloud] : [])]
+  }
+
   /** What the palette draws at its current position, over the words typed into it. */
   const createGroups = (step: PendingStep | null, target: CommandTarget, text: string) => {
     if (!step) return getCommandGroups(target, text)
@@ -95,7 +101,7 @@ export function getPaletteView(state: ViewState) {
     if (step.step === 'arguments') return [stepGroups.getArgumentGroup(step, text)]
     if (step.step === 'note') return [choices.getPickingGroup(step, text)]
     if (step.step === 'items') return stepGroups.getItemGroups(step, text)
-    if (step.step === 'vault') return [choices.getVaultsGroup(text, step)]
+    if (step.step === 'vault') return getVaultGroups(step, text)
     if (step.step === 'confirmation') return [stepGroups.getConfirmGroup(step, text)]
     return [stepGroups.getExactlyGroup(step, text)]
   }

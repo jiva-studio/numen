@@ -26,4 +26,8 @@ export const VAULT_WORDS = {
   folder: WORDS.folder,
   undeleted: WORDS.undeleted,
   vaultErrors: VAULT_ERRORS,
+  cloudWhere: (name: string, path: string): string => `Put “${name}” in ${path}`,
+  useFolder: 'Use this folder',
+  chooseFolder: 'Choose another folder...',
+  cloudFailed: 'The vault could not be downloaded',
 }

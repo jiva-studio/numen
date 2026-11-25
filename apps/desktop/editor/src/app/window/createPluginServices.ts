@@ -6,6 +6,7 @@
 import type { Ref } from 'vue'
 import type { BackgroundTaskHost, CommandsHost, WindowControls } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
+import type { CloudVault } from '@/entities/vault'
 import { createWindowBackgroundTasks } from '@/features/background-tasks'
 import { createBufferHost } from '@/features/file-conflict'
 import {
@@ -108,6 +109,7 @@ export interface WindowOwnedServicesDeps {
   readonly editing: Pick<VaultServices['editing'], 'fileFlush' | 'notes'>
   readonly window: Pick<VaultServices['window'], 'tasks'>
   readonly vaults: Pick<VaultServices['vaults'], 'vaultList'>
+  readonly cloud?: Readonly<Ref<readonly CloudVault[]>> | undefined
   readonly hostPort: Pick<HostPort, 'commands' | 'openVault'>
   readonly backgroundTasks: BackgroundTaskHost
   readonly frame: WindowControls
@@ -116,14 +118,18 @@ export interface WindowOwnedServicesDeps {
 
 /** The buffers, the tasks, the commands, the vaults and the window a plugin is given. */
 export function createWindowOwnedServices(deps: WindowOwnedServicesDeps) {
-  const { editing, window, vaults, hostPort } = deps
+  const { editing, window, vaults, hostPort, cloud } = deps
   return {
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),
     noteBuffer: editing.notes,
     taskList: window.tasks,
     backgroundTasks: deps.backgroundTasks,
     commands: hostPort.commands,
-    vaults: createWindowVaults({ vaultList: vaults.vaultList, openVault: hostPort.openVault }),
+    vaults: createWindowVaults({
+      vaultList: vaults.vaultList,
+      cloud,
+      openVault: hostPort.openVault,
+    }),
     window: createWindowService({ frame: deps.frame, writeMessage: deps.log.getWriter('command') }),
   }
 }
