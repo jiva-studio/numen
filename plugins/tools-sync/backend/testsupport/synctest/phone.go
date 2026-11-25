@@ -31,7 +31,7 @@ func NewPhone(t *testing.T, server *Server, clock *Clock, vault string, words []
 // FetchDeps are the dependencies of the download of an absent file.
 func (c *Computer) FetchDeps() fetchfile.Deps {
 	return fetchfile.Deps{
-		Stage: syncwire.NewDownloads(c.WireDeps()), Revisions: c.Cloud, Blobs: cloud.NewBlobs(c.Cloud), Crypto: c.Account, Host: c.Host, State: c.State,
+		Stage: c.WireDeps().Downloads, Revisions: c.Cloud, Blobs: cloud.NewBlobs(c.Cloud), Crypto: c.Account, Host: c.Host, State: c.State,
 	}
 }
 

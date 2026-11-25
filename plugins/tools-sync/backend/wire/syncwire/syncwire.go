@@ -22,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
 )
 
-// Deps are the dependencies of a pass and what the transfers of files of any size need besides.
+// Deps are the dependencies of a pass and what the transfers of files of any size need besides. Downloads is optional and, when set, the pass uses it instead of its own, so that a fetch on demand and the pass share its holds.
 type Deps struct {
 	syncvault.Deps
 	Uploads         ports.Uploads
@@ -36,6 +36,7 @@ type Deps struct {
 	Digests         ports.Digests
 	Conflicts       ports.ConflictResolver
 	LazyHeavy       bool
+	Downloads       *download.DownloadFile
 }
 
 // NewResolveDeletions returns the use case that takes the answer of the person to a pause.
@@ -64,7 +65,10 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 
 // NewSyncVaultReading is NewSyncVault with shares as the way to read the shares of a vault at the start of a pass.
 func NewSyncVaultReading(deps Deps, shares syncvault.SharesReader) *syncvault.SyncVault {
-	downloads := NewDownloads(deps)
+	downloads := deps.Downloads
+	if downloads == nil {
+		downloads = NewDownloads(deps)
+	}
 	uploads := upload.NewUploadFile(upload.Deps{
 		Uploads: deps.Uploads, Entries: deps.UploadEntries, Crypto: deps.Crypto, Host: deps.Host, Random: deps.Random, Digests: deps.Digests,
 	})

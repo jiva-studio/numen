@@ -131,6 +131,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 		DownloadEntries: p.state, Pending: p.state, Approvals: p.state, Absences: p.state, RemovalDelay: r.removal.Get,
 		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}), LazyHeavy: platform.IsPhone(),
 	}
+	wired.Downloads = syncwire.NewDownloads(wired)
 	pass := syncwire.NewSyncVault(wired)
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
 		Pass: pass, Host: p.vaults, State: p.state, Health: p.getHealth(), Clock: p.clock,
@@ -141,7 +142,7 @@ func (r *runtime) start(ctx context.Context, address string) (*Backend, map[stri
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
 	fetching := downloadwire.Deps{
 		Fetch: fetchfile.Deps{
-			Stage: syncwire.NewDownloads(wired), Revisions: cloudSide, Blobs: wired.DownloadBlobs, Crypto: p.identity, Host: p.vaults, State: p.state,
+			Stage: wired.Downloads, Revisions: cloudSide, Blobs: wired.DownloadBlobs, Crypto: p.identity, Host: p.vaults, State: p.state,
 		},
 		Entries: p.state,
 	}

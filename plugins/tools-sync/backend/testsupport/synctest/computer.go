@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -33,6 +34,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/endorse"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
@@ -93,6 +95,8 @@ type Computer struct {
 	network        *link
 	healthEndpoint hostcall.Endpoint
 	token          atomic.Value
+	downloadsOnce  sync.Once
+	downloads      *download.DownloadFile
 }
 
 // NewWords makes recovery words that identify one account.
@@ -223,11 +227,14 @@ func (c *Computer) LocalChangesDeps() localchanges.Deps {
 // WireDeps are the dependencies of the pass and of the transfers of files of any size.
 func (c *Computer) WireDeps() syncwire.Deps {
 	uploader := cloud.NewUploader(c.Cloud, c.Clock.Now)
-	return syncwire.Deps{
+	wired := syncwire.Deps{
 		Deps: c.SyncDeps(), Uploads: uploader, UploadEntries: c.State, DownloadBlobs: cloud.NewBlobs(c.Cloud), DownloadEntries: c.State,
 		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return RemovalDelay }, Digests: digest.Sha256{},
 		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), LazyHeavy: c.LazyHeavy,
 	}
+	c.downloadsOnce.Do(func() { c.downloads = syncwire.NewDownloads(wired) })
+	wired.Downloads = c.downloads
+	return wired
 }
 
 // CommitDeps are the dependencies of the commit of revisions.
@@ -242,9 +249,8 @@ func (c *Computer) CommitDeps() commit.Deps {
 // PullDeps are the dependencies of the pull of changes.
 func (c *Computer) PullDeps() pull.Deps {
 	wired := c.WireDeps()
-	downloads := syncwire.NewDownloads(wired)
 	return pull.Deps{
-		Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Downloads: downloads,
+		Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Downloads: wired.Downloads,
 		Guard: syncwire.NewGuard(wired), Health: c.NewHealth(),
 		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), Clock: c.Clock, LazyHeavy: c.LazyHeavy,
 	}

@@ -422,3 +422,21 @@ func TestDownloadFile_SweepKeepsAStagedFileWhileItIsHeldAndDeletesItAfter(t *tes
 		t.Error("a staged file that is not held any more is still there")
 	}
 }
+
+func TestDownloadFile_APassKeepsTheStagedFileOfAFetchOnDemandThatIsInFlight(t *testing.T) {
+	w := newWorld(t)
+	store := w.p.B.Host.Store(synctest.SecondVault)
+	if err := store.Write(t.Context(), "fetch-0bad.part", []byte("coming in")); err != nil {
+		t.Fatal(err)
+	}
+	release := w.p.B.FetchDeps().Stage.Hold(synctest.SecondVault, "fetch-0bad.part")
+	defer release()
+
+	if err := w.p.B.Sync(t.Context(), synctest.SecondVault); err != nil {
+		t.Fatalf("pass over %s: %v", synctest.SecondVault, err)
+	}
+
+	if _, isThere := w.getStagedSize(t, "fetch-0bad.part"); !isThere {
+		t.Error("the pass swept the staged file that a fetch on demand holds")
+	}
+}
