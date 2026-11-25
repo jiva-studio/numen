@@ -172,3 +172,32 @@ func TestGetRoots_RefusesARootThatIsNotThirtyTwoBytesOfHex(t *testing.T) {
 }
 
 func hexOf(key []byte) string { return hex.EncodeToString(key) }
+
+func TestGetRoots_IgnoresTheRootOfTheSettingForEverySpellingOfTheDefaultServer(t *testing.T) {
+	t.Parallel()
+	public, _ := newKey(t, 7)
+	for _, address := range []string{
+		"https://sync.numen.md",
+		"https://sync.numen.md/",
+		"https://sync.numen.md:443",
+		"https://sync.numen.md.",
+		"HTTPS://SYNC.NUMEN.MD/",
+		"https://sync.numen.md/some/path",
+	} {
+		roots, err := epochtrust.GetRoots(address, hexOf(public))
+		if err != nil || len(roots) != 0 {
+			t.Errorf("GetRoots(%q) = %x %v, want none", address, roots, err)
+		}
+	}
+}
+
+func TestGetRoots_AddsTheRootOfTheSettingForAnotherServer(t *testing.T) {
+	t.Parallel()
+	public, _ := newKey(t, 7)
+	for _, address := range []string{"https://sync.example.com", "https://sync.numen.md:8443", "http://sync.numen.md", "https://evilsync.numen.md"} {
+		roots, err := epochtrust.GetRoots(address, hexOf(public))
+		if err != nil || len(roots) != 1 || !bytes.Equal(roots[0], public) {
+			t.Errorf("GetRoots(%q) = %x %v, want the key of the setting", address, roots, err)
+		}
+	}
+}

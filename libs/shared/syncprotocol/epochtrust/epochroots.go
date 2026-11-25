@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -29,5 +30,31 @@ func GetRoots(address, settingRoot string) ([]ed25519.PublicKey, error) {
 }
 
 func isDefaultServer(address string) bool {
-	return strings.EqualFold(strings.TrimRight(address, "/"), DefaultServer)
+	got, err := parseServer(strings.TrimSpace(address))
+	if err != nil {
+		return true
+	}
+	want, err := parseServer(DefaultServer)
+	if err != nil {
+		return true
+	}
+	return got == want
+}
+
+type serverKey struct{ scheme, host, port string }
+
+func parseServer(address string) (serverKey, error) {
+	u, err := url.Parse(address)
+	if err != nil {
+		return serverKey{}, err
+	}
+	key := serverKey{
+		scheme: strings.ToLower(u.Scheme),
+		host:   strings.TrimSuffix(strings.ToLower(u.Hostname()), "."),
+		port:   u.Port(),
+	}
+	if key.port == "" && key.scheme == "https" {
+		key.port = "443"
+	}
+	return key, nil
 }
