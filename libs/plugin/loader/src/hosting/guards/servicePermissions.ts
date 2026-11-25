@@ -238,6 +238,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       move: requirePermissionsAsync(WRITE),
       createFolder: requirePermissionsAsync(WRITE),
       createNote: requirePermissionsAsync(WRITE),
+      watchDownloads: requirePermissions(READ),
     },
     texts: {
       readLiveText: requirePermissionsAsync(READ),

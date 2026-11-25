@@ -2,7 +2,12 @@
  * What a command is: the row a feature declares, and what carries out its rows.
  */
 import type { Component } from 'vue'
-import type { CommandAnswers, CommandItem, CommandWarns } from '@numen/plugin-loader'
+import type {
+  CommandAnswers,
+  CommandItem,
+  CommandTarget as RowTarget,
+  CommandWarns,
+} from '@numen/plugin-loader'
 import type { Keystroke } from '@numen/ui'
 import type { CommandInvocation, CommandTarget, RunSupport } from '@/shared/model/command'
 
@@ -74,7 +79,7 @@ export interface Command {
   readonly group: CommandGroup
   readonly when?: string
   /** Whether it suits what a row menu is over, beyond its condition. */
-  canRunOver?(target: CommandTarget): boolean
+  canRunOver?(target: RowTarget): boolean
   /** Whether it is offered at all over what is in front, in this window. */
   isAvailable(target: CommandTarget, runs: RunSupport): boolean
   getFieldText?(target: CommandTarget): string

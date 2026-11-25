@@ -4,6 +4,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { NOTE_ERROR_CODE } from '@numen/core-client'
+import { createLostConnection } from '@numen/core-client/testing'
+import type { CommandTarget as RowTarget } from '@numen/plugin-loader'
 import { createHandledApi } from '@/testing/coreAnswers'
 import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
@@ -59,7 +61,7 @@ const createWindow = (answers: Answers = {}) => {
     fetchFile: (request: { path: string }) => {
       actions.push(`fetch ${request.path}`)
       if (answers.offline)
-        throw new ConnectError('Connect to the internet to download', Code.Unavailable)
+        throw createLostConnection('Connect to the internet to download')
       return {}
     },
     dropDownload: (request: { path: string }) => {
@@ -264,12 +266,10 @@ describe('a folder made over a folder', () => {
 })
 
 describe('the commands over a file kept on demand', () => {
-  const target = (path: string) => ({ ...front({ path }), others: [] })
-
   it('download the bytes of the file the menu was opened on', async () => {
     const { actions, carry } = createWindow()
 
-    await carry(invoke('app:file.download', { target: target('Lecture.mp4') }))
+    await carry(invoke('app:file.download', front({ path: 'Lecture.mp4' })))
 
     expect(actions).toStrictEqual(['fetch Lecture.mp4'])
   })
@@ -277,7 +277,7 @@ describe('the commands over a file kept on demand', () => {
   it('report a failed download as a notice with no technical text', async () => {
     const { notices, severities, carry } = createWindow({ offline: true })
 
-    await carry(invoke('app:file.download', { target: target('Lecture.mp4') }))
+    await carry(invoke('app:file.download', front({ path: 'Lecture.mp4' })))
 
     expect(notices).toHaveLength(1)
     expect(notices[0]).not.toContain('boom')
@@ -287,7 +287,7 @@ describe('the commands over a file kept on demand', () => {
   it('take the download of a file off the device', async () => {
     const { actions, carry } = createWindow()
 
-    await carry(invoke('app:file.dropDownload', { target: target('Lecture.mp4') }))
+    await carry(invoke('app:file.dropDownload', front({ path: 'Lecture.mp4' })))
 
     expect(actions).toStrictEqual(['dropDownload Lecture.mp4'])
   })
@@ -306,7 +306,7 @@ describe('the commands over a file kept on demand', () => {
     const { set } = createWindow()
     const download = set.commands.find((one) => one.id === 'app:file.download')
     const drop = set.commands.find((one) => one.id === 'app:file.dropDownload')
-    const row = (more: object) => ({
+    const row = (more: Partial<RowTarget>): RowTarget => ({
       path: 'a',
       title: 'a',
       isFolder: false,
