@@ -8,9 +8,9 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Downloads fills the absent files of the vault and takes their bytes off the device again, by the file
@@ -67,8 +67,7 @@ func (h *Downloads) GetDownloadProgress(
 		return nil, err
 	}
 	progress, err := h.progress.Execute(ctx, showing, r.Msg.GetPath())
-	var unavailable *plugindomain.UnavailableError
-	if errors.As(err, &unavailable) {
+	if errors.Is(err, domain.ErrUnavailable) {
 		return connect.NewResponse(&v1.GetDownloadProgressResponse{}), nil
 	}
 	if err != nil {
@@ -93,8 +92,7 @@ func newDownloadError(err error) error {
 		}
 		return answered
 	}
-	var unavailable *plugindomain.UnavailableError
-	if errors.As(err, &unavailable) {
+	if errors.Is(err, domain.ErrUnavailable) {
 		return connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {

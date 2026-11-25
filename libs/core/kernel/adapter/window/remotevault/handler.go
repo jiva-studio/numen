@@ -12,7 +12,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -84,8 +83,7 @@ func newOpenError(err error) error {
 	if answered, ok := errors.AsType[*connect.Error](err); ok {
 		return answered
 	}
-	var unavailable *plugindomain.UnavailableError
-	if errors.As(err, &unavailable) {
+	if errors.Is(err, domain.ErrUnavailable) {
 		return connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	switch {
