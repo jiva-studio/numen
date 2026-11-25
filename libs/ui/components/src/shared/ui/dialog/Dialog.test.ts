@@ -88,7 +88,7 @@ describe('Dialog accessibility', () => {
     document.body.append(page, kept)
     const dialog = mountDialog()
     expect(page.inert).toBe(true)
-    expect(getBody().get('[data-slot="dialog-backdrop"]').element.inert).toBeFalsy()
+    expect(getBody().get('[data-slot="dialog-backdrop"]').attributes('inert')).toBeUndefined()
     dialog.unmount()
     expect(page.inert).toBe(false)
     expect(kept.inert).toBe(true)
