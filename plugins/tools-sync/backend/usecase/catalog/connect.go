@@ -187,7 +187,7 @@ func (u *ConnectVault) writeLink(ctx context.Context, id domain.VaultID, remoteI
 		return err
 	}
 	link := vaultlink.Link{
-		RemoteVaultID: hex.EncodeToString(remoteID), SealedKey: first, LaterKeys: later, CatalogName: name, ServerSeq: 0, RestoreEpochID: nil,
+		RemoteVaultID: hex.EncodeToString(remoteID), SealedKey: first, LaterKeys: later, CatalogName: name, ServerSeq: 0, HighSeq: 0, RestoreEpochID: nil,
 		FeedCursor: vaultlink.FeedCursor{FeedID: "", Seq: 0}, Recovery: nil, Removed: nil, Retired: nil, Kind: "", Received: nil,
 	}
 	return u.reader.deps.State.WriteLink(ctx, id, link)

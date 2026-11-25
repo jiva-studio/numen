@@ -23,11 +23,13 @@ const (
 	WentBack
 )
 
-// Memory is what this device remembers of the server: the epoch it ran last, the position in the changes and the
-// pinned key that signs epochs. An empty key is none pinned yet.
+// Memory is what this device remembers of the server: the epoch it ran last, the position in the changes, the
+// highest sequence number of the vault it saw under that epoch and the pinned key that signs epochs. An empty key
+// is none pinned yet.
 type Memory struct {
 	EpochID   []byte
 	Cursor    uint64
+	HighSeq   uint64
 	PinnedKey []byte
 }
 
@@ -40,7 +42,7 @@ type Look struct {
 }
 
 // GetVerdict tells what the look means. A key that differs from the pinned one wins over everything, then a
-// different epoch id, then a head below the cursor.
+// different epoch id, then a head below the cursor or below the highest sequence number this device saw.
 func GetVerdict(memory Memory, look Look) Verdict {
 	switch {
 	case len(memory.PinnedKey) > 0 && len(look.SignKey) > 0 && !bytes.Equal(memory.PinnedKey, look.SignKey):

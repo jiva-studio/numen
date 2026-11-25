@@ -76,7 +76,7 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 		return err
 	}
 	return u.deps.State.UpdateLink(ctx, id, func(fresh *vaultlink.Link) error {
-		fresh.RestoreEpochID, fresh.Recovery, fresh.ServerSeq = found.epochID, nil, 0
+		fresh.RestoreEpochID, fresh.Recovery, fresh.ServerSeq, fresh.HighSeq = found.epochID, nil, 0, 0
 		return nil
 	})
 }

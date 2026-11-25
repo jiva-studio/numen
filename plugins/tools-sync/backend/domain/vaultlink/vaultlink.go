@@ -36,6 +36,7 @@ type Link struct {
 	LaterKeys      []SealedKey       `json:"laterKeys,omitempty"`
 	CatalogName    string            `json:"catalogName"`
 	ServerSeq      uint64            `json:"serverSeq"`
+	HighSeq        uint64            `json:"highSeq,omitempty"`
 	FeedCursor     FeedCursor        `json:"feedCursor"`
 	RestoreEpochID []byte            `json:"restoreEpochId,omitempty"`
 	Recovery       *RecoveryProgress `json:"recovery,omitempty"`

@@ -462,3 +462,83 @@ func TestSyncVault_RecreatesVaultOnCatalogEntryOfOtherIdentity(t *testing.T) {
 		t.Errorf("catalog = %d entries, want one authored by this device", len(entries))
 	}
 }
+
+func TestSyncVault_WarnsAndSendsNothingWhenTheServerWentBackBelowWhatItSawAfterThePositionWasRewound(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	p.a.WriteNote(source, "Shopping list.md", "bread")
+	sync(t, p.a, source)
+	kept := backup(t, p)
+	p.a.WriteNote(source, "Shopping list.md", "eggs")
+	p.a.WriteNote(source, "Plan.md", "tea")
+	sync(t, p.a, source)
+	rewind(t, p.a)
+	restoreServer(t, p, kept)
+	commits := countCommits(p)
+
+	sync(t, p.a, source)
+
+	if !p.a.HasItem(textWentBack) {
+		t.Errorf("health items = %+v, want %q", p.a.Health.List(), textWentBack)
+	}
+	if got := countCommits(p); got != commits {
+		t.Errorf("commits grew from %d to %d, want none while the server is not announced", commits, got)
+	}
+}
+
+func TestSyncVault_SendsWhatTheServerLostAfterTheWarningAndTheAnnouncement(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	p.a.WriteNote(source, "Shopping list.md", "bread")
+	sync(t, p.a, source)
+	kept := backup(t, p)
+	p.a.WriteNote(source, "Shopping list.md", "eggs")
+	p.a.WriteNote(source, "Plan.md", "tea")
+	sync(t, p.a, source)
+	rewind(t, p.a)
+	restoreServer(t, p, kept)
+	sync(t, p.a, source)
+	announce(t, p)
+
+	sync(t, p.a, source)
+
+	if p.a.HasItemKey(healthkey.Create(keyWentBack, string(source))) {
+		t.Errorf("health items = %+v, want the warning cleared", p.a.Health.List())
+	}
+	wantServerNote(t, p, "Shopping list.md", "eggs")
+	wantServerNote(t, p, "Plan.md", "tea")
+	wantNote(t, p.a, source, "Shopping list.md", "eggs")
+	wantNote(t, p.a, source, "Plan.md", "tea")
+}
+
+func TestSyncVault_RaisesNoWarningAfterTheRestoreWasRunAndTheServerHoldsFewerChanges(t *testing.T) {
+	p := newPair(t, fakeserver.Config{})
+	p.a.WriteNote(source, "Shopping list.md", "bread")
+	sync(t, p.a, source)
+	kept := backup(t, p)
+	p.a.WriteNote(source, "Plan.md", "tea")
+	sync(t, p.a, source)
+	restoreServer(t, p, kept)
+	announce(t, p)
+	sync(t, p.a, source)
+
+	sync(t, p.a, source)
+
+	if p.a.HasItemKey(healthkey.Create(keyWentBack, string(source))) {
+		t.Errorf("health items = %+v, want no warning after the restore ran", p.a.Health.List())
+	}
+	var head uint64
+	for _, stored := range p.a.ReadChanges(t, p.a.GetRemoteID(t, source)) {
+		head = max(head, stored.GetSeq())
+	}
+	if link := p.a.Link(t, source); link.HighSeq != head {
+		t.Errorf("highest head = %d, want the head %d of the restored server: the restore lowers it", link.HighSeq, head)
+	}
+}
+
+func rewind(t *testing.T, c *synctest.Computer) {
+	t.Helper()
+	link := c.Link(t, source)
+	link.ServerSeq = 0
+	if err := c.State.WriteLink(t.Context(), source, link); err != nil {
+		t.Fatal(err)
+	}
+}
