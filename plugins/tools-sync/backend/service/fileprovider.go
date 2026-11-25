@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/fileprovider"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
@@ -26,6 +27,13 @@ func (p fileProvider) DropDownload(ctx context.Context, vaultID, path string) er
 		return b.DropDownload(ctx, api.DropDownloadRequest{VaultID: vaultID, Path: path})
 	})
 	return newProviderError(err)
+}
+
+func (p fileProvider) GetFetchProgress(ctx context.Context, path string) (fileprovider.Progress, error) {
+	answer, err := handle(ctx, p.runtime, api.MethodGetFetchProgress, func(b *Backend) (api.GetFetchProgressResponse, error) {
+		return b.GetFetchProgress(ctx, api.GetFetchProgressRequest{Path: path})
+	})
+	return fileprovider.Progress{IsKnown: answer.IsKnown, BytesDone: answer.BytesDone, BytesTotal: answer.BytesTotal}, newProviderError(err)
 }
 
 func newProviderError(err error) error {

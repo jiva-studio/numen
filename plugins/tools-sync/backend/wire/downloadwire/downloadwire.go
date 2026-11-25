@@ -87,6 +87,37 @@ func (d *Downloads) getVaultDownloads(ctx context.Context, id domain.VaultID) ([
 	return listed, nil
 }
 
+// GetFetchProgress says how many bytes of the running download of the file at the path have come. No download
+// of the path running is not known.
+func (d *Downloads) GetFetchProgress(ctx context.Context, request api.GetFetchProgressRequest) (api.GetFetchProgressResponse, error) {
+	progress, isRunning := d.fetch.GetProgress(request.Path)
+	if !isRunning {
+		return api.GetFetchProgressResponse{IsKnown: false, BytesDone: 0, BytesTotal: 0}, nil
+	}
+	done := progress.Bytes
+	if progress.IsStaged {
+		staged, err := d.getStagedBytes(ctx, progress.Vault, request.Path)
+		if err != nil {
+			return api.GetFetchProgressResponse{IsKnown: false, BytesDone: 0, BytesTotal: 0}, err
+		}
+		done = min(staged, progress.Total)
+	}
+	return api.GetFetchProgressResponse{IsKnown: true, BytesDone: done, BytesTotal: progress.Total}, nil
+}
+
+func (d *Downloads) getStagedBytes(ctx context.Context, id domain.VaultID, path string) (int64, error) {
+	entries, err := d.entries.ReadDownloads(ctx, id)
+	if err != nil {
+		return 0, err
+	}
+	for _, entry := range entries {
+		if entry.Path == path {
+			return getBytes(entry.Header, entry.NextChunk), nil
+		}
+	}
+	return 0, nil
+}
+
 func getBytes(header []byte, next uint64) int64 {
 	parsed, err := blobcipher.ParseHeader(header)
 	if err != nil || next == 0 {

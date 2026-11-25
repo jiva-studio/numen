@@ -20,7 +20,7 @@ func TestFileProvider_AnswersAFailureOfTheMethodWithItsCodeAndPlainText(t *testi
 	web := httptest.NewServer(mux)
 	t.Cleanup(web.Close)
 
-	for _, method := range []string{"FetchFile", "DropDownload"} {
+	for _, method := range []string{"FetchFile", "DropDownload", "GetFetchProgress"} {
 		request, err := http.NewRequestWithContext(
 			t.Context(), http.MethodPost, web.URL+"/numen.v1.FileProviderService/"+method, strings.NewReader(`{"vaultId":"v-1","path":"a.pdf"}`),
 		)

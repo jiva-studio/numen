@@ -10,6 +10,7 @@ import (
 	"io"
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -83,6 +84,33 @@ type download struct {
 	err     error
 	waiters int
 	cancel  context.CancelFunc
+	vault   domain.VaultID
+	path    string
+	bytes   atomic.Int64
+	total   atomic.Int64
+	staged  atomic.Bool
+}
+
+// Progress is how far a running download has come. A staged download is a large file that the stager brings
+// down chunk by chunk, so its bytes are in the entries of the vault and not in Bytes.
+type Progress struct {
+	Vault    domain.VaultID
+	Bytes    int64
+	Total    int64
+	IsStaged bool
+}
+
+// GetProgress returns how far the running download of the file at path has come, and false when none runs.
+func (u *FetchFile) GetProgress(path string) (Progress, bool) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	for _, own := range u.running {
+		if own.path == path {
+			total := own.total.Load()
+			return Progress{Vault: own.vault, Bytes: min(own.bytes.Load(), total), Total: total, IsStaged: own.staged.Load()}, true
+		}
+	}
+	return Progress{Vault: "", Bytes: 0, Total: 0, IsStaged: false}, false
 }
 
 // NewFetchFile returns the use case over the dependencies.
@@ -124,7 +152,7 @@ func (u *FetchFile) join(ctx context.Context, key string, id domain.VaultID, pat
 	}
 	if !isRunning {
 		runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-		own = &download{done: make(chan struct{}), err: nil, waiters: 0, cancel: cancel}
+		own = &download{done: make(chan struct{}), err: nil, waiters: 0, cancel: cancel, vault: id, path: path, bytes: atomic.Int64{}, total: atomic.Int64{}, staged: atomic.Bool{}}
 		u.running[key] = own
 		go u.finish(runCtx, key, own, id, path)
 	}
@@ -133,7 +161,7 @@ func (u *FetchFile) join(ctx context.Context, key string, id domain.VaultID, pat
 }
 
 func (u *FetchFile) finish(ctx context.Context, key string, own *download, id domain.VaultID, path string) {
-	own.err = u.run(ctx, id, path)
+	own.err = u.run(ctx, own, id, path)
 	u.mu.Lock()
 	delete(u.running, key)
 	u.mu.Unlock()
@@ -155,9 +183,10 @@ type target struct {
 	remote []byte
 	record transfer.FileRecord
 	entry  host.AbsentFile
+	own    *download
 }
 
-func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) error {
+func (u *FetchFile) run(ctx context.Context, own *download, id domain.VaultID, path string) error {
 	t, keys, err := u.open(ctx, id, path)
 	if errors.Is(err, errHeld) {
 		return nil
@@ -165,6 +194,8 @@ func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) err
 	if err != nil {
 		return err
 	}
+	t.own = own
+	own.total.Store(t.entry.Size)
 	rev, meta, err := u.readHead(ctx, t, keys)
 	if err != nil {
 		return err
@@ -192,6 +223,7 @@ func (u *FetchFile) run(ctx context.Context, id domain.VaultID, path string) err
 }
 
 func (u *FetchFile) runLarge(ctx context.Context, t target, rev *syncv1.Revision, meta note.Meta) error {
+	t.own.staged.Store(true)
 	in := transfer.DownloadInput{
 		Vault: t.id, RemoteID: t.remote, FileID: t.record.FileID, Path: t.path, BlobID: rev.GetBlobId(), BlobHash: rev.GetBlobHash(),
 		BlobSize: rev.GetBlobSize(), Key: [32]byte(meta.Key), Hash: meta.Hash, Size: meta.Size, HeadRev: nil, Baseline: nil,
@@ -236,7 +268,7 @@ func (u *FetchFile) open(ctx context.Context, id domain.VaultID, path string) (t
 	if err != nil {
 		return target{}, nil, err
 	}
-	return target{id: id, path: path, remote: remote, record: records[recordAt], entry: listed[at]}, keys, nil
+	return target{id: id, path: path, remote: remote, record: records[recordAt], entry: listed[at], own: nil}, keys, nil
 }
 
 func (u *FetchFile) readHead(ctx context.Context, t target, keys []vaultlink.VaultKey) (*syncv1.Revision, note.Meta, error) {
@@ -338,6 +370,7 @@ func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision
 			return nil, err
 		}
 	}
+	t.own.bytes.Store(int64(len(part)))
 	for int64(len(part)) < size {
 		next, err := u.readRange(ctx, t, rev, int64(len(part)), min(RangeSize, size-int64(len(part))))
 		if err != nil {
@@ -350,6 +383,7 @@ func (u *FetchFile) readBlob(ctx context.Context, t target, rev *syncv1.Revision
 		if err := store.Append(ctx, name, next); err != nil {
 			return nil, err
 		}
+		t.own.bytes.Store(int64(len(part)))
 	}
 	return part, nil
 }

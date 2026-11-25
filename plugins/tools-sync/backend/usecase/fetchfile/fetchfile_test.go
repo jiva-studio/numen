@@ -3,6 +3,7 @@ package fetchfile_test
 import (
 	"context"
 	"errors"
+	"io"
 	"strings"
 	"sync"
 	"testing"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
@@ -301,5 +303,97 @@ func TestFetchFile_EndsTheDownloadWhenNoCallWaitsForIt(t *testing.T) {
 	}
 	if err := w.Fetch(t.Context(), guidePath); err != nil {
 		t.Errorf("a download after a cancelled one failed: %v", err)
+	}
+}
+
+// gatedBlobs lets a download take the given number of ranges and holds the next one until released.
+type gatedBlobs struct {
+	ports.BlobReader
+	allowed int
+	reached chan struct{}
+	release chan struct{}
+	mu      sync.Mutex
+	opened  int
+}
+
+func (g *gatedBlobs) OpenBlob(ctx context.Context, vault, blob []byte, from int64) (io.ReadCloser, error) {
+	g.mu.Lock()
+	g.opened++
+	isHeld := g.opened == g.allowed+1
+	g.mu.Unlock()
+	if isHeld {
+		close(g.reached)
+		select {
+		case <-g.release:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	return g.BlobReader.OpenBlob(ctx, vault, blob, from)
+}
+
+func TestFetchFile_GetProgress_RunningDownload_ReturnsTheBytesOfTheRangesThatCameAndTheSizeOfTheFile(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	w.WriteGuide(t, guidePath)
+	deps := w.Phone.FetchDeps()
+	gate := &gatedBlobs{BlobReader: deps.Blobs, allowed: 2, reached: make(chan struct{}), release: make(chan struct{})}
+	deps.Blobs = gate
+	use := fetchfile.NewFetchFile(deps)
+	finished := make(chan error, 1)
+	go func() { finished <- use.Execute(t.Context(), synctest.PhoneVault, guidePath) }()
+	<-gate.reached
+
+	got, isRunning := use.GetProgress(guidePath)
+
+	close(gate.release)
+	if err := <-finished; err != nil {
+		t.Fatal(err)
+	}
+	want := fetchfile.Progress{Vault: synctest.PhoneVault, Bytes: 2 * fetchfile.RangeSize, Total: 5 << 20, IsStaged: false}
+	if !isRunning || got != want {
+		t.Errorf("progress = %+v (running: %v), want %+v", got, isRunning, want)
+	}
+}
+
+func TestFetchFile_GetProgress_NoDownloadRuns_ReturnsNotRunning(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	w.WriteGuide(t, guidePath)
+	use := fetchfile.NewFetchFile(w.Phone.FetchDeps())
+
+	if _, isRunning := use.GetProgress(guidePath); isRunning {
+		t.Error("a download runs before any was started")
+	}
+	if err := use.Execute(t.Context(), synctest.PhoneVault, guidePath); err != nil {
+		t.Fatal(err)
+	}
+	if _, isRunning := use.GetProgress(guidePath); isRunning {
+		t.Error("a download runs after it ended")
+	}
+}
+
+func TestFetchFile_GetProgress_ResumedDownload_StartsAtTheBytesOfThePart(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	w.WriteGuide(t, guidePath)
+	w.Server.FailBlobGetsAfter(2)
+	if err := w.Fetch(t.Context(), guidePath); err == nil {
+		t.Fatal("a download that lost the server succeeded")
+	}
+	w.Server.FailBlobGetsAfter(-1)
+	deps := w.Phone.FetchDeps()
+	gate := &gatedBlobs{BlobReader: deps.Blobs, allowed: 0, reached: make(chan struct{}), release: make(chan struct{})}
+	deps.Blobs = gate
+	use := fetchfile.NewFetchFile(deps)
+	finished := make(chan error, 1)
+	go func() { finished <- use.Execute(t.Context(), synctest.PhoneVault, guidePath) }()
+	<-gate.reached
+
+	got, isRunning := use.GetProgress(guidePath)
+
+	close(gate.release)
+	if err := <-finished; err != nil {
+		t.Fatal(err)
+	}
+	if !isRunning || got.Bytes != 2*fetchfile.RangeSize {
+		t.Errorf("progress = %+v (running: %v), want the 2 ranges of the first try", got, isRunning)
 	}
 }

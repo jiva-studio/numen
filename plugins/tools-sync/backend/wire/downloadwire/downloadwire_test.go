@@ -58,3 +58,18 @@ func TestGetDownloads_ListsNothingWhenNoDownloadRuns(t *testing.T) {
 		t.Errorf("got %d downloads, want none", len(got.Downloads))
 	}
 }
+
+func TestGetFetchProgress_NoDownloadRuns_IsNotKnown(t *testing.T) {
+	w := synctest.NewPhoneWorld(t)
+	w.WriteGuide(t, guidePath)
+	downloads := newDownloads(w)
+
+	got, err := downloads.GetFetchProgress(t.Context(), api.GetFetchProgressRequest{Path: guidePath})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != (api.GetFetchProgressResponse{IsKnown: false, BytesDone: 0, BytesTotal: 0}) {
+		t.Errorf("got %+v, want nothing known", got)
+	}
+}

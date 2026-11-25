@@ -40,6 +40,7 @@ const (
 	MethodFetchFile                = "FetchFile"
 	MethodDropDownload             = "DropDownload"
 	MethodGetDownloads             = "GetDownloads"
+	MethodGetFetchProgress         = "GetFetchProgress"
 	MethodSuspend                  = "Suspend"
 	MethodResume                   = "Resume"
 )
@@ -263,6 +264,18 @@ type Download struct {
 
 type GetDownloadsResponse struct {
 	Downloads []Download `json:"downloads"`
+}
+
+// GetFetchProgressRequest asks how far the download of the file at Path has come.
+type GetFetchProgressRequest struct {
+	Path string `json:"path"`
+}
+
+// GetFetchProgressResponse is how far a running download has come. IsKnown is false when none runs.
+type GetFetchProgressResponse struct {
+	IsKnown    bool  `json:"isKnown"`
+	BytesDone  int64 `json:"bytesDone"`
+	BytesTotal int64 `json:"bytesTotal"`
 }
 
 // SuspendRequest tells that the application left the screen.
