@@ -119,7 +119,7 @@ func TestAnEditThatCannotReachTheVaultChangesNothing(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
 		readers vaultport.VaultReaders
-		writers note.NoteWriting
+		writers note.NoteWriter
 	}{
 		{"the write lock fails", vaultreader.Readers{}, brokenWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, hold: errDiskGone}},
 		{"the vault will not open for reading", brokenReaders{open: errDiskGone}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}},
@@ -258,7 +258,7 @@ func TestAnEditOfANoteTheVaultDoesNotHoldMakesNothing(t *testing.T) {
 	}
 }
 
-func (c changeFixture) editWith(readers vaultport.VaultReaders, writers note.NoteWriting) note.Edit {
+func (c changeFixture) editWith(readers vaultport.VaultReaders, writers note.NoteWriter) note.Edit {
 	return note.NewEdit(readers, writers, c.index, testsupport.NewClock())
 }
 

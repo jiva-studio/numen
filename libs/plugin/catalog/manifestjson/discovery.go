@@ -26,10 +26,10 @@ func ReadFile(path string) (m manifest.Manifest, err error) {
 }
 
 // Discover scans directories and loads every valid plugin manifest found; the rest are reported as problems.
-func Discover(dirs []string) ([]manifest.Discovered, []DiscoveryProblem) {
+func Discover(dirs []string) ([]manifest.DiscoveredPlugin, []DiscoveryProblem) {
 	observed := make(map[string]string)
 	seenDirs := make(map[string]bool)
-	var found []manifest.Discovered
+	var found []manifest.DiscoveredPlugin
 	var problems []DiscoveryProblem
 
 	for _, dir := range dirs {
@@ -58,7 +58,7 @@ func getAbsolutePath(path string) string {
 	return clean
 }
 
-func scanDirectory(dir string, visited map[string]string) ([]manifest.Discovered, []DiscoveryProblem) {
+func scanDirectory(dir string, visited map[string]string) ([]manifest.DiscoveredPlugin, []DiscoveryProblem) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -67,7 +67,7 @@ func scanDirectory(dir string, visited map[string]string) ([]manifest.Discovered
 		return nil, []DiscoveryProblem{{Dir: dir, Err: fmt.Errorf("read plugin dir %s: %w", dir, err)}}
 	}
 
-	var found []manifest.Discovered
+	var found []manifest.DiscoveredPlugin
 	var problems []DiscoveryProblem
 	for _, entry := range entries {
 		if !entry.IsDir() {
@@ -86,26 +86,26 @@ func scanDirectory(dir string, visited map[string]string) ([]manifest.Discovered
 	return found, problems
 }
 
-func scanPluginDir(pluginDir string, seenCount map[string]string) (manifest.Discovered, error) {
+func scanPluginDir(pluginDir string, seenCount map[string]string) (manifest.DiscoveredPlugin, error) {
 	manifestPath := filepath.Join(pluginDir, manifest.FileName)
 	m, err := ReadFile(manifestPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return manifest.Discovered{}, nil
+			return manifest.DiscoveredPlugin{}, nil
 		}
-		return manifest.Discovered{}, fmt.Errorf("read manifest %s: %w", manifestPath, err)
+		return manifest.DiscoveredPlugin{}, fmt.Errorf("read manifest %s: %w", manifestPath, err)
 	}
 
 	for _, theme := range m.Contributes.Themes {
 		if _, err := ReadThemeFile(pluginDir, theme.File); err != nil {
-			return manifest.Discovered{}, fmt.Errorf("theme %q of %s: %w", theme.ID, manifestPath, err)
+			return manifest.DiscoveredPlugin{}, fmt.Errorf("theme %q of %s: %w", theme.ID, manifestPath, err)
 		}
 	}
 
 	cleanPluginDir := getAbsolutePath(pluginDir)
 	if existingDir, ok := seenCount[m.ID]; ok {
-		return manifest.Discovered{}, fmt.Errorf("duplicate plugin id %q in %s and %s", m.ID, existingDir, cleanPluginDir)
+		return manifest.DiscoveredPlugin{}, fmt.Errorf("duplicate plugin id %q in %s and %s", m.ID, existingDir, cleanPluginDir)
 	}
 	seenCount[m.ID] = cleanPluginDir
-	return manifest.Discovered{Dir: cleanPluginDir, Manifest: m}, nil
+	return manifest.DiscoveredPlugin{Dir: cleanPluginDir, Manifest: m}, nil
 }

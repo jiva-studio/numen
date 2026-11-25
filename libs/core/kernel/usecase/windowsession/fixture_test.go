@@ -223,14 +223,14 @@ type runs struct {
 	log      *eventLog
 }
 
-func (r *runs) Start(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) Started {
+func (r *runs) Start(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) StartedPasses {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.started = append(r.started, v)
 	r.rebuilds = append(r.rebuilds, rebuild)
 	r.report = append(r.report, report)
 	r.log.add("start " + string(v.ID))
-	return Started{
+	return StartedPasses{
 		Read: func(context.Context, func()) (vaultreading.ScanResult, error) { return vaultreading.ScanResult{}, nil },
 		Run:  func(ctx context.Context) { <-ctx.Done() },
 		Retire: func() {

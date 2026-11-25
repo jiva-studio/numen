@@ -200,7 +200,7 @@ func (c *Client) OpenVault(ctx context.Context, id domain.VaultID) error {
 	return getVaultsError(res.Msg.GetError(), res.Msg.GetDetail())
 }
 
-func (c *Client) AddLinks(ctx context.Context, additions []LinkAddition) ([]LinkAdded, error) {
+func (c *Client) AddLinks(ctx context.Context, additions []LinkAddition) ([]LinkResult, error) {
 	links := make([]*v1.HostLinkAddition, len(additions))
 	for i, one := range additions {
 		links[i] = &v1.HostLinkAddition{
@@ -215,9 +215,9 @@ func (c *Client) AddLinks(ctx context.Context, additions []LinkAddition) ([]Link
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
 	}
-	out := make([]LinkAdded, 0, len(res.Msg.GetResults()))
+	out := make([]LinkResult, 0, len(res.Msg.GetResults()))
 	for _, one := range res.Msg.GetResults() {
-		added := LinkAdded{Err: getNoteError(one.GetError(), one.GetDetail())}
+		added := LinkResult{Err: getNoteError(one.GetError(), one.GetDetail())}
 		if added.Err == nil {
 			added.Stat = readFileStat(one.GetStat())
 		}

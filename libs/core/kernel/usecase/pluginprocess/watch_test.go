@@ -57,9 +57,9 @@ func (h *health) Watch(context.Context) <-chan []plugin.HealthItem { return h.it
 
 type plugins map[string]string
 
-func (p plugins) GetPlugin(id string) (manifest.Discovered, bool) {
+func (p plugins) GetPlugin(id string) (manifest.DiscoveredPlugin, bool) {
 	name, ok := p[id]
-	return manifest.Discovered{Manifest: manifest.Manifest{ID: id, Name: name}}, ok
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: id, Name: name}}, ok
 }
 
 func getNames() plugins { return plugins{atlasID: "Atlas", mapsID: "Maps"} }

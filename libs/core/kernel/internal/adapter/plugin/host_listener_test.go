@@ -166,7 +166,7 @@ func startRelayLauncher(t *testing.T, started *atomic.Int32, listenerToken strin
 	if listenerToken != "" {
 		ready += " " + listenerToken
 	}
-	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	return func(ctx context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err

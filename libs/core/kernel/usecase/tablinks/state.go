@@ -37,9 +37,9 @@ type state struct {
 	expiries *expiries
 }
 
-// shared is the state of the use cases, which they take under its lock. hold waits for the lock and returns
+// stateHolder is the state of the use cases, which they take under its lock. hold waits for the lock and returns
 // the state with the function that gives it back.
-type shared interface {
+type stateHolder interface {
 	hold() (*state, func())
 }
 

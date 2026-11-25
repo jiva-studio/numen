@@ -56,7 +56,7 @@ func startCore(dir string, errOut io.Writer) (*linkedCore, error) {
 		return nil, errors.Join(err, container.StopPlugins(execution.Watch, context.Background()))
 	}
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, ctx, container.WindowOpening{Named: shown.Path, Out: errOut})
+	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, ctx, container.WindowRequest{Named: shown.Path, Out: errOut})
 	if err != nil {
 		stop()
 		return nil, errors.Join(err, container.StopPlugins(execution.Watch, context.Background()))

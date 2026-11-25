@@ -191,8 +191,8 @@ func (a *allowance) recordSpend(isNew, counted bool, cost time.Duration) {
 	a.admits.Minutes -= cost
 }
 
-// asking holds due and new review cards selected for review.
-type asking struct {
+// cardSelection holds due and new review cards selected for review.
+type cardSelection struct {
 	dueCards []ReviewCard
 	newCards []ReviewCard
 }
@@ -221,7 +221,7 @@ func (b *budgets) getStopError(preset string) error {
 func (b *budgets) getAskingBudget(
 	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
 	day review.Day, now time.Time, scope Scope,
-) asking {
+) cardSelection {
 	var dueCards, newCards []ReviewCard
 	for _, one := range reviewCards {
 		s, reply := schedules[one.ID]
@@ -237,7 +237,7 @@ func (b *budgets) getAskingBudget(
 	})
 
 	allocations := b.recordSpend(dueCards, newCards)
-	var out asking
+	var out cardSelection
 	for item, one := range dueCards {
 		if allocations.dueCards[item] && b.isAllowed(one, scope) {
 			out.dueCards = append(out.dueCards, one)

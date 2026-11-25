@@ -21,9 +21,9 @@ func NewWords(queries LexicalQueries) Words {
 }
 
 // Rank returns the chunks that hold the words of the query, best first, each with its word score.
-func (w Words) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error) {
+func (w Words) Rank(ctx context.Context, v domain.Vault, q Query) (ParticipantResults, error) {
 	found, err := w.queries.FindLexical(ctx, v.ID, getLexicalQuery(q))
-	return Ranking{Results: found}, err
+	return ParticipantResults{Results: found}, err
 }
 
 // Names ranks the sections of a vault whose names match the query. Its ranking leads: the section a
@@ -38,9 +38,9 @@ func NewNames(queries LexicalQueries) Names {
 }
 
 // Rank returns the sections whose names match the query, best first.
-func (n Names) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error) {
+func (n Names) Rank(ctx context.Context, v domain.Vault, q Query) (ParticipantResults, error) {
 	found, err := n.queries.GetNamedSections(ctx, v.ID, getLexicalQuery(q))
-	return Ranking{Results: found, IsLeading: true}, err
+	return ParticipantResults{Results: found, IsLeading: true}, err
 }
 
 func getLexicalQuery(q Query) sourcedomain.LexicalQuery {
@@ -69,17 +69,17 @@ func NewSource(source searchsourceport.Source, enclosing EnclosingResults) Sourc
 // Rank returns the search results enclosing the chunks the source answers, in the order of the source, each
 // with the similarity the source scored its chunk with. A source that has not described itself keeps no vectors
 // and answers nothing.
-func (s Source) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error) {
+func (s Source) Rank(ctx context.Context, v domain.Vault, q Query) (ParticipantResults, error) {
 	described := s.source.Describe()
 	if !described.IsDescribed() {
-		return Ranking{}, nil
+		return ParticipantResults{}, nil
 	}
 	place := searchsource.Place{VaultID: v.ID, Recipe: described.Recipe()}
 	matches, err := s.source.SearchChunks(ctx, place, searchsource.Query{
 		Text: q.Text, Kinds: q.Kinds, PathPrefix: q.PathPrefix, Limit: q.Limit, Floor: q.Floor,
 	})
 	if err != nil || len(matches) == 0 {
-		return Ranking{}, err
+		return ParticipantResults{}, err
 	}
 	chunks := make([]domain.ChunkID, len(matches))
 	for i, one := range matches {
@@ -87,7 +87,7 @@ func (s Source) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, err
 	}
 	found, err := s.enclosing.GetEnclosingResults(ctx, v.ID, chunks)
 	if err != nil {
-		return Ranking{}, err
+		return ParticipantResults{}, err
 	}
 	scores := make(map[domain.ChunkID]float64, len(matches))
 	for _, one := range matches {
@@ -100,5 +100,5 @@ func (s Source) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, err
 			found[i].Similarity = &score
 		}
 	}
-	return Ranking{Results: found}, nil
+	return ParticipantResults{Results: found}, nil
 }

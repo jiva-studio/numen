@@ -8,11 +8,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func setPlugin(management *container.PluginManagement, id string, p manifest.Discovered) {
+func setPlugin(management *container.PluginManagement, id string, p manifest.DiscoveredPlugin) {
 	plugin.SetPlugin(management.Registry, id, p)
 }
 
-func getRawPlugin(management *container.PluginManagement, id string) manifest.Discovered {
+func getRawPlugin(management *container.PluginManagement, id string) manifest.DiscoveredPlugin {
 	return plugin.GetRawPlugin(management.Registry, id)
 }
 

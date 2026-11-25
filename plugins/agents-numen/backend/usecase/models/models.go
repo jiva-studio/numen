@@ -22,9 +22,9 @@ type Option struct {
 // is left out of the listing, which is then partial.
 const ConnectionLimit = 3 * time.Second
 
-// Listing is the models a task can chat with. IsPartial marks a listing that left out a connection whose
+// ModelList is the models a task can chat with. IsPartial marks a listing that left out a connection whose
 // models could not be listed.
-type Listing struct {
+type ModelList struct {
 	Options   []Option
 	IsPartial bool
 }
@@ -45,19 +45,19 @@ func NewLister(models ports.Models) (*Lister, error) {
 // ListOptions returns the models of each connection that serves llm.chat, the connections in their order
 // and the models in the order the connection lists them. A connection with no field of models is left out,
 // and so is one whose models cannot be listed within ConnectionLimit, which makes the listing partial.
-func (l *Lister) ListOptions(ctx context.Context) (Listing, error) {
+func (l *Lister) ListOptions(ctx context.Context) (ModelList, error) {
 	connections, err := l.models.ListConnections(ctx)
 	if err != nil {
-		return Listing{}, err
+		return ModelList{}, err
 	}
-	listing := Listing{Options: []Option{}, IsPartial: false}
+	listing := ModelList{Options: []Option{}, IsPartial: false}
 	for _, one := range connections {
 		if one.ModelField == "" {
 			continue
 		}
 		listed, err := l.listModels(ctx, one)
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return Listing{}, ctxErr
+			return ModelList{}, ctxErr
 		}
 		if err != nil {
 			listing.IsPartial = true

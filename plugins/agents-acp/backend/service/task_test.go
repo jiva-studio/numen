@@ -34,8 +34,8 @@ type gardenHost struct {
 	calls []tools.Call
 }
 
-func (h *gardenHost) ListTools(context.Context, http.Header) (tools.Listing, error) {
-	return tools.Listing{Tools: []*tools.ToolInfo{
+func (h *gardenHost) ListTools(context.Context, http.Header) (tools.ToolList, error) {
+	return tools.ToolList{Tools: []*tools.ToolInfo{
 		{
 			Name: "note_read", Title: "Read a note", Effect: tools.ReadOnly,
 			InputSchema:  []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),

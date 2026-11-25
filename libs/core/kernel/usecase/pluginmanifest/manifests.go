@@ -13,13 +13,13 @@ import (
 
 // PluginLookup finds the installed plugin by ID.
 type PluginLookup interface {
-	GetPlugin(id string) (manifest.Discovered, bool)
+	GetPlugin(id string) (manifest.DiscoveredPlugin, bool)
 }
 
 // Host provides the plugins, their manifests and whether the host holds one suspended.
 type Host interface {
 	GetPluginInfos() []plugindomain.Info
-	GetPlugin(id string) (manifest.Discovered, bool)
+	GetPlugin(id string) (manifest.DiscoveredPlugin, bool)
 	PluginSuspensions
 }
 
@@ -78,8 +78,8 @@ func (m Manifests) ListTabKinds() []plugindomain.TabKindEntry {
 	return found
 }
 
-func (m Manifests) listUncontestedPlugins() []manifest.Discovered {
-	var enabled []manifest.Discovered
+func (m Manifests) listUncontestedPlugins() []manifest.DiscoveredPlugin {
+	var enabled []manifest.DiscoveredPlugin
 	for _, info := range m.host.GetPluginInfos() {
 		if plugin, isEnabled := m.host.GetPlugin(info.ID); isEnabled {
 			enabled = append(enabled, plugin)
@@ -89,7 +89,7 @@ func (m Manifests) listUncontestedPlugins() []manifest.Discovered {
 	for _, conflict := range manifest.ListContributionConflicts(enabled, manifest.CoreClaims{}) {
 		conflicting[conflict.PluginID] = true
 	}
-	return slices.DeleteFunc(enabled, func(plugin manifest.Discovered) bool { return conflicting[plugin.Manifest.ID] })
+	return slices.DeleteFunc(enabled, func(plugin manifest.DiscoveredPlugin) bool { return conflicting[plugin.Manifest.ID] })
 }
 
 // ListSlots lists the slot entries the manifests of the enabled plugins declare. No plugin is started.

@@ -105,7 +105,7 @@ func TestAChunkSizeThatBecomesKnownIsAChange(t *testing.T) {
 }
 
 func TestAnEmbedderThatAnnouncesNothingIsNotFollowed(t *testing.T) {
-	var absent *indexing.Embedding
+	var absent *indexing.EmbeddingSetup
 	absent.SubscribeModelChange(func(bool) { t.Error("a window without an embedder announced a change") })
 	indexing.NewEmbedding(sourcefake.Wrap(silent{}), nil, nil).SubscribeModelChange(func(bool) { t.Error("a silent embedder announced a change") })
 }

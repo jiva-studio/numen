@@ -3,18 +3,18 @@ package query
 // UseCases is everything that answers a question about the notes of a vault, grouped; the container
 // builds each use case on its own.
 type UseCases struct {
-	Refer  Referring
-	Browse Browsing
+	Refer  LinkQueries
+	Browse BrowseQueries
 }
 
-// Referring lists and resolves the links of notes.
-type Referring struct {
+// LinkQueries lists and resolves the links of notes.
+type LinkQueries struct {
 	Links        ShowLinks
 	Backlinks    ListBacklinks
 	ResolveLinks *ResolveLinks
 }
 
-// Browsing answers questions about the notes of a vault.
-type Browsing struct {
+// BrowseQueries answers questions about the notes of a vault.
+type BrowseQueries struct {
 	Connection GetConnection
 }

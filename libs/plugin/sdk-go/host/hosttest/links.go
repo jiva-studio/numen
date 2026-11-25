@@ -13,10 +13,10 @@ import (
 
 // AddLinks writes the links into the frontmatter of their notes, as the host does: the links of one
 // note are one write against its baseline, and a link that cannot be written fails only itself.
-func (v *Vault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]host.LinkAdded, error) {
+func (v *Vault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]host.LinkResult, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	out := make([]host.LinkAdded, len(additions))
+	out := make([]host.LinkResult, len(additions))
 	var order []string
 	groups := map[string][]int{}
 	for i, one := range additions {
@@ -40,7 +40,7 @@ func (v *Vault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]
 			return nil
 		})
 		for _, i := range positions {
-			out[i] = host.LinkAdded{Stat: stat, Err: err}
+			out[i] = host.LinkResult{Stat: stat, Err: err}
 		}
 	}
 	return out, nil

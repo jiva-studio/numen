@@ -70,7 +70,7 @@ type wiring struct {
 	links   noteport.LinkQueries
 	queries note.SourcesUnder
 	sources sourceport.SourceRepository
-	writers note.MoveWriting
+	writers note.MoveWriter
 	index   func(context.Context, domain.Vault, []string) error
 }
 
@@ -237,7 +237,7 @@ func TestAMoveInAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the vault cannot be written")
 	w := f.wiring()
-	w.writers = unwritable{MoveWriting: w.writers, err: cannot}
+	w.writers = unwritable{MoveWriter: w.writers, err: cannot}
 
 	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
 	if !errors.Is(err, cannot) {

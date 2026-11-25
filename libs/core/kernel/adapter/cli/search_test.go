@@ -39,8 +39,8 @@ func newVault(folder string) domain.Vault {
 func createSearchDeps(folder string, index fakeSearchIndex, words error) stubSession {
 	return stubSession{
 		Vaults: createVaultList(newVault(folder)),
-		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Search: cli.Search{
+		Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
+			return cli.IndexRun{Search: cli.Search{
 				Search: search.NewByName(singleVaultList{newVault(folder)}, preparing(search.New(index, vaultreader.Readers{}, nil, nil, nil, nil))),
 				Words:  words,
 			}}, nil
@@ -70,15 +70,15 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 	folder := t.TempDir()
 	for name, provided := range map[string]stubSession{
 		"the list of vaults cannot be opened": {
-			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+			Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
 				prepared := preparing(search.New(fakeSearchIndex{}, vaultreader.Readers{}, nil, nil, nil, nil))
-				return cli.Indexed{Search: cli.Search{Search: search.NewByName(brokenVaultList{}, prepared)}}, nil
+				return cli.IndexRun{Search: cli.Search{Search: search.NewByName(brokenVaultList{}, prepared)}}, nil
 			},
 		},
 		"the search cannot be opened": {
 			Vaults: createVaultList(newVault(folder)),
-			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-				return cli.Indexed{}, errRefused
+			Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
+				return cli.IndexRun{}, errRefused
 			},
 		},
 		"the index cannot answer": createSearchDeps(folder, fakeSearchIndex{err: errRefused}, nil),
@@ -163,7 +163,7 @@ func TestAHalfThatCannotRunIsReportedInTheAdjacentAnswer(t *testing.T) {
 	t.Parallel()
 	provided := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
 	open := provided.Indexed
-	provided.Indexed = func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+	provided.Indexed = func(ctx context.Context, options cli.IndexOptions) (cli.IndexRun, error) {
 		options.ErrorHandler(errRefused)
 		return open(ctx, options)
 	}

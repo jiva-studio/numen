@@ -33,7 +33,7 @@ func entry(id string, state catalog.State, kind string) catalog.Entry {
 
 func newHandler(t *testing.T, sources ...catalog.Source) *windowcatalog.Handler {
 	t.Helper()
-	return newHandlerOver(t, func() []manifest.Discovered { return nil }, sources...)
+	return newHandlerOver(t, func() []manifest.DiscoveredPlugin { return nil }, sources...)
 }
 
 func newHandlerOver(t *testing.T, installed windowcatalog.InstalledPlugins, sources ...catalog.Source) *windowcatalog.Handler {
@@ -50,8 +50,8 @@ func TestTheReadmeOfAnInstalledPluginIsReadFromItsFolder(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(withReadme, "README.md"), []byte("# Peat\n\nBurns slowly.\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	handler := newHandlerOver(t, func() []manifest.Discovered {
-		return []manifest.Discovered{
+	handler := newHandlerOver(t, func() []manifest.DiscoveredPlugin {
+		return []manifest.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.on"}, Dir: withReadme},
 			{Manifest: manifest.Manifest{ID: "org.example.off"}, Dir: withReadme},
 			{Manifest: manifest.Manifest{ID: "org.example.bare"}, Dir: withoutReadme},

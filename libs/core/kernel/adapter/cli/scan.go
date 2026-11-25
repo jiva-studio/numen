@@ -85,8 +85,8 @@ func describeSources(r vaultreading.IndexResult) string {
 	return s
 }
 
-func getProgressReporting(r *reporter) indexing.Reporting {
-	return indexing.Reporting{
+func getProgressReporting(r *reporter) indexing.ReadCallbacks {
+	return indexing.ReadCallbacks{
 		NotifyVaultFound: func(v domain.Vault, unembedded error) {
 			if unembedded != nil {
 				r.WriteFormat("not embedding %s: %v\n", v.Name, unembedded)

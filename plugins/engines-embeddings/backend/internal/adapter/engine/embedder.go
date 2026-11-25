@@ -194,7 +194,7 @@ func (e *Embedder) GetModel() model.ModelInfo {
 		FloorHint:      0,
 		MinChunkLength: 0,
 		ChunkTokens:    0,
-		Handling:       model.Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalize: e.isNormalized, ExtraInputs: nil, Tokenizer: e.encoder.GetVersion()},
+		Handling:       model.InputFormat{QueryPrefix: "", DocumentPrefix: "", File: "", Normalize: e.isNormalized, ExtraInputs: nil, Tokenizer: e.encoder.GetVersion()},
 	}
 }
 

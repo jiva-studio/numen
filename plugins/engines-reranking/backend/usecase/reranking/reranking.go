@@ -18,8 +18,8 @@ import (
 // detectedName is the name of the one connection the plugin detects.
 const detectedName = "Local reranker"
 
-// Reranking scores documents against a query with the model of the profile a row names.
-type Reranking struct {
+// Reranker scores documents against a query with the model of the profile a row names.
+type Reranker struct {
 	queue  host.InferenceQueue
 	source ports.ProfileSource
 	report func(what string, err error)
@@ -28,15 +28,15 @@ type Reranking struct {
 
 // New returns a Reranking that reads profiles from source, opens models with open and reports what fails to
 // report. The error is the one of the shipped profiles.
-func New(source ports.ProfileSource, open ports.OpenScorer, queue host.InferenceQueue, report func(what string, err error)) (*Reranking, error) {
+func New(source ports.ProfileSource, open ports.OpenScorer, queue host.InferenceQueue, report func(what string, err error)) (*Reranker, error) {
 	if _, err := source.Load(func(string, error) {}); err != nil {
 		return nil, err
 	}
-	return &Reranking{source: source, report: report, queue: queue, models: newLoader(open, report)}, nil
+	return &Reranker{source: source, report: report, queue: queue, models: newLoader(open, report)}, nil
 }
 
 // Rerank scores each document against the query with the model the row names. No document is no load.
-func (r *Reranking) Rerank(ctx context.Context, call connection.Call, query string, documents []string) (scores []float32, err error) {
+func (r *Reranker) Rerank(ctx context.Context, call connection.Call, query string, documents []string) (scores []float32, err error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (r *Reranking) Rerank(ctx context.Context, call connection.Call, query stri
 	return scores, nil
 }
 
-func (r *Reranking) getProfile(model string) (profile.Profile, error) {
+func (r *Reranker) getProfile(model string) (profile.Profile, error) {
 	table, err := r.loadProfiles()
 	if err != nil {
 		return profile.Profile{}, err
@@ -84,7 +84,7 @@ func (r *Reranking) getProfile(model string) (profile.Profile, error) {
 	return p, err
 }
 
-func (r *Reranking) loadProfiles() (*profile.Profiles, error) {
+func (r *Reranker) loadProfiles() (*profile.Profiles, error) {
 	table, err := r.source.Load(r.report)
 	if err != nil {
 		r.report("profiles", err)
@@ -94,7 +94,7 @@ func (r *Reranking) loadProfiles() (*profile.Profiles, error) {
 }
 
 // ListModels lists the profiles that have a tier, as the options of the row field model.
-func (r *Reranking) ListModels(ctx context.Context, _ connection.Call, _ connection.OptionsQuery) (connection.ListedOptions, error) {
+func (r *Reranker) ListModels(ctx context.Context, _ connection.Call, _ connection.OptionsQuery) (connection.ListedOptions, error) {
 	if err := ctx.Err(); err != nil {
 		return connection.ListedOptions{}, err
 	}
@@ -112,7 +112,7 @@ func (r *Reranking) ListModels(ctx context.Context, _ connection.Call, _ connect
 
 // DetectConnections answers connections.detected with one connection of the type, whether or not a model is
 // on this machine.
-func (r *Reranking) DetectConnections(ctx context.Context, _ connection.Call) ([]connection.DetectedConnection, error) {
+func (r *Reranker) DetectConnections(ctx context.Context, _ connection.Call) ([]connection.DetectedConnection, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -120,6 +120,6 @@ func (r *Reranking) DetectConnections(ctx context.Context, _ connection.Call) ([
 }
 
 // Close stops a load in progress and closes the loaded model.
-func (r *Reranking) Close() error {
+func (r *Reranker) Close() error {
 	return r.models.close()
 }

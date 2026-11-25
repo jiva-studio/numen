@@ -15,4 +15,4 @@ func newPluginHost(t *testing.T, target string, dirs ...string) *TestPlugins {
 	return &TestPlugins{Execution: execution, Preferences: preferences, Endpoints: endpoints}
 }
 
-func prepareIndexPath(c vaultWiring) (string, error) { return indexfolder.Prepare(c.IndexPath) }
+func prepareIndexPath(c vaultParts) (string, error) { return indexfolder.Prepare(c.IndexPath) }

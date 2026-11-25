@@ -89,7 +89,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.TestInstallation,
 		t.Fatal(err)
 	}
 	cmd := wiretest.StartSleepProcess(t)
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 	return container.NewTestInstallation(container.Config{
@@ -275,7 +275,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := read.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
+	if _, err := read.Execute(t.Context(), v, indexing.ReadCallbacks{}); err != nil {
 		t.Fatal(err)
 	}
 

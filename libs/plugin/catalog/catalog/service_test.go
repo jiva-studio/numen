@@ -40,7 +40,7 @@ func newService(t *testing.T, sources ...catalog.Source) *catalog.Service {
 	return service
 }
 
-func list(t *testing.T, service *catalog.Service) catalog.Listing {
+func list(t *testing.T, service *catalog.Service) catalog.EntryList {
 	t.Helper()
 	listing, err := service.List(t.Context())
 	if err != nil {
@@ -49,7 +49,7 @@ func list(t *testing.T, service *catalog.Service) catalog.Listing {
 	return listing
 }
 
-func find(listing catalog.Listing, id string) (catalog.Entry, bool) {
+func find(listing catalog.EntryList, id string) (catalog.Entry, bool) {
 	for _, one := range listing.Entries {
 		if one.ID == id {
 			return one, true

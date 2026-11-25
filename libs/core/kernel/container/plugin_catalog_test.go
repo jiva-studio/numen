@@ -143,7 +143,7 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(
 	}
 }
 
-func findEntry(listing catalog.Listing, id string) (catalog.Entry, bool) {
+func findEntry(listing catalog.EntryList, id string) (catalog.Entry, bool) {
 	for _, one := range listing.Entries {
 		if one.ID == id {
 			return one, true

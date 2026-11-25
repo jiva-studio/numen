@@ -126,7 +126,7 @@ type moveParts struct {
 	links    noteport.LinkQueries
 	names    edit.NameQueries
 	readers  vaultport.VaultReaders
-	writers  note.MoveWriting
+	writers  note.MoveWriter
 	index    edit.IndexUpdater
 	hasIndex bool
 }

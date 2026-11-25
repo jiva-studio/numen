@@ -76,8 +76,8 @@ type fakeHost struct {
 	calls []tools.Call
 }
 
-func (h *fakeHost) ListTools(context.Context, http.Header) (tools.Listing, error) {
-	return tools.Listing{Tools: []*tools.ToolInfo{{
+func (h *fakeHost) ListTools(context.Context, http.Header) (tools.ToolList, error) {
+	return tools.ToolList{Tools: []*tools.ToolInfo{{
 		Name:         "note_read",
 		Title:        "Read a note",
 		Description:  "Reads a note",

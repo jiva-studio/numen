@@ -256,7 +256,7 @@ func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 		t.Fatalf("Discover: %v", err)
 	}
 	launched := make(chan string, 1)
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, p manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launched <- p.Manifest.ID
 		return nil, nil, errors.New("no process in this test")
 	})

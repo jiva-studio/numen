@@ -78,7 +78,7 @@ type Arranger interface {
 type LinkEditor interface {
 	// AddLinks writes links into the frontmatter links of notes, grouped by note: the links of one
 	// note are one write against one file stat. The result has one entry per addition, in order.
-	AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error)
+	AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkResult, error)
 	// UpdateLinks changes the role, type, label and note of the links the note at from has to the
 	// target, keeping the target. An empty field is kept.
 	UpdateLinks(ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat) (domain.FileStat, error)
@@ -88,7 +88,7 @@ type LinkEditor interface {
 	// WriteFrontmatter sets, replaces and removes top-level frontmatter keys of notes, one result per
 	// write in order. A note that fails costs the others nothing; the notes of a canceled call get
 	// plugin.ErrNotAttempted.
-	WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error)
+	WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterResult, error)
 }
 
 // Watch tells of the moves in the vaults of the installation.

@@ -49,7 +49,7 @@ func NewRegistry(d RegistryDeps) *Registry {
 }
 
 // ListPlugins returns all discovered plugins registered with the host, in the order of their ids.
-func (r *Registry) ListPlugins() []manifest.Discovered {
+func (r *Registry) ListPlugins() []manifest.DiscoveredPlugin {
 	v, release := r.set.getView()
 	defer release()
 	if r.mode.IsSafeMode() {
@@ -59,15 +59,15 @@ func (r *Registry) ListPlugins() []manifest.Discovered {
 }
 
 // GetPlugin retrieves a single enabled plugin by its unique identifier.
-func (r *Registry) GetPlugin(id string) (manifest.Discovered, bool) {
+func (r *Registry) GetPlugin(id string) (manifest.DiscoveredPlugin, bool) {
 	v, release := r.set.getView()
 	defer release()
 	if r.mode.IsSafeMode() {
-		return manifest.Discovered{}, false
+		return manifest.DiscoveredPlugin{}, false
 	}
 	p, ok := v.get(id)
 	if !ok || !v.isEnabled(id) {
-		return manifest.Discovered{}, false
+		return manifest.DiscoveredPlugin{}, false
 	}
 	return p, true
 }
@@ -83,7 +83,7 @@ func (r *Registry) IsPluginEnabled(pluginID string) bool {
 // capability. Where none is enabled, the error is a *plugin.UnavailableError: Disabled when a
 // plugin declares it and it is switched off or the host is in safe mode, NotInstalled when
 // none declares it.
-func (r *Registry) ResolveCapability(capability string) (manifest.Discovered, error) {
+func (r *Registry) ResolveCapability(capability string) (manifest.DiscoveredPlugin, error) {
 	v, release := r.set.getView()
 	defer release()
 
@@ -103,12 +103,12 @@ func (r *Registry) ResolveCapability(capability string) (manifest.Discovered, er
 	if isSafe {
 		missing.Err = ErrSafeModeActive
 	}
-	return manifest.Discovered{}, missing
+	return manifest.DiscoveredPlugin{}, missing
 }
 
 // ResolveService finds the enabled plugin with the lowest id among those that serve the service to
 // the windows.
-func (r *Registry) ResolveService(service string) (manifest.Discovered, bool) {
+func (r *Registry) ResolveService(service string) (manifest.DiscoveredPlugin, bool) {
 	v, release := r.set.getView()
 	defer release()
 	for _, p := range v.enabled() {
@@ -116,7 +116,7 @@ func (r *Registry) ResolveService(service string) (manifest.Discovered, bool) {
 			return p, true
 		}
 	}
-	return manifest.Discovered{}, false
+	return manifest.DiscoveredPlugin{}, false
 }
 
 // ResolveNoteProfile returns how the index stores the notes of a type, as
@@ -133,7 +133,7 @@ func (r *Registry) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProf
 	return domain.NoteProfile{}, false
 }
 
-func (r *Registry) FindPluginByCapability(capability string) (manifest.Discovered, bool) {
+func (r *Registry) FindPluginByCapability(capability string) (manifest.DiscoveredPlugin, bool) {
 	p, err := r.ResolveCapability(capability)
 	return p, err == nil
 }

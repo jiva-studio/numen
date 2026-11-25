@@ -18,8 +18,8 @@ type Config struct {
 	CacheDir   string
 }
 
-// Listing is the merged entries of the sources, and the sources that could not be read in full.
-type Listing struct {
+// EntryList is the merged entries of the sources, and the sources that could not be read in full.
+type EntryList struct {
 	Entries []Entry
 	Errors  []*SourceError
 }
@@ -46,13 +46,13 @@ func NewService(config Config) (*Service, error) {
 // List asks every source, merges the entries by plugin id and marks the entries the application
 // cannot run. A source that fails does not remove the entries of the others: the error returned
 // joins one *SourceError for each source that failed, and the listing holds what the rest returned.
-func (s *Service) List(ctx context.Context) (Listing, error) {
+func (s *Service) List(ctx context.Context) (EntryList, error) {
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="lists starts with zero length and capacity len(s.sources)"
 	lists := make([][]Entry, 0, len(s.sources))
 	var failures []*SourceError
 	for _, source := range s.sources {
 		if err := ctx.Err(); err != nil {
-			return Listing{}, err
+			return EntryList{}, err
 		}
 		entries, err := source.List(ctx)
 		if err != nil {
@@ -64,7 +64,7 @@ func (s *Service) List(ctx context.Context) (Listing, error) {
 	for i := range merged {
 		merged[i].Incompatibility = checkEntry(merged[i], s.env)
 	}
-	listing := Listing{Entries: merged, Errors: failures}
+	listing := EntryList{Entries: merged, Errors: failures}
 	return listing, joinSourceErrors(failures)
 }
 

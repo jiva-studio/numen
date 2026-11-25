@@ -11,10 +11,10 @@ import (
 )
 
 type fakeDeclarations struct {
-	plugins []manifest.Discovered
+	plugins []manifest.DiscoveredPlugin
 }
 
-func (f *fakeDeclarations) ListPlugins() []manifest.Discovered {
+func (f *fakeDeclarations) ListPlugins() []manifest.DiscoveredPlugin {
 	return f.plugins
 }
 

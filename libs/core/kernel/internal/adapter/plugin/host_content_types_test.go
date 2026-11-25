@@ -22,7 +22,7 @@ func newReaderHost(manifests ...catalogmanifest.Manifest) *pluginhost.Host {
 	host.Management.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &catalogmanifest.Frontend{}
-		setPlugin(host.Management, manifest.ID, catalogmanifest.Discovered{Manifest: manifest})
+		setPlugin(host.Management, manifest.ID, catalogmanifest.DiscoveredPlugin{Manifest: manifest})
 	}
 	return host
 }

@@ -27,7 +27,7 @@ import (
 // file texts and embed the chunks. They are put together here, in the external package, because those use
 // cases and the index import this package.
 func TestWorker(t *testing.T) {
-	indexing.RunWorkerTests(t, func(t *testing.T) (indexing.OpenReading, vaultport.VaultReaders, *indexing.WorkerIndex) {
+	indexing.RunWorkerTests(t, func(t *testing.T) (indexing.ReadWholeVaultOpener, vaultport.VaultReaders, *indexing.WorkerIndex) {
 		t.Helper()
 		db, err := index.Open(t.Context(), filepath.Join(t.TempDir(), "index.db"))
 		if err != nil {

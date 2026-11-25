@@ -186,16 +186,16 @@ func describeCode(reason api.ErrorCode) string {
 	return string(reason)
 }
 
-// NoteCreated is the deck or the card model a create call created.
-type NoteCreated struct {
+// CreatedNote is the deck or the card model a create call created.
+type CreatedNote struct {
 	Path  string `json:"path" jsonschema:"the path of the new file, relative to the vault folder"`
 	ID    string `json:"id" jsonschema:"the identifier of the new note"`
 	Title string `json:"title" jsonschema:"the title of the new note"`
 }
 
-func newNoteCreated(created cards.CreateNoteResult, err error) (NoteCreated, error) {
+func newNoteCreated(created cards.CreateNoteResult, err error) (CreatedNote, error) {
 	if err != nil {
-		return NoteCreated{}, err
+		return CreatedNote{}, err
 	}
-	return NoteCreated{Path: created.Path, ID: created.ID, Title: created.Title}, nil
+	return CreatedNote{Path: created.Path, ID: created.ID, Title: created.Title}, nil
 }

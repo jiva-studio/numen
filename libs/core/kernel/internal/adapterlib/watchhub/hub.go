@@ -5,7 +5,7 @@
 // recursively is served by that watch, and a folder requested over existing
 // watches replaces them. notify's recursive tree, which FSEvents uses, removes
 // the outer watch when a watch nested inside it stops. Place on Linux is the one nested
-// watch: it is placed inside the recursive watch it lies in and is stopped with it.
+// watch: it is an osWatch inside the recursive watch it lies in and is stopped with it.
 package watchhub
 
 import (
@@ -19,7 +19,7 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
-// handover is how many events a placed watch holds before they are handed to the followers.
+// handover is how many events an osWatch holds before they are handed to the followers.
 const handover = 1024
 
 // follower is one caller following a folder.
@@ -27,7 +27,7 @@ type follower struct {
 	dir         string
 	isRecursive bool
 	c           chan<- notify.EventInfo
-	watch       *placed
+	watch       *osWatch
 }
 
 func (f *follower) isFollowing(path string) bool {
@@ -37,8 +37,8 @@ func (f *follower) isFollowing(path string) bool {
 	return path == f.dir || filepath.Dir(path) == f.dir
 }
 
-// placed is one watch of the operating system and the followers it serves.
-type placed struct {
+// osWatch is one watch of the operating system and the followers it serves.
+type osWatch struct {
 	dir         string
 	isRecursive bool
 	raw         chan notify.EventInfo
@@ -50,14 +50,14 @@ type placed struct {
 	inner chan notify.EventInfo
 }
 
-func (p *placed) isCovering(dir string, isRecursive bool) bool {
+func (p *osWatch) isCovering(dir string, isRecursive bool) bool {
 	if p.isRecursive {
 		return isWithin(dir, p.dir)
 	}
 	return dir == p.dir && !isRecursive
 }
 
-func (p *placed) forward() {
+func (p *osWatch) forward() {
 	for {
 		select {
 		case <-p.quit:
@@ -99,11 +99,11 @@ type Hub struct {
 	system system
 
 	mu     sync.Mutex
-	placed map[*placed]struct{}
+	placed map[*osWatch]struct{}
 }
 
 func newHub(watches system) *Hub {
-	return &Hub{system: watches, placed: make(map[*placed]struct{})}
+	return &Hub{system: watches, placed: make(map[*osWatch]struct{})}
 }
 
 // ErrNoHub is returned by a watch asked of no hub.
@@ -146,7 +146,7 @@ func (h *Hub) place(dir string, isRecursive bool, one *follower) error {
 	for _, p := range inner {
 		h.removePlacement(p)
 	}
-	next := &placed{dir: dir, isRecursive: isRecursive, followers: make(map[*follower]struct{})}
+	next := &osWatch{dir: dir, isRecursive: isRecursive, followers: make(map[*follower]struct{})}
 	if err := h.start(next); err != nil {
 		for _, p := range inner {
 			err = errors.Join(err, h.start(p))
@@ -162,13 +162,13 @@ func (h *Hub) place(dir string, isRecursive bool, one *follower) error {
 	return nil
 }
 
-func (h *Hub) getInnerWatches(dir string, isRecursive bool) (string, bool, []*placed) {
+func (h *Hub) getInnerWatches(dir string, isRecursive bool) (string, bool, []*osWatch) {
 	for p := range h.placed {
 		if isWithin(dir, p.dir) {
 			dir, isRecursive = p.dir, true
 		}
 	}
-	var inner []*placed
+	var inner []*osWatch
 	for p := range h.placed {
 		if !isWithin(p.dir, dir) {
 			continue
@@ -181,7 +181,7 @@ func (h *Hub) getInnerWatches(dir string, isRecursive bool) (string, bool, []*pl
 	return dir, isRecursive, inner
 }
 
-func (h *Hub) start(p *placed) error {
+func (h *Hub) start(p *osWatch) error {
 	target := p.dir
 	if p.isRecursive {
 		target = filepath.Join(p.dir, "...")
@@ -196,7 +196,7 @@ func (h *Hub) start(p *placed) error {
 	return nil
 }
 
-func (h *Hub) removePlacement(p *placed) {
+func (h *Hub) removePlacement(p *osWatch) {
 	h.system.Stop(p.raw)
 	if p.inner != nil {
 		h.system.Stop(p.inner)
@@ -223,7 +223,7 @@ func (h *Hub) newStop(one *follower) func() {
 	}
 }
 
-func (p *placed) add(one *follower) {
+func (p *osWatch) add(one *follower) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	one.watch = p

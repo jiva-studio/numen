@@ -25,10 +25,10 @@ type Types interface {
 
 // ResolveConnection reads a connection and its type as a call to the provider needs them. It fails with
 // connection.ErrNotFound and connection.ErrTypeUnavailable.
-type ResolveConnection func(connectionID string) (connection.Resolved, error)
+type ResolveConnection func(connectionID string) (connection.Resolution, error)
 
-// Detected is the connections the providers report ready on this machine through connection.OperationDetected.
-type Detected interface {
+// DetectedConnections is the connections the providers report ready on this machine through connection.OperationDetected.
+type DetectedConnections interface {
 	// ListDetected returns the connections the providers last reported for the available types, in the order
 	// of the types. It does not wait for a provider.
 	ListDetected() []connection.Connection

@@ -20,7 +20,7 @@ type ChangeHub interface {
 // Declarations lists the plugins that can declare licenses.
 type Declarations interface {
 	// ListPlugins returns all discovered plugins registered with the host, in the order of their IDs.
-	ListPlugins() []manifest.Discovered
+	ListPlugins() []manifest.DiscoveredPlugin
 }
 
 // MachineIdentity provides the current machine's fingerprint and human-readable instance name.

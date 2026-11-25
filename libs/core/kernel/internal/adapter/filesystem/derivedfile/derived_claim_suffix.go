@@ -38,7 +38,7 @@ func (d *DerivedStore) ClaimName(_ context.Context, name string) (func() error, 
 
 // List returns the files directly under a name, as names of this store,
 // sorted. Folders are omitted because the store contains only files.
-func (d *DerivedStore) List(_ context.Context, name string) ([]Listed, error) {
+func (d *DerivedStore) List(_ context.Context, name string) ([]StoreFile, error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (d *DerivedStore) List(_ context.Context, name string) ([]Listed, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]Listed, 0, len(entries))
+	out := make([]StoreFile, 0, len(entries))
 	for _, e := range entries {
 		if e.IsDir() {
 			continue
@@ -65,9 +65,9 @@ func (d *DerivedStore) List(_ context.Context, name string) ([]Listed, error) {
 		if err != nil {
 			continue
 		}
-		out = append(out, Listed{Name: clean + "/" + e.Name(), Size: int(info.Size())})
+		out = append(out, StoreFile{Name: clean + "/" + e.Name(), Size: int(info.Size())})
 	}
-	slices.SortFunc(out, func(a, b Listed) int { return strings.Compare(a.Name, b.Name) })
+	slices.SortFunc(out, func(a, b StoreFile) int { return strings.Compare(a.Name, b.Name) })
 	return out, nil
 }
 
@@ -229,9 +229,9 @@ func (d *DerivedStore) isEnclosedBy(resolved, area string) (bool, error) {
 	return where.isInside(resolved, area), nil
 }
 
-// Listed is a file a folder of the store holds: its name in the store, and how
+// StoreFile is a file a folder of the store holds: its name in the store, and how
 // many bytes are under it.
-type Listed struct {
+type StoreFile struct {
 	Name string
 	Size int
 }

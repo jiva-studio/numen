@@ -273,7 +273,7 @@ type cancelingLinkVault struct {
 	cancel context.CancelFunc
 }
 
-func (c *cancelingLinkVault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
+func (c *cancelingLinkVault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkResult, error) {
 	first := additions[0].From
 	var written []plugin.LinkAddition
 	for _, one := range additions {
@@ -286,7 +286,7 @@ func (c *cancelingLinkVault) AddLinks(ctx context.Context, additions []plugin.Li
 		return nil, err
 	}
 	c.cancel()
-	out := make([]plugin.LinkAdded, len(additions))
+	out := make([]plugin.LinkResult, len(additions))
 	next := 0
 	for i, one := range additions {
 		if one.From == first {
@@ -294,7 +294,7 @@ func (c *cancelingLinkVault) AddLinks(ctx context.Context, additions []plugin.Li
 			next++
 			continue
 		}
-		out[i] = plugin.LinkAdded{
+		out[i] = plugin.LinkResult{
 			Err: fmt.Errorf("the call was canceled before the links were added to %s: %w", one.From, plugin.ErrNotAttempted),
 		}
 	}

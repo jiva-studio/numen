@@ -51,7 +51,7 @@ func (s *session) parts(where cli.Locations) vaultParts {
 // they opened.
 type stubSession struct {
 	Vaults         func() (cli.Vaults, error)
-	Indexed        func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error)
+	Indexed        func(ctx context.Context, options cli.IndexOptions) (cli.IndexRun, error)
 	PluginCommands func() cli.PluginCommands
 	closes         *closeList
 	failures       []string
@@ -73,9 +73,9 @@ func (d stubSession) OpenVaults() (cli.Vaults, error) {
 	return d.Vaults()
 }
 
-func (d stubSession) OpenIndexed(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+func (d stubSession) OpenIndexed(ctx context.Context, options cli.IndexOptions) (cli.IndexRun, error) {
 	if d.Indexed == nil {
-		return cli.Indexed{}, errNotProvided
+		return cli.IndexRun{}, errNotProvided
 	}
 	return d.Indexed(ctx, options)
 }
@@ -108,7 +108,7 @@ func (s *session) depsOver(where cli.Locations, parts vaultParts) stubSession {
 	closes := &closeList{}
 	return stubSession{
 		Vaults: func() (cli.Vaults, error) { return parts.build(), nil },
-		Indexed: func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+		Indexed: func(ctx context.Context, options cli.IndexOptions) (cli.IndexRun, error) {
 			return s.openIndexedSession(ctx, where, parts, closes, options)
 		},
 		closes: closes,
@@ -117,15 +117,15 @@ func (s *session) depsOver(where cli.Locations, parts vaultParts) stubSession {
 
 func (s *session) openIndexedSession(
 	ctx context.Context, where cli.Locations, parts vaultParts, closes *closeList, options cli.IndexOptions,
-) (cli.Indexed, error) {
+) (cli.IndexRun, error) {
 	rows, closeRows, err := parts.rows(ctx)
 	if err != nil {
-		return cli.Indexed{}, err
+		return cli.IndexRun{}, err
 	}
 	closes.add(closeRows)
 	db, err := index.Open(ctx, where.Index)
 	if err != nil {
-		return cli.Indexed{}, err
+		return cli.IndexRun{}, err
 	}
 	closes.add(db.Close)
 	vaultOptions := vaultconfig.Options{ServiceDir: where.ServiceDir}
@@ -175,10 +175,10 @@ func (p vaultParts) build() cli.Vaults {
 	}
 }
 
-func (p vaultParts) indexedOver(rows indexport.VaultRepository) cli.Indexed {
+func (p vaultParts) indexedOver(rows indexport.VaultRepository) cli.IndexRun {
 	find := p.ports.Lookup
 	unregister := vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
-	return cli.Indexed{Changes: cli.VaultChanges{
+	return cli.IndexRun{Changes: cli.VaultChanges{
 		Rename:     vaults.NewRenameByName(find, vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows)),
 		Unregister: vaults.NewUnregisterByName(find, unregister),
 		Erase:      vaults.NewEraseByName(find, vaults.NewErase(p.identity, p.trash, unregister)),
@@ -237,8 +237,8 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 		Vaults: func() (cli.Vaults, error) {
 			return vaultParts{ports: portsOfSingle(singleVaultList{target})}.build(), nil
 		},
-		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Links: query.NewShowLinksByName(singleVaultList{target}, query.NewShowLinks(fixedLinkQueries{
+		Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
+			return cli.IndexRun{Links: query.NewShowLinksByName(singleVaultList{target}, query.NewShowLinks(fixedLinkQueries{
 				links: []domain.ResolvedLink{{
 					Link: domain.Link{
 						Target: domain.Address{Scheme: domain.SchemeName, Value: "Hives"},

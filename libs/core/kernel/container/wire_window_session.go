@@ -14,7 +14,7 @@ import (
 type windowParts struct {
 	lookup    vaultport.VaultLookup
 	indexer   *indexing.Worker
-	embedding *indexing.Embedding
+	embedding *indexing.EmbeddingSetup
 
 	recordOpen    vaultport.VaultRecorder
 	importFiles   vault.Import
@@ -49,7 +49,7 @@ type windowSession struct {
 }
 
 func newWindowSession(
-	parts windowParts, pluginVault windowsession.PluginVaultPath, runner *windowsession.PassRunner, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess,
+	parts windowParts, pluginVault windowsession.PluginVaultPath, runner *windowsession.PassRunner, vaultDeps vaultParts, state *editor.Session, page *editor.PageAccess,
 ) windowSession {
 	identity := windowsession.NewCheckIdentity(createVaultIdentity(vaultDeps.Options))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, parts.diagnostics, parts.embedderError, runner)

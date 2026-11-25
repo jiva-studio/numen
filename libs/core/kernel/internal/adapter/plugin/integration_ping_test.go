@@ -25,7 +25,7 @@ import (
 func launchAnsweringPing(t *testing.T, protocol int32, procs *[]*os.Process) supervision.Launcher {
 	t.Helper()
 	pingPort := wiretest.ServePing(t, protocol)
-	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	return func(ctx context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err

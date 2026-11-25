@@ -109,7 +109,7 @@ func (u Session) Execute(
 }
 
 func queueCards(
-	holds asking, schedules map[review.CardID]review.Schedule, policy review.Assignment,
+	holds cardSelection, schedules map[review.CardID]review.Schedule, policy review.Assignment,
 	dueTable *review.DueByDay, now time.Time,
 ) []QueuedReviewCard {
 	queue := make([]QueuedReviewCard, 0, len(holds.dueCards)+len(holds.newCards))

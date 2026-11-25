@@ -97,7 +97,7 @@ func (a Arranger) GetProblems(ctx context.Context, checks []domain.Check) ([]dom
 	}
 	return a.RunChecks(ctx, v, checks...)
 }
-func (a Arranger) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
+func (a Arranger) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkResult, error) {
 	v, err := a.session.open()
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ func (a Arranger) ListParseProblems(ctx context.Context) ([]domain.VaultProblem,
 type LinkEditor struct{ Arranger }
 
 // WriteFrontmatter writes the keys of the notes through the use case of the vault the call works on.
-func (a LinkEditor) WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
+func (a LinkEditor) WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterResult, error) {
 	v, err := a.session.open()
 	if err != nil {
 		return nil, err

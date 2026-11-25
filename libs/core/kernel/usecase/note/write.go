@@ -19,7 +19,7 @@ import (
 // because nothing here rewrites them. The user's YAML formatting is retained.
 type Write struct {
 	readers   vaultport.VaultReaders
-	writers   NoteWriting
+	writers   NoteWriter
 	index     edit.IndexUpdater
 	now       machineport.Clock
 	Bound     int
@@ -28,7 +28,7 @@ type Write struct {
 }
 
 func NewWrite(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock, admission vaultport.WriteAdmission,
+	readers vaultport.VaultReaders, writers NoteWriter, index edit.IndexUpdater, now machineport.Clock, admission vaultport.WriteAdmission,
 ) Write {
 	return Write{readers: readers, writers: writers, index: index, now: now, admission: admission}
 }

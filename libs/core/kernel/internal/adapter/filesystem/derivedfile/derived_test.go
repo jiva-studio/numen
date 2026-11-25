@@ -477,7 +477,7 @@ func TestTheStoreReturnsWhatNamesItContains(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []derivedfile.Listed{
+	want := []derivedfile.StoreFile{
 		{Name: "area/first.txt", Size: len("in it")},
 		{Name: "area/second.txt", Size: len("in it")},
 	}
@@ -503,7 +503,7 @@ func TestAListingReturnsHowLongEachFileIs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []derivedfile.Listed{{Name: "area/one.txt", Size: len("first and more")}}
+	want := []derivedfile.StoreFile{{Name: "area/one.txt", Size: len("first and more")}}
 	if !slices.Equal(got, want) {
 		t.Errorf("listed %v, want %v", got, want)
 	}

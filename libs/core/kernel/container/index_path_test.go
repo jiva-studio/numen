@@ -18,7 +18,7 @@ func TestOpenIndex_RejectsConfigWithoutIndexPath(t *testing.T) {
 	if _, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context()); !errors.Is(err, indexfolder.ErrNoPath) {
 		t.Fatalf("OpenIndex without IndexPath: %v, want ErrNoIndexPath", err)
 	}
-	if _, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowOpening{Named: "", Out: io.Discard}); !errors.Is(err, indexfolder.ErrNoPath) {
+	if _, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowRequest{Named: "", Out: io.Discard}); !errors.Is(err, indexfolder.ErrNoPath) {
 		t.Fatalf("OpenWindow without IndexPath: %v, want ErrNoIndexPath", err)
 	}
 }

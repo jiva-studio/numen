@@ -63,7 +63,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 		}
 	})
 	stuck := make(chan struct{})
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, p manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "org.example.sample" {
 			close(stuck)
 			return cmd.Process, silent, nil

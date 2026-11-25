@@ -28,7 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vaultIndex, v domain.Vault) error {
+func installCurrentVault(install pluginInstall, vaultDeps vaultParts, db *vaultIndex, v domain.Vault) error {
 	registry, err := openVaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ type installedPlugins interface {
 	textversion.TextPlugins
 	pluginmanifest.PluginLister
 	pluginport.PluginManifests
-	ListPlugins() []manifest.Discovered
+	ListPlugins() []manifest.DiscoveredPlugin
 }
 
 // pluginResolver supplies the plugin lookups used during host assembly.
@@ -109,7 +109,7 @@ type PluginPreferences struct {
 	ApplySetting        settingsusecase.PluginSettingApplier
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
-	Detection           connectionport.Detected
+	Detection           connectionport.DetectedConnections
 }
 
 // pluginProviders connects plugin providers to search and model clients.

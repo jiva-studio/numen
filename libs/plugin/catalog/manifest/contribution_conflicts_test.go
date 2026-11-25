@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func plugin(id string, contributes manifest.Contributes) manifest.Discovered {
-	return manifest.Discovered{Manifest: manifest.Manifest{ID: id, Frontend: &manifest.Frontend{}, Contributes: contributes}}
+func plugin(id string, contributes manifest.Contributes) manifest.DiscoveredPlugin {
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: id, Frontend: &manifest.Frontend{}, Contributes: contributes}}
 }
 
 func tabKinds(kinds ...string) []manifest.TabKind {
@@ -23,57 +23,57 @@ func tabKinds(kinds ...string) []manifest.TabKind {
 
 func TestListContributionConflicts(t *testing.T) {
 	cases := map[string]struct {
-		plugins []manifest.Discovered
+		plugins []manifest.DiscoveredPlugin
 		want    []string
 	}{
 		"the same tab kind in two plugins": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("deck")}),
 				plugin("md.example.b", manifest.Contributes{TabKinds: tabKinds("deck")}),
 			},
 			want: []string{`plugin "md.example.b" declares the tab kind "deck", which plugin "md.example.a" already declares`},
 		},
 		"the same reader id in two plugins": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{Readers: []manifest.Reader{{ID: "pdf"}}}),
 				plugin("md.example.b", manifest.Contributes{Readers: []manifest.Reader{{ID: "pdf"}}}),
 			},
 			want: []string{`plugin "md.example.b" declares the reader "reader:pdf", which plugin "md.example.a" already declares`},
 		},
 		"a reader that takes the tab kind of another plugin": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("reader:pdf")}),
 				plugin("md.example.b", manifest.Contributes{Readers: []manifest.Reader{{ID: "pdf"}}}),
 			},
 			want: []string{`plugin "md.example.b" declares the reader "reader:pdf", which plugin "md.example.a" already declares`},
 		},
 		"the same application view kind in two plugins": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{ViewCapabilities: []string{"note-editor"}}),
 				plugin("md.example.b", manifest.Contributes{ViewCapabilities: []string{"note-editor"}}),
 			},
 			want: []string{`plugin "md.example.b" declares the view capability "note-editor", which plugin "md.example.a" already declares`},
 		},
 		"a view kind of the plugin own id in two plugins": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{ViewCapabilities: []string{"md.example.a.deck"}}),
 				plugin("md.example.b", manifest.Contributes{ViewCapabilities: []string{"md.example.b.deck"}}),
 			},
 		},
 		"a reader and its tab kind in one plugin": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("reader:pdf"), Readers: []manifest.Reader{{ID: "pdf"}}}),
 			},
 		},
 		"a reader with prefix that takes the tab kind of another plugin": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("reader:pdf")}),
 				plugin("md.example.b", manifest.Contributes{Readers: []manifest.Reader{{ID: "reader:pdf"}}}),
 			},
 			want: []string{`plugin "md.example.b" declares the reader "reader:pdf", which plugin "md.example.a" already declares`},
 		},
 		"a refused plugin owns nothing": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("deck")}),
 				plugin("md.example.b", manifest.Contributes{TabKinds: tabKinds("deck", "extra")}),
 				plugin("md.example.c", manifest.Contributes{TabKinds: tabKinds("extra")}),
@@ -85,13 +85,13 @@ func TestListContributionConflicts(t *testing.T) {
 			},
 		},
 		"distinct declarations": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("deck")}),
 				plugin("md.example.b", manifest.Contributes{TabKinds: tabKinds("cards")}),
 			},
 		},
 		"two plugins contributing to the same license id with matching provider productId": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{Licenses: []manifest.License{{
 					ID: "supporter", Description: "A", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_1"}},
 				}}}),
@@ -101,7 +101,7 @@ func TestListContributionConflicts(t *testing.T) {
 			},
 		},
 		"two plugins declaring different productId for the same license provider": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{Licenses: []manifest.License{{
 					ID: "supporter", Description: "A", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_1"}},
 				}}}),
@@ -112,34 +112,34 @@ func TestListContributionConflicts(t *testing.T) {
 			want: []string{`plugin "md.example.b" declares the license provider "supporter/creem", which plugin "md.example.a" already declares`},
 		},
 		"a slot point two plugins declare": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: "ledger.row", Title: "A"}}}),
 				plugin("md.example.b", manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: "ledger.row", Title: "B"}}}),
 			},
 			want: []string{`plugin "md.example.b" declares the slot point "ledger.row", which plugin "md.example.a" already declares`},
 		},
 		"a submenu named as the slot point of another plugin": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: "ledger.row", Title: "A"}}}),
 				plugin("md.example.b", manifest.Contributes{Slots: []manifest.SlotEntry{{Slot: "titleBar.commands", Submenu: "ledger.row", Title: "B"}}}),
 			},
 			want: []string{`plugin "md.example.b" declares the submenu "ledger.row", which plugin "md.example.a" already declares`},
 		},
 		"a slot point named as the submenu of another plugin": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{Slots: []manifest.SlotEntry{{Slot: "titleBar.commands", Submenu: "ledger.row", Title: "A"}}}),
 				plugin("md.example.b", manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: "ledger.row", Title: "B"}}}),
 			},
 			want: []string{`plugin "md.example.b" declares the slot point "ledger.row", which plugin "md.example.a" already declares`},
 		},
 		"one submenu in two plugins is left to the slots": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{Slots: []manifest.SlotEntry{{Slot: "titleBar.commands", Submenu: "ledger.row", Title: "A"}}}),
 				plugin("md.example.b", manifest.Contributes{Slots: []manifest.SlotEntry{{Slot: "titleBar.commands", Submenu: "ledger.row", Title: "B"}}}),
 			},
 		},
 		"two plugins declaring different url for the same license provider": {
-			plugins: []manifest.Discovered{
+			plugins: []manifest.DiscoveredPlugin{
 				plugin("md.example.a", manifest.Contributes{Licenses: []manifest.License{{
 					ID: "supporter", Description: "A", Providers: []manifest.LicenseProvider{{Provider: "dodo", URL: "https://checkout.dodopayments.com/buy/1"}},
 				}}}),

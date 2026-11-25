@@ -13,8 +13,8 @@ type ConnectionProfile struct {
 }
 
 // GetHandling returns what is done to a text before the connection reads it.
-func (p ConnectionProfile) GetHandling() Handling {
-	return Handling{
+func (p ConnectionProfile) GetHandling() InputFormat {
+	return InputFormat{
 		QueryPrefix: p.QueryPrefix, DocumentPrefix: p.DocumentPrefix, File: "", Normalize: false, ExtraInputs: nil,
 		Tokenizer: "",
 	}

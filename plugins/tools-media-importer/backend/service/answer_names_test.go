@@ -287,7 +287,7 @@ func TestMediaImporterToolInstructionsContainNoNarrativeMarker(t *testing.T) {
 	}
 }
 
-func getToolSentences(listing tools.Listing, name string) []string {
+func getToolSentences(listing tools.ToolList, name string) []string {
 	for _, info := range listing.Tools {
 		if info.GetName() == name {
 			return info.Instructions

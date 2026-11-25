@@ -31,8 +31,8 @@ func (a failingActivator) EnsureActiveForQuestion(ctx context.Context, pluginID 
 
 func (failingActivator) ReleaseQuestion(string, string, plugindomain.Holder) {}
 
-func (failingActivator) ResolveCapability(string) (manifest.Discovered, error) {
-	return manifest.Discovered{Manifest: manifest.Manifest{ID: embeddingPluginID}}, nil
+func (failingActivator) ResolveCapability(string) (manifest.DiscoveredPlugin, error) {
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: embeddingPluginID}}, nil
 }
 
 func (failingActivator) WatchPluginConfig(string, func()) func() { return func() {} }

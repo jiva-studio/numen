@@ -25,8 +25,8 @@ type Runtime[E any] struct {
 	loaded  atomic.Bool
 }
 
-// Opened is the engine of this process and the path of the library it was made from.
-type Opened[E any] struct {
+// OpenedEngine is the engine of this process and the path of the library it was made from.
+type OpenedEngine[E any] struct {
 	Engine  E
 	LibPath string
 }
@@ -35,13 +35,13 @@ type Opened[E any] struct {
 // the first time it succeeds. Every hook registered runs once, with the
 // library, in the same step that records the engine. A hook that fails fails
 // the open with the error of every failing hook, and nothing is recorded.
-func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath string) (E, error)) (Opened[E], error) {
+func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath string) (E, error)) (OpenedEngine[E], error) {
 	for {
 		r.mu.Lock()
 		if r.loaded.Load() {
 			engine, openedPath := r.engine, r.libPath
 			r.mu.Unlock()
-			return Opened[E]{Engine: engine, LibPath: openedPath}, nil
+			return OpenedEngine[E]{Engine: engine, LibPath: openedPath}, nil
 		}
 		if pending := r.opening; pending != nil {
 			r.mu.Unlock()
@@ -49,7 +49,7 @@ func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath
 			case <-pending:
 				continue
 			case <-ctx.Done():
-				return Opened[E]{}, ctx.Err()
+				return OpenedEngine[E]{}, ctx.Err()
 			}
 		}
 		mine := make(chan struct{})
@@ -66,9 +66,9 @@ func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath
 		r.mu.Unlock()
 		close(mine)
 		if err != nil {
-			return Opened[E]{}, err
+			return OpenedEngine[E]{}, err
 		}
-		return Opened[E]{Engine: engine, LibPath: libPath}, nil
+		return OpenedEngine[E]{Engine: engine, LibPath: libPath}, nil
 	}
 }
 

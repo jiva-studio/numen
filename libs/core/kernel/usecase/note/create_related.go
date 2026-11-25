@@ -21,19 +21,19 @@ const MaxUntitledAttempts = 100
 // CreateInRelation creates a note joined to an existing one. The new note writes
 // the record about From, with the inverse role, and is filed in the folder of From.
 type CreateInRelation struct {
-	create noteCreating
+	create noteCreator
 	names  edit.NameQueries
 }
 
-// noteCreating is the creation of a note that CreateInRelation joins to another.
-type noteCreating interface {
+// noteCreator is the creation of a note that CreateInRelation joins to another.
+type noteCreator interface {
 	Execute(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error)
 	ExecuteUntitled(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error)
 }
 
 // NewCreateInRelation builds the use case over the creation of a note and the
 // address under which a link names the note it is related to.
-func NewCreateInRelation(create noteCreating, names edit.NameQueries) CreateInRelation {
+func NewCreateInRelation(create noteCreator, names edit.NameQueries) CreateInRelation {
 	return CreateInRelation{create: create, names: names}
 }
 

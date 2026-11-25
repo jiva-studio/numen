@@ -62,16 +62,16 @@ func newFunction(readTag func(searchfunction.Call) (string, error), listTagged l
 		return paths, "", nil
 	}
 	return searchfunction.Function{
-		Match: func(ctx context.Context, call searchfunction.Call, asked []string) (searchfunction.Matched, error) {
+		Match: func(ctx context.Context, call searchfunction.Call, asked []string) (searchfunction.MatchResult, error) {
 			paths, warning, err := list(ctx, call)
 			if err != nil {
-				return searchfunction.Matched{}, err
+				return searchfunction.MatchResult{}, err
 			}
 			matched := slices.DeleteFunc(slices.Clone(asked), func(path string) bool {
 				_, isTagged := slices.BinarySearch(paths, path)
 				return !isTagged
 			})
-			return searchfunction.Matched{Paths: matched, Warning: warning}, nil
+			return searchfunction.MatchResult{Paths: matched, Warning: warning}, nil
 		},
 		Find: func(ctx context.Context, call searchfunction.Call, limit int) (searchfunction.Found, error) {
 			paths, warning, err := list(ctx, call)

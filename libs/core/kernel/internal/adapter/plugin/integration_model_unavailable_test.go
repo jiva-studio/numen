@@ -25,19 +25,19 @@ type stubModelHost struct {
 	released atomic.Int32
 }
 
-func (h *stubModelHost) ResolveCapability(string) (manifest.Discovered, error) {
-	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.stub"}}, nil
+func (h *stubModelHost) ResolveCapability(string) (manifest.DiscoveredPlugin, error) {
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: "md.numen.stub"}}, nil
 }
 
 // WatchPluginConfig registers nothing: the stub is never configured.
 func (h *stubModelHost) WatchPluginConfig(string, func()) func() { return func() {} }
 
-func (h *stubModelHost) ResolveService(string) (manifest.Discovered, bool) {
-	return manifest.Discovered{}, false
+func (h *stubModelHost) ResolveService(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{}, false
 }
 
-func (h *stubModelHost) GetPlugin(string) (manifest.Discovered, bool) {
-	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.stub"}}, true
+func (h *stubModelHost) GetPlugin(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: "md.numen.stub"}}, true
 }
 
 func (h *stubModelHost) EnsureActive(context.Context, string, plugindomain.Holder) (transport.Endpoint, error) {

@@ -250,13 +250,13 @@ func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 	if len(unembedded) != 2 {
 		t.Fatalf("%d chunks need a vector, want 2", len(unembedded))
 	}
-	vectors := make([]vector.Stored, 0, len(unembedded))
+	vectors := make([]vector.StoredVector, 0, len(unembedded))
 	for _, p := range unembedded {
 		row, err := strconv.ParseInt(string(p.ChunkID), 10, 64)
 		if err != nil {
 			t.Fatal(err)
 		}
-		vectors = append(vectors, vector.Stored{
+		vectors = append(vectors, vector.StoredVector{
 			ChunkID: p.ChunkID, Hash: hashOf(t, db, row), Recipe: getBenchModel().Recipe(),
 			Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f),
 		})
@@ -268,8 +268,8 @@ func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 		t.Errorf("%d chunks still need a vector", len(remaining))
 	}
 
-	stranger := vector.Stored{ChunkID: "x", Hash: []byte{1}, Recipe: getBenchModel().Recipe(), Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f)}
-	if err := db.Sources().SaveVectors(ctx, []vector.Stored{stranger}); err == nil {
+	stranger := vector.StoredVector{ChunkID: "x", Hash: []byte{1}, Recipe: getBenchModel().Recipe(), Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f)}
+	if err := db.Sources().SaveVectors(ctx, []vector.StoredVector{stranger}); err == nil {
 		t.Error("a vector for chunk \"x\" was saved")
 	}
 }

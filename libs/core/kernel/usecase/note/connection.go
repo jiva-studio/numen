@@ -29,7 +29,7 @@ type noteChange struct {
 // them. A write either leaves every note changed or none.
 type connectionEditor struct {
 	readers   vaultport.VaultReaders
-	writers   NoteWriting
+	writers   NoteWriter
 	index     edit.IndexUpdater
 	now       machineport.Clock
 	links     noteport.LinkQueries
@@ -42,7 +42,7 @@ type connectionEditor struct {
 // is nil the index is taken to follow every write. Where Names is nil, a link names a note by its basename.
 type ConnectionDeps struct {
 	Readers   vaultport.VaultReaders
-	Writers   NoteWriting
+	Writers   NoteWriter
 	Index     edit.IndexUpdater
 	Now       machineport.Clock
 	Links     noteport.LinkQueries

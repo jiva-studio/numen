@@ -46,8 +46,8 @@ type Snapshot struct {
 	Version uint64
 }
 
-// Stored is the content of the settings file.
-type Stored interface {
+// StoredSettings is the content of the settings file.
+type StoredSettings interface {
 	// GetValue returns the value in force at a path: the stored value, else the default its owner
 	// declares. The first element of the path is the owner.
 	GetValue(path ...string) (any, bool)

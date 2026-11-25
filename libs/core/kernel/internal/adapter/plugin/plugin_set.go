@@ -21,7 +21,7 @@ const settingEnabled = "enabled"
 // what makes the handler that serves its backend from the variables a launched process of it is
 // given.
 type builtInPlugin struct {
-	plugin manifest.Discovered
+	plugin manifest.DiscoveredPlugin
 	serve  func(vars map[string]string) (http.Handler, error)
 }
 
@@ -40,7 +40,7 @@ type PluginSet struct {
 	core   manifest.CoreClaims
 
 	mu       sync.RWMutex
-	plugins  map[string]manifest.Discovered
+	plugins  map[string]manifest.DiscoveredPlugin
 	onDisk   map[string]bool
 	builtIns map[string]builtInPlugin
 	problems []manifestjson.DiscoveryProblem
@@ -58,7 +58,7 @@ type PluginSetDeps struct {
 func NewPluginSet(d PluginSetDeps) *PluginSet {
 	return &PluginSet{
 		sups: d.Supervisors, values: d.Values, mode: d.Mode, core: d.Core,
-		plugins:  make(map[string]manifest.Discovered),
+		plugins:  make(map[string]manifest.DiscoveredPlugin),
 		onDisk:   make(map[string]bool),
 		builtIns: make(map[string]builtInPlugin),
 	}
@@ -72,17 +72,17 @@ func (s *PluginSet) getView() (setView, func()) {
 	return setView{set: s}, s.mu.RUnlock
 }
 
-func (v setView) get(pluginID string) (manifest.Discovered, bool) {
+func (v setView) get(pluginID string) (manifest.DiscoveredPlugin, bool) {
 	p, ok := v.set.plugins[pluginID]
 	return p, ok
 }
 
-func (v setView) ordered() []manifest.Discovered {
-	result := make([]manifest.Discovered, 0, len(v.set.plugins))
+func (v setView) ordered() []manifest.DiscoveredPlugin {
+	result := make([]manifest.DiscoveredPlugin, 0, len(v.set.plugins))
 	for _, p := range v.set.plugins {
 		result = append(result, p)
 	}
-	slices.SortFunc(result, func(a, b manifest.Discovered) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
+	slices.SortFunc(result, func(a, b manifest.DiscoveredPlugin) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
 	return result
 }
 
@@ -110,23 +110,23 @@ func (v setView) getSettings(pluginID string) map[string]any {
 	return result
 }
 
-func (v setView) getRequirements(p manifest.Discovered) []manifest.DependencyRequirement {
+func (v setView) getRequirements(p manifest.DiscoveredPlugin) []manifest.DependencyRequirement {
 	return p.Manifest.GetDependencyRequirements(p.Dir, v.getSettings(p.Manifest.ID))
 }
 
-func (v setView) enabled() []manifest.Discovered {
+func (v setView) enabled() []manifest.DiscoveredPlugin {
 	if v.set.mode.IsSafeMode() {
 		return nil
 	}
-	return slices.DeleteFunc(v.ordered(), func(p manifest.Discovered) bool { return !v.isEnabled(p.Manifest.ID) })
+	return slices.DeleteFunc(v.ordered(), func(p manifest.DiscoveredPlugin) bool { return !v.isEnabled(p.Manifest.ID) })
 }
 
-func (v setView) hasBackend(p manifest.Discovered) bool {
+func (v setView) hasBackend(p manifest.DiscoveredPlugin) bool {
 	_, isBuiltIn := v.set.builtIns[p.Manifest.ID]
 	return isBuiltIn || p.Manifest.HasBackend()
 }
 
-func (s *PluginSet) getKnownPlugin(pluginID string) (manifest.Discovered, bool) {
+func (s *PluginSet) getKnownPlugin(pluginID string) (manifest.DiscoveredPlugin, bool) {
 	v, release := s.getView()
 	defer release()
 	return v.get(pluginID)
@@ -168,7 +168,7 @@ func (s *PluginSet) getRequirementIDs(pluginID string) []string {
 	return ids
 }
 
-func (s *PluginSet) listEnabledPlugins() []manifest.Discovered {
+func (s *PluginSet) listEnabledPlugins() []manifest.DiscoveredPlugin {
 	v, release := s.getView()
 	defer release()
 	return v.enabled()
@@ -190,7 +190,7 @@ func (s *PluginSet) isOnDisk(pluginID string) bool {
 	return s.onDisk[pluginID]
 }
 
-func (s *PluginSet) getLaunch(p manifest.Discovered) supervision.Launch {
+func (s *PluginSet) getLaunch(p manifest.DiscoveredPlugin) supervision.Launch {
 	v, release := s.getView()
 	defer release()
 	launch := supervision.Launch{Plugin: p, BuiltIn: nil, Requirements: v.getRequirements(p), VaultPath: s.mode.GetVaultPath()}
@@ -200,17 +200,17 @@ func (s *PluginSet) getLaunch(p manifest.Discovered) supervision.Launch {
 	return launch
 }
 
-func (s *PluginSet) refuseConflicts(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) ([]manifest.Discovered, []manifestjson.DiscoveryProblem) {
+func (s *PluginSet) refuseConflicts(discovered []manifest.DiscoveredPlugin, problems []manifestjson.DiscoveryProblem) ([]manifest.DiscoveredPlugin, []manifestjson.DiscoveryProblem) {
 	discovered, problems = s.refuseBuiltInProviders(discovered, problems)
 	s.mu.RLock()
-	ordered := make([]manifest.Discovered, 0, len(s.builtIns)+len(discovered))
+	ordered := make([]manifest.DiscoveredPlugin, 0, len(s.builtIns)+len(discovered))
 	for id, builtIn := range s.builtIns {
-		if !slices.ContainsFunc(discovered, func(p manifest.Discovered) bool { return p.Manifest.ID == id }) {
+		if !slices.ContainsFunc(discovered, func(p manifest.DiscoveredPlugin) bool { return p.Manifest.ID == id }) {
 			ordered = append(ordered, builtIn.plugin)
 		}
 	}
 	s.mu.RUnlock()
-	byID := func(a, b manifest.Discovered) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) }
+	byID := func(a, b manifest.DiscoveredPlugin) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) }
 	slices.SortFunc(ordered, byID)
 	sorted := slices.Clone(discovered)
 	slices.SortFunc(sorted, byID)
@@ -224,7 +224,7 @@ func (s *PluginSet) refuseConflicts(discovered []manifest.Discovered, problems [
 	for _, conflict := range conflicts {
 		conflicting[conflict.PluginID] = true
 	}
-	accepted := make([]manifest.Discovered, 0, len(discovered))
+	accepted := make([]manifest.DiscoveredPlugin, 0, len(discovered))
 	for _, p := range discovered {
 		if !conflicting[p.Manifest.ID] {
 			accepted = append(accepted, p)
@@ -241,7 +241,7 @@ func (s *PluginSet) refuseConflicts(discovered []manifest.Discovered, problems [
 	return accepted, problems
 }
 
-func (s *PluginSet) replaceDiscovered(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) []string {
+func (s *PluginSet) replaceDiscovered(discovered []manifest.DiscoveredPlugin, problems []manifestjson.DiscoveryProblem) []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.problems = problems
@@ -286,20 +286,20 @@ func (s *PluginSet) isCoveredByProblemLocked(pluginID string) bool {
 	return false
 }
 
-func (s *PluginSet) addBuiltIn(p manifest.Discovered, serve func(vars map[string]string) (http.Handler, error)) error {
+func (s *PluginSet) addBuiltIn(p manifest.DiscoveredPlugin, serve func(vars map[string]string) (http.Handler, error)) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	id := p.Manifest.ID
 	if _, exists := s.builtIns[id]; exists {
 		return errBuiltInRegistered
 	}
-	others := make([]manifest.Discovered, 0, len(s.plugins))
+	others := make([]manifest.DiscoveredPlugin, 0, len(s.plugins))
 	for otherID, other := range s.plugins {
 		if otherID != id {
 			others = append(others, other)
 		}
 	}
-	slices.SortFunc(others, func(a, b manifest.Discovered) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
+	slices.SortFunc(others, func(a, b manifest.DiscoveredPlugin) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
 	if conflicts := manifest.ListContributionConflicts(append(others, p), s.core); len(conflicts) > 0 {
 		return conflicts[len(conflicts)-1]
 	}
@@ -325,10 +325,10 @@ func (s *PluginSet) GetVersion(pluginID string) string {
 // types. The keys of a connection go to the plugin that provides its type, so the built-in plugin stays.
 var errProviderIDTaken = errors.New("a built-in plugin of this id provides connection types")
 
-func (s *PluginSet) refuseBuiltInProviders(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) ([]manifest.Discovered, []manifestjson.DiscoveryProblem) {
+func (s *PluginSet) refuseBuiltInProviders(discovered []manifest.DiscoveredPlugin, problems []manifestjson.DiscoveryProblem) ([]manifest.DiscoveredPlugin, []manifestjson.DiscoveryProblem) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	kept := make([]manifest.Discovered, 0, len(discovered))
+	kept := make([]manifest.DiscoveredPlugin, 0, len(discovered))
 	for _, p := range discovered {
 		if builtIn, isBuiltIn := s.builtIns[p.Manifest.ID]; isBuiltIn && len(builtIn.plugin.Manifest.Contributes.ConnectionTypes) > 0 {
 			problems = append(slices.Clone(problems), manifestjson.DiscoveryProblem{

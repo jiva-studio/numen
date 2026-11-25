@@ -89,7 +89,7 @@ func openMeaningCore(t *testing.T, pluginDir, cacheRoot string, port int) meanin
 	// Each start takes the next of the processes started here.
 	processes := []*exec.Cmd{wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t)}
 	launches := &atomic.Int32{}
-	roles.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	roles.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		next := int(launches.Add(1)) - 1
 		if next >= len(processes) {
 			return nil, nil, errors.New("no process is left to start")
@@ -125,7 +125,7 @@ func (c meaningCore) readVault(t *testing.T, db *container.Index, source searchs
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := whole.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
+	if _, err := whole.Execute(t.Context(), v, indexing.ReadCallbacks{}); err != nil {
 		t.Fatal(err)
 	}
 }

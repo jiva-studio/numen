@@ -12,7 +12,7 @@ import (
 
 // CapabilityResolver finds the enabled plugin that provides a capability.
 type CapabilityResolver interface {
-	ResolveCapability(capability string) (manifest.Discovered, error)
+	ResolveCapability(capability string) (manifest.DiscoveredPlugin, error)
 }
 
 // PluginAccess resolves the source provider and subscribes to its settings.

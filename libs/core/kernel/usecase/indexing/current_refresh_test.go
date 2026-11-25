@@ -15,7 +15,7 @@ func (n namedRefresh) Execute(context.Context, domain.Vault, []string) (indexing
 	return indexing.RefreshResult{Indexed: []string{string(n)}}, nil
 }
 
-func getRefreshedBy(t *testing.T, refresh indexing.Refreshing) string {
+func getRefreshedBy(t *testing.T, refresh indexing.Refresher) string {
 	t.Helper()
 	result, err := refresh.Execute(t.Context(), domain.Vault{}, nil)
 	if err != nil {
@@ -25,7 +25,7 @@ func getRefreshedBy(t *testing.T, refresh indexing.Refreshing) string {
 }
 
 func TestCurrentRefreshAnswersWithThePublishedRefreshUntilItIsRetired(t *testing.T) {
-	current := &indexing.CurrentRefresh{CreateFallback: func() indexing.Refreshing { return namedRefresh("fallback") }}
+	current := &indexing.CurrentRefresh{CreateFallback: func() indexing.Refresher { return namedRefresh("fallback") }}
 
 	if got := getRefreshedBy(t, current.Get()); got != "fallback" {
 		t.Fatalf("before a publish the refresh is %q, want the fallback", got)

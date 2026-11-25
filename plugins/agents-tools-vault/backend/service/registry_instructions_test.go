@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
-func listVaultTools(t *testing.T) tools.Listing {
+func listVaultTools(t *testing.T) tools.ToolList {
 	t.Helper()
 	_, _, registry := newTwoVaults(t)
 	listing, err := registry.ListTools(t.Context())
@@ -19,7 +19,7 @@ func listVaultTools(t *testing.T) tools.Listing {
 	return listing
 }
 
-func joinToolInstructions(listing tools.Listing) string {
+func joinToolInstructions(listing tools.ToolList) string {
 	var sentences []string
 	for _, one := range listing.Tools {
 		for _, sentence := range one.Instructions {
@@ -125,7 +125,7 @@ func TestReadOnlyToolInstructionsNameNoWritingTool(t *testing.T) {
 
 func TestTheReadOnlyToolsOfTheVaultHaveInstructions(t *testing.T) {
 	listing := listVaultTools(t)
-	var subset tools.Listing
+	var subset tools.ToolList
 	for _, tool := range listing.Tools {
 		if isReadOnly(tool) {
 			subset.Tools = append(subset.Tools, tool)

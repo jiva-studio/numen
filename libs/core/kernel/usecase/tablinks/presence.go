@@ -49,7 +49,7 @@ type Watch struct {
 	stop        chan struct{}
 	isCanceled  bool
 	unsubscribe func()
-	host        shared
+	host        stateHolder
 }
 
 // Close ends the watch. When the window has no other watch, the pending moves

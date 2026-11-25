@@ -65,8 +65,8 @@ func (failingLinkQueries) ResolveLinks(context.Context, domain.VaultID, string, 
 func createLinkDeps(links, backlinks []domain.ResolvedLink) stubSession {
 	return stubSession{
 		Vaults: createVaultList(getNotebook()),
-		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Links: query.NewShowLinksByName(singleVaultList{getNotebook()}, query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks}))}, nil
+		Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
+			return cli.IndexRun{Links: query.NewShowLinksByName(singleVaultList{getNotebook()}, query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks}))}, nil
 		},
 	}
 }
@@ -83,18 +83,18 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
 	for name, provided := range map[string]stubSession{
 		"the list of vaults cannot be opened": {
-			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-				return cli.Indexed{Links: query.NewShowLinksByName(brokenVaultList{}, query.NewShowLinks(fixedLinkQueries{}))}, nil
+			Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
+				return cli.IndexRun{Links: query.NewShowLinksByName(brokenVaultList{}, query.NewShowLinks(fixedLinkQueries{}))}, nil
 			},
 		},
 		"the links cannot be opened": {
 			Vaults:  createVaultList(getNotebook()),
-			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) { return cli.Indexed{}, errRefused },
+			Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) { return cli.IndexRun{}, errRefused },
 		},
 		"the index cannot say what a note points at": {
 			Vaults: createVaultList(getNotebook()),
-			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-				return cli.Indexed{Links: query.NewShowLinksByName(singleVaultList{getNotebook()}, query.NewShowLinks(failingLinkQueries{}))}, nil
+			Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
+				return cli.IndexRun{Links: query.NewShowLinksByName(singleVaultList{getNotebook()}, query.NewShowLinks(failingLinkQueries{}))}, nil
 			},
 		},
 	} {
@@ -219,8 +219,8 @@ func (fixedProblemQueries) GetDanglingLinks(context.Context, domain.VaultID) ([]
 func problemsDeps(queries check.ProblemQueries) stubSession {
 	return stubSession{
 		Vaults: createVaultList(getNotebook()),
-		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Problems: vaults.NewGetProblemsByName(singleVaultList{getNotebook()}, vaults.NewGetProblems(check.CreateStandard(queries)))}, nil
+		Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
+			return cli.IndexRun{Problems: vaults.NewGetProblemsByName(singleVaultList{getNotebook()}, vaults.NewGetProblems(check.CreateStandard(queries)))}, nil
 		},
 	}
 }
@@ -286,16 +286,16 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 		args  []string
 	}{
 		"the list of vaults cannot be opened": {
-			stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+			stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
 				problems := vaults.NewGetProblems(check.CreateStandard(fixedProblemQueries{}))
-				return cli.Indexed{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, problems)}, nil
+				return cli.IndexRun{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, problems)}, nil
 			}},
 			[]string{"problems", "notebook"},
 		},
 		"the problems cannot be opened": {
 			stubSession{
 				Vaults:  createVaultList(getNotebook()),
-				Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) { return cli.Indexed{}, errRefused },
+				Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) { return cli.IndexRun{}, errRefused },
 			},
 			[]string{"problems", "notebook"},
 		},
@@ -312,8 +312,8 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 			t.Errorf("%s: problems said something before it failed:\n%s", name, out)
 		}
 	}
-	if _, err := runWithDeps(stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-		return cli.Indexed{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, vaults.NewGetProblems(check.CreateStandard(fixedProblemQueries{})))}, nil
+	if _, err := runWithDeps(stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
+		return cli.IndexRun{Problems: vaults.NewGetProblemsByName(brokenVaultList{}, vaults.NewGetProblems(check.CreateStandard(fixedProblemQueries{})))}, nil
 	}},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
 		t.Errorf("the rejection was lost: %v", err)
@@ -325,9 +325,9 @@ func TestACommandProducesBackWhatItOpened(t *testing.T) {
 	closed := 0
 	provided := createLinkDeps(nil, nil)
 	provided.closes = &closeList{}
-	provided.Indexed = func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+	provided.Indexed = func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
 		provided.closes.add(func() error { closed++; return nil })
-		return cli.Indexed{
+		return cli.IndexRun{
 			Links: query.NewShowLinksByName(singleVaultList{getNotebook()}, query.NewShowLinks(fixedLinkQueries{})),
 		}, nil
 	}
@@ -346,8 +346,8 @@ func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 		Vaults: func() (cli.Vaults, error) {
 			return vaultParts{ports: brokenVaultList{}.ports()}.build(), nil
 		},
-		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Links: query.NewShowLinksByName(brokenVaultList{}, query.NewShowLinks(fixedLinkQueries{}))}, nil
+		Indexed: func(context.Context, cli.IndexOptions) (cli.IndexRun, error) {
+			return cli.IndexRun{Links: query.NewShowLinksByName(brokenVaultList{}, query.NewShowLinks(fixedLinkQueries{}))}, nil
 		},
 	}
 	_, err := runWithDeps(provided, "links", "notebook", "Bees.md")
@@ -486,11 +486,11 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 	return stubSession{
 		Vaults: createVaultList(target),
 		closes: closes,
-		Indexed: func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+		Indexed: func(ctx context.Context, options cli.IndexOptions) (cli.IndexRun, error) {
 			s.rebuilt = options.Rebuild
 			db, err := index.Open(ctx, indexPath)
 			if err != nil {
-				return cli.Indexed{}, err
+				return cli.IndexRun{}, err
 			}
 			closes.add(db.Close)
 			readerOptions := vaultconfig.Options{}
@@ -503,13 +503,13 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 			embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{})
 			if s.embedder != nil {
 				if err := db.VectorIndex().FitVectors(ctx, width, s.embedder.Describe().Recipe()); err != nil {
-					return cli.Indexed{}, err
+					return cli.IndexRun{}, err
 				}
 				embed = indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(s.embedder))
 			}
 			read := indexing.NewReadWholeVaultByName(singleVaultList{target}, preparingRead(indexing.NewReadWholeVault(notes, books, embed)))
 			read.Unembedded = s.unembedded
-			return cli.Indexed{Scan: cli.Scan{
+			return cli.IndexRun{Scan: cli.Scan{
 				Scan: indexing.NewScanVault(read, refusingSummaries{VaultSummaries: db.NoteQueries(), err: s.summary}),
 			}}, nil
 		},
@@ -607,7 +607,7 @@ func TestScanReturnsWhatWentWrong(t *testing.T) {
 	target := createNoteVault(t)
 
 	opening := (&scanFixture{}).deps(t, target)
-	opening.Indexed = func(context.Context, cli.IndexOptions) (cli.Indexed, error) { return cli.Indexed{}, errRefused }
+	opening.Indexed = func(context.Context, cli.IndexOptions) (cli.IndexRun, error) { return cli.IndexRun{}, errRefused }
 	if _, err := runWithDeps(opening, "scan", target.Name); !errors.Is(err, errRefused) {
 		t.Errorf("a scan that cannot open answered %v", err)
 	}

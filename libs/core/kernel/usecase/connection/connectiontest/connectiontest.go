@@ -35,7 +35,7 @@ type Parts struct {
 	Types      connectionport.Types
 	Keys       pluginport.KeyStore
 	Uses       connection.Uses
-	Detected   connectionport.Detected
+	Detected   connectionport.DetectedConnections
 	Titles     connection.OperationTitles
 }
 

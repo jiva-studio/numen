@@ -38,9 +38,9 @@ func Parse(output []byte) []Model {
 
 // GroupFamilies groups the models that differ only in their reasoning level into one family.
 func GroupFamilies(items []Model) []reasoning.Family {
-	entries := make([]reasoning.Listed, 0, len(items))
+	entries := make([]reasoning.ListedModel, 0, len(items))
 	for _, one := range items {
-		entries = append(entries, reasoning.Listed{Name: one.Name, Title: one.Title})
+		entries = append(entries, reasoning.ListedModel{Name: one.Name, Title: one.Title})
 	}
 	return reasoning.GroupFamilies(entries)
 }

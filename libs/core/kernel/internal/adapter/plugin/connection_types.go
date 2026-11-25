@@ -7,8 +7,8 @@ import (
 
 // ConnectionPlugins provides the plugins and their manifests. GetPlugin answers only for an enabled plugin.
 type ConnectionPlugins interface {
-	ListPlugins() []manifest.Discovered
-	GetPlugin(id string) (manifest.Discovered, bool)
+	ListPlugins() []manifest.DiscoveredPlugin
+	GetPlugin(id string) (manifest.DiscoveredPlugin, bool)
 }
 
 // ConnectionTypes lists the kinds of connection the manifests of the enabled plugins declare. It answers

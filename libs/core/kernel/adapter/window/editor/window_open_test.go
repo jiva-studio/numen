@@ -106,7 +106,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 		}
 	}()
 
-	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})

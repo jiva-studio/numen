@@ -43,18 +43,18 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 			_, _, v := buildVaultSearch(c, exec, prefs, res, nil)
 			return openCLIVaults(v)
 		},
-		func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+		func(ctx context.Context, options cli.IndexOptions) (cli.IndexRun, error) {
 			config := c
 			config.ShouldRebuildIndex = options.Rebuild
 			install := newPluginInstall(config, prefs, endpoints, res)
 			settingsDeps, plan, vaultDeps := buildVaultSearch(config, exec, prefs, res, nil)
 			ports, err := openVaultRegistry(vaultDeps.RegistryPath)
 			if err != nil {
-				return cli.Indexed{}, err
+				return cli.IndexRun{}, err
 			}
 			db, err := openIndex(vaultDeps, ctx)
 			if err != nil {
-				return cli.Indexed{}, err
+				return cli.IndexRun{}, err
 			}
 			index := newCLIIndex(r, db, options.ErrorHandler, newCLIPluginWork(install, exec, r))
 			index.source = newSourceBinding(exec, config.SafeMode, install.Endpoints, res)
@@ -73,7 +73,7 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 	)
 }
 
-func openCLIVaults(vaultDeps vaultWiring) (cli.Vaults, error) {
+func openCLIVaults(vaultDeps vaultParts) (cli.Vaults, error) {
 	ports, err := openVaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return cli.Vaults{}, err
@@ -85,10 +85,10 @@ func openCLIVaults(vaultDeps vaultWiring) (cli.Vaults, error) {
 	}, nil
 }
 
-type cliPluginWork func(vaultWiring, *vaultIndex, domain.Vault) (*run.PluginWork, error)
+type cliPluginWork func(vaultParts, *vaultIndex, domain.Vault) (*run.PluginWork, error)
 
 func newCLIPluginWork(install pluginInstall, exec *PluginExecution, r *cliRun) cliPluginWork {
-	return func(vaultDeps vaultWiring, db *vaultIndex, v domain.Vault) (*run.PluginWork, error) {
+	return func(vaultDeps vaultParts, db *vaultIndex, v domain.Vault) (*run.PluginWork, error) {
 		exec.Runtime.pluginBinding.SetVaultPath(v.Path)
 		if err := installCurrentVault(install, vaultDeps, db, v); err != nil {
 			return nil, err
@@ -123,7 +123,7 @@ type cliPreparations struct {
 	query  func(context.Context, domain.Vault, connection.ReportSetAside) (*searchqueryusecase.FindSearchResults, error)
 }
 
-func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, plan vaultIndexPlan, vaultDeps vaultWiring) cliPreparations {
+func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, plan vaultIndexPlan, vaultDeps vaultParts) cliPreparations {
 	plugins := getRunningExecution(exec, install.SafeMode).Runtime.Listing
 	db := index.db
 	prepareScan := func(ctx context.Context, v domain.Vault) (indexing.ReadWholeVault, error) {
@@ -149,10 +149,10 @@ func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecu
 	return cliPreparations{scan: prepareScan, search: prepareSearch, query: prepareQuery}
 }
 
-func newCLIIndexed(ports registry.Ports, db *vaultIndex, vaultDeps vaultWiring, prepare cliPreparations, notices connection.ReportSetAside) cli.Indexed {
+func newCLIIndexed(ports registry.Ports, db *vaultIndex, vaultDeps vaultParts, prepare cliPreparations, notices connection.ReportSetAside) cli.IndexRun {
 	find := ports.Lookup
 	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
-	return cli.Indexed{
+	return cli.IndexRun{
 		Changes: cli.VaultChanges{
 			Rename:     vault.NewRenameByName(find, vault.NewRename(ports.Vaults, ports.Saver, db.Vaults())),
 			Unregister: vault.NewUnregisterByName(find, unregister),
@@ -172,7 +172,7 @@ func newCLIIndexed(ports registry.Ports, db *vaultIndex, vaultDeps vaultWiring, 
 	}
 }
 
-func prepareCLIScan(i cliIndex, ctx context.Context, v domain.Vault, plan vaultIndexPlan, vaultDeps vaultWiring) (indexing.ReadWholeVault, error) {
+func prepareCLIScan(i cliIndex, ctx context.Context, v domain.Vault, plan vaultIndexPlan, vaultDeps vaultParts) (indexing.ReadWholeVault, error) {
 	db := i.db
 	_, err := i.openWork(vaultDeps, db, v)
 	if err != nil {
@@ -187,7 +187,7 @@ func prepareCLIScan(i cliIndex, ctx context.Context, v domain.Vault, plan vaultI
 	return read, nil
 }
 
-func prepareCLISearch(i cliIndex, ctx context.Context, v domain.Vault, plan vaultIndexPlan, vaultDeps vaultWiring) (searchusecase.Search, error) {
+func prepareCLISearch(i cliIndex, ctx context.Context, v domain.Vault, plan vaultIndexPlan, vaultDeps vaultParts) (searchusecase.Search, error) {
 	db := i.db
 	errorHandler := i.report
 	_, err := i.openWork(vaultDeps, db, v)
@@ -213,7 +213,7 @@ func openCLIEmbedder(closers *[]func() error, source sourcebridge.Binding, ctx c
 	return getSourceAccess(embedder), why
 }
 
-func getCLIPluginCommands(_ Config, commands pluginCommandUseCases, openWork cliPluginWork, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {
+func getCLIPluginCommands(_ Config, commands pluginCommandUseCases, openWork cliPluginWork, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultParts) cli.PluginCommands {
 	ports, err := openVaultRegistry(vaultDeps.RegistryPath)
 	find := ports.Lookup
 	if err != nil {
@@ -232,7 +232,7 @@ func getCLIPluginCommands(_ Config, commands pluginCommandUseCases, openWork cli
 	}
 }
 
-func openCLIPluginWork(openWork cliPluginWork, ctx context.Context, v domain.Vault, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) (func() error, error) {
+func openCLIPluginWork(openWork cliPluginWork, ctx context.Context, v domain.Vault, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultParts) (func() error, error) {
 	db, err := openIndex(vaultDeps, ctx)
 	if err != nil {
 		return nil, err

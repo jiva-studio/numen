@@ -70,10 +70,10 @@ func TestTheFusedOrderIsTheSumOfReciprocalRanks(t *testing.T) {
 		},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			var rankings []Ranking
-			rankings = append(rankings, Ranking{Results: newRanking(c.words...)})
+			var rankings []ParticipantResults
+			rankings = append(rankings, ParticipantResults{Results: newRanking(c.words...)})
 			if c.dense != nil {
-				rankings = append(rankings, Ranking{Results: newRanking(c.dense...)})
+				rankings = append(rankings, ParticipantResults{Results: newRanking(c.dense...)})
 			}
 			got := chunksIn(merge(rankings...))
 			if !slices.Equal(got, c.want) {
@@ -110,7 +110,7 @@ func TestCollapse_DocumentUsesNamedSection(t *testing.T) {
 	}
 	named := []domain.SearchResult{{ChunkID: "1", Path: "book.epub"}}
 
-	got := collapse(fused, []Ranking{{Results: named, IsLeading: true}}, 1, 10)
+	got := collapse(fused, []ParticipantResults{{Results: named, IsLeading: true}}, 1, 10)
 	if len(got) != 2 {
 		t.Fatalf("%d results, want one per document: %+v", len(got), got)
 	}
@@ -129,7 +129,7 @@ func TestADocumentWithNoSectionOfThatNameIsUnchanged(t *testing.T) {
 	}
 	named := []domain.SearchResult{{ChunkID: "9", Path: "other.epub"}}
 
-	got := collapse(fused, []Ranking{{Results: named, IsLeading: true}}, 1, 10)
+	got := collapse(fused, []ParticipantResults{{Results: named, IsLeading: true}}, 1, 10)
 	if len(got) != 1 || got[0].ChunkID != "2" {
 		t.Errorf("got %+v, want the best-ranked chunk of the book", got)
 	}
@@ -161,7 +161,7 @@ func TestASectionIsTheFirstOfWhatADocumentAnswersWith(t *testing.T) {
 	}
 	named := []domain.SearchResult{{ChunkID: "1", Path: "book.epub", Start: 0, Length: 10}}
 
-	got := collapse(fused, []Ranking{{Results: named, IsLeading: true}}, 2, 10)
+	got := collapse(fused, []ParticipantResults{{Results: named, IsLeading: true}}, 2, 10)
 	if len(got) != 2 {
 		t.Fatalf("%d results, want the section and the passage: %+v", len(got), got)
 	}

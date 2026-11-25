@@ -18,22 +18,22 @@ type Resolve struct{ operation }
 // Execute returns the connection with the id. A detected connection of a type whose provider has not reported
 // what it detects yet is asked for first. It fails with connection.ErrNotFound for an id not in the list and
 // with connection.ErrTypeUnavailable where no enabled plugin provides the type.
-func (u *Resolve) Execute(connectionID string) (connection.Resolved, error) {
+func (u *Resolve) Execute(connectionID string) (connection.Resolution, error) {
 	typeID, _, _ := connection.SplitDetectedID(connectionID)
 	list, err := u.listConnectionsAfterDetection([]string{typeID})
 	if err != nil {
-		return connection.Resolved{}, err
+		return connection.Resolution{}, err
 	}
 	position := getIndex(list, connectionID)
 	if position < 0 {
-		return connection.Resolved{}, newNotFoundError(connectionID)
+		return connection.Resolution{}, newNotFoundError(connectionID)
 	}
 	one := list[position]
 	found, err := u.getAvailableType(one.TypeID)
 	if err != nil {
-		return connection.Resolved{}, err
+		return connection.Resolution{}, err
 	}
-	return connection.Resolved{
+	return connection.Resolution{
 		ID: one.ID, Name: one.Name, Revision: one.Revision, PluginID: found.PluginID, PluginVersion: found.PluginVersion,
 		Declaration:      found.Declaration,
 		Fields:           formatFields(found.Declaration, one.Fields),
@@ -76,7 +76,7 @@ type ReadSecrets struct{ operation }
 // required secret with no value is connection.ErrSecretMissing. It fails with connection.ErrStaleRevision when the connection
 // is gone or its revision is no longer the one resolved, so a key is never returned for a connection
 // that changed while it was read.
-func (u *ReadSecrets) Execute(ctx context.Context, resolved connection.Resolved) (map[string]string, error) {
+func (u *ReadSecrets) Execute(ctx context.Context, resolved connection.Resolution) (map[string]string, error) {
 	secrets := map[string]string{}
 	for _, field := range resolved.Declaration.Fields {
 		if field.Type != secretFieldType {

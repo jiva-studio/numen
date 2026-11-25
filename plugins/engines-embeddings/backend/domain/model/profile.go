@@ -82,10 +82,10 @@ func (p Profile) GetOptionDetail() string {
 	return fmt.Sprintf("%d dims · Hugging Face", p.Dimensions)
 }
 
-// Handling is what is done to a text before the model reads it and to the output after. It decides
+// InputFormat is what is done to a text before the model reads it and to the output after. It decides
 // which vector a text gets, so it is part of the recipe. Tokenizer is the version of the tokenizer the
 // plugin reads the text with: empty for a connection, the mock model and a BPE tokenizer.
-type Handling struct {
+type InputFormat struct {
 	QueryPrefix    string   `json:"queryPrefix"`
 	DocumentPrefix string   `json:"documentPrefix"`
 	File           string   `json:"file"`
@@ -104,7 +104,7 @@ const (
 )
 
 // Apply puts the prefix of the role in front of each text.
-func (h Handling) Apply(role Role, texts []string) []string {
+func (h InputFormat) Apply(role Role, texts []string) []string {
 	prefix := h.DocumentPrefix
 	if role == RoleQuery {
 		prefix = h.QueryPrefix
@@ -122,7 +122,7 @@ func (h Handling) Apply(role Role, texts []string) []string {
 // Hash returns a short value that changes with the prefixes, the model file, the token limit, the
 // normalization and the tokenizer version, and with nothing else. A handling without a tokenizer version
 // hashes as it did before the version joined the hash, so its recipe stays.
-func (h Handling) Hash(maxTokens int) string {
+func (h InputFormat) Hash(maxTokens int) string {
 	parts := []string{h.QueryPrefix, h.DocumentPrefix, h.File, strconv.Itoa(maxTokens), strconv.FormatBool(h.Normalize)}
 	if h.Tokenizer != "" {
 		parts = append(parts, h.Tokenizer)
@@ -133,8 +133,8 @@ func (h Handling) Hash(maxTokens int) string {
 
 const handlingHashLength = 8
 
-func (p Profile) GetHandling() Handling {
-	return Handling{
+func (p Profile) GetHandling() InputFormat {
+	return InputFormat{
 		QueryPrefix:    p.QueryPrefix,
 		DocumentPrefix: p.DocumentPrefix,
 		File:           p.GetModelFile(),
@@ -380,7 +380,7 @@ func (t *Profiles) GetCurated() []Profile {
 }
 
 // IsZero reports whether the handling changes nothing.
-func (h Handling) IsZero() bool {
+func (h InputFormat) IsZero() bool {
 	return h.QueryPrefix == "" && h.DocumentPrefix == "" && h.File == "" && !h.Normalize && len(h.ExtraInputs) == 0 &&
 		h.Tokenizer == ""
 }

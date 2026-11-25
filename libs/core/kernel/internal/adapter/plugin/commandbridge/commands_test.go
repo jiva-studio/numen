@@ -37,7 +37,7 @@ func (p *commandPlugin) RunCommand(
 
 // commandHost holds the plugins it is given, enabled or not, and runs those it has an endpoint for.
 type commandHost struct {
-	plugins   []catalogmanifest.Discovered
+	plugins   []catalogmanifest.DiscoveredPlugin
 	disabled  map[string]bool
 	endpoints map[string]transport.Endpoint
 	acquired  int
@@ -58,21 +58,21 @@ func (h *commandHost) GetPluginInfos() []plugindomain.Info {
 	return infos
 }
 
-func (h *commandHost) GetPlugin(id string) (catalogmanifest.Discovered, bool) {
+func (h *commandHost) GetPlugin(id string) (catalogmanifest.DiscoveredPlugin, bool) {
 	for _, one := range h.plugins {
 		if one.Manifest.ID == id && !h.disabled[id] {
 			return one, true
 		}
 	}
-	return catalogmanifest.Discovered{}, false
+	return catalogmanifest.DiscoveredPlugin{}, false
 }
 
-func (h *commandHost) ResolveCapability(string) (catalogmanifest.Discovered, error) {
-	return catalogmanifest.Discovered{}, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
+func (h *commandHost) ResolveCapability(string) (catalogmanifest.DiscoveredPlugin, error) {
+	return catalogmanifest.DiscoveredPlugin{}, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 }
 
-func (h *commandHost) ResolveService(string) (catalogmanifest.Discovered, bool) {
-	return catalogmanifest.Discovered{}, false
+func (h *commandHost) ResolveService(string) (catalogmanifest.DiscoveredPlugin, bool) {
+	return catalogmanifest.DiscoveredPlugin{}, false
 }
 
 func (h *commandHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
@@ -115,18 +115,18 @@ func serveCommandPlugin(t *testing.T, plugin *commandPlugin) transport.Endpoint 
 	return transport.Endpoint{Host: address, Port: port}
 }
 
-func declaring(id string, commands ...string) catalogmanifest.Discovered {
+func declaring(id string, commands ...string) catalogmanifest.DiscoveredPlugin {
 	manifest := catalogmanifest.Manifest{ID: id}
 	for _, one := range commands {
 		manifest.Contributes.Commands = append(manifest.Contributes.Commands, catalogmanifest.Command{ID: one, Title: one})
 	}
-	return catalogmanifest.Discovered{Manifest: manifest}
+	return catalogmanifest.DiscoveredPlugin{Manifest: manifest}
 }
 
 func TestRunCommandSendsFileAndArgumentsAndReturnsPluginResult(t *testing.T) {
 	plugin := &commandPlugin{reply: &v1.RunCommandResponse{Message: "made it", OpenedPath: "Made.md"}}
 	host := &commandHost{
-		plugins:   []catalogmanifest.Discovered{declaring("md.numen.a", "make")},
+		plugins:   []catalogmanifest.DiscoveredPlugin{declaring("md.numen.a", "make")},
 		endpoints: map[string]transport.Endpoint{"md.numen.a": serveCommandPlugin(t, plugin)},
 	}
 
@@ -151,7 +151,7 @@ func TestRunCommand_FailureCarriesPluginMessage(t *testing.T) {
 		Error: v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, Message: "the disk is full",
 	}}
 	host := &commandHost{
-		plugins:   []catalogmanifest.Discovered{declaring("md.numen.a", "make")},
+		plugins:   []catalogmanifest.DiscoveredPlugin{declaring("md.numen.a", "make")},
 		endpoints: map[string]transport.Endpoint{"md.numen.a": serveCommandPlugin(t, plugin)},
 	}
 
@@ -164,7 +164,7 @@ func TestRunCommand_FailureCarriesPluginMessage(t *testing.T) {
 }
 
 func TestRunCommand_PluginCannotStartIsUnavailable(t *testing.T) {
-	host := &commandHost{plugins: []catalogmanifest.Discovered{declaring("md.numen.a", "make")}}
+	host := &commandHost{plugins: []catalogmanifest.DiscoveredPlugin{declaring("md.numen.a", "make")}}
 
 	_, err := Open(host).RunCommand(t.Context(), plugindomain.CommandCall{PluginID: "md.numen.a", Command: "make"})
 
@@ -186,7 +186,7 @@ func TestRunCommand_PluginWithoutCommandServiceIsUnavailable(t *testing.T) {
 		t.Fatal(err)
 	}
 	host := &commandHost{
-		plugins:   []catalogmanifest.Discovered{declaring("md.numen.a", "make")},
+		plugins:   []catalogmanifest.DiscoveredPlugin{declaring("md.numen.a", "make")},
 		endpoints: map[string]transport.Endpoint{"md.numen.a": {Host: address, Port: port}},
 	}
 
@@ -200,7 +200,7 @@ func TestRunCommand_PluginWithoutCommandServiceIsUnavailable(t *testing.T) {
 func TestRunCommandSendsThePathsOfATrigger(t *testing.T) {
 	plugin := &commandPlugin{reply: &v1.RunCommandResponse{}}
 	host := &commandHost{
-		plugins:   []catalogmanifest.Discovered{declaring("md.numen.a", "make")},
+		plugins:   []catalogmanifest.DiscoveredPlugin{declaring("md.numen.a", "make")},
 		endpoints: map[string]transport.Endpoint{"md.numen.a": serveCommandPlugin(t, plugin)},
 	}
 

@@ -33,7 +33,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
-func openIndex(c vaultWiring, ctx context.Context) (*vaultIndex, error) {
+func openIndex(c vaultParts, ctx context.Context) (*vaultIndex, error) {
 	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(c.Clock, c.RecordLog))
 }
 
@@ -64,7 +64,7 @@ type noteViews struct {
 	Follow    note.IndexFollow
 }
 
-func createNoteUseCases(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {
+func createNoteUseCases(c vaultParts, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {
 	names, links := db.NoteQueries(), db.NoteQueries()
 	indexed := db.Sources()
 	readers := c.Readers
@@ -89,21 +89,21 @@ func createNoteUseCases(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, 
 	}
 
 	return noteUseCases{
-		Edit: noteEditing{
+		Edit: noteTextUseCases{
 			Read:    note.NewRead(readers),
 			Write:   note.NewWrite(readers, writers, index, now, views.Admission),
 			Create:  create,
 			Linking: linking,
 		},
 		Properties: noteProperties{Frontmatter: note.NewWriteFrontmatter(readers, writers, index, now)},
-		Place: notePlacing{
+		Place: notePlacementUseCases{
 			Move:       mover,
 			Rename:     note.NewRename(moveDeps, mover, views.Admission),
 			Remove:     remove,
 			RemoveNote: note.NewRemoveNote(remove, readers),
 			EmptyTrash: note.NewEmptyTrash(writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}), views.Admission),
 		},
-		Connect: noteConnecting{
+		Connect: noteRelationUseCases{
 			SaveConnection:       note.NewSaveConnection(connecting),
 			DeleteConnectionSide: note.NewDeleteConnectionSide(connecting),
 			DeleteConnection:     note.NewDeleteConnection(connecting),
@@ -116,22 +116,22 @@ func createNoteUseCases(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, 
 func createQueryUseCases(db *vaultIndex) query.UseCases {
 	links := db.NoteQueries()
 	return query.UseCases{
-		Refer: query.Referring{
+		Refer: query.LinkQueries{
 			Links:        query.NewShowLinks(links),
 			Backlinks:    query.NewListBacklinks(links),
 			ResolveLinks: query.NewResolveLinks(links),
 		},
-		Browse: query.Browsing{
+		Browse: query.BrowseQueries{
 			Connection: query.NewGetConnection(links),
 		},
 	}
 }
 
-func createVaultOpener(c vaultWiring, db *vaultIndex) *indexing.VaultOpener {
+func createVaultOpener(c vaultParts, db *vaultIndex) *indexing.VaultOpener {
 	return createVaultOpenerWith(c, db, c.Readers, c.Watcher)
 }
 
-func createVaultOpenerWith(c vaultWiring,
+func createVaultOpenerWith(c vaultParts,
 	db *vaultIndex, walking vaultport.VaultReaders, watcher indexing.VaultWatcher,
 ) *indexing.VaultOpener {
 	scan := indexing.NewScan(
@@ -147,11 +147,11 @@ func createVaultOpenerWith(c vaultWiring,
 	}
 	scan.Walks = &db.Walks
 
-	buffered := &indexnote.Buffered{NoteRepository: db.Notes()}
+	buffered := &indexnote.BufferedNoteRepository{NoteRepository: db.Notes()}
 	return indexing.ConfigureVaultOpener(watcher, scan, buffered, createRefresh(c, db, buffered))
 }
 
-func createRefresh(c vaultWiring, db *vaultIndex, notes noteport.NoteRepository) indexing.Refresh {
+func createRefresh(c vaultParts, db *vaultIndex, notes noteport.NoteRepository) indexing.Refresh {
 	return indexing.NewRefreshFrom(indexing.RefreshDeps{
 		Readers: c.Readers, Vaults: db.Vaults(), Notes: notes, Queries: db.Sources(), Sources: db.Sources(),
 		Now: c.Clock, Cut: c.CutNotes, Ledger: db.Ledger,
@@ -208,7 +208,7 @@ func getMediaType() *file.GetMediaType {
 	return file.NewGetMediaType(contenttype.Open())
 }
 
-func openVaults(c vaultWiring, db *vaultIndex, out io.Writer, label string, record func(domain.Vault)) *indexing.OpenVaults[*vaultIndex] {
+func openVaults(c vaultParts, db *vaultIndex, out io.Writer, label string, record func(domain.Vault)) *indexing.OpenVaults[*vaultIndex] {
 	return &indexing.OpenVaults[*vaultIndex]{
 		CreateOpener: func(i *vaultIndex) *indexing.VaultOpener { return createVaultOpener(c, i) }, Index: db, Out: out, Label: label,
 		RecordVault: record,

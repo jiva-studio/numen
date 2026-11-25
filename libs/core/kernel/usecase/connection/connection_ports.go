@@ -39,4 +39,4 @@ type OperationTitles interface {
 // ReadConnectionSecrets reads the secret fields of a resolved connection from the key store. It fails with
 // connection.ErrSecretMissing for a required secret with no value and connection.ErrStaleRevision for a
 // connection that changed since it was resolved.
-type ReadConnectionSecrets func(ctx context.Context, resolved connection.Resolved) (map[string]string, error)
+type ReadConnectionSecrets func(ctx context.Context, resolved connection.Resolution) (map[string]string, error)

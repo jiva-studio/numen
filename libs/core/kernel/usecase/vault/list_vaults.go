@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// Listed is a vault and whether its folder is gone.
-type Listed struct {
+// ListedVault is a vault and whether its folder is gone.
+type ListedVault struct {
 	domain.Vault
 	IsMissing bool
 }
@@ -30,14 +30,14 @@ func NewListVaults(vaults vaultport.VaultList, readers vaultport.VaultReaders) *
 	return &ListVaults{vaults: vaults, readers: readers}
 }
 
-func (u *ListVaults) Execute() ([]Listed, error) {
+func (u *ListVaults) Execute() ([]ListedVault, error) {
 	vaults, err := u.vaults.List()
 	if err != nil {
 		return nil, err
 	}
-	out := make([]Listed, 0, len(vaults))
+	out := make([]ListedVault, 0, len(vaults))
 	for _, v := range vaults {
-		out = append(out, Listed{Vault: v, IsMissing: isFolderMissing(u.readers, v)})
+		out = append(out, ListedVault{Vault: v, IsMissing: isFolderMissing(u.readers, v)})
 	}
 	return out, nil
 }
@@ -54,12 +54,12 @@ func NewAddVault(add Add, readers vaultport.VaultReaders) *AddVault {
 }
 
 // Execute adds the folder at the path. A name another vault has gets a number appended.
-func (u *AddVault) Execute(path, name string) (Listed, error) {
+func (u *AddVault) Execute(path, name string) (ListedVault, error) {
 	added, err := u.add.Execute(path, name)
 	if err != nil {
-		return Listed{}, err
+		return ListedVault{}, err
 	}
-	return Listed{Vault: added, IsMissing: isFolderMissing(u.readers, added)}, nil
+	return ListedVault{Vault: added, IsMissing: isFolderMissing(u.readers, added)}, nil
 }
 
 // RenameVault sets the display name of the vault with an id.
@@ -75,14 +75,14 @@ func NewRenameVault(lookup vaultport.VaultLookup, rename Rename, readers vaultpo
 }
 
 // Execute renames the vault. The folder name on the filesystem is unchanged.
-func (u *RenameVault) Execute(ctx context.Context, id, name string) (Listed, error) {
+func (u *RenameVault) Execute(ctx context.Context, id, name string) (ListedVault, error) {
 	v, err := vaultdomain.FindByName(id, u.lookup.FindVault)
 	if err != nil {
-		return Listed{}, err
+		return ListedVault{}, err
 	}
 	renamed, err := u.rename.Execute(ctx, v, name)
 	if err != nil {
-		return Listed{}, err
+		return ListedVault{}, err
 	}
-	return Listed{Vault: renamed, IsMissing: isFolderMissing(u.readers, renamed)}, nil
+	return ListedVault{Vault: renamed, IsMissing: isFolderMissing(u.readers, renamed)}, nil
 }

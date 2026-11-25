@@ -86,7 +86,7 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	)
 	var notes, books, made atomic.Int32
 
-	result, err := making.Execute(t.Context(), v, indexing.Reporting{
+	result, err := making.Execute(t.Context(), v, indexing.ReadCallbacks{
 		NotifyNotesProgress:   func(vaultreading.ScanResult) { notes.Add(1) },
 		NotifyTextsProgress:   func(vaultreading.IndexResult) { books.Add(1) },
 		NotifyVectorsProgress: func(vaultreading.EmbedResult) { made.Add(1) },
@@ -127,7 +127,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 		indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
 	)
 
-	result, err := making.Execute(t.Context(), v, indexing.Reporting{})
+	result, err := making.Execute(t.Context(), v, indexing.ReadCallbacks{})
 	if !errors.Is(err, stopErr) {
 		t.Fatalf("got %v", err)
 	}
@@ -155,7 +155,7 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	if _, err := scanner(readers, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	read, err := making.IndexTexts(t.Context(), v, indexing.Reporting{})
+	read, err := making.IndexTexts(t.Context(), v, indexing.ReadCallbacks{})
 	if !errors.Is(err, stopErr) {
 		t.Fatalf("got %v", err)
 	}
@@ -184,7 +184,7 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 		embed,
 	)
 
-	result, err := making.Execute(t.Context(), v, indexing.Reporting{})
+	result, err := making.Execute(t.Context(), v, indexing.ReadCallbacks{})
 	if !errors.Is(err, stopErr) {
 		t.Fatalf("got %v", err)
 	}
@@ -213,7 +213,7 @@ func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 		embed,
 	)
 
-	result, err := making.Execute(ctx, v, indexing.Reporting{})
+	result, err := making.Execute(ctx, v, indexing.ReadCallbacks{})
 	if !errors.Is(err, stopErr) {
 		t.Fatalf("got %v", err)
 	}
@@ -242,7 +242,7 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	embed := indexing.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
 	making := indexing.NewReadWholeVault(scanner(readers, db), books, embed)
 
-	_, executeErr := making.Execute(ctx, v, indexing.Reporting{})
+	_, executeErr := making.Execute(ctx, v, indexing.ReadCallbacks{})
 	t.Logf("executing the whole read after its context ended gave %v", executeErr)
 
 	if counted.opened == 0 {
@@ -263,7 +263,7 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	v, readers := vaultAt(t, vaulttest.CreateVaultDir(t))
 	db := openIndex(t)
 	making := newWholeVaultRead(readers, db)
-	if _, err := making.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
+	if _, err := making.Execute(t.Context(), v, indexing.ReadCallbacks{}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := making.CutOne(t.Context(), v, "library/A Book.epub"); err != nil {

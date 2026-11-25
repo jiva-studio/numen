@@ -9,15 +9,15 @@ import (
 // FileName is the name of the manifest file in the folder of a plugin.
 const FileName = "manifest.json"
 
-// Discovered is a validated plugin located on disk.
-type Discovered struct {
+// DiscoveredPlugin is a validated plugin located on disk.
+type DiscoveredPlugin struct {
 	Dir      string
 	Manifest Manifest
 }
 
 // FilterByTarget returns only plugins that can run in the target workspace.
-func FilterByTarget(plugins []Discovered, target string) []Discovered {
-	var matched []Discovered
+func FilterByTarget(plugins []DiscoveredPlugin, target string) []DiscoveredPlugin {
+	var matched []DiscoveredPlugin
 	for _, p := range plugins {
 		if p.Manifest.CanTarget(target) {
 			matched = append(matched, p)
@@ -73,7 +73,7 @@ type CoreClaims struct {
 // which one plugin may make as both. Two plugins may contribute to one license id unless they give
 // the same provider different productIds or urls. A plugin with a conflict owns nothing, because the
 // host refuses it.
-func ListContributionConflicts(plugins []Discovered, core CoreClaims) []DuplicateContributionError {
+func ListContributionConflicts(plugins []DiscoveredPlugin, core CoreClaims) []DuplicateContributionError {
 	owners := map[string]string{}
 	for _, name := range core.SearchFunctions {
 		owners[searchFunctionSpace+"\x00"+name] = CoreOwnerID

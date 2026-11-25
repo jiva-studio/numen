@@ -147,7 +147,7 @@ func hostOver(t *testing.T, plugins ...testPlugin) *pluginhost.Host {
 	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p manifest.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		port, isServed := ports[p.Manifest.ID]
 		if !isServed {
 			return nil, nil, errors.New("this plugin cannot be started")

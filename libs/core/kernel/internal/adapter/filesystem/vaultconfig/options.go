@@ -21,24 +21,24 @@ type Options struct {
 // is several events, and the same path arrives more than once inside it.
 const DefaultDebounceDelay = 50 * time.Millisecond
 
-// Ignoring excludes paths from the vault: the default rules and the rules the
+// IgnoreRules excludes paths from the vault: the default rules and the rules the
 // vault configures. A path matched by either set is excluded.
 // The sets are separate matchers because vault configuration is untrusted: in
 // one list the last pattern wins, so a vault pattern `!.*` would expose every
 // dotfile folder. Separate sets let a vault only narrow what is read and written.
-type Ignoring struct {
+type IgnoreRules struct {
 	defaults *ignore.GitIgnore
 	vaults   *ignore.GitIgnore
 }
 
 // IsMatch reports whether the path is excluded. It applies to files and
 // folders, and the path is relative to the vault root.
-func (i *Ignoring) IsMatch(path string) bool {
+func (i *IgnoreRules) IsMatch(path string) bool {
 	return i.defaults.MatchesPath(path) || i.vaults.MatchesPath(path)
 }
 
-func (o Options) CompileIgnoring() *Ignoring {
-	return &Ignoring{
+func (o Options) CompileIgnoring() *IgnoreRules {
+	return &IgnoreRules{
 		defaults: ignore.CompileIgnoreLines(vaultdomain.GetDefaultIgnore()...),
 		vaults:   ignore.CompileIgnoreLines(o.Ignore...),
 	}

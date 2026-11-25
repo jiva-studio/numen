@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 )
 
-func openLicenseUseCases(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) *windowlicense.UseCases {
+func openLicenseUseCases(install pluginInstall, settingsDeps settingsParts, vaultDeps vaultParts) *windowlicense.UseCases {
 	if install.Licenses == nil {
 		return nil
 	}

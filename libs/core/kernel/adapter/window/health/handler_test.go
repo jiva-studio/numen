@@ -18,7 +18,9 @@ import (
 
 type noPlugins struct{}
 
-func (noPlugins) GetPlugin(string) (manifest.Discovered, bool) { return manifest.Discovered{}, false }
+func (noPlugins) GetPlugin(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{}, false
+}
 
 func newClient(t *testing.T, items *pluginhealth.Items) numenv1connect.PluginHealthServiceClient {
 	t.Helper()

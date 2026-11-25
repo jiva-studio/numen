@@ -44,8 +44,8 @@ func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences
 	return c
 }
 
-// settingsWiring wires the settings, setting change events and themes of an installation.
-type settingsWiring struct {
+// settingsParts wires the settings, setting change events and themes of an installation.
+type settingsParts struct {
 	SettingsPath  string
 	ThemesPath    string
 	RegistryPath  string
@@ -59,11 +59,11 @@ type settingsWiring struct {
 	ConnectionTypes connectionport.Types
 	PluginInfos     settingsusecase.PluginInfos
 	Checks          settingsusecase.PluginSettings
-	Detection       connectionport.Detected
+	Detection       connectionport.DetectedConnections
 	HandleError     func(error)
 }
 
-func createSettings(c settingsWiring) (settingsadapter.File, error) {
+func createSettings(c settingsParts) (settingsadapter.File, error) {
 	path, err := getSettingsFile(c)
 	if err != nil {
 		return settingsadapter.File{}, err
@@ -71,11 +71,11 @@ func createSettings(c settingsWiring) (settingsadapter.File, error) {
 	return createSettingsStore(c).ReadCheckedAt(path)
 }
 
-func readCheckedSettings(c settingsWiring) (settingsadapter.File, error) {
+func readCheckedSettings(c settingsParts) (settingsadapter.File, error) {
 	return createSettingsStore(c).ReadCheckedFile()
 }
 
-func configurePluginHost(c settingsWiring, prefs *PluginPreferences, hosts *settingsusecase.HostSubscriptions, s settingsadapter.File, compute machinedomain.ResolvedCompute) {
+func configurePluginHost(c settingsParts, prefs *PluginPreferences, hosts *settingsusecase.HostSubscriptions, s settingsadapter.File, compute machinedomain.ResolvedCompute) {
 	var subscribe settingsusecase.ChangeSubscriber
 	if c.SettingEvents != nil {
 		subscribe = getFeed(c).Subscribe
@@ -86,7 +86,7 @@ func configurePluginHost(c settingsWiring, prefs *PluginPreferences, hosts *sett
 	}).Execute(s.Plugins, getPluginPerformance(compute))
 }
 
-func getDeclarations(c settingsWiring) settingsdomain.Declarations {
+func getDeclarations(c settingsParts) settingsdomain.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {
 		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
@@ -95,7 +95,7 @@ func getDeclarations(c settingsWiring) settingsdomain.Declarations {
 	}
 }
 
-func getRegistries(c settingsWiring) settingsdomain.Registries {
+func getRegistries(c settingsParts) settingsdomain.Registries {
 	themes := getThemeRegistry(c).GetNames()
 	return settingsadapter.AddDetectedRegistries(func(name string) ([]string, bool) {
 		if name == settingsdomain.RegistryConnections {
@@ -105,7 +105,7 @@ func getRegistries(c settingsWiring) settingsdomain.Registries {
 	}, c.ConnectionTypes, c.Detection)
 }
 
-func listConnectionIDs(c settingsWiring) ([]string, bool) {
+func listConnectionIDs(c settingsParts) ([]string, bool) {
 	ids, err := createSettingsStore(c).ListConnectionIDs()
 	if err != nil {
 		c.HandleError(err)
@@ -114,11 +114,11 @@ func listConnectionIDs(c settingsWiring) ([]string, bool) {
 	return ids, true
 }
 
-func getThemeRegistry(c settingsWiring) settingsadapter.RegistryOptions {
+func getThemeRegistry(c settingsParts) settingsadapter.RegistryOptions {
 	return settingsadapter.BuildThemeRegistry(func() []themedomain.Theme { return listThemes(c) })
 }
 
-func listThemes(c settingsWiring) []themedomain.Theme {
+func listThemes(c settingsParts) []themedomain.Theme {
 	files, err := openThemeFiles(c)
 	if err != nil {
 		c.HandleError(err)
@@ -126,18 +126,18 @@ func listThemes(c settingsWiring) []themedomain.Theme {
 	return themeusecase.NewListThemes(getThemeSources(c, files)).Execute()
 }
 
-func listAppSettings(c settingsWiring) []plugindomain.Setting {
+func listAppSettings(c settingsParts) []plugindomain.Setting {
 	return settingsusecase.NewListAppSettings(
 		settingsadapter.JSONCodec{}, createSettingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{},
 		getThemeRegistry(c),
 	).Execute()
 }
 
-func refreshSettingEvents(c settingsWiring) {
+func refreshSettingEvents(c settingsParts) {
 	getFeed(c).Refresh()
 }
 
-func syncSetting(c settingsWiring) naming.SyncSetting {
+func syncSetting(c settingsParts) naming.SyncSetting {
 	return func() naming.SyncTitleAndFilename {
 		target, err := createSettings(c)
 		if err != nil {
@@ -147,7 +147,7 @@ func syncSetting(c settingsWiring) naming.SyncSetting {
 	}
 }
 
-func writeLogLevel(c settingsWiring) func(domainlogs.Level) error {
+func writeLogLevel(c settingsParts) func(domainlogs.Level) error {
 	write := openWriteSettings(c)
 	return func(level domainlogs.Level) error {
 		return write.Execute([]settingsdomain.Setting{{
@@ -157,27 +157,27 @@ func writeLogLevel(c settingsWiring) func(domainlogs.Level) error {
 	}
 }
 
-func readSettings(c settingsWiring) func() (settingsdomain.Snapshot, error) {
+func readSettings(c settingsParts) func() (settingsdomain.Snapshot, error) {
 	return createSettingsStore(c).ReadJSON
 }
 
-func getSettingsWriter(c settingsWiring) func(entries []settingsdomain.Setting) error {
+func getSettingsWriter(c settingsParts) func(entries []settingsdomain.Setting) error {
 	return openWriteSettings(c).Execute
 }
 
-func getSettingsFile(c settingsWiring) (string, error) {
+func getSettingsFile(c settingsParts) (string, error) {
 	return settingsadapter.LocateFile(c.SettingsPath, c.RegistryPath)
 }
 
-func openWatchSettings(c settingsWiring) *settingsusecase.WatchSettingChanges {
+func openWatchSettings(c settingsParts) *settingsusecase.WatchSettingChanges {
 	return settingsusecase.NewWatchSettingChanges(func() (<-chan []settingsdomain.Setting, func()) { return getFeed(c).Subscribe() })
 }
 
-func openChoosePluginPath(c settingsWiring, dialog settingsusecase.PathDialog) *settingsusecase.ChoosePluginPath {
+func openChoosePluginPath(c settingsParts, dialog settingsusecase.PathDialog) *settingsusecase.ChoosePluginPath {
 	return settingsusecase.NewChoosePluginPath(dialog, c.Infos.GetPluginInfos, getSettingsWriter(c))
 }
 
-func createSettingsStore(c settingsWiring) *settingsadapter.Store {
+func createSettingsStore(c settingsParts) *settingsadapter.Store {
 	var declared settingsdomain.Declarations
 	if c.PluginInfos != nil {
 		declared = getDeclarations(c)
@@ -185,7 +185,7 @@ func createSettingsStore(c settingsWiring) *settingsadapter.Store {
 	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return getSettingsFile(c) }, declared, getRegistries(c))
 }
 
-func getFeed(c settingsWiring) settingevents.Feed {
+func getFeed(c settingsParts) settingevents.Feed {
 	list := listSettingValues(c)
 	return settingevents.Feed{
 		Events:  c.SettingEvents,
@@ -207,20 +207,20 @@ func getFeed(c settingsWiring) settingevents.Feed {
 	}
 }
 
-func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
+func listSettingValues(c settingsParts) *settingsusecase.ListSettingValues {
 	return settingsusecase.NewListSettingValues(
 		settingsadapter.JSONCodec{}, createSettingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, cmp.Or[settingsusecase.PluginInfos](c.PluginInfos, none.PluginInfos{}),
 	)
 }
 
-func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
+func openWriteSettings(c settingsParts) *settingsusecase.WriteSettings {
 	check := settingsusecase.NewCheckSettings(
 		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), cmp.Or[settingsusecase.PluginSettings](c.Checks, none.PluginSettings{}),
 	)
 	return settingsusecase.NewWriteSettings(check, createSettingsStore(c), getFeed(c))
 }
 
-func notifyPlugins(c settingsWiring, prefs *PluginPreferences) *settingsusecase.NotifyPlugins {
+func notifyPlugins(c settingsParts, prefs *PluginPreferences) *settingsusecase.NotifyPlugins {
 	signal := c.PluginChanges.Signal
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Apply: prefs.ApplySetting, Config: prefs.Configuration,
@@ -233,7 +233,7 @@ func resolveProfile(profile string) plugindomain.Performance {
 	return getPluginPerformance(settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(profile))
 }
 
-func createThemeService(c settingsWiring, scales Scales, say func(string)) (*theme.Service, error) {
+func createThemeService(c settingsParts, scales Scales, say func(string)) (*theme.Service, error) {
 	files, err := openThemeFiles(c)
 	sources := getThemeSources(c, files)
 	store := settingsadapter.NewAppearanceStore(
@@ -263,11 +263,11 @@ func CheckTextScale(name string, scale float64) error {
 	return settingsusecase.NewCheckScale(settingsadapter.GetTextScaleBounds()).Execute(name, scale)
 }
 
-func getThemeSources(c settingsWiring, files themefiles.Files) themeusecase.Sources {
+func getThemeSources(c settingsParts, files themefiles.Files) themeusecase.Sources {
 	return themeusecase.Sources{Presets: files, Own: files, Plugins: themefiles.NewPluginThemes(c.Infos)}
 }
 
-func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
+func openThemeFiles(c settingsParts) (themefiles.Files, error) {
 	if folder, isSet := settingsadapter.LocateThemes(c.ThemesPath, c.RegistryPath); isSet {
 		return themefiles.OpenAt(folder, c.Watches.GetShared())
 	}
@@ -278,7 +278,7 @@ func getPluginPerformance(compute machinedomain.ResolvedCompute) plugindomain.Pe
 	return plugindomain.Performance{Profile: compute.Profile, Threads: compute.CoreBudget, Nice: compute.Nice}
 }
 
-func (c Config) openThemes(settingsDeps settingsWiring, tasks *run.Tasks) *theme.Service {
+func (c Config) openThemes(settingsDeps settingsParts, tasks *run.Tasks) *theme.Service {
 	service, err := createThemeService(settingsDeps, c.Scales, editor.NewThemeWarning(tasks))
 	if err != nil {
 		settingsDeps.HandleError(err)

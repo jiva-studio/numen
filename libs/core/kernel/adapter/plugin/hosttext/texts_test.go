@@ -214,7 +214,7 @@ func getScannedMaps() text.ContentHash {
 	return text.ContentHash{Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime()}
 }
 
-func assertLive(t *testing.T, listing plugin.TextListing, err error) {
+func assertLive(t *testing.T, listing plugin.TextVersionList, err error) {
 	t.Helper()
 	if err != nil || len(listing.Versions) != 1 || listing.Live != listing.Versions[0].GetID() {
 		t.Fatalf("the listing is %+v (%v), want the one version live", listing, err)

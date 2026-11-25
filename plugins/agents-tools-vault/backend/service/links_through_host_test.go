@@ -48,7 +48,7 @@ type linkHostVault struct {
 
 func (l linkHostVault) With(domain.VaultID) linkHostVault { return l }
 
-func (l linkHostVault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]host.LinkAdded, error) {
+func (l linkHostVault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]host.LinkResult, error) {
 	l.calls.mu.Lock()
 	l.calls.additions = append(l.calls.additions, additions)
 	l.calls.mu.Unlock()

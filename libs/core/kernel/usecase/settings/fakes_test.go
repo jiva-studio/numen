@@ -35,9 +35,13 @@ type memoryFile struct {
 	readFailure error
 }
 
-func (f *memoryFile) ReadChecked() (settingsdomain.Stored, error) { return f.current, f.failure }
+func (f *memoryFile) ReadChecked() (settingsdomain.StoredSettings, error) {
+	return f.current, f.failure
+}
 
-func (f *memoryFile) ReadUnchecked() (settingsdomain.Stored, error) { return f.current, f.failure }
+func (f *memoryFile) ReadUnchecked() (settingsdomain.StoredSettings, error) {
+	return f.current, f.failure
+}
 
 func (f *memoryFile) WriteJSON(entries []settingsdomain.Setting) (string, uint64, error) {
 	f.mu.Lock()
@@ -55,7 +59,9 @@ func (f *memoryFile) WriteJSON(entries []settingsdomain.Setting) (string, uint64
 	return "{}", 0, nil
 }
 
-func (f *memoryFile) GetDefaults() settingsdomain.Stored { return stored{values: map[string]any{}} }
+func (f *memoryFile) GetDefaults() settingsdomain.StoredSettings {
+	return stored{values: map[string]any{}}
+}
 
 func declare(paths ...[]string) settingsdomain.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {

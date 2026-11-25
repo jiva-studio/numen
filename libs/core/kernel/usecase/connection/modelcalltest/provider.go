@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 )
 
-// Recorded is one call a provider received.
-type Recorded struct {
+// RecordedCall is one call a provider received.
+type RecordedCall struct {
 	Operation  string
 	Address    string
 	Call       modelcall.ProviderCall
@@ -28,7 +28,7 @@ type Provider struct {
 	scripts  map[string]script
 	answers  map[string]func(payload []byte) ([]byte, error)
 	listings map[string]modelcall.ListedOptions
-	recorded []Recorded
+	recorded []RecordedCall
 	entered  chan string
 }
 
@@ -64,15 +64,15 @@ func (p *Provider) Block(address string) {
 }
 
 // Calls returns the calls received, in order.
-func (p *Provider) Calls() []Recorded {
+func (p *Provider) Calls() []RecordedCall {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return append([]Recorded(nil), p.recorded...)
+	return append([]RecordedCall(nil), p.recorded...)
 }
 
 // ListCallsTo returns the calls received for the address.
-func (p *Provider) ListCallsTo(address string) []Recorded {
-	var calls []Recorded
+func (p *Provider) ListCallsTo(address string) []RecordedCall {
+	var calls []RecordedCall
 	for _, one := range p.Calls() {
 		if one.Address == address {
 			calls = append(calls, one)
@@ -81,7 +81,7 @@ func (p *Provider) ListCallsTo(address string) []Recorded {
 	return calls
 }
 
-func (p *Provider) record(ctx context.Context, recorded Recorded) error {
+func (p *Provider) record(ctx context.Context, recorded RecordedCall) error {
 	address := recorded.Address
 	p.mu.Lock()
 	p.recorded = append(p.recorded, recorded)
@@ -125,7 +125,7 @@ func (p *Provider) Call(
 	ctx context.Context, operation string, call modelcall.ProviderCall, payload []byte, send modelcall.Send,
 ) ([]byte, error) {
 	address := call.Fields[addressField]
-	if err := p.record(ctx, Recorded{Operation: operation, Address: address, Call: call, Payload: payload}); err != nil {
+	if err := p.record(ctx, RecordedCall{Operation: operation, Address: address, Call: call, Payload: payload}); err != nil {
 		return nil, err
 	}
 	p.mu.Lock()
@@ -168,7 +168,7 @@ func (p *Provider) ListOptions(
 	ctx context.Context, operation string, call modelcall.ProviderCall, query modelcall.OptionsQuery,
 ) (modelcall.ListedOptions, error) {
 	address := call.Fields[addressField]
-	recorded := Recorded{Operation: operation, Address: address, Call: call, Operations: query.Operations, IsFresh: query.IsFresh}
+	recorded := RecordedCall{Operation: operation, Address: address, Call: call, Operations: query.Operations, IsFresh: query.IsFresh}
 	if err := p.record(ctx, recorded); err != nil {
 		return modelcall.ListedOptions{}, err
 	}

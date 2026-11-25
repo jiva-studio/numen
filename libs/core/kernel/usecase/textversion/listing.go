@@ -68,15 +68,15 @@ func getVersions(ctx context.Context, stores VersionStores, v domain.Vault, path
 
 // ListVersions returns the versions of a file and the live one, evaluated for
 // the file content identified by contentHash.
-func (u *Texts) ListVersions(ctx context.Context, v domain.Vault, path, contentHash string) (plugin.TextListing, error) {
+func (u *Texts) ListVersions(ctx context.Context, v domain.Vault, path, contentHash string) (plugin.TextVersionList, error) {
 	versions, err := getVersions(ctx, u.stores, v, path)
 	if err != nil {
-		return plugin.TextListing{}, err
+		return plugin.TextVersionList{}, err
 	}
-	listing := plugin.TextListing{Versions: versions}
+	listing := plugin.TextVersionList{Versions: versions}
 	live, ok, err := u.live.find(ctx, v, path, versions, contentHash)
 	if err != nil {
-		return plugin.TextListing{}, err
+		return plugin.TextVersionList{}, err
 	}
 	if ok {
 		listing.Live = live.GetID()
@@ -86,13 +86,13 @@ func (u *Texts) ListVersions(ctx context.Context, v domain.Vault, path, contentH
 
 // ListFileVersions lists the versions of a file of the vault and names the live one for the file's
 // current content.
-func (u *Texts) ListFileVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextListing, error) {
+func (u *Texts) ListFileVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextVersionList, error) {
 	contentHash, err := u.GetContentHash(ctx, v, path)
 	if errors.Is(err, text.ErrFileUnreadable) {
-		return plugin.TextListing{}, fmt.Errorf("%w: %w", text.ErrNoText, err)
+		return plugin.TextVersionList{}, fmt.Errorf("%w: %w", text.ErrNoText, err)
 	}
 	if err != nil {
-		return plugin.TextListing{}, err
+		return plugin.TextVersionList{}, err
 	}
 	return u.ListVersions(ctx, v, path, contentHash)
 }

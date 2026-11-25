@@ -21,13 +21,13 @@ import (
 // what that order kept.
 const coarseCandidates = 8
 
-// ranked is a chunk and how near the query it is.
-type ranked struct {
+// chunkScore is a chunk and how near the query it is.
+type chunkScore struct {
 	chunk      domain.ChunkID
 	similarity float64
 }
 
-func rankCandidates(ctx context.Context, queries NearestQueries, q source.StoredVectorQuery, query []float32, floor float64) ([]ranked, error) {
+func rankCandidates(ctx context.Context, queries NearestQueries, q source.StoredVectorQuery, query []float32, floor float64) ([]chunkScore, error) {
 	if len(q.Chunks) == 0 {
 		return nil, nil
 	}
@@ -39,16 +39,16 @@ func rankCandidates(ctx context.Context, queries NearestQueries, q source.Stored
 	for i, id := range q.Chunks {
 		position[id] = i
 	}
-	passing := make([]ranked, 0, len(stored))
+	passing := make([]chunkScore, 0, len(stored))
 	for _, s := range stored {
 		if len(s.Vector) != len(query) {
 			return nil, fmt.Errorf("chunk %s holds %d dimensions where the query has %d", s.Chunk, len(s.Vector), len(query))
 		}
 		if similarity := vector.ComputeSimilarityBytes(query, s.Vector); similarity >= floor {
-			passing = append(passing, ranked{chunk: s.Chunk, similarity: similarity})
+			passing = append(passing, chunkScore{chunk: s.Chunk, similarity: similarity})
 		}
 	}
-	slices.SortFunc(passing, func(a, b ranked) int {
+	slices.SortFunc(passing, func(a, b chunkScore) int {
 		if c := cmp.Compare(b.similarity, a.similarity); c != 0 {
 			return c
 		}

@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func syncPlugins() []manifest.Discovered {
-	return []manifest.Discovered{{
+func syncPlugins() []manifest.DiscoveredPlugin {
+	return []manifest.DiscoveredPlugin{{
 		Manifest: manifest.Manifest{
 			ID:   "md.numen.tools.sync",
 			Name: "Numen Sync",

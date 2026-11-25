@@ -27,7 +27,7 @@ func (c changeFixture) addresses() edit.NameQueries {
 	return c.db.NoteQueries()
 }
 
-func (c changeFixture) connectionDeps(writers note.NoteWriting) note.ConnectionDeps {
+func (c changeFixture) connectionDeps(writers note.NoteWriter) note.ConnectionDeps {
 	return note.ConnectionDeps{
 		Readers: vaultreader.Readers{}, Writers: writers, Index: c.index, Now: testsupport.NewClock(),
 		Links: c.db.NoteQueries(), Names: c.addresses(),
@@ -38,7 +38,7 @@ func (c changeFixture) saveConnection() note.SaveConnection {
 	return c.saveConnectionWith(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
 }
 
-func (c changeFixture) saveConnectionWith(writers note.NoteWriting) note.SaveConnection {
+func (c changeFixture) saveConnectionWith(writers note.NoteWriter) note.SaveConnection {
 	return note.NewSaveConnection(c.connectionDeps(writers))
 }
 

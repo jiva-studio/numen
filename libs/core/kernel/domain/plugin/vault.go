@@ -41,9 +41,9 @@ type LinkAddition struct {
 	Link     domain.Link
 }
 
-// LinkAdded is the outcome of one addition: the note after the write, or the error of a link
+// LinkResult is the outcome of one addition: the note after the write, or the error of a link
 // not written.
-type LinkAdded struct {
+type LinkResult struct {
 	Stat domain.FileStat
 	Err  error
 }
@@ -56,8 +56,8 @@ type FrontmatterWrite struct {
 	Values   map[string]any
 }
 
-// FrontmatterWritten is the outcome of one write: the note after it, or the error of a note not written.
-type FrontmatterWritten struct {
+// FrontmatterResult is the outcome of one write: the note after it, or the error of a note not written.
+type FrontmatterResult struct {
 	Stat domain.FileStat
 	Err  error
 }

@@ -44,7 +44,7 @@ func newCreateCommand(built *parts) command.Run {
 	}
 }
 
-func formatProblems(saved savedsearch.Saved) string {
+func formatProblems(saved savedsearch.SavedSearch) string {
 	lines := make([]string, len(saved.Errors))
 	for i, problem := range saved.Errors {
 		lines[i] = fmt.Sprintf("%d:%d %s", problem.Line, problem.Column, problem.Message)

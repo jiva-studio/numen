@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
-func listWindowTools(t *testing.T) tools.Listing {
+func listWindowTools(t *testing.T) tools.ToolList {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, "1")
 	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "window-token"}, Mount)
@@ -28,7 +28,7 @@ func listWindowTools(t *testing.T) tools.Listing {
 	return listing
 }
 
-func getWindowToolSentences(listing tools.Listing) map[string][]string {
+func getWindowToolSentences(listing tools.ToolList) map[string][]string {
 	byTool := map[string][]string{}
 	for _, one := range listing.Tools {
 		byTool[one.GetName()] = one.Instructions

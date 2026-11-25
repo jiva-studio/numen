@@ -15,7 +15,7 @@ import (
 
 // ServiceHandler answers the tool calls of a plugin with the headers of each request.
 type ServiceHandler interface {
-	ListTools(ctx context.Context, header http.Header) (tools.Listing, error)
+	ListTools(ctx context.Context, header http.Header) (tools.ToolList, error)
 	InvokeTool(ctx context.Context, header http.Header, call tools.Call) (*tools.CallResponse, error)
 }
 

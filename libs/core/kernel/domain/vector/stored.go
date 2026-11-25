@@ -14,12 +14,12 @@ const QuantizedInt8 = "int8"
 // The value 0.4 sets the headroom: a larger component of a unit vector is clamped.
 const Int8Scale = 0.4
 
-// Stored is one chunk's vector, in both stored representations.
+// StoredVector is one chunk's vector, in both stored representations.
 // Value is the copy used for reranking, quantized as Kind specifies. Coarse is
 // one bit per dimension, used by the coarse pass. Hash is the digest of the
 // text the source read; the vector is stored under it after the chunk that
 // referenced it is gone. Recipe is the key the vector is kept under.
-type Stored struct {
+type StoredVector struct {
 	ChunkID domain.ChunkID
 	Hash    []byte
 	Recipe  string

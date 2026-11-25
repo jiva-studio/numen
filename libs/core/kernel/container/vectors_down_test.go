@@ -26,20 +26,20 @@ type downEmbeddingHost struct {
 	acquired atomic.Int32
 }
 
-func (h *downEmbeddingHost) FindPluginByCapability(string) (manifest.Discovered, bool) {
-	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.embeddings"}}, true
+func (h *downEmbeddingHost) FindPluginByCapability(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: "md.numen.embeddings"}}, true
 }
 
-func (h *downEmbeddingHost) ResolveCapability(string) (manifest.Discovered, error) {
-	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.embeddings"}}, nil
+func (h *downEmbeddingHost) ResolveCapability(string) (manifest.DiscoveredPlugin, error) {
+	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{ID: "md.numen.embeddings"}}, nil
 }
 
-func (h *downEmbeddingHost) GetPlugin(string) (manifest.Discovered, bool) {
-	return manifest.Discovered{}, false
+func (h *downEmbeddingHost) GetPlugin(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{}, false
 }
 
-func (h *downEmbeddingHost) ResolveService(string) (manifest.Discovered, bool) {
-	return manifest.Discovered{}, false
+func (h *downEmbeddingHost) ResolveService(string) (manifest.DiscoveredPlugin, bool) {
+	return manifest.DiscoveredPlugin{}, false
 }
 
 func (h *downEmbeddingHost) EnsureActive(context.Context, string, plugindomain.Holder) (transport.Endpoint, error) {
@@ -99,7 +99,7 @@ func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := whole.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
+	if _, err := whole.Execute(t.Context(), v, indexing.ReadCallbacks{}); err != nil {
 		t.Fatal(err)
 	}
 	if got := unembeddedTo(t, db, v, unit{"first"}); got != 0 {

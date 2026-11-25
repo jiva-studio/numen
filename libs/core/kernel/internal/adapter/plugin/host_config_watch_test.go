@@ -70,7 +70,7 @@ const stoppedPluginID = "md.numen.engines.stopped"
 func newStoppedHost(t *testing.T) *pluginhost.Host {
 	t.Helper()
 	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
-	setPlugin(host.Management, stoppedPluginID, manifest.Discovered{Manifest: manifest.Manifest{
+	setPlugin(host.Management, stoppedPluginID, manifest.DiscoveredPlugin{Manifest: manifest.Manifest{
 		ID:       stoppedPluginID,
 		Version:  "2026.1.1",
 		Settings: []manifest.Setting{{Key: "model", Type: "string", Title: "Model", Default: "small"}},

@@ -21,7 +21,7 @@ import (
 type VaultReader struct {
 	root    string
 	opts    vaultconfig.Options
-	ignored *vaultconfig.Ignoring
+	ignored *vaultconfig.IgnoreRules
 }
 
 // Open prepares a vault for reading. It does not write anything: looking at a

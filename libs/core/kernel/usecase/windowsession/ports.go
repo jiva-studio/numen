@@ -81,9 +81,9 @@ type Reporters struct {
 	Failed        window.ErrorHandler
 }
 
-// Started is the passes behind one vault. Publish makes the refresh of this run the one requests
+// StartedPasses is the passes behind one vault. Publish makes the refresh of this run the one requests
 // use, and Retire ends it.
-type Started struct {
+type StartedPasses struct {
 	Read      ReadNotes
 	Run       func(ctx context.Context)
 	Unwatched error
@@ -93,13 +93,13 @@ type Started struct {
 
 // VaultPasses starts the walk and the watch of one vault.
 type VaultPasses interface {
-	Start(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) Started
+	Start(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) StartedPasses
 }
 
-type VaultPassesFunc func(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) Started
+type VaultPassesFunc func(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) StartedPasses
 
 // Start calls f.
-func (f VaultPassesFunc) Start(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) Started {
+func (f VaultPassesFunc) Start(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) StartedPasses {
 	return f(ctx, v, rebuild, report)
 }
 

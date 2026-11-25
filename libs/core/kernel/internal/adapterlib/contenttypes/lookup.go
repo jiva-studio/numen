@@ -59,7 +59,7 @@ func (l *Lookup) GetContentType(name string) domain.ContentType {
 	return table.GetContentType(name)
 }
 
-func getKey(plugins []manifest.Discovered) string {
+func getKey(plugins []manifest.DiscoveredPlugin) string {
 	var key strings.Builder
 	for _, p := range plugins {
 		key.WriteString(p.Manifest.ID + "@" + p.Manifest.Version + ",")
@@ -67,7 +67,7 @@ func getKey(plugins []manifest.Discovered) string {
 	return key.String()
 }
 
-func (l *Lookup) openCache(plugins []manifest.Discovered) *cache {
+func (l *Lookup) openCache(plugins []manifest.DiscoveredPlugin) *cache {
 	l.cache.mu.Lock()
 	if key := getKey(plugins); l.cache.key != key || l.cache.extensions == nil {
 		l.cache.key = key
@@ -79,7 +79,7 @@ func (l *Lookup) openCache(plugins []manifest.Discovered) *cache {
 
 // ListExtensions lists, lowercase, sorted and without the dot, the extensions that give a file a type
 // the mask covers, over the enabled plugins.
-func (l *Lookup) ListExtensions(plugins []manifest.Discovered, mask domain.ContentType) []string {
+func (l *Lookup) ListExtensions(plugins []manifest.DiscoveredPlugin, mask domain.ContentType) []string {
 	cache := l.openCache(plugins)
 	defer cache.mu.Unlock()
 	return slices.Clone(l.listCachedTypes(cache, mask))
@@ -101,7 +101,7 @@ func (l *Lookup) listCachedTypes(cache *cache, mask domain.ContentType) []string
 	return candidates
 }
 
-func (l *Lookup) listOpenedTypes(plugins []manifest.Discovered, pluginID string) map[string][]string {
+func (l *Lookup) listOpenedTypes(plugins []manifest.DiscoveredPlugin, pluginID string) map[string][]string {
 	cache := l.openCache(plugins)
 	defer cache.mu.Unlock()
 	if found, ok := cache.opened[pluginID]; ok {
@@ -131,7 +131,7 @@ func (l *Lookup) listOpenedTypes(plugins []manifest.Discovered, pluginID string)
 
 // ListReaderInfos lists the readers a plugin declares with the extensions each opens, over the
 // enabled plugins.
-func (l *Lookup) ListReaderInfos(plugins []manifest.Discovered, declared manifest.Manifest) []plugindomain.ReaderInfo {
+func (l *Lookup) ListReaderInfos(plugins []manifest.DiscoveredPlugin, declared manifest.Manifest) []plugindomain.ReaderInfo {
 	if len(declared.Contributes.Readers) == 0 {
 		return nil
 	}

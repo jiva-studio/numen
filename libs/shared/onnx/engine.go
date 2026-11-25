@@ -30,7 +30,7 @@ func NewLibrary(hooks ...func(libPath string) error) *Library {
 }
 
 // Open returns the engine of the library at libPath, opened on the first call.
-func (l *Library) Open(ctx context.Context, libPath string) (Opened[*ort.Engine], error) {
+func (l *Library) Open(ctx context.Context, libPath string) (OpenedEngine[*ort.Engine], error) {
 	return l.runtime.Open(ctx, libPath, openEngine)
 }
 

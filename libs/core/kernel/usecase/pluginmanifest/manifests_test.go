@@ -11,7 +11,7 @@ import (
 
 // manifestHost holds the plugins it is given, enabled or not, and counts the reads of its listing.
 type manifestHost struct {
-	plugins   []catalogmanifest.Discovered
+	plugins   []catalogmanifest.DiscoveredPlugin
 	disabled  map[string]bool
 	infoReads int
 }
@@ -29,38 +29,38 @@ func (h *manifestHost) GetPluginInfos() []plugin.Info {
 	return infos
 }
 
-func (h *manifestHost) GetPlugin(id string) (catalogmanifest.Discovered, bool) {
+func (h *manifestHost) GetPlugin(id string) (catalogmanifest.DiscoveredPlugin, bool) {
 	for _, one := range h.plugins {
 		if one.Manifest.ID == id && !h.disabled[id] {
 			return one, true
 		}
 	}
-	return catalogmanifest.Discovered{}, false
+	return catalogmanifest.DiscoveredPlugin{}, false
 }
 
-func (h *manifestHost) ResolveCapability(string) (catalogmanifest.Discovered, error) {
-	return catalogmanifest.Discovered{}, &plugin.UnavailableError{Reason: plugin.NotInstalled}
+func (h *manifestHost) ResolveCapability(string) (catalogmanifest.DiscoveredPlugin, error) {
+	return catalogmanifest.DiscoveredPlugin{}, &plugin.UnavailableError{Reason: plugin.NotInstalled}
 }
 
-func (h *manifestHost) ResolveService(string) (catalogmanifest.Discovered, bool) {
-	return catalogmanifest.Discovered{}, false
+func (h *manifestHost) ResolveService(string) (catalogmanifest.DiscoveredPlugin, bool) {
+	return catalogmanifest.DiscoveredPlugin{}, false
 }
 
 func (h *manifestHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 	return domain.NoteProfile{}, false
 }
 
-func declaring(id string, commands ...string) catalogmanifest.Discovered {
+func declaring(id string, commands ...string) catalogmanifest.DiscoveredPlugin {
 	manifest := catalogmanifest.Manifest{ID: id}
 	for _, one := range commands {
 		manifest.Contributes.Commands = append(manifest.Contributes.Commands, catalogmanifest.Command{ID: one, Title: one})
 	}
-	return catalogmanifest.Discovered{Manifest: manifest}
+	return catalogmanifest.DiscoveredPlugin{Manifest: manifest}
 }
 
 func TestListCommands_ReadsManifestsWithoutStartingPlugins(t *testing.T) {
 	host := &manifestHost{
-		plugins: []catalogmanifest.Discovered{
+		plugins: []catalogmanifest.DiscoveredPlugin{
 			declaring("md.numen.a", "first", "second"),
 			declaring("md.numen.b", "third"),
 			declaring("md.numen.c", "fourth"),

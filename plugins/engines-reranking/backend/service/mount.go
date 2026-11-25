@@ -27,7 +27,7 @@ func newScorerOpener(library *onnx.Library, fetch onnx.FetchFile, queue host.Inf
 	}
 }
 
-func openRerankingUseCase(queue host.InferenceQueue, fetch onnx.FetchFile) (*reranking.Reranking, error) {
+func openRerankingUseCase(queue host.InferenceQueue, fetch onnx.FetchFile) (*reranking.Reranker, error) {
 	return reranking.New(profilefiles.GetDefaultDirectory(), newScorerOpener(onnx.NewLibrary(), fetch, queue), queue, console.Report)
 }
 
