@@ -1,4 +1,6 @@
-package keychain
+	if after := readCredentialsBytes(t, dir); string(after) != string(before) {
+		t.Errorf("the file changed after refused calls: %q, want %q", after, before)
+	}package keychain
 
 import (
 	"context"
@@ -275,10 +277,7 @@ func TestAPlaintextFileIsRefusedInPassphraseMode(t *testing.T) {
 	if err := newTestStore(dir).SetKey(t.Context(), entryName, seedValue); err != nil {
 		t.Fatal(err)
 	}
-	before, err := os.ReadFile(credentialsPath(dir))
-	if err != nil {
-		t.Fatal(err)
-	}
+	before := readCredentialsBytes(t, dir)
 	store := newPassphraseStore(dir, &fakeSource{passphrase: passphraseOne})
 
 	_, readErr := store.GetKey(t.Context(), entryName)
