@@ -331,7 +331,7 @@ func (m *markedRelay) WaitMessages(ctx context.Context, channelID []byte, reader
 	return m.Relay.WaitMessages(ctx, channelID, reader, afterSeq, wait)
 }
 
-func TestJoin_IgnoresAnUnauthenticatedUsedMarkerBeforeTheHandshake(t *testing.T) {
+func TestJoin_IgnoresAnUnauthenticatedUsedMarkerBeforeAuthentication(t *testing.T) {
 	w := newWorld(t)
 	_, readerDeps := w.newReader(t, "Reader")
 	readerDeps.Relay = &markedRelay{Relay: readerDeps.Relay}

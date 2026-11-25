@@ -39,13 +39,18 @@ func TestUploader_AnotherUploadGetsItsPartURLWhileTheRequestOfOneIsOpen(t *testi
 		close(entered)
 		<-release
 	})
+	firstDone := make(chan struct{})
 	go func() {
+		defer close(firstDone)
 		if err := uploader.PutPart(t.Context(), first, 1, make([]byte, first.PartSize)); err != nil {
 			t.Error(err)
 		}
 	}()
 	<-entered
-	defer close(release)
+	defer func() {
+		close(release)
+		<-firstDone
+	}()
 
 	done := make(chan struct{})
 	go func() {
