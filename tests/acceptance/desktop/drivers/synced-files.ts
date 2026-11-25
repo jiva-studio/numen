@@ -1,13 +1,17 @@
 /** Files of any kind and size on the two computers, the breaks of the connection while they travel, and the answer to a paused removal. */
+import path from 'node:path'
 import { expect } from 'playwright/test'
 import { callRPC } from '../../../e2e/desktop/tests/support/vault.js'
 import type { ComputerDriver, ComputerName, Holder, Place } from './computer.js'
 import { appendToFixture, buildFixture } from './file-fixtures.js'
 import type { SyncDriver } from './sync.js'
 import type { SyncVaultsDriver } from './sync-vaults.js'
+import { getSampleKind } from './vault-files.js'
 
 /** A file arrives within a few passes of the plugin on both computers; a big one takes longer. */
 const ARRIVAL_LIMIT_MS = 90_000
+/** The sample file a file is made from, by its extension: a person adds a real file, as the step "the vault has the following" does. */
+const SAMPLE_OF_EXTENSION: Readonly<Record<string, string>> = { '.pdf': 'paper.pdf', '.png': 'llama.png' }
 /** How many bytes are appended to a file a person changes. */
 const CHANGE_BYTES = 100
 /** The server breaks after a few parts of a big file went up, before the last: the parts are of 16 MiB. */
@@ -20,12 +24,15 @@ export class SyncedFilesDriver {
     private readonly vaults: SyncVaultsDriver,
   ) {}
 
-  writeFile(computer: ComputerName, filePath: string, megabytes: number | undefined, vault: string): void {
+  /** Puts a file in the vault: a sample when the file has an extension that has one and no size, else bytes of the size. */
+  addFile(computer: ComputerName, filePath: string, megabytes: number | undefined, vault: string): void {
     const { world, vault: name } = this.computers.getPlace(computer, vault)
-    world.writeBytes(name, filePath, buildFixture(filePath, megabytes))
+    const sample = SAMPLE_OF_EXTENSION[path.extname(filePath).toLowerCase()]
+    if (megabytes === undefined && sample !== undefined) world.copySample(name, getSampleKind(sample), filePath, sample)
+    else world.writeBytes(name, filePath, buildFixture(filePath, megabytes))
   }
 
-  writeFiles(computer: ComputerName, count: number, folder: string, vault: string): void {
+  addFiles(computer: ComputerName, count: number, folder: string, vault: string): void {
     const { world, vault: name } = this.computers.getPlace(computer, vault)
     for (let number = 1; number <= count; number += 1) {
       const filePath = `${folder}/File ${number}.bin`

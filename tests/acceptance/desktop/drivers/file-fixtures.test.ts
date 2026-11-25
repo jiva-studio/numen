@@ -1,19 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { appendToFixture, buildFixture } from './file-fixtures.js'
 
-const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-
 describe('buildFixture', () => {
-  it('starts a ".pdf" file with the header of a PDF', () => {
-    expect(buildFixture('Papers/Report.pdf').subarray(0, 5).toString('latin1')).toBe('%PDF-')
-  })
-
-  it('starts a ".png" file with the signature of a PNG', () => {
-    expect(buildFixture('Pictures/Tree.png').subarray(0, 8).equals(PNG_SIGNATURE)).toBe(true)
-  })
-
-  it('gives bytes that are not text for any other extension', () => {
-    const content = buildFixture('Videos/Trip.bin')
+  it('gives bytes that are not text', () => {
+    const content = buildFixture('Videos/Trip.mp4')
     expect(content.length).toBeGreaterThan(0)
     expect(content.includes(0)).toBe(true)
   })

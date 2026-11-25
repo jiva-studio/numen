@@ -1,11 +1,9 @@
-/** The bytes a scenario writes for a file it names: the same bytes for the same path, so both sides can build them again. */
+/** The bytes of a file a scenario names that has no sample: the same bytes for the same path, so both sides can build them again. */
 import { createHash } from 'node:crypto'
 
 const MEGABYTE = 1024 * 1024
 /** The size of a file a scenario names without a size. */
 const DEFAULT_SIZE = 64 * 1024
-const PDF_HEADER = '%PDF-1.7\n%âãÏÓ\n'
-const PNG_HEADER = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
 const fillFrom = (target: Buffer, from: number, seed: Buffer | string): void => {
   const digest = createHash('sha256').update(seed).digest()
@@ -29,20 +27,11 @@ const fillFrom = (target: Buffer, from: number, seed: Buffer | string): void => 
   output.copy(target, from, 0, target.length - from)
 }
 
-const getHeader = (filePath: string): Buffer => {
-  const lower = filePath.toLowerCase()
-  if (lower.endsWith('.pdf')) return Buffer.from(PDF_HEADER, 'latin1')
-  if (lower.endsWith('.png')) return PNG_HEADER
-  return Buffer.alloc(0)
-}
-
-/** The bytes of a file of the path: a PDF header and bytes for ".pdf", a PNG for ".png", other bytes otherwise, all seeded by the path. A longer fixture of the same path starts with the bytes of a shorter one. */
+/** The bytes of a file of the path, seeded by the path. A longer fixture of the same path starts with the bytes of a shorter one. */
 export const buildFixture = (filePath: string, megabytes?: number): Buffer => {
   const size = megabytes === undefined ? DEFAULT_SIZE : megabytes * MEGABYTE
-  const header = getHeader(filePath)
   const content = Buffer.alloc(size)
-  header.copy(content, 0, 0, Math.min(header.length, size))
-  fillFrom(content, header.length, filePath)
+  fillFrom(content, 0, filePath)
   return content
 }
 

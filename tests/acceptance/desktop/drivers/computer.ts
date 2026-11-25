@@ -287,10 +287,6 @@ export class ComputerDriver {
     this.getScenario(computer).getWorld().writeNote(this.resolveVault(computer, vault), getNotePath(title), text)
   }
 
-  writeFile(computer: ComputerName, filePath: string, vault: string): void {
-    this.getScenario(computer).getWorld().writeText(this.resolveVault(computer, vault), filePath, 'bytes')
-  }
-
   private async expectNoteBy(holder: Holder, title: string, text: string, timeout: number): Promise<void> {
     const world = this.getScenario(holder.computer).getWorld()
     const name = this.resolveVault(holder.computer, holder.vault)

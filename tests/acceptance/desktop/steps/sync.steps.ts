@@ -94,7 +94,7 @@ When(
 )
 
 When('{computer} adds the file {string} to {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
-  person.files.writeFile(computer, filePath, undefined, vault)
+  person.files.addFile(computer, filePath, undefined, vault)
 })
 
 Then('{computer} does not have the file {string} in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
@@ -245,11 +245,11 @@ Then('the vault {string} has the same file {string} as the second computer', asy
 })
 
 When('{computer} adds the file {string} of {int} MB to {owned}', ({ person }, computer: ComputerName, filePath: string, megabytes: number, vault: string) => {
-  person.files.writeFile(computer, filePath, megabytes, vault)
+  person.files.addFile(computer, filePath, megabytes, vault)
 })
 
 When('{computer} adds {int} files to the folder {string} in {owned}', ({ person }, computer: ComputerName, count: number, folder: string, vault: string) => {
-  person.files.writeFiles(computer, count, folder, vault)
+  person.files.addFiles(computer, count, folder, vault)
 })
 
 When('{computer} replaces the file {string} with a new version in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
