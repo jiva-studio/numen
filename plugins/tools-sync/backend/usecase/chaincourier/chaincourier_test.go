@@ -317,6 +317,9 @@ func newBackdatedAddition(t *testing.T) (observer *synctest.Computer, clock *syn
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	observer = synctest.NewSecondComputer(t, server, clock, "Tablet", words)
+	if _, err := chaincourier.NewAdopt(first.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
