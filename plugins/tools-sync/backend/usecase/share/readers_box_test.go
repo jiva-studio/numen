@@ -21,8 +21,8 @@ func TestAcceptInvitation_AReaderRestoredFromTheWordsOpensTheSealOfItsEarlierBox
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.syncOwner(t)
 	w.shareFolder(t)
-	invitation := w.addReader(t, reader, "Anna")
 	w.syncOwner(t)
+	invitation := w.addReader(t, reader, "Anna")
 	restored := synctest.NewRestoredComputer(t, w.server, w.clock, "Restored", words)
 
 	received, err := restored.AcceptInvitation(t.Context(), invitation.Text)

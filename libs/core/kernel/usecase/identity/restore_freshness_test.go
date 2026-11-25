@@ -159,8 +159,8 @@ func TestCompleteRestore_RotatesTheKeysSoTheKeysWrappedForTheWordsAreNotInUse(t 
 		t.Errorf("epoch = %d, want %d with new account keys", after.Epoch(), before.Epoch()+1)
 	}
 	devices, err := phone.devices.Execute(t.Context())
-	if err != nil || len(devices) != 2 {
-		t.Errorf("devices = %+v, error = %v, want both devices listed for the person to check", devices, err)
+	if err != nil || len(devices) != 1 || !devices[0].IsThis {
+		t.Errorf("devices = %+v, error = %v, want the restored device alone listed: the person links the others again", devices, err)
 	}
 }
 
