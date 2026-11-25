@@ -11,9 +11,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/shared/identity"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func newComputer(t *testing.T) (*synctest.Computer, []string) {

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (

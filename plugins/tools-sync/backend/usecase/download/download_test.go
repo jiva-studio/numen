@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
@@ -22,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (

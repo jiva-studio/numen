@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/service"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 type world struct {

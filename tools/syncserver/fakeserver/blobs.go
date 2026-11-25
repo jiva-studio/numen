@@ -14,8 +14,8 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver/internal/bodystore"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver/internal/bodystore"
 )
 
 func (s *Server) ReserveBlobs(_ context.Context, req *connect.Request[syncv1.ReserveBlobsRequest]) (*connect.Response[syncv1.ReserveBlobsResponse], error) {

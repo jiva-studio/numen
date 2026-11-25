@@ -10,8 +10,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver/internal/streams"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver/internal/streams"
 )
 
 // EndStreams ends every open stream of change hints cleanly.

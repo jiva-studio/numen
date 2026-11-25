@@ -9,9 +9,9 @@ import (
 	"time"
 
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 type run struct {

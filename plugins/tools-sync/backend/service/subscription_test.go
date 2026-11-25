@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/service"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func newBillingWorld(t *testing.T) *world {

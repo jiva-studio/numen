@@ -3,9 +3,9 @@ package syncvault_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func newFolderJoinPair(t *testing.T) *pair {

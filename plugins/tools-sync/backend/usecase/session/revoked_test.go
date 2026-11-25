@@ -6,11 +6,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	domain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 // revokedPair is an account of two computers on a server, where the first has revoked the second.

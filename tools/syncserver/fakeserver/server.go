@@ -17,13 +17,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver/internal/bodystore"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver/internal/linkrelay"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver/internal/sharestate"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver/internal/stopafter"
 	"github.com/jiva-studio/numen/tools/syncserver/fakeserver/internal/streams"
-	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
-	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
 
 const (

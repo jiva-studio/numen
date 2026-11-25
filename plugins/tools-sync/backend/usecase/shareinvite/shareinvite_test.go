@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	domainshare "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/shareinvite"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (

@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 type partLogRow struct {
