@@ -37,7 +37,7 @@ func newVaultID(t *testing.T) []byte {
 }
 
 func newCloud(c *synctest.Computer, token string, refresh func(context.Context) error) *cloud.Cloud {
-	return cloud.New(cloud.Config{Address: c.Server.URL, HTTP: http.DefaultClient, Token: func() string { return token }, Refresh: refresh, Roots: fakeserver.GetTestRoots(), Now: c.Clock.Now})
+	return cloud.New(cloud.Config{Address: c.Server.URL, HTTP: http.DefaultClient, Token: func() string { return token }, Refresh: refresh, Roots: c.Roots, Now: c.Clock.Now})
 }
 
 func TestCloud_AppendsACatalogEntryAndReadsItBack(t *testing.T) {

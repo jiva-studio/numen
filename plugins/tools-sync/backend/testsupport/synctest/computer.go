@@ -51,7 +51,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/errorwire"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 // Host is the host of a computer for the plugin: the vaults of the installation and the files and the store
@@ -193,12 +192,12 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	client := account.NewClient(accountEndpoint)
 	root := hosttest.New(vault)
 	host := Host{Root: root, Names: vaultnames.New()}
-	network := &link{}
+	network := &link{isOffline: atomic.Bool{}, origin: server.origin, dial: server.dial}
 	web := &http.Client{Transport: network}
 	receivedRoot := t.TempDir()
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: host, Notes: host,
-		Cloud: nil, Roots: fakeserver.GetTestRoots(), State: nil,
+		Cloud: nil, Roots: server.getRoots(), State: nil,
 		LazyHeavy: false, Folders: folders.NewReceivedFolders(func() string { return receivedRoot }), token: atomic.Value{},
 		network: network, downloadsOnce: sync.Once{}, downloads: nil, retries: pull.NewRetries(),
 		Account:        accountadapter.New(client),
@@ -249,6 +248,9 @@ func (c *Computer) AddVault(t *testing.T, name string) {
 		t.Fatal(err)
 	}
 }
+
+// NewHTTP returns a client over the network link of this computer.
+func (c *Computer) NewHTTP() *http.Client { return &http.Client{Transport: c.network} }
 
 func (c *Computer) NewHealth() *health.Client { return health.NewClient(c.healthEndpoint) }
 

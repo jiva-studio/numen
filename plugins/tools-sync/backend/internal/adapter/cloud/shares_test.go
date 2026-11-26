@@ -6,11 +6,17 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 )
 
+func newRealComputer(t *testing.T) *synctest.Computer {
+	t.Helper()
+	server, clock, words := synctest.NewRealWorld(t)
+	return synctest.NewFirstComputer(t, server, clock, "Test", words)
+}
+
 func TestCloud_SignsInAgainOnceForEachCallOfTheShareService(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{})
+	c := newRealComputer(t)
 	shareID := newVaultID(t)
 	var refreshed int
 	stale := newCloud(c, "not a session", func(context.Context) error {
@@ -34,7 +40,7 @@ func TestCloud_SignsInAgainOnceForEachCallOfTheShareService(t *testing.T) {
 }
 
 func TestCloud_ReadsNoShareOfAnAccountThatSharesNothing(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{})
+	c := newRealComputer(t)
 
 	shares, err := c.Cloud.ListShares(t.Context())
 

@@ -1,6 +1,7 @@
 package synctest
 
 import (
+	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,10 +17,16 @@ import (
 
 // Server is the fake sync server of the protocol library on a loopback port, behind a switch that makes it
 // unreachable, a hook that loses one response, and a hook that damages the blobs it sends.
+// Over the real sync server it is a proxy of the test in front of it, and URL is then the public address of that server, which the computers dial and the server names as its own.
 type Server struct {
 	Fake *fakeserver.Server
 	URL  string
 
+	backend      http.Handler
+	dial         string
+	origin       string
+	roots        []ed25519.PublicKey
+	calls        map[string]int
 	mu           sync.Mutex
 	isDown       bool
 	lostPath     string
@@ -37,9 +44,10 @@ type Server struct {
 func NewServer(t *testing.T, clock *Clock, cfg fakeserver.Config) *Server {
 	t.Helper()
 	cfg.Now = clock.Now
-	s := &Server{Fake: nil, URL: "", mu: sync.Mutex{}, isDown: false, lostPath: "", isCorrupted: false, hookPath: "", hookCallback: nil, requests: 0, blobGets: 0, blobBudget: 0, hasBudget: false}
+	s := newServer()
 	cfg.Stop = func() { s.SetDown(true) }
 	s.Fake = fakeserver.New(cfg)
+	s.backend = s.Fake
 	served := httptest.NewServer(http.HandlerFunc(s.serve))
 	t.Cleanup(served.Close)
 	s.URL = served.URL
@@ -180,14 +188,14 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	case isDown:
 		http.Error(w, "the server is down", http.StatusServiceUnavailable)
 	case isLost:
-		s.Fake.ServeHTTP(httptest.NewRecorder(), r)
+		s.backend.ServeHTTP(httptest.NewRecorder(), r)
 		http.Error(w, "the response was lost", http.StatusServiceUnavailable)
 	case isCorrupted && r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/blobs/"):
 		s.serveCorrupted(w, r)
 	case hook != nil:
 		s.serveHooked(w, r, hook)
 	default:
-		s.Fake.ServeHTTP(w, r)
+		s.backend.ServeHTTP(w, r)
 	}
 }
 
@@ -198,6 +206,7 @@ func (s *Server) ForgetRemovals() { s.Fake.PruneTombstones() }
 func (s *Server) takeFaults(method, path string) (isDown, isCorrupted, isLost bool, hook func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.calls[path]++
 	isCut := s.countRequest(method, path)
 	isLost = !s.isDown && s.lostPath != "" && strings.HasSuffix(path, s.lostPath)
 	if isLost {
@@ -249,7 +258,7 @@ func (s *Server) FailBlobGetsAfter(n int) {
 
 func (s *Server) serveCorrupted(w http.ResponseWriter, r *http.Request) {
 	recorded := httptest.NewRecorder()
-	s.Fake.ServeHTTP(recorded, r)
+	s.backend.ServeHTTP(recorded, r)
 	body := recorded.Body.Bytes()
 	if len(body) > 0 {
 		body[0] ^= 0xff
@@ -264,7 +273,7 @@ func (s *Server) serveCorrupted(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) serveHooked(w http.ResponseWriter, r *http.Request, hook func()) {
 	recorded := httptest.NewRecorder()
-	s.Fake.ServeHTTP(recorded, r)
+	s.backend.ServeHTTP(recorded, r)
 	hook()
 	maps.Copy(w.Header(), recorded.Header())
 	switch replayed := recorded.Header().Get("Content-Type"); {
@@ -283,3 +292,12 @@ func (s *Server) serveHooked(w http.ResponseWriter, r *http.Request, hook func()
 		return
 	}
 }
+
+func newServer() *Server {
+	return &Server{
+		Fake: nil, URL: "", backend: nil, dial: "", origin: "", roots: nil, calls: map[string]int{}, mu: sync.Mutex{}, isDown: false,
+		lostPath: "", isCorrupted: false, hookPath: "", hookCallback: nil, requests: 0, blobGets: 0, blobBudget: 0, hasBudget: false,
+	}
+}
+
+func fakeRoots() []ed25519.PublicKey { return fakeserver.GetTestRoots() }

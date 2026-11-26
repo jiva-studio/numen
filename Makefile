@@ -559,6 +559,18 @@ app_desktop_e2e: lib_workbench_build app_desktop_editor_build app_desktop_flashc
 	cd $(TESTS)/e2e/desktop && npm test
 	cd $(TESTS)/e2e/desktop && npm run test:flashcards
 
+.PHONY: sync_stack_up
+sync_stack_up: ## start the real sync server of the tests (tests/server)
+	bash $(TESTS)/server/stack.sh up
+
+.PHONY: sync_stack_down
+sync_stack_down: ## stop the real sync server of the tests and drop its data
+	bash $(TESTS)/server/stack.sh down
+
+.PHONY: sync_stack_env
+sync_stack_env: ## print the settings of the running stack: eval "$$(make -s sync_stack_env)"
+	@bash $(TESTS)/server/stack.sh env
+
 .PHONY: app_desktop_acceptance
 app_desktop_acceptance: lib_workbench_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run the acceptance scenarios
 	cd $(DESKTOP) && go build -tags numen_debug -ldflags "-X 'github.com/jiva-studio/numen/apps/desktop/internal/version.version=1.0.0 (build 1000, commit acceptance)'" -o numen-debug ./cmd/numen

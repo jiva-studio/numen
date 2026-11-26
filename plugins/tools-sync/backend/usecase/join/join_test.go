@@ -10,14 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
-
-func newWorld(t *testing.T) (*synctest.Server, *synctest.Clock) {
-	t.Helper()
-	clock := synctest.NewClock(synctest.GetStart())
-	return synctest.NewServer(t, clock, fakeserver.Config{}), clock
-}
 
 func parseChain(t *testing.T, raw []byte) identity.Chain {
 	t.Helper()
@@ -29,8 +22,7 @@ func parseChain(t *testing.T, raw []byte) identity.Chain {
 }
 
 func TestJoin_AddsThisDeviceToTheAccountOfTheRecoveryWords(t *testing.T) {
-	server, clock := newWorld(t)
-	words := synctest.NewWords(t)
+	server, clock, words := synctest.NewRealWorld(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	second := synctest.NewPendingComputer(t, server, clock, "Copy", words)
 
@@ -52,8 +44,7 @@ func TestJoin_AddsThisDeviceToTheAccountOfTheRecoveryWords(t *testing.T) {
 }
 
 func TestJoin_OpensWhatTheFirstComputerSealed(t *testing.T) {
-	server, clock := newWorld(t)
-	words := synctest.NewWords(t)
+	server, clock, words := synctest.NewRealWorld(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	second := synctest.NewPendingComputer(t, server, clock, "Copy", words)
 	sealed, err := first.Client.SealData(t.Context(), []byte("context"), []byte("secret"))
@@ -72,9 +63,9 @@ func TestJoin_OpensWhatTheFirstComputerSealed(t *testing.T) {
 }
 
 func TestJoin_DoesNothingWhenNoRestoreIsPending(t *testing.T) {
-	server, clock := newWorld(t)
-	first := synctest.NewFirstComputer(t, server, clock, "Test", synctest.NewWords(t))
-	before := server.Fake.CountCalls(syncv1connect.SignInServiceGetChallengeProcedure)
+	server, clock, words := synctest.NewRealWorld(t)
+	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
+	before := server.CountCalls(syncv1connect.SignInServiceGetChallengeProcedure)
 
 	isJoined, err := join.NewJoin(first.JoinDeps()).Execute(t.Context())
 	if err != nil {
@@ -84,14 +75,13 @@ func TestJoin_DoesNothingWhenNoRestoreIsPending(t *testing.T) {
 	if isJoined {
 		t.Error("Execute reported a join with no restore pending")
 	}
-	if after := server.Fake.CountCalls(syncv1connect.SignInServiceGetChallengeProcedure); after != before {
+	if after := server.CountCalls(syncv1connect.SignInServiceGetChallengeProcedure); after != before {
 		t.Errorf("challenges asked for grew from %d to %d, want no call to the server", before, after)
 	}
 }
 
 func TestJoin_ReadsTheChainOnceWithAChallengeOfTheRecoveryKey(t *testing.T) {
-	server, clock := newWorld(t)
-	words := synctest.NewWords(t)
+	server, clock, words := synctest.NewRealWorld(t)
 	synctest.NewFirstComputer(t, server, clock, "Test", words)
 	second := synctest.NewPendingComputer(t, server, clock, "Copy", words)
 
@@ -99,14 +89,14 @@ func TestJoin_ReadsTheChainOnceWithAChallengeOfTheRecoveryKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := server.Fake.CountCalls(syncv1connect.AccountServiceGetAccountChainByRootProcedure); got != 1 {
+	if got := server.CountCalls(syncv1connect.AccountServiceGetAccountChainByRootProcedure); got != 1 {
 		t.Errorf("reads of the chain by root = %d, want 1", got)
 	}
 }
 
 func TestJoin_MakesANewAccountWhenTheServerHasNone(t *testing.T) {
-	server, clock := newWorld(t)
-	second := synctest.NewPendingComputer(t, server, clock, "Copy", synctest.NewWords(t))
+	server, clock, words := synctest.NewRealWorld(t)
+	second := synctest.NewPendingComputer(t, server, clock, "Copy", words)
 
 	isJoined, err := join.NewJoin(second.JoinDeps()).Execute(t.Context())
 	if err != nil {
@@ -120,8 +110,8 @@ func TestJoin_MakesANewAccountWhenTheServerHasNone(t *testing.T) {
 }
 
 func TestJoin_KeepsTheRestorePendingWhenTheServerIsDown(t *testing.T) {
-	server, clock := newWorld(t)
-	second := synctest.NewPendingComputer(t, server, clock, "Copy", synctest.NewWords(t))
+	server, clock, words := synctest.NewRealWorld(t)
+	second := synctest.NewPendingComputer(t, server, clock, "Copy", words)
 	server.SetDown(true)
 
 	isJoined, err := join.NewJoin(second.JoinDeps()).Execute(t.Context())
