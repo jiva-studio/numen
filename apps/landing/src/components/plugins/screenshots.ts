@@ -17,12 +17,18 @@ const files = import.meta.glob<{ default: ImageMetadata }>(
   { eager: true },
 )
 const repositoryImages = new Map(
-  Object.entries(files).map(([key, module]) => [key.slice(key.indexOf('plugins/')), module.default]),
+  Object.entries(files).map(([key, module]) => [
+    key.slice(key.indexOf('plugins/')),
+    module.default,
+  ]),
 )
 
 const SHOWN = { format: 'webp' as const, quality: 84 }
 
-const getShotImage = async (plugin: CatalogPlugin, path: string | null): Promise<ShotImage | null> => {
+const getShotImage = async (
+  plugin: CatalogPlugin,
+  path: string | null,
+): Promise<ShotImage | null> => {
   if (path === null) return null
   if (plugin.source.kind === 'external') return { src: getPublishedUrl(path) }
   const image = repositoryImages.get(path)

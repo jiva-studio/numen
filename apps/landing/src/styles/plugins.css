@@ -323,7 +323,6 @@
   white-space: nowrap;
 }
 
-
 /* ------------------------------- Plugin page ------------------------------ */
 .plugin-page {
   max-width: 72rem;
@@ -781,7 +780,6 @@
 .plugin-changelog li li + li {
   margin-top: 0.25rem;
 }
-
 
 .plugin-readme {
   max-width: 40rem;

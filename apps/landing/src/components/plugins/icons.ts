@@ -21,7 +21,8 @@ const ESCAPES: Readonly<Record<string, string>> = {
   '"': '&quot;',
 }
 
-const escapeAttribute = (value: string): string => value.replace(/[&<>"]/g, (one) => ESCAPES[one] ?? one)
+const escapeAttribute = (value: string): string =>
+  value.replace(/[&<>"]/g, (one) => ESCAPES[one] ?? one)
 
 const importIconNode = async (name: string): Promise<IconNode | null> => {
   if (!/^[a-z0-9-]+$/.test(name)) return null
