@@ -26,7 +26,8 @@ export const createAccountApi = (identity: AccountClient) => ({
   startRestore: (
     words: readonly string[],
     isUnmarkedConfirmed: boolean,
-  ): Promise<Result<undefined, IdentityFailure>> => identity.startRestore(words, isUnmarkedConfirmed),
+  ): Promise<Result<undefined, IdentityFailure>> =>
+    identity.startRestore(words, isUnmarkedConfirmed),
 
   /** Removes the identity from this device. */
   deleteIdentity: (): Promise<void> => identity.delete(),

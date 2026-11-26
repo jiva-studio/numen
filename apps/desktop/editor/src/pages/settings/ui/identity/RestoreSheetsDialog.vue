@@ -43,10 +43,18 @@ const stages = computed(() => getRestoreStages(props.slots, props.isBusy, props.
       @unavailable="emit('unavailable')"
     />
     <StageList :stages="stages" />
-    <p v-if="problem !== ''" role="alert" class="restore-sheets__line restore-sheets__line--problem">
+    <p
+      v-if="problem !== ''"
+      role="alert"
+      class="restore-sheets__line restore-sheets__line--problem"
+    >
       {{ problem }}
     </p>
-    <p v-else-if="note !== ''" role="alert" class="restore-sheets__line restore-sheets__line--problem">
+    <p
+      v-else-if="note !== ''"
+      role="alert"
+      class="restore-sheets__line restore-sheets__line--problem"
+    >
       {{ note }}
     </p>
     <template #actions>

@@ -128,7 +128,8 @@ export const WORDS = {
   restoreUnverifiedNote:
     'The sync server cannot be checked against your recovery kit. If you have another device, open it and confirm the devices listed are yours.',
   restoreWordsHint: 'Enter your 12 recovery words.',
-  restoreSheetsHint: 'Take two of your three recovery sheets and scan their QR codes one after the other.',
+  restoreSheetsHint:
+    'Take two of your three recovery sheets and scan their QR codes one after the other.',
   restoreTypedTitle: 'Recovery kit: type',
   restoreTypedHint: 'Type the words of two sheets, one sheet in each field.',
   restoreSheetField: (sheet: number) => `Sheet ${sheet}`,
@@ -161,8 +162,7 @@ export const WORDS = {
   kitDownloading: 'Saving…',
   kitSaved: 'Recovery kit saved',
   kitDialogTitle: 'Download recovery kit',
-  kitProofHint:
-    'Enter the 12 recovery words, or any two sheets of an earlier kit.',
+  kitProofHint: 'Enter the 12 recovery words, or any two sheets of an earlier kit.',
   proofField: 'Recovery words or sheets',
   proofPlaceholder: 'Type or paste the 12 words, or put one sheet on each line',
   proofWordsSoFar: (count: number) => `${count} of 12 words`,

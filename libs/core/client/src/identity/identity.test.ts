@@ -297,8 +297,7 @@ describe('createIdentityClient link', () => {
 
   it('reads the refusal of a call that needs a link', async () => {
     const client = createClient({
-      getLink: () =>
-        create(GetLinkResponseSchema, { error: ErrorCode.NO_LINK, detail: 'none' }),
+      getLink: () => create(GetLinkResponseSchema, { error: ErrorCode.NO_LINK, detail: 'none' }),
       decideLink: () =>
         create(DecideLinkResponseSchema, { error: ErrorCode.NO_LINK, detail: 'none' }),
       confirmJoin: () =>

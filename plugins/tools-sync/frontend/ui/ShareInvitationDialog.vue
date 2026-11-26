@@ -21,9 +21,12 @@ const isAsking = computed(() => props.state.request !== undefined)
 const isWaiting = computed(() => props.state.isLinkAlive && !isAsking.value)
 const step = computed(() => (isAsking.value ? 'asking' : props.state.isLinkAlive ? 'link' : 'done'))
 const isConfirmed = ref(false)
-watch(() => props.state.request?.requestId, () => {
-  isConfirmed.value = false
-})
+watch(
+  () => props.state.request?.requestId,
+  () => {
+    isConfirmed.value = false
+  },
+)
 const getDevice = (name: string, fingerprint: string): string =>
   words.deviceLabel(name, getShortFingerprint(fingerprint))
 
@@ -115,7 +118,9 @@ function onDecline(): void {
         <Button variant="ghost" :disabled="state.isBusy" @click="onDecline">
           {{ words.decline }}
         </Button>
-        <Button :disabled="state.isBusy || !isConfirmed" @click="onAllow">{{ words.approve }}</Button>
+        <Button :disabled="state.isBusy || !isConfirmed" @click="onAllow">
+          {{ words.approve }}
+        </Button>
       </template>
       <template v-else>
         <template v-if="state.isLinkAlive">

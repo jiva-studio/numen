@@ -56,7 +56,9 @@ export class ShareDriver {
 
   private async expectRequest(fingerprint: string, code: string): Promise<void> {
     const request = this.getDialog().getByRole('alert')
-    await expect(request).toContainText(getShortFingerprint(fingerprint), { timeout: SHARE_LIMIT_MS })
+    await expect(request).toContainText(getShortFingerprint(fingerprint), {
+      timeout: SHARE_LIMIT_MS,
+    })
     await expect(request).toContainText(`Code ${code}`)
     await expect(request).toContainText(fingerprint)
   }
@@ -67,7 +69,9 @@ export class ShareDriver {
     const dialog = this.getDialog()
     await dialog.getByRole('checkbox', { name: 'The fingerprint is the same' }).check()
     await dialog.getByRole('button', { name: 'Approve', exact: true }).click()
-    await expect(dialog.getByText(getShortFingerprint(fingerprint))).toBeVisible({ timeout: SHARE_LIMIT_MS })
+    await expect(dialog.getByText(getShortFingerprint(fingerprint))).toBeVisible({
+      timeout: SHARE_LIMIT_MS,
+    })
     await this.close()
   }
 
@@ -97,6 +101,8 @@ export class ShareDriver {
   async removeReader(folder: string, fingerprint: string): Promise<void> {
     const device = await this.getDevice(folder, fingerprint)
     await device.getByRole('button', { name: REMOVE, exact: true }).click()
-    await expect(device.getByRole('button', { name: REMOVE, exact: true })).toHaveCount(0, { timeout: SHARE_LIMIT_MS })
+    await expect(device.getByRole('button', { name: REMOVE, exact: true })).toHaveCount(0, {
+      timeout: SHARE_LIMIT_MS,
+    })
   }
 }

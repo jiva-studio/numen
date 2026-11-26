@@ -19,7 +19,12 @@ describe('the restore dialogs', () => {
     mounted.push(
       mount(RestoreWordsDialog, {
         attachTo: document.body,
-        props: { text: '', reading: { proof: undefined, note: '', isProblem: false }, problem: '', isBusy: false },
+        props: {
+          text: '',
+          reading: { proof: undefined, note: '', isProblem: false },
+          problem: '',
+          isBusy: false,
+        },
       }),
     )
 

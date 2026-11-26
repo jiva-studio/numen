@@ -68,12 +68,7 @@ type LinkPhase =
 
 /** Why a link failed. */
 type LinkReason =
-  | 'declined'
-  | 'deviceHasIdentity'
-  | 'staleChain'
-  | 'cancelled'
-  | 'expired'
-  | 'invalid'
+  'declined' | 'deviceHasIdentity' | 'staleChain' | 'cancelled' | 'expired' | 'invalid'
 
 /** What the window shows of the link in progress. It holds no key. */
 export interface LinkInfo {
@@ -119,9 +114,7 @@ export type KitProof =
   { readonly words: readonly string[] } | { readonly sheets: readonly (readonly string[])[] }
 
 /** The calls of IdentityService that link a device to an account. */
-type LinkRpc = Rpc<
-  'startLink' | 'getLink' | 'decideLink' | 'confirmJoin' | 'cancelLink'
->
+type LinkRpc = Rpc<'startLink' | 'getLink' | 'decideLink' | 'confirmJoin' | 'cancelLink'>
 
 /** The calls of IdentityService that list the devices of the account and revoke one. */
 type DevicesRpc = Rpc<'listDevices' | 'revokeDevice'>
@@ -214,8 +207,7 @@ const ERROR_CODES: Partial<Record<ProtoErrorCode, IdentityErrorCode>> = {
   [ProtoErrorCode.NOT_FOUND]: 'unknownDevice',
 }
 
-const readErrorCode = (code: ProtoErrorCode): IdentityErrorCode | undefined =>
-  ERROR_CODES[code]
+const readErrorCode = (code: ProtoErrorCode): IdentityErrorCode | undefined => ERROR_CODES[code]
 
 const PHASES: Partial<Record<ProtoLinkPhase, LinkPhase>> = {
   [ProtoLinkPhase.WAITING_FOR_CHANNEL]: 'waitingForChannel',
@@ -330,7 +322,9 @@ const createAccountClient = (rpc: AccountRpc): AccountClient => ({
     })
   },
   startRestore: async (words, isUnmarkedConfirmed) =>
-    readStartAnswer(await rpc.startRestore({ words: [...words], confirmUnmarked: isUnmarkedConfirmed })),
+    readStartAnswer(
+      await rpc.startRestore({ words: [...words], confirmUnmarked: isUnmarkedConfirmed }),
+    ),
   delete: async () => {
     await rpc.deleteIdentity({})
   },
@@ -343,7 +337,10 @@ const createAccountClient = (rpc: AccountRpc): AccountClient => ({
   },
   startRestoreFromKit: async (sheets, isUnmarkedConfirmed) =>
     readStartAnswer(
-      await rpc.startRestoreFromKit({ sheets: writeSheets(sheets), confirmUnmarked: isUnmarkedConfirmed }),
+      await rpc.startRestoreFromKit({
+        sheets: writeSheets(sheets),
+        confirmUnmarked: isUnmarkedConfirmed,
+      }),
     ),
 })
 
