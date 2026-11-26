@@ -124,14 +124,13 @@ jobs:
         if: ${{ !cancelled() && inputs.mutation_tool }}
         run: node --test tools/ci-mutation/*.test.mjs
 
-      # Every picture the manual and the landing page show is a story named as a string, and
-      # renaming a story leaves the name pointing at nothing. Both lists are held against the tree.
+      # The manual's generated pages, and the screenshots the stories declare held against their files.
       - if: ${{ !cancelled() && inputs.references }}
         uses: ./.github/actions/install-lock-packages
         with:
           packages: "@bufbuild/protobuf typescript"
 
-      - name: Verify documentation story references
+      - name: Verify the generated pages of the manual
         if: ${{ !cancelled() && inputs.references }}
         run: node apps/docs/tools/manual.mjs --check
 
@@ -139,9 +138,13 @@ jobs:
         if: ${{ !cancelled() && inputs.references }}
         run: node --test apps/docs/tools/reference.test.mjs apps/docs/tools/cell.test.mjs
 
-      - name: Verify landing page story references
+      - name: Test the screenshot tool
         if: ${{ !cancelled() && inputs.references }}
-        run: node apps/landing/tools/stories.mjs
+        run: node --test tools/shoot/*.test.mjs
+
+      - name: Verify the screenshots
+        if: ${{ !cancelled() && inputs.references }}
+        run: node tools/shoot/check.mjs
 
       - if: ${{ !cancelled() && steps.go.outcome == 'success' }}
         uses: ./.github/actions/save-go-cache

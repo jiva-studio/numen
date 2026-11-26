@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.saved.search",
   "name": "Saved Search",
-  "version": "2026.11.19",
+  "version": "2026.11.20",
   "protocol": 1,
   "description": "Saved searches: notes that keep a query of the search language and its results",
   "capabilities": ["tools"],

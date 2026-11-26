@@ -4,6 +4,11 @@ Under and over each note of the plex, small grey names show the notes it is rela
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/names-dark.webp">
+  <img alt="The plex in the window, the children of a note written under its node" src="screenshots/names-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Move the focus**: Click a name to show that note in the plex.

@@ -1,17 +1,14 @@
 /**
  * The Storybooks a camera's shots are drawn in, started for the run and
- * stopped again.
- *
- * Each shot is served by the Storybook its story is declared in: the
- * components' own, the shell's, the editor's or the plugins'. Only the ones a
- * list of shots names are started. `STORYBOOK_PORT`, `STORYBOOK_SHELL_PORT`,
+ * stopped again: the components' own, the shell's, the editor's or the
+ * plugins'. Only the ones named are started. `STORYBOOK_PORT`, `STORYBOOK_SHELL_PORT`,
  * `STORYBOOK_EDITOR_PORT` and `STORYBOOK_PLUGINS_PORT` name one already
  * running instead.
  */
 import { join } from 'node:path'
 import { root } from '../shared/modules.mjs'
 import { spawnTool } from '../shared/tools.mjs'
-import { BOOKS, stories } from './stories.mjs'
+import { BOOKS } from '../ci-stories/stories.mjs'
 
 /** The port each Storybook is started on, and the variable naming one already up. */
 const PORTS = {
@@ -38,31 +35,48 @@ const waitForAnswer = async (url) => {
   throw new Error(`Storybook did not answer at ${url}`)
 }
 
-/**
- * Every Storybook these shots are drawn in, answering. `getBase` is the
- * address a shot's story is served at; `close` stops what was started here.
- */
-export const openBooks = async (shots) => {
-  const declared = await stories()
-  const bookOf = (story) => {
-    const book = declared.get(story)
-    if (!book || book === 'both') throw new Error(`${story} is drawn in no one Storybook`)
-    return book
+const stopAll = (started) => {
+  for (const one of started) {
+    try {
+      process.kill(-one.pid, 'SIGTERM')
+    } catch {
+      // The Storybook has already exited.
+    }
   }
+}
 
+/**
+ * Every Storybook named, answering. `getBase` is the address a Storybook is
+ * served at; `close` stops what was started here.
+ */
+export const openBooks = async (books) => {
   const started = []
   const bases = new Map()
   try {
-    for (const book of new Set(shots.map((shot) => bookOf(shot.story)))) {
+    for (const book of new Set(books)) {
       const { given, port: own } = PORTS[book]
       const port = process.env[given] ? Number(process.env[given]) : own
       if (!process.env[given]) {
         started.push(
-          spawnTool('npx', ['storybook', 'dev', '-p', String(port), '--no-open', '--quiet'], {
-            cwd: join(root, BOOKS[book]),
-            detached: true,
-            stdio: 'ignore',
-          }),
+          // npx runs in the nearest package folder, which is not the Storybook's own for the plugins'.
+          spawnTool(
+            'npx',
+            [
+              'storybook',
+              'dev',
+              '-p',
+              String(port),
+              '-c',
+              join(root, BOOKS[book], '.storybook'),
+              '--no-open',
+              '--quiet',
+            ],
+            {
+              cwd: join(root, BOOKS[book]),
+              detached: true,
+              stdio: 'ignore',
+            },
+          ),
         )
       }
       const base = `http://localhost:${port}`
@@ -70,14 +84,14 @@ export const openBooks = async (shots) => {
       bases.set(book, base)
     }
   } catch (error) {
-    for (const one of started) process.kill(-one.pid, 'SIGTERM')
+    stopAll(started)
     throw error
   }
 
   return {
-    getBase: (story) => bases.get(bookOf(story)),
+    getBase: (book) => bases.get(book),
     close: () => {
-      for (const one of started) process.kill(-one.pid, 'SIGTERM')
+      stopAll(started)
     },
   }
 }

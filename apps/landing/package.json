@@ -13,8 +13,7 @@
     "pretypecheck": "npm run build --prefix ../../libs/ui/components",
     "typecheck": "astro check",
     "lint": "eslint .",
-    "stories:check": "node tools/stories.mjs",
-    "shoot": "node tools/shoot.mjs"
+    "shoot": "node ../../tools/shoot/shoot.mjs --app landing"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.10",
@@ -30,7 +29,6 @@
     "eslint": "^10.14.0",
     "eslint-plugin-astro": "^3.1.0",
     "globals": "^17.14.0",
-    "playwright": "^1.64.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.2"
   }

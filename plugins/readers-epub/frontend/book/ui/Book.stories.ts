@@ -15,7 +15,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import Book from './Book.vue'
 import type { TextRange } from '@numen/ui'
 import { countBytes } from '../lib/bytes'
-import { PROSE, VERSE, VERSES, createChapter, type Chapter } from '../fixtures/book'
+import { PROSE, VERSE, VERSES, createChapter, type Chapter, type Run } from '../fixtures/book'
 
 const meta = {
   title: 'Reading/Book',
@@ -45,6 +45,16 @@ const room =
       </div>
     `,
   })
+
+/** The pane of a window a book is opened in. */
+const PANE: Decorator = (story) => ({
+  components: { story },
+  template: `
+    <div class="numen h-full bg-surface p-6 font-sans text-base text-ink" style="box-sizing: border-box">
+      <div class="flex h-full flex-col"><story /></div>
+    </div>
+  `,
+})
 
 /** Narrow enough for one column, and wide enough for two. */
 const NARROW = room(700)
@@ -615,4 +625,53 @@ export const TheTurnCompletesAfterABlockedStart: Story = {
       { timeout: ITS_OWN_PACE },
     )
   },
+}
+
+/** A chapter of an invented book on heat, as the window opens it. */
+const ON_HEAT: readonly Run[] = [
+  { tag: 'h2', text: 'IV. The Engine and the Count' },
+  {
+    tag: 'p',
+    text: 'An engine takes heat from a hot body and gives part of it to a cold one, and the part it keeps back is the work it does. Carnot asked how large that part could be, and found that it depends on the two temperatures alone: not on the steam, not on the metal, not on the cleverness of the builder.',
+  },
+  {
+    tag: 'p',
+    text: 'The answer has the look of a law about machines. It is not. It is a law about how many ways the heat can be shared out, and the machine only makes the sharing visible.',
+  },
+  {
+    tag: 'p',
+    text: 'Take a box of gas at a fixed energy. There are a great many arrangements of its molecules that give that energy, and no thermometer can tell them apart. Call the number of them W. The gas does not prefer any one arrangement; it wanders among all of them, and it spends its time where most of them are.',
+  },
+  {
+    tag: 'p',
+    text: 'Now bring the hot body against the cold one. Before they touch, the heat is held in few arrangements; after, in many. The flow from hot to cold is nothing but the gas finding the larger count. Run it backwards and you ask the molecules to find their way, by chance, into the smaller one.',
+  },
+  {
+    tag: 'p',
+    text: 'Boltzmann wrote the count as a logarithm, so that two boxes side by side add their entropies as they multiply their arrangements. The constant in front of it carries the units; the logarithm carries the idea.',
+  },
+  {
+    tag: 'p',
+    text: 'It follows that the second law can be broken, only very rarely. A gas of a dozen molecules gathers in one half of its box often enough to be watched. A gas of a mole would need longer than the age of the stars.',
+  },
+  {
+    tag: 'p',
+    text: 'What, then, is the work an engine does? It is the price of leaving the count a little smaller than it would have been, paid at the cold end of the machine.',
+  },
+]
+
+/** The book in a tab of the window, set in two columns. */
+export const BookInTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'On Heat and Order', icon: 'book' },
+      behind: [{ title: 'Entropy', icon: 'note' }],
+      selected: 'Reading/On Heat and Order.epub',
+    },
+    screenshot: [{ name: 'book' }],
+  },
+  decorators: [PANE],
+  render: activeReading(createChapter(ON_HEAT)),
 }

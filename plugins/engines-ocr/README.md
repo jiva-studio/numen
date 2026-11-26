@@ -4,6 +4,11 @@ Recognizes text in scanned PDFs and images on your computer so their contents ca
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/recognise-dark.webp">
+  <img alt="The window with a scanned book open and the commands offering to recognise its text" src="screenshots/recognise-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Make scans searchable**: Run **Recognize text** from a PDF or image file's right-click menu in the file tree, or turn on **Recognize automatically** to recognize new and changed files of the vault that have no text.
