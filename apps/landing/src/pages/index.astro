@@ -9,12 +9,13 @@ import PrivacyBand from '../components/page/PrivacyBand.astro'
 import MapBand from '../components/page/MapBand.astro'
 import FindingsBand from '../components/page/FindingsBand.astro'
 import ReviewBand from '../components/page/ReviewBand.astro'
+import SyncBand from '../components/page/SyncBand.astro'
 import DownloadBand from '../components/page/DownloadBand.astro'
 import SiteFooter from '../components/page/SiteFooter.astro'
 
-const title = 'numen — your second brain that actually remembers'
+const title = 'numen — a privacy-first, local-first second brain that actually remembers'
 const description =
-  'A local-first notebook and spaced repetition suite: linked Markdown notes, directional concept map, PDF & EPUB reader with local OCR, offline audio transcription, and an AI assistant.'
+  'A privacy-first, local-first notebook and spaced repetition suite: linked notes as plain Markdown files, directional concept map, PDF & EPUB reader with local OCR, offline audio transcription with on-device AI models, and an AI assistant. No account, no email, no telemetry, no vendor lock-in.'
 ---
 
 <Page title={title} description={description}>
@@ -26,6 +27,7 @@ const description =
     <MapBand />
     <FindingsBand />
     <ReviewBand />
+    <SyncBand />
     <DownloadBand />
   </main>
 
@@ -33,11 +35,9 @@ const description =
 
   <script>
     import { initSiteControls } from '../scripts/site-controls'
-    import { initDemoLaunch } from '../scripts/demo-launch'
     import { initReleaseLinks } from '../scripts/release-links'
 
     initSiteControls()
-    initDemoLaunch()
     await initReleaseLinks()
   </script>
 </Page>
