@@ -307,8 +307,8 @@ test('a frontend fetch of an absolute URL of another host is a network request t
 
       assert.equal(use.isNetworked, true)
       assert.deepEqual(use.calls, [
-        { language: 'typescript', name: 'WebSocket', files: ['frontend/api/socket.ts'] },
         { language: 'typescript', name: 'fetch', files: ['frontend/api/weather.ts'] },
+        { language: 'typescript', name: 'WebSocket', files: ['frontend/api/socket.ts'] },
       ])
       assert.deepEqual(use.hosts, ['api.weather.org'])
     },
