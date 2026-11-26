@@ -118,7 +118,7 @@ export const TheVault: Story = {
 export const AFolderOpened: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'files', width: 400, height: 480, drawn: 2_000 }],
+    screenshot: [{ name: 'files', width: 320, height: 130, drawn: 1_000 }],
   },
   render: room(['physics']),
   play: async ({ canvasElement }) => {
@@ -191,6 +191,16 @@ const TEMPLATES: Room = {
 
 const getMenuItem = (name: string) => within(document.body).findByRole('menuitem', { name })
 
+/** A right click past the name of a row, so the menu leaves the row in sight. */
+const openMenuOn = async (row: HTMLElement) => {
+  const box = row.getBoundingClientRect()
+  await userEvent.pointer({
+    target: row,
+    coords: { clientX: box.left + 160, clientY: box.bottom },
+    keys: '[MouseRight]',
+  })
+}
+
 /** The templates of the vault offered under New on a folder. */
 export const TemplatesUnderNew: Story = {
   tags: ['screenshot'],
@@ -200,7 +210,7 @@ export const TemplatesUnderNew: Story = {
         name: 'new-from-template',
         plugin: 'tools-templates',
         width: 720,
-        height: 420,
+        height: 230,
         drawn: 5_000,
       },
     ],
@@ -209,7 +219,7 @@ export const TemplatesUnderNew: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(3))
     const garden = rows(canvasElement)[0] as HTMLElement
-    await userEvent.pointer({ target: garden, keys: '[MouseRight]' })
+    await openMenuOn(garden)
     await userEvent.click(await getMenuItem('New'))
     await userEvent.click(await getMenuItem('New note from template'))
     await expect(await getMenuItem('Planting plan')).toBeVisible()
@@ -251,7 +261,7 @@ export const MediaOfALink: Story = {
         name: 'download-media',
         plugin: 'tools-media-importer',
         width: 720,
-        height: 420,
+        height: 200,
         drawn: 5_000,
       },
     ],
@@ -261,7 +271,7 @@ export const MediaOfALink: Story = {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(3))
     const link = rows(canvasElement)[1] as HTMLElement
     await userEvent.click(link)
-    await userEvent.pointer({ target: link, keys: '[MouseRight]' })
+    await openMenuOn(link)
     await userEvent.click(await getMenuItem('Download media'))
     await expect(await getMenuItem('Audio only')).toBeVisible()
   },

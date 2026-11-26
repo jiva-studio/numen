@@ -55,8 +55,8 @@ export const Opened: Story = {
   tags: ['screenshot'],
   parameters: {
     screenshot: [
-      { name: 'models', plugin: 'agents-claude', width: 640, height: 600, drawn: 5_000 },
-      { name: 'models', plugin: 'agents-antigravity', width: 640, height: 600, drawn: 5_000 },
+      { name: 'models', plugin: 'agents-claude', width: 640, height: 560, drawn: 5_000 },
+      { name: 'models', plugin: 'agents-antigravity', width: 640, height: 560, drawn: 5_000 },
     ],
   },
   play: async (context) => {

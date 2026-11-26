@@ -83,7 +83,7 @@ type Story = StoryObj<typeof meta>
 export const Opened: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'tasks-due', width: 760, height: 520, drawn: 3_000 }],
+    screenshot: [{ name: 'tasks-due', width: 760, height: 380, drawn: 3_000 }],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

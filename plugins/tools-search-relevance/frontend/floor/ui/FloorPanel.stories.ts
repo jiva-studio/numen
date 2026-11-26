@@ -63,7 +63,7 @@ type Story = StoryObj<typeof meta>
 export const ChecksAQuery: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'relevance', width: 680, height: 480, drawn: 5_000 }],
+    screenshot: [{ name: 'relevance', width: 680, height: 340, drawn: 5_000 }],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

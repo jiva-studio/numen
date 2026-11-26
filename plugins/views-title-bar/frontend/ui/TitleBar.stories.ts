@@ -121,7 +121,7 @@ const getPage = (canvas: HTMLElement) => within(canvas.ownerDocument.body)
 export const Default: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'title-bar', width: 1000, height: 80, drawn: 1_000 }],
+    screenshot: [{ name: 'title-bar', width: 960, height: 26, drawn: 1_000 }],
   },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(title(canvasElement).textContent).toBe('numen — Orchard notes'))

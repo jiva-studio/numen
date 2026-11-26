@@ -69,7 +69,7 @@ const getRows = (canvasElement: HTMLElement) =>
 export const Streaming: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'logs', width: 900, height: 560 }],
+    screenshot: [{ name: 'logs', width: 900, height: 320 }],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

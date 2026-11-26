@@ -113,7 +113,7 @@ const getRowOf = (popover: HTMLElement, name: string) =>
 export const Open: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'plugins', width: 640, height: 520, drawn: 3_000 }],
+    screenshot: [{ name: 'plugins', width: 640, height: 250, drawn: 3_000 }],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

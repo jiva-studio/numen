@@ -25,7 +25,7 @@ type Story = StoryObj<typeof meta>
 export const GoesBackAndForward: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'navigation', width: 240, height: 96, drawn: 500 }],
+    screenshot: [{ name: 'navigation', width: 96, height: 56, drawn: 500 }],
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
