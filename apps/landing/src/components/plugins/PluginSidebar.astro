@@ -11,6 +11,7 @@ import {
   getAvatarUrl,
   getBugReportUrl,
   getContributorName,
+  getContributorUrl,
   getFeatureRequestUrl,
   getInitial,
   getPlatformName,
@@ -38,6 +39,7 @@ const systems = plugin.platforms.map((platform) => ({
 const people = plugin.contributors.map((person) => ({
   name: getContributorName(person),
   avatar: getAvatarUrl(person, 52),
+  url: getContributorUrl(person),
 }))
 const isInternal = plugin.source.kind === 'internal'
 ---
@@ -51,18 +53,30 @@ const isInternal = plugin.source.kind === 'internal'
           <span class="plugin-count">{plugin.contributors.length}</span>
         </h2>
         <ul class="plugin-people">
-          {people.map((person) => (
-            <li>
-              {person.avatar ? (
-                <img class="plugin-avatar" src={person.avatar} width="26" height="26" alt="" loading="lazy" />
-              ) : (
-                <span class="plugin-avatar" aria-hidden="true">
-                  {getInitial(person.name)}
-                </span>
-              )}
-              {person.name}
-            </li>
-          ))}
+          {people.map((person) => {
+            const avatar = person.avatar ? (
+              <img class="plugin-avatar" src={person.avatar} width="26" height="26" alt="" loading="lazy" />
+            ) : (
+              <span class="plugin-avatar" aria-hidden="true">
+                {getInitial(person.name)}
+              </span>
+            )
+            return (
+              <li>
+                {person.url ? (
+                  <a class="plugin-person" href={person.url} target="_blank" rel="noopener">
+                    {avatar}
+                    {person.name}
+                  </a>
+                ) : (
+                  <>
+                    {avatar}
+                    {person.name}
+                  </>
+                )}
+              </li>
+            )
+          })}
         </ul>
       </section>
     )

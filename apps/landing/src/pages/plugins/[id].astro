@@ -1,19 +1,21 @@
 ---
 /**
- * The page of one plugin: its head, then Overview (screenshots and README), Access & tests (checks,
- * permissions, settings, commands, downloads, tests) and Version history as tabs, beside a side
- * column of contributors, compatibility, source, issue links and related plugins.
+ * The page of one plugin: its head, then Overview (screenshots and README), Contributions
+ * (permissions, settings, commands, what it adds to Numen, downloads), Quality (checks and tests)
+ * and Version history as tabs, beside a side column of contributors, compatibility, source, issue
+ * links and related plugins.
  */
 import { getCollection, render, type CollectionEntry } from 'astro:content'
 import Page from '../../layouts/Page.astro'
 import SiteHeader from '../../components/page/SiteHeader.astro'
 import SiteFooter from '../../components/page/SiteFooter.astro'
 import PluginScreenshots from '../../components/plugins/PluginScreenshots.astro'
-import PluginScorecard from '../../components/plugins/PluginScorecard.astro'
+import PluginSections from '../../components/plugins/PluginSections.astro'
 import PluginChangelog from '../../components/plugins/PluginChangelog.astro'
 import PluginHeader from '../../components/plugins/PluginHeader.astro'
 import PluginSidebar from '../../components/plugins/PluginSidebar.astro'
 import { type CatalogPlugin, listRelated } from '../../components/plugins/catalog'
+import { listContributionSections, listQualitySections } from '../../components/plugins/sections'
 import '../../styles/plugins.css'
 
 export async function getStaticPaths() {
@@ -35,7 +37,8 @@ const title = `${plugin.name} — numen plugins`
 const description = plugin.readme?.intro || plugin.description
 const tabs = [
   { id: 'overview', key: 'plugin_tab_overview', text: 'Overview' },
-  { id: 'access', key: 'plugin_tab_access', text: 'Access & tests' },
+  { id: 'contributions', key: 'plugin_tab_contributions', text: 'Contributions' },
+  { id: 'quality', key: 'plugin_tab_quality', text: 'Quality' },
   { id: 'history', key: 'plugin_tab_history', text: 'Version history' },
 ]
 ---
@@ -90,8 +93,17 @@ const tabs = [
           }
         </section>
 
-        <section class="plugin-panel" id="panel-access" role="tabpanel" aria-labelledby="tab-access">
-          <PluginScorecard plugin={plugin} />
+        <section
+          class="plugin-panel"
+          id="panel-contributions"
+          role="tabpanel"
+          aria-labelledby="tab-contributions"
+        >
+          <PluginSections sections={listContributionSections(plugin)} />
+        </section>
+
+        <section class="plugin-panel" id="panel-quality" role="tabpanel" aria-labelledby="tab-quality">
+          <PluginSections sections={listQualitySections(plugin)} />
         </section>
 
         <section class="plugin-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">

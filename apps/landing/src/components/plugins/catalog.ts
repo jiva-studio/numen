@@ -7,7 +7,7 @@ import {
   type PluginChange,
   type PluginQualityEntry,
   type RegistryPlugin,
-} from './registry'
+} from './registry.ts'
 
 /**
  * A registry entry with its release notes rendered and its place in the featured list, as the
@@ -151,6 +151,13 @@ export function listRelated(
 /** What a contributor is shown as: their GitHub login, else their name. */
 export function getContributorName(person: { name: string; login: string | null }): string {
   return person.login ?? person.name
+}
+
+const GITHUB_LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/
+
+/** The GitHub profile of a contributor, or null when they have no valid login. */
+export function getContributorUrl(person: { login: string | null }): string | null {
+  return person.login && GITHUB_LOGIN.test(person.login) ? `https://github.com/${person.login}` : null
 }
 
 const AVATAR_HOST = 'avatars.githubusercontent.com'

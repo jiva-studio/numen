@@ -12,6 +12,11 @@ import {
   parseRegistry,
   readRegistry,
 } from '../src/components/plugins/registry.ts'
+import {
+  listContributionSections,
+  listQualitySections,
+} from '../src/components/plugins/sections.ts'
+import { getContributorUrl } from '../src/components/plugins/catalog.ts'
 import { isEntryShown } from '../src/scripts/plugin-catalog.ts'
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/plugin-registry.json', import.meta.url))
@@ -86,4 +91,64 @@ test('a row is hidden by a category it is not in', () => {
 
 test('a search matches whatever the case and the spaces around it', () => {
   assert.equal(isEntryShown(entry, { ...noFilter, query: '  Word COUNT ' }), true)
+})
+
+const readPlugin = async (id) => {
+  const registry = await readRegistry({ [REGISTRY_FILE_VARIABLE]: FIXTURE }, refuseFetch)
+  return { ...registry.plugins.find((one) => one.id === id), changelog: [], featuredRank: null }
+}
+
+const readRows = (section) =>
+  section.rows.map((row) => [
+    row.name.map((one) => one.text).join(' '),
+    row.value.map((line) => line.map((one) => one.text).join(' ')).join(' / '),
+  ])
+
+test('the Contributions tab shows only the sections with rows', async () => {
+  const sections = listContributionSections(await readPlugin('md.numen.engines.transcription'))
+
+  assert.deepEqual(
+    sections.map((one) => one.title),
+    ['Permissions', 'Settings', 'Text versions', 'Slots', 'Downloads'],
+  )
+  assert.deepEqual(readRows(sections[2]), [['Transcript', 'transcript']])
+  assert.equal(sections[0].rows.find((row) => row.isNew)?.value[0][0].text, 'link:open')
+})
+
+test('a plugin that adds nothing has no Contributions sections', async () => {
+  assert.deepEqual(listContributionSections(await readPlugin('md.numen.tools.sync')), [])
+})
+
+test('the Tests section lists the counted tests and the measured numbers, without zero counts', async () => {
+  const [checks, tests] = listQualitySections(await readPlugin('md.numen.engines.transcription'))
+
+  assert.equal(checks.title, 'Checks')
+  assert.equal(checks.rows[0].status, 'pass')
+  assert.deepEqual(readRows(tests), [
+    ['Go tests', '162'],
+    ['Mutation score', '78.4%'],
+    ['Coverage', '71.2%'],
+  ])
+  assert.equal(tests.note, null)
+})
+
+test('the numbers an author reports are marked as theirs', async () => {
+  const [, tests] = listQualitySections(await readPlugin('org.example.word-count'))
+
+  assert.equal(tests.note?.key, 'plugin_quality_author')
+})
+
+test('a plugin with no quality has only its checks', async () => {
+  const sections = listQualitySections(await readPlugin('md.numen.tools.sync'))
+
+  assert.deepEqual(
+    sections.map((one) => one.id),
+    ['checks'],
+  )
+})
+
+test('a contributor with a GitHub login links to their profile', () => {
+  assert.equal(getContributorUrl({ login: 'ann-b' }), 'https://github.com/ann-b')
+  assert.equal(getContributorUrl({ login: null }), null)
+  assert.equal(getContributorUrl({ login: '../evil' }), null)
 })
