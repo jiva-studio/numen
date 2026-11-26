@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.reranking",
   "name": "Local Reranking",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Reranks search results with a model on this machine",
   "targets": ["desktop.editor"],
