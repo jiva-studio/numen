@@ -59,12 +59,15 @@ const createRow = (name: RowText[], value: RowText[][] = []): PluginRow => ({
   href: null,
 })
 
-const createSection = (id: string, rows: PluginRow[], note: RowText | null = null): PluginSection => {
+const createSection = (
+  id: string,
+  rows: PluginRow[],
+  note: RowText | null = null,
+): PluginSection => {
   const key = `plugin_${id}`
   return { id, key, title: EN[key] ?? id, rows, note }
 }
 
-/** The sections that have rows. */
 function listShownSections(sections: readonly PluginSection[]): PluginSection[] {
   return sections.filter((one) => one.rows.length > 0)
 }
@@ -82,41 +85,60 @@ export function listContributionSections(plugin: CatalogPlugin): PluginSection[]
     ),
     createSection(
       'settings',
-      plugin.settings.map((one) => createRow([createPlainText(one.title)], [[createPlainText(one.description)]])),
+      plugin.settings.map((one) =>
+        createRow([createPlainText(one.title)], [[createPlainText(one.description)]]),
+      ),
     ),
     createSection(
       'commands',
-      plugin.commands.map((one) => createRow([createPlainText(one.title)], [[createCodeText(one.id)]])),
+      plugin.commands.map((one) =>
+        createRow([createPlainText(one.title)], [[createCodeText(one.id)]]),
+      ),
     ),
     createSection(
       'tabs',
-      plugin.tabKinds.map((one) => createRow([createPlainText(one.title)], [[createCodeText(one.kind)]])),
+      plugin.tabKinds.map((one) =>
+        createRow([createPlainText(one.title)], [[createCodeText(one.kind)]]),
+      ),
     ),
     createSection(
       'file_types',
-      plugin.fileTypes.map((one) => createRow([createPlainText(one.contentType)], [[createPlainText(one.title)]])),
+      plugin.fileTypes.map((one) =>
+        createRow([createPlainText(one.contentType)], [[createPlainText(one.title)]]),
+      ),
     ),
     createSection(
       'text_kinds',
-      plugin.textKinds.map((one) => createRow([createPlainText(one.title)], [[createCodeText(one.kind)]])),
+      plugin.textKinds.map((one) =>
+        createRow([createPlainText(one.title)], [[createCodeText(one.kind)]]),
+      ),
     ),
     createSection(
       'themes',
-      plugin.themes.map((one) => createRow([createPlainText(one.name)], [[createCodeText(one.id)]])),
+      plugin.themes.map((one) =>
+        createRow([createPlainText(one.name)], [[createCodeText(one.id)]]),
+      ),
     ),
     createSection(
       'slots',
       plugin.slots.map((one) =>
-        createRow([one.title === '' ? createCodeText(one.target) : createPlainText(one.title)], [[getSlotPlace(one.slot)]]),
+        createRow(
+          [one.title === '' ? createCodeText(one.target) : createPlainText(one.title)],
+          [[getSlotPlace(one.slot)]],
+        ),
       ),
     ),
     createSection(
       'connections',
-      plugin.connectionTypes.map((one) => createRow([createPlainText(one.title)], [[createPlainText(one.description)]])),
+      plugin.connectionTypes.map((one) =>
+        createRow([createPlainText(one.title)], [[createPlainText(one.description)]]),
+      ),
     ),
     createSection(
       'search_functions',
-      plugin.searchFunctions.map((one) => createRow([createCodeText(one.name)], [[createPlainText(one.description)]])),
+      plugin.searchFunctions.map((one) =>
+        createRow([createCodeText(one.name)], [[createPlainText(one.description)]]),
+      ),
     ),
     createSection(
       'downloads',
@@ -135,7 +157,10 @@ export function listContributionSections(plugin: CatalogPlugin): PluginSection[]
     createSection(
       'artifacts',
       plugin.artifacts.map((one) => ({
-        ...createRow([createPlainText(one.name)], [[createPlainText(formatSize(one.size)), createCodeText(one.sha256 ?? '')]]),
+        ...createRow(
+          [createPlainText(one.name)],
+          [[createPlainText(formatSize(one.size)), createCodeText(one.sha256 ?? '')]],
+        ),
         href: one.url,
       })),
     ),
@@ -152,7 +177,10 @@ const listTestRows = (plugin: CatalogPlugin): PluginRow[] => {
   const quality = plugin.quality
   if (!quality) return []
   const counts = TEST_COUNTS.filter((one) => quality.tests[one.kind] > 0).map((one) =>
-    createRow([createTranslatedText(one.key, one.name)], [[createPlainText(String(quality.tests[one.kind]))]]),
+    createRow(
+      [createTranslatedText(one.key, one.name)],
+      [[createPlainText(String(quality.tests[one.kind]))]],
+    ),
   )
   const measured = quality.entries.flatMap((entry) => {
     const kind = getQualityKind(entry)
@@ -163,7 +191,10 @@ const listTestRows = (plugin: CatalogPlugin): PluginRow[] => {
     ]
       .filter((one) => one.value !== null)
       .map((one) =>
-        createRow([createTranslatedText(one.key, one.name), ...suffix], [[createPlainText(formatPercent(one.value))]]),
+        createRow(
+          [createTranslatedText(one.key, one.name), ...suffix],
+          [[createPlainText(formatPercent(one.value))]],
+        ),
       )
   })
   return [...counts, ...measured]
@@ -195,7 +226,10 @@ const listDependencyRows = (plugin: CatalogPlugin): PluginRow[] => {
   )
   const indirect = INDIRECT_COUNTS.filter((one) => dependencies.indirect[one.ecosystem] > 0).map(
     (one) =>
-      createRow([createTranslatedText(one.key, one.name)], [[createPlainText(String(dependencies.indirect[one.ecosystem]))]]),
+      createRow(
+        [createTranslatedText(one.key, one.name)],
+        [[createPlainText(String(dependencies.indirect[one.ecosystem]))]],
+      ),
   )
   return [...packages, ...indirect]
 }
@@ -217,7 +251,10 @@ export function listQualitySections(plugin: CatalogPlugin): PluginSection[] {
     createSection(
       'vulnerabilities',
       (plugin.vulnerabilities ?? []).map((one) => ({
-        ...createRow([createPlainText(one.id)], [[createCodeText(`${one.name} ${one.version}`)], [createPlainText(one.summary)]]),
+        ...createRow(
+          [createPlainText(one.id)],
+          [[createCodeText(`${one.name} ${one.version}`)], [createPlainText(one.summary)]],
+        ),
         href: one.url,
       })),
     ),
@@ -225,7 +262,9 @@ export function listQualitySections(plugin: CatalogPlugin): PluginSection[] {
     createSection(
       'tests',
       listTestRows(plugin),
-      isReportedByAuthor ? createTranslatedText('plugin_quality_author', 'Reported by the author.') : null,
+      isReportedByAuthor
+        ? createTranslatedText('plugin_quality_author', 'Reported by the author.')
+        : null,
     ),
   ])
 }
