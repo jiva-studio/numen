@@ -49,4 +49,39 @@ jobs:
         env:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
           GH_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
-        run: node tools/ci-coverage/collect.mjs
+        run: node tools/ci-coverage/collect.mjs --quality .coverage-quality/coverage.json
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: plugin-quality-coverage
+          path: .coverage-quality/coverage.json
+          if-no-files-found: error
+          retention-days: 14
+
+  # The coverage of each plugin module is merged into
+  # plugins/quality/coverage.json of the downloads zone, which the plugin
+  # registry reads.
+  quality:
+    name: Plugin quality
+    needs: coverage
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: plugin-quality-coverage
+          path: .coverage-quality
+
+      - name: Publish the plugin coverage
+        env:
+          BUNNY_STORAGE_ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          BUNNY_SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: node tools/plugin-registry/storage.mjs merge-quality coverage .coverage-quality/coverage.json
