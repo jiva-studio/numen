@@ -1,0 +1,373 @@
+/* ------------------------------ Plugin catalog ----------------------------- */
+.plugins-band h1,
+.plugin-head h1 {
+  margin: 0 0 0.9rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 3.6vw, 3.25rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.plugin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.plugin-field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.plugin-field--search {
+  flex: 1 1 16rem;
+}
+
+.plugin-field--check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+}
+
+.plugin-field input[type='search'],
+.plugin-field select {
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.4rem;
+  background: var(--card-bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.plugin-field :is(input, select):focus-visible,
+.plugin-tabs button:focus-visible,
+.plugin-page a:focus-visible,
+.plugins-band a:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 0.15rem;
+}
+
+.plugin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plugin-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.plugin-card h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.plugin-card h2 a:hover {
+  color: var(--rust);
+}
+
+.plugin-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.plugin-card__author {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.plugin-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.4rem 0 0;
+}
+
+.plugin-tag {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 1rem;
+  background: var(--sage);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.plugin-empty,
+.plugin-muted {
+  color: var(--muted);
+}
+
+/* ------------------------------- Plugin page ------------------------------ */
+.plugin-back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: var(--rust);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.plugin-head {
+  max-width: 48rem;
+  margin-bottom: 2rem;
+}
+
+.plugin-lede {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.plugin-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  align-items: start;
+  gap: 2.5rem;
+}
+
+.plugin-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.plugin-tabs button {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  background: none;
+  color: var(--muted);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.plugin-tabs button[aria-selected='true'] {
+  border-color: var(--suite-active-border);
+  background: var(--suite-active-bg);
+  color: var(--suite-active-title);
+}
+
+.plugin-note {
+  margin: 0 0 1.5rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  background: var(--sage);
+  font-weight: 700;
+}
+
+.plugin-shots {
+  display: grid;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.plugin-shot {
+  margin: 0;
+}
+
+.plugin-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.plugin-prose {
+  max-width: 46rem;
+  line-height: 1.65;
+}
+
+.plugin-prose :is(h1, h2, h3) {
+  margin: 1.8rem 0 0.6rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.plugin-prose a {
+  color: var(--rust);
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.plugin-prose code,
+.plugin-list code,
+.plugin-hash {
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.25rem;
+  background: var(--sage);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.plugin-hash {
+  display: block;
+  margin-top: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.plugin-section {
+  margin-bottom: 2.25rem;
+}
+
+.plugin-section h2 {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.plugin-checks,
+.plugin-list,
+.plugin-changelog {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plugin-check {
+  display: grid;
+  grid-template-columns: 7.5rem 10rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--card-bg);
+}
+
+.plugin-check__status {
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.plugin-check[data-status='pass'] .plugin-check__status {
+  color: var(--suite-active-title);
+}
+
+.plugin-check[data-status='fail'] .plugin-check__status {
+  color: var(--rust);
+}
+
+.plugin-check[data-status='fail'] {
+  background: var(--sage);
+}
+
+.plugin-sublist {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.plugin-quality {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 0.4rem 1.5rem;
+  margin: 0 0 0.6rem;
+}
+
+.plugin-quality dt {
+  font-weight: 700;
+}
+
+.plugin-quality dd {
+  margin: 0;
+  font-weight: 800;
+}
+
+.plugin-changelog > li {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.plugin-changelog h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.plugin-changelog time {
+  margin-left: 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.plugin-changelog ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  line-height: 1.6;
+}
+
+.plugin-sidebar {
+  position: sticky;
+  top: 6rem;
+}
+
+.plugin-sidebar dl {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0 0 1.25rem;
+}
+
+.plugin-sidebar dt {
+  margin-top: 0.6rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.plugin-sidebar dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+@media (max-width: 68rem) {
+  .plugin-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .plugin-layout {
+    grid-template-columns: 1fr;
+  }
+  .plugin-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 45rem) {
+  .plugin-grid {
+    grid-template-columns: 1fr;
+  }
+  .plugin-check {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}

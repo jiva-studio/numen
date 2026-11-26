@@ -1,0 +1,35 @@
+---
+import { type CatalogPlugin, getCategoryName, getPluginPath, getSearchText } from './catalog'
+
+interface Props {
+  plugin: CatalogPlugin
+}
+
+const { plugin } = Astro.props
+const summary = plugin.readme?.intro || plugin.description
+---
+
+<li
+  class="u-card plugin-card"
+  data-plugin-card
+  data-search={getSearchText(plugin)}
+  data-category={plugin.category}
+  data-apps={plugin.targets.join(' ')}
+  data-paid={String(plugin.isPaid)}
+  data-official={String(plugin.isOfficial)}
+>
+  <span class="u-card__tag">{getCategoryName(plugin.category)}</span>
+  <h2><a href={getPluginPath(plugin.id)}>{plugin.name}</a></h2>
+  <p class="plugin-card__author">{plugin.author}</p>
+  <p>{summary}</p>
+  <p class="plugin-tags">
+    {
+      plugin.isPaid ? (
+        <span class="plugin-tag" data-i18n="plugins_paid">Paid</span>
+      ) : (
+        <span class="plugin-tag" data-i18n="plugins_free">Free</span>
+      )
+    }
+    {plugin.isOfficial && <span class="plugin-tag" data-i18n="plugins_official">Official</span>}
+  </p>
+</li>

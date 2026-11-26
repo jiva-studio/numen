@@ -1,0 +1,141 @@
+---
+/**
+ * The page of one plugin: Overview (README and screenshots), Scorecard (checks, permissions,
+ * settings, commands, downloads, tests) and Changelog, with a sidebar of its facts.
+ */
+import { getCollection, render, type CollectionEntry } from 'astro:content'
+import Page from '../../layouts/Page.astro'
+import SiteHeader from '../../components/page/SiteHeader.astro'
+import SiteFooter from '../../components/page/SiteFooter.astro'
+import PluginScreenshots from '../../components/plugins/PluginScreenshots.astro'
+import PluginScorecard from '../../components/plugins/PluginScorecard.astro'
+import PluginChangelog from '../../components/plugins/PluginChangelog.astro'
+import PluginSidebar from '../../components/plugins/PluginSidebar.astro'
+import { type CatalogPlugin, getCategoryName } from '../../components/plugins/catalog'
+import '../../styles/plugins.css'
+
+export async function getStaticPaths() {
+  const entries = await getCollection('plugins')
+  return entries.map((entry) => ({ params: { id: entry.id }, props: { entry } }))
+}
+
+interface Props {
+  entry: CollectionEntry<'plugins'>
+}
+
+const { entry } = Astro.props
+const plugin = entry.data as CatalogPlugin
+const { Content } = entry.rendered ? await render(entry) : { Content: null }
+
+const title = `${plugin.name} — numen plugins`
+const description = plugin.readme?.intro || plugin.description
+---
+
+<Page title={title} description={description}>
+  <SiteHeader />
+
+  <main class="band plugin-page">
+    <div class="container">
+      <a class="plugin-back" href="/plugins" data-i18n="plugins_back">All plugins</a>
+
+      <header class="plugin-head">
+        <span class="u-card__tag">{getCategoryName(plugin.category)}</span>
+        <h1>{plugin.name}</h1>
+        <p class="plugin-card__author">{plugin.author}</p>
+        <p class="plugin-lede">{plugin.description}</p>
+        <p class="plugin-tags">
+          {
+            plugin.isPaid ? (
+              <span class="plugin-tag" data-i18n="plugins_paid">Paid</span>
+            ) : (
+              <span class="plugin-tag" data-i18n="plugins_free">Free</span>
+            )
+          }
+          {plugin.isOfficial && <span class="plugin-tag" data-i18n="plugins_official">Official</span>}
+        </p>
+      </header>
+
+      <div class="plugin-layout">
+        <div class="plugin-main">
+          <div class="plugin-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              id="tab-overview"
+              aria-controls="panel-overview"
+              aria-selected="true"
+              data-plugin-tab
+              data-i18n="plugin_tab_overview"
+            >
+              Overview
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-scorecard"
+              aria-controls="panel-scorecard"
+              aria-selected="false"
+              data-plugin-tab
+              data-i18n="plugin_tab_scorecard"
+            >
+              Scorecard
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-changelog"
+              aria-controls="panel-changelog"
+              aria-selected="false"
+              data-plugin-tab
+              data-i18n="plugin_tab_changelog"
+            >
+              Changelog
+            </button>
+          </div>
+
+          <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+            {
+              plugin.isPaid && (
+                <p class="plugin-note" data-i18n="plugin_paid_note">
+                  This plugin is paid. You buy it in the Numen app.
+                </p>
+              )
+            }
+            <PluginScreenshots plugin={plugin} />
+            {
+              Content ? (
+                <div class="plugin-prose">
+                  <Content />
+                </div>
+              ) : (
+                <p class="plugin-muted" data-i18n="plugin_no_readme">
+                  This plugin has no README.
+                </p>
+              )
+            }
+          </section>
+
+          <section id="panel-scorecard" role="tabpanel" aria-labelledby="tab-scorecard">
+            <PluginScorecard plugin={plugin} />
+          </section>
+
+          <section id="panel-changelog" role="tabpanel" aria-labelledby="tab-changelog">
+            <PluginChangelog plugin={plugin} />
+          </section>
+        </div>
+
+        <PluginSidebar plugin={plugin} />
+      </div>
+    </div>
+  </main>
+
+  <SiteFooter />
+
+  <script>
+    import { initSiteControls } from '../../scripts/site-controls'
+    import { initPluginTabs } from '../../scripts/plugin-tabs'
+
+    initSiteControls()
+    initPluginTabs()
+  </script>
+</Page>
