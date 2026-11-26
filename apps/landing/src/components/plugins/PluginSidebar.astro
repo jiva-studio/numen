@@ -1,7 +1,7 @@
 ---
 /**
  * The side column of a plugin page: contributors, the apps and systems it works on, its source,
- * links to report a bug or ask for a feature, and plugins that go with it.
+ * plugins that go with it, and links to report a bug or ask for a feature.
  */
 import numenIcon from '../../../../../tools/build-icons/icon.svg?url'
 import flashcardsIcon from '../../../../../tools/build-icons/flashcards.svg?url'
@@ -123,26 +123,9 @@ const isInternal = plugin.source.kind === 'internal'
     </a>
   </section>
 
-  <div class="plugin-side__actions">
-    <a
-      class="button-secondary button-small"
-      href={getBugReportUrl(plugin)}
-      target="_blank"
-      rel="noopener"
-      data-i18n="plugin_report_bug">Report bug</a
-    >
-    <a
-      class="button-secondary button-small"
-      href={getFeatureRequestUrl(plugin)}
-      target="_blank"
-      rel="noopener"
-      data-i18n="plugin_request_feature">Request feature</a
-    >
-  </div>
-
   {
     related.length > 0 && (
-      <section class="plugin-side__section plugin-side__related">
+      <section class="plugin-side__section">
         <h2 data-i18n="plugin_related">Works well with</h2>
         <ul class="plugin-related">
           {related.map((one) => (
@@ -162,4 +145,22 @@ const isInternal = plugin.source.kind === 'internal'
       </section>
     )
   }
+
+  <section class="plugin-side__section">
+    <h2 data-i18n="plugin_links">Links</h2>
+    <ul class="plugin-links">
+      <li>
+        <a href={getBugReportUrl(plugin)} target="_blank" rel="noopener">
+          <PluginIcon name="bug" />
+          <span data-i18n="plugin_report_bug">Report a bug</span>
+        </a>
+      </li>
+      <li>
+        <a href={getFeatureRequestUrl(plugin)} target="_blank" rel="noopener">
+          <PluginIcon name="lightbulb" />
+          <span data-i18n="plugin_request_feature">Request a feature</span>
+        </a>
+      </li>
+    </ul>
+  </section>
 </aside>

@@ -780,16 +780,32 @@ img.plugin-avatar {
   }
 }
 
-.plugin-side__actions,
-.plugin-side__related {
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
+.plugin-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.plugin-side__actions {
+.plugin-links a {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 0.625rem;
+  color: var(--ink);
+}
+
+.plugin-links a:hover span {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.plugin-links .plugin-icon {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--muted);
 }
 
 .plugin-related {
