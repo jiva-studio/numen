@@ -36,12 +36,18 @@ const (
 	// HostDependencyServiceFetchModelFileProcedure is the fully-qualified name of the
 	// HostDependencyService's FetchModelFile RPC.
 	HostDependencyServiceFetchModelFileProcedure = "/numen.v1.HostDependencyService/FetchModelFile"
+	// HostDependencyServiceFetchDependencyProcedure is the fully-qualified name of the
+	// HostDependencyService's FetchDependency RPC.
+	HostDependencyServiceFetchDependencyProcedure = "/numen.v1.HostDependencyService/FetchDependency"
 )
 
 // HostDependencyServiceClient is a client for the numen.v1.HostDependencyService service.
 type HostDependencyServiceClient interface {
 	// FetchModelFile returns the cached path of the selected file.
 	FetchModelFile(context.Context, *connect.Request[v1.FetchModelFileRequest]) (*connect.Response[v1.FetchModelFileResponse], error)
+	// FetchDependency returns the path of the model that the manifest of the calling plugin declares
+	// under id, fetching it first when it is not on this machine.
+	FetchDependency(context.Context, *connect.Request[v1.FetchDependencyRequest]) (*connect.Response[v1.FetchDependencyResponse], error)
 }
 
 // NewHostDependencyServiceClient constructs a client for the numen.v1.HostDependencyService
@@ -61,12 +67,19 @@ func NewHostDependencyServiceClient(httpClient connect.HTTPClient, baseURL strin
 			connect.WithSchema(hostDependencyServiceMethods.ByName("FetchModelFile")),
 			connect.WithClientOptions(opts...),
 		),
+		fetchDependency: connect.NewClient[v1.FetchDependencyRequest, v1.FetchDependencyResponse](
+			httpClient,
+			baseURL+HostDependencyServiceFetchDependencyProcedure,
+			connect.WithSchema(hostDependencyServiceMethods.ByName("FetchDependency")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // hostDependencyServiceClient implements HostDependencyServiceClient.
 type hostDependencyServiceClient struct {
-	fetchModelFile *connect.Client[v1.FetchModelFileRequest, v1.FetchModelFileResponse]
+	fetchModelFile  *connect.Client[v1.FetchModelFileRequest, v1.FetchModelFileResponse]
+	fetchDependency *connect.Client[v1.FetchDependencyRequest, v1.FetchDependencyResponse]
 }
 
 // FetchModelFile calls numen.v1.HostDependencyService.FetchModelFile.
@@ -74,10 +87,18 @@ func (c *hostDependencyServiceClient) FetchModelFile(ctx context.Context, req *c
 	return c.fetchModelFile.CallUnary(ctx, req)
 }
 
+// FetchDependency calls numen.v1.HostDependencyService.FetchDependency.
+func (c *hostDependencyServiceClient) FetchDependency(ctx context.Context, req *connect.Request[v1.FetchDependencyRequest]) (*connect.Response[v1.FetchDependencyResponse], error) {
+	return c.fetchDependency.CallUnary(ctx, req)
+}
+
 // HostDependencyServiceHandler is an implementation of the numen.v1.HostDependencyService service.
 type HostDependencyServiceHandler interface {
 	// FetchModelFile returns the cached path of the selected file.
 	FetchModelFile(context.Context, *connect.Request[v1.FetchModelFileRequest]) (*connect.Response[v1.FetchModelFileResponse], error)
+	// FetchDependency returns the path of the model that the manifest of the calling plugin declares
+	// under id, fetching it first when it is not on this machine.
+	FetchDependency(context.Context, *connect.Request[v1.FetchDependencyRequest]) (*connect.Response[v1.FetchDependencyResponse], error)
 }
 
 // NewHostDependencyServiceHandler builds an HTTP handler from the service implementation. It
@@ -93,10 +114,18 @@ func NewHostDependencyServiceHandler(svc HostDependencyServiceHandler, opts ...c
 		connect.WithSchema(hostDependencyServiceMethods.ByName("FetchModelFile")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostDependencyServiceFetchDependencyHandler := connect.NewUnaryHandler(
+		HostDependencyServiceFetchDependencyProcedure,
+		svc.FetchDependency,
+		connect.WithSchema(hostDependencyServiceMethods.ByName("FetchDependency")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostDependencyService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostDependencyServiceFetchModelFileProcedure:
 			hostDependencyServiceFetchModelFileHandler.ServeHTTP(w, r)
+		case HostDependencyServiceFetchDependencyProcedure:
+			hostDependencyServiceFetchDependencyHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -108,4 +137,8 @@ type UnimplementedHostDependencyServiceHandler struct{}
 
 func (UnimplementedHostDependencyServiceHandler) FetchModelFile(context.Context, *connect.Request[v1.FetchModelFileRequest]) (*connect.Response[v1.FetchModelFileResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostDependencyService.FetchModelFile is not implemented"))
+}
+
+func (UnimplementedHostDependencyServiceHandler) FetchDependency(context.Context, *connect.Request[v1.FetchDependencyRequest]) (*connect.Response[v1.FetchDependencyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostDependencyService.FetchDependency is not implemented"))
 }

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostdependency.proto.
  */
 export const file_numen_v1_hostdependency: GenFile = /*@__PURE__*/
-  fileDesc("Ch1udW1lbi92MS9ob3N0ZGVwZW5kZW5jeS5wcm90bxIIbnVtZW4udjEiNAoVRmV0Y2hNb2RlbEZpbGVSZXF1ZXN0EgsKA3VybBgBIAEoCRIOCgZzaGEyNTYYAiABKAkiWgoWRmV0Y2hNb2RlbEZpbGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg4KBmRldGFpbBgCIAEoCRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZTJsChVIb3N0RGVwZW5kZW5jeVNlcnZpY2USUwoORmV0Y2hNb2RlbEZpbGUSHy5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlcXVlc3QaIC5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("Ch1udW1lbi92MS9ob3N0ZGVwZW5kZW5jeS5wcm90bxIIbnVtZW4udjEiNAoVRmV0Y2hNb2RlbEZpbGVSZXF1ZXN0EgsKA3VybBgBIAEoCRIOCgZzaGEyNTYYAiABKAkiWgoWRmV0Y2hNb2RlbEZpbGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg4KBmRldGFpbBgCIAEoCRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZSIkChZGZXRjaERlcGVuZGVuY3lSZXF1ZXN0EgoKAmlkGAEgASgJIlsKF0ZldGNoRGVwZW5kZW5jeVJlc3BvbnNlEgwKBHBhdGgYASABKAkSDgoGZGV0YWlsGAIgASgJEiIKBWVycm9yGAMgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlMsQBChVIb3N0RGVwZW5kZW5jeVNlcnZpY2USUwoORmV0Y2hNb2RlbEZpbGUSHy5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlcXVlc3QaIC5udW1lbi52MS5GZXRjaE1vZGVsRmlsZVJlc3BvbnNlElYKD0ZldGNoRGVwZW5kZW5jeRIgLm51bWVuLnYxLkZldGNoRGVwZW5kZW5jeVJlcXVlc3QaIS5udW1lbi52MS5GZXRjaERlcGVuZGVuY3lSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.FetchModelFileRequest
@@ -68,6 +68,52 @@ export const FetchModelFileResponseSchema: GenMessage<FetchModelFileResponse> = 
   messageDesc(file_numen_v1_hostdependency, 1);
 
 /**
+ * @generated from message numen.v1.FetchDependencyRequest
+ */
+export type FetchDependencyRequest = Message<"numen.v1.FetchDependencyRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message numen.v1.FetchDependencyRequest.
+ * Use `create(FetchDependencyRequestSchema)` to create a new message.
+ */
+export const FetchDependencyRequestSchema: GenMessage<FetchDependencyRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostdependency, 2);
+
+/**
+ * @generated from message numen.v1.FetchDependencyResponse
+ */
+export type FetchDependencyResponse = Message<"numen.v1.FetchDependencyResponse"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+
+  /**
+   * error is ERROR_CODE_NOT_FOUND for an id that the manifest does not declare as a model.
+   *
+   * @generated from field: numen.v1.ErrorCode error = 3;
+   */
+  error: ErrorCode;
+};
+
+/**
+ * Describes the message numen.v1.FetchDependencyResponse.
+ * Use `create(FetchDependencyResponseSchema)` to create a new message.
+ */
+export const FetchDependencyResponseSchema: GenMessage<FetchDependencyResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostdependency, 3);
+
+/**
  * HostDependencyService provisions files that a plugin selects while running.
  *
  * @generated from service numen.v1.HostDependencyService
@@ -82,6 +128,17 @@ export const HostDependencyService: GenService<{
     methodKind: "unary";
     input: typeof FetchModelFileRequestSchema;
     output: typeof FetchModelFileResponseSchema;
+  },
+  /**
+   * FetchDependency returns the path of the model that the manifest of the calling plugin declares
+   * under id, fetching it first when it is not on this machine.
+   *
+   * @generated from rpc numen.v1.HostDependencyService.FetchDependency
+   */
+  fetchDependency: {
+    methodKind: "unary";
+    input: typeof FetchDependencyRequestSchema;
+    output: typeof FetchDependencyResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostdependency, 0);

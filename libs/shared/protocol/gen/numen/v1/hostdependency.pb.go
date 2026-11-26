@@ -135,6 +135,111 @@ func (x *FetchModelFileResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
+type FetchDependencyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FetchDependencyRequest) Reset() {
+	*x = FetchDependencyRequest{}
+	mi := &file_numen_v1_hostdependency_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FetchDependencyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchDependencyRequest) ProtoMessage() {}
+
+func (x *FetchDependencyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostdependency_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchDependencyRequest.ProtoReflect.Descriptor instead.
+func (*FetchDependencyRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostdependency_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *FetchDependencyRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type FetchDependencyResponse struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Path   string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Detail string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	// error is ERROR_CODE_NOT_FOUND for an id that the manifest does not declare as a model.
+	Error         ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FetchDependencyResponse) Reset() {
+	*x = FetchDependencyResponse{}
+	mi := &file_numen_v1_hostdependency_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FetchDependencyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchDependencyResponse) ProtoMessage() {}
+
+func (x *FetchDependencyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostdependency_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchDependencyResponse.ProtoReflect.Descriptor instead.
+func (*FetchDependencyResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostdependency_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *FetchDependencyResponse) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *FetchDependencyResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *FetchDependencyResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
+}
+
 var File_numen_v1_hostdependency_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostdependency_proto_rawDesc = "" +
@@ -146,9 +251,16 @@ const file_numen_v1_hostdependency_proto_rawDesc = "" +
 	"\x16FetchModelFileResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x12)\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error2l\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"(\n" +
+	"\x16FetchDependencyRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"p\n" +
+	"\x17FetchDependencyResponse\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\x12)\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error2\xc4\x01\n" +
 	"\x15HostDependencyService\x12S\n" +
-	"\x0eFetchModelFile\x12\x1f.numen.v1.FetchModelFileRequest\x1a .numen.v1.FetchModelFileResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0eFetchModelFile\x12\x1f.numen.v1.FetchModelFileRequest\x1a .numen.v1.FetchModelFileResponse\x12V\n" +
+	"\x0fFetchDependency\x12 .numen.v1.FetchDependencyRequest\x1a!.numen.v1.FetchDependencyResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_hostdependency_proto_rawDescOnce sync.Once
@@ -162,21 +274,26 @@ func file_numen_v1_hostdependency_proto_rawDescGZIP() []byte {
 	return file_numen_v1_hostdependency_proto_rawDescData
 }
 
-var file_numen_v1_hostdependency_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_numen_v1_hostdependency_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_numen_v1_hostdependency_proto_goTypes = []any{
-	(*FetchModelFileRequest)(nil),  // 0: numen.v1.FetchModelFileRequest
-	(*FetchModelFileResponse)(nil), // 1: numen.v1.FetchModelFileResponse
-	(ErrorCode)(0),                 // 2: numen.v1.ErrorCode
+	(*FetchModelFileRequest)(nil),   // 0: numen.v1.FetchModelFileRequest
+	(*FetchModelFileResponse)(nil),  // 1: numen.v1.FetchModelFileResponse
+	(*FetchDependencyRequest)(nil),  // 2: numen.v1.FetchDependencyRequest
+	(*FetchDependencyResponse)(nil), // 3: numen.v1.FetchDependencyResponse
+	(ErrorCode)(0),                  // 4: numen.v1.ErrorCode
 }
 var file_numen_v1_hostdependency_proto_depIdxs = []int32{
-	2, // 0: numen.v1.FetchModelFileResponse.error:type_name -> numen.v1.ErrorCode
-	0, // 1: numen.v1.HostDependencyService.FetchModelFile:input_type -> numen.v1.FetchModelFileRequest
-	1, // 2: numen.v1.HostDependencyService.FetchModelFile:output_type -> numen.v1.FetchModelFileResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	4, // 0: numen.v1.FetchModelFileResponse.error:type_name -> numen.v1.ErrorCode
+	4, // 1: numen.v1.FetchDependencyResponse.error:type_name -> numen.v1.ErrorCode
+	0, // 2: numen.v1.HostDependencyService.FetchModelFile:input_type -> numen.v1.FetchModelFileRequest
+	2, // 3: numen.v1.HostDependencyService.FetchDependency:input_type -> numen.v1.FetchDependencyRequest
+	1, // 4: numen.v1.HostDependencyService.FetchModelFile:output_type -> numen.v1.FetchModelFileResponse
+	3, // 5: numen.v1.HostDependencyService.FetchDependency:output_type -> numen.v1.FetchDependencyResponse
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostdependency_proto_init() }
@@ -191,7 +308,7 @@ func file_numen_v1_hostdependency_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostdependency_proto_rawDesc), len(file_numen_v1_hostdependency_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
