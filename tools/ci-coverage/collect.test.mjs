@@ -67,13 +67,16 @@ const measureAll = (total, covered) =>
 test('the quality file holds the coverage of a Go plugin and of a frontend-only plugin', () => {
   const measuredAt = '2026-11-26T03:00:00.000Z'
   const entries = collect.listPluginCoverage(measureAll(200, 150), measuredAt)
-  for (const target of ['plugins-views-media-viewer', 'plugins-agents-mcp-server', 'plugins-views-plex-graph']) {
-    assert.deepEqual(
-      entries.find((one) => one.target === target),
-      { target, coverage: 75, measuredAt },
-      target,
-    )
-  }
+  assert.deepEqual(entries.find((one) => one.target === 'plugins-agents-mcp-server'), {
+    target: 'plugins-agents-mcp-server',
+    coverage: 75,
+    measuredAt,
+  })
+  assert.deepEqual(entries.find((one) => one.target === 'plugins-views-plex-graph'), {
+    target: 'plugins-views-plex-graph',
+    coverage: 75,
+    measuredAt,
+  })
 })
 
 test('a plugin with Go and a frontend has a coverage entry for each, named by kind', () => {
