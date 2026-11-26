@@ -4,6 +4,11 @@ Open a conversation tab to ask AI assistants questions about your vault, find pa
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/agent-dark.webp">
+  <img alt="A conversation with an agent" src="screenshots/agent-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Chat with no setup**: The chat uses every agent connection on the Connections page, in their order, until you choose agents on the plugin page.

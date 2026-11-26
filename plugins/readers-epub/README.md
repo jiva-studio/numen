@@ -4,6 +4,11 @@ Opens EPUB books in a two-column or one-column page reader, extracts their text 
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/book-dark.webp">
+  <img alt="An EPUB book open on a page" src="screenshots/book-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Read EPUB books page by page**: Opens `.epub` files in a reader tab laid out in one or two columns depending on the pane width. Turn pages with the arrow keys, Page Up and Page Down, the space bar, a drag, or a click near either edge.

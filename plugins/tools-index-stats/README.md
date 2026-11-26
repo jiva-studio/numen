@@ -4,6 +4,11 @@ Shows in the title bar how many vectors the search index holds, so you can watch
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/index-dark.webp">
+  <img alt="The index statistics opened from the status chip" src="screenshots/index-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Watch the index**: The title bar shows `⬡ 12 480`, the number of chunks of text that carry a vector. While chunks still wait for their vector, the mark pulses softly in green; when none wait, it stands still. The item never shows the total of chunks: the details are in the popover.

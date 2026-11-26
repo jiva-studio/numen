@@ -4,6 +4,16 @@ Create flashcard decks, design custom card layouts, and review cards with spaced
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/deck-dark.webp">
+  <img alt="A deck of cards in the editor" src="screenshots/deck-light.webp">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/review-dark.webp">
+  <img alt="A card under review" src="screenshots/review-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Build and manage decks**: Browse, search, and edit flashcards in a clean table view.

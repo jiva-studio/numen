@@ -4,6 +4,11 @@ Write and organize Markdown notes with live formatting, `[[wikilinks]]`, tables,
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/editor-dark.webp">
+  <img alt="A note in the editor with headings, lists, a table and code" src="screenshots/editor-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Clean live writing**: Headings, lists, tables, quotes, and links are formatted cleanly as you read, while showing the underlying Markdown syntax on the line you are currently editing.

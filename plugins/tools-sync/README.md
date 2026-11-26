@@ -4,6 +4,11 @@ Synchronizes your vaults across devices when the **Numen Sync** license is activ
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/sync-dark.webp">
+  <img alt="The sync badge while syncing" src="screenshots/sync-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Turn sync on with a license**: Activate the **Numen Sync** license for this machine and the plugin starts. It watches the license, so activating or removing it takes effect without a restart.

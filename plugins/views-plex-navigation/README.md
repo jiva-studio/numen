@@ -4,6 +4,11 @@ Back and Forward buttons at the top of a Plex board retrace the nodes you visite
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/navigation-dark.webp">
+  <img alt="The Back and Forward buttons of the plex" src="screenshots/navigation-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Go back**: Back shows the node visited before the one in front.

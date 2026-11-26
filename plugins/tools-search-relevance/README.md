@@ -4,6 +4,11 @@ Sets how similar a note must be to your search to appear in the results. Matches
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/relevance-dark.webp">
+  <img alt="The search relevance threshold and a checked query" src="screenshots/relevance-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Set the threshold automatically**: Numen measures your vault once its vectors exist and uses the threshold that excludes unrelated notes.

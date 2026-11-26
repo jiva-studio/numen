@@ -4,6 +4,11 @@ Use Anthropic Claude Code (`claude`) installed on your computer to answer questi
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/models-dark.webp">
+  <img alt="The models of each agent in the model picker" src="screenshots/models-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Chat in the Agent Chat panel**: When Claude Code is installed on this computer, the connection Claude Code is on the Connections page, marked Discovered, with no setup, and Claude answers in Agent Chat as it writes. A row of the Agents setting of Agent Chat chooses its model and level of reasoning; with no model, the program uses its own default.

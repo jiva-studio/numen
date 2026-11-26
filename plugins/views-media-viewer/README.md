@@ -4,6 +4,11 @@ Play audio and video recordings and the media of link notes alongside their text
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/recording-dark.webp">
+  <img alt="A recording playing beside its transcript" src="screenshots/recording-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Listen and follow along**: Play recordings while the active line in the transcript or captions highlights and scrolls with the playback. Scrolling away from the active line turns **Follow** off; turn it on again to return to it.

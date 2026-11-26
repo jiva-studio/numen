@@ -4,6 +4,11 @@ Opens PDF documents in a horizontal page reader with zoom controls, extracts the
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/reader-dark.webp">
+  <img alt="A PDF book open on a page" src="screenshots/reader-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Read PDF pages**: Opens `.pdf` files in a horizontal strip of pages. Move between pages by dragging, scrolling, pressing the arrow keys, Page Up, Page Down, Home, or End, clicking the previous and next page buttons, or typing a page number in the toolbar.
