@@ -22,6 +22,7 @@ import {
   toManifestJson,
 } from './entry.mjs'
 import { getInternalQuality } from './quality.mjs'
+import { countTests } from './tests.mjs'
 
 /** The repository the internal plugins are published from. */
 export const INTERNAL_REPO = 'jiva-studio/numen'
@@ -128,7 +129,7 @@ export const collectInternal = async (folder, context) => {
       checkPermissions(fields.permissions, permissionsAdded),
       checkUpdated(updatedAt),
     ],
-    quality: getInternalQuality(folder, context.quality),
+    quality: getInternalQuality(folder, context.quality, countTests(dir)),
   }
 }
 

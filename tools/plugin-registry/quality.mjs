@@ -1,7 +1,8 @@
 /**
  * The quality of a plugin as the registry shows it. A plugin of this repository takes the numbers
- * of the nightly mutation and coverage workflows (`tools/shared/plugin-quality.mjs`); a plugin of
- * another repository takes the `quality.json` its author publishes.
+ * of the nightly mutation and coverage workflows (`tools/shared/plugin-quality.mjs`) and the tests
+ * counted in its folder; a plugin of another repository takes the `quality.json` its author
+ * publishes.
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -42,11 +43,17 @@ export const readQualityFiles = async (source, fetcher = fetch) => {
 
 const getLatest = (...dates) => dates.filter(Boolean).sort().at(-1) ?? null
 
+const hasTests = (tests) => tests.go + tests.typescript + tests.stories > 0
+
 /**
- * The quality of the plugin folder `folder`, one entry per measured target; null when nothing was
- * measured.
+ * The quality of the plugin folder `folder`: one entry per measured target and the counts of its
+ * tests; null when nothing was measured and it holds no tests.
+ *
+ * @param {string} folder
+ * @param {{ mutation: Map<string, object>, coverage: Map<string, object> }} files
+ * @param {{ go: number, typescript: number, stories: number }} tests
  */
-export const getInternalQuality = (folder, files) => {
+export const getInternalQuality = (folder, files, tests) => {
   const entries = listPluginTargets(folder).flatMap(({ target, kind }) => {
     const mutation = files.mutation.get(target)
     const coverage = files.coverage.get(target)
@@ -61,28 +68,35 @@ export const getInternalQuality = (folder, files) => {
       },
     ]
   })
-  return entries.length === 0 ? null : { reportedBy: 'numen', entries }
+  return entries.length === 0 && !hasTests(tests) ? null : { reportedBy: 'numen', entries, tests }
 }
 
 const readPercent = (value) =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100 ? value : null
 
-/** The quality an author reports in `quality.json`; null when the file is absent or names neither number. */
+const readCount = (value) => (Number.isSafeInteger(value) && value >= 0 ? value : 0)
+
+const readTests = (tests) => ({
+  go: readCount(tests?.go),
+  typescript: readCount(tests?.typescript),
+  stories: readCount(tests?.stories),
+})
+
+/**
+ * The quality an author reports in `quality.json`; null when the file is absent or names no
+ * percentage and no test count.
+ */
 export const getExternalQuality = (document) => {
   if (document === null || typeof document !== 'object') return null
   const mutationScore = readPercent(document.mutationScore)
   const coverage = readPercent(document.coverage)
-  if (mutationScore === null && coverage === null) return null
+  const tests = readTests(document.tests)
+  const isMeasured = mutationScore !== null || coverage !== null
+  if (!isMeasured && !hasTests(tests)) return null
+  const measuredAt = typeof document.measuredAt === 'string' ? document.measuredAt : null
   return {
     reportedBy: 'author',
-    entries: [
-      {
-        target: null,
-        kind: null,
-        mutationScore,
-        coverage,
-        measuredAt: typeof document.measuredAt === 'string' ? document.measuredAt : null,
-      },
-    ],
+    entries: isMeasured ? [{ target: null, kind: null, mutationScore, coverage, measuredAt }] : [],
+    tests,
   }
 }

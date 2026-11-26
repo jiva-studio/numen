@@ -96,6 +96,43 @@ const getSettings = (settings = []) =>
 const getCommands = (commands = []) =>
   commands.map((one) => ({ id: one.id, title: one.title ?? one.id }))
 
+const getTabKinds = (tabKinds = []) =>
+  tabKinds.map((one) => ({ kind: one.kind, title: one.title ?? one.kind }))
+
+const getFileTypes = (readers = [], tabKinds = []) =>
+  readers.flatMap((reader) => {
+    const tab = tabKinds.find((one) => one.kind === `reader:${reader.id}`)
+    return (reader.contentTypes ?? []).map((contentType) => ({
+      contentType,
+      title: tab?.title ?? reader.id,
+    }))
+  })
+
+const getTextKinds = (textKinds = []) =>
+  textKinds.map((one) => ({ kind: one.kind, title: one.title ?? one.kind }))
+
+const getThemes = (themes = []) => themes.map((one) => ({ id: one.id, name: one.name ?? one.id }))
+
+const getSlots = (slots = []) =>
+  slots.map((one) => ({
+    slot: one.slot,
+    title: one.title ?? '',
+    target: one.command ?? one.view ?? one.submenu ?? '',
+  }))
+
+const getConnectionTypes = (connectionTypes = []) =>
+  connectionTypes.map((one) => ({
+    id: one.id,
+    title: one.title ?? one.id,
+    description: one.description ?? '',
+  }))
+
+const getSearchFunctions = (searchFunctions) =>
+  (searchFunctions?.functions ?? []).map((one) => ({
+    name: one.name,
+    description: one.description ?? '',
+  }))
+
 const getLicenses = (licenses = []) =>
   licenses.map((one) => ({ id: one.id, title: one.title ?? one.id, description: one.description ?? '' }))
 
@@ -126,6 +163,13 @@ export const describeManifest = (json) => {
     permissions: (json.permissions ?? []).map((id) => ({ id, description: describePermission(id) })),
     settings: getSettings(json.settings),
     commands: getCommands(contributes.commands),
+    tabKinds: getTabKinds(contributes.tabKinds),
+    fileTypes: getFileTypes(contributes.readers, contributes.tabKinds),
+    textKinds: getTextKinds(contributes.textKinds),
+    themes: getThemes(contributes.themes),
+    slots: getSlots(contributes.slots),
+    connectionTypes: getConnectionTypes(contributes.connectionTypes),
+    searchFunctions: getSearchFunctions(contributes.searchFunctions),
   }
 }
 

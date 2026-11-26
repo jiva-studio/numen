@@ -6,12 +6,13 @@ The plugin catalog of numen.md (`/plugins`) is built from one JSON file, the reg
 
 Every folder of `plugins/` with a `manifest.json` is in the registry. Its entry takes:
 
-- the manifest, read against the schema of `manifest.proto`;
+- the manifest, read against the schema of `manifest.proto`: besides its id, name and permissions, the settings, commands, tab kinds, file types of its readers, text kinds, themes, slots, connection types and search functions it contributes;
 - `README.md`: the text before `<!-- more -->` is the introduction the catalog search and the page description use, and the whole README is the Overview of the plugin page;
 - `screenshots/<name>-light.webp` and `screenshots/<name>-dark.webp`, one pair per screenshot;
 - the changelog: the commits that touched the folder, grouped by the commit that changed the `version` of the manifest;
 - the contributors: the people who wrote the commits that touched the folder, one per email address as `.mailmap` maps it, named as in their newest commit, with their commit counts, bots left out; online with a GitHub token, each also gets the login and avatar of their GitHub account from the commits API;
-- the mutation score and the coverage of the nightly `mutation.yml` and `coverage.yml`, which publish them at `plugins/quality/mutation.json` and `plugins/quality/coverage.json`.
+- the mutation score and the coverage of the nightly `mutation.yml` and `coverage.yml`, which publish them at `plugins/quality/mutation.json` and `plugins/quality/coverage.json`;
+- the tests of the folder, counted from the source without running them: Go functions `Test…` and `Fuzz…` in `*_test.go`, TypeScript cases `it(` and `test(` in `*.test.ts` (an `.each` table counts once), and the stories exported from `*.stories.ts`, which run as browser tests; `node_modules`, `dist` and `testdata` are left out.
 
 Every entry, internal or external, has an `icon`: the lucide name of the first icon its manifest declares on a tab kind, a command, a slot or a setting, else the icon of its category (`agents` bot, `connections` plug, `engines` cpu, `readers` book-open, `themes` palette, `tools` wrench, `views` layout-panel-left).
 
@@ -28,14 +29,14 @@ A repository of a plugin holds, at the tag of its latest GitHub release:
 - `manifest.json`, whose `id` is the id listed in `plugins/registry.json`;
 - `README.md`, with an introduction before `<!-- more -->`;
 - `screenshots/<name>-light.webp` and `screenshots/<name>-dark.webp`;
-- optionally `quality.json`, `{ "coverage": 82.5, "mutationScore": 71.0, "measuredAt": "<ISO time>" }`, percentages the site shows as reported by the author;
+- optionally `quality.json`, `{ "coverage": 82.5, "mutationScore": 71.0, "measuredAt": "<ISO time>", "tests": { "go": 40, "typescript": 120, "stories": 12 } }`, percentages and test counts the site shows as reported by the author;
 - a LICENSE that GitHub recognizes.
 
 The release carries one artifact per platform, named with the system (`darwin` or `macos`, `linux`, `windows`) and the architecture (`amd64`, `arm64`), for example `word-count-linux-amd64.tar.gz`. The notes of the releases are the plugin's changelog. A release is asked for with the ETag of the previous registry, and a release with the same tag and publication time keeps its previous entry and is not downloaded again.
 
 ## Checks
 
-The registry runs these checks itself and shows them on the Access & tests tab of each plugin page:
+The registry runs these checks itself and shows them on the Quality tab of each plugin page, above the tests:
 
 | Check | Internal | External |
 | --- | --- | --- |
