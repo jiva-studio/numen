@@ -52,7 +52,7 @@ type WorkQueue interface {
 // every file. CallCancels holds the cancels of the calls of connections.
 type Callers struct {
 	Dependencies         *plugindependency.Fetch
-	DeclaredDependencies *plugindependency.FetchDeclared
+	DeclaredDependencies *plugindependency.FetchDeclaredModel
 	Identity             Identity
 	Leases               Leases
 	Lent                 *Services

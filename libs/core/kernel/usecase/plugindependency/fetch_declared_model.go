@@ -17,20 +17,20 @@ type DeclaredModels interface {
 	FindModelDependency(pluginID, id string) (manifest.DependencyRequirement, bool)
 }
 
-// FetchDeclared resolves a model that the manifest of the calling plugin declares, fetching it when it
+// FetchDeclaredModel resolves a model that the manifest of the calling plugin declares, fetching it when it
 // is not on this machine.
-type FetchDeclared struct {
+type FetchDeclaredModel struct {
 	plugins     DeclaredModels
 	getRegistry func() pluginport.DependencyRegistry
 }
 
-func NewFetchDeclared(plugins DeclaredModels, registry func() pluginport.DependencyRegistry) *FetchDeclared {
-	return &FetchDeclared{plugins: plugins, getRegistry: registry}
+func NewFetchDeclaredModel(plugins DeclaredModels, registry func() pluginport.DependencyRegistry) *FetchDeclaredModel {
+	return &FetchDeclaredModel{plugins: plugins, getRegistry: registry}
 }
 
 // Execute returns the path of the model that the manifest of pluginID declares under id. It returns
 // ErrUndeclaredDependency, and fetches nothing, for an id the manifest does not declare as a model.
-func (f *FetchDeclared) Execute(ctx context.Context, pluginID, id string) (string, error) {
+func (f *FetchDeclaredModel) Execute(ctx context.Context, pluginID, id string) (string, error) {
 	declared, ok := f.plugins.FindModelDependency(pluginID, id)
 	if !ok {
 		return "", fmt.Errorf("%w: %s asks for %q", ErrUndeclaredDependency, pluginID, id)
