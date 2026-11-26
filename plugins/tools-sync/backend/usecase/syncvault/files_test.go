@@ -581,3 +581,40 @@ func TestSyncVault_APassThatFailsAfterCommittingARemovalKeepsTheRecordsWithoutTh
 		}
 	}
 }
+
+func TestSyncVault_AChangeBeatsARemovalTheServerPrunedAsANewFile(t *testing.T) {
+	p := newOwnPair(t)
+	p.a.WriteNote(source, pdf, pdfText)
+	sync(t, p.a, source)
+	sync(t, p.b, target)
+	fileID := p.heads(t)[0].GetRevision().GetFileId()
+	p.b.WriteNote(target, pdf, pdfText+" edited there")
+	p.server.RunAfterNext("/GetChanges", func() {
+		records, err := p.a.State.ReadRecords(t.Context(), source)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		vault := transfer.Vault{ID: p.a.GetRemoteID(t, source), Key: p.a.GetVaultKey(t, source)}
+		if _, err := commit.NewCommitRemovals(p.a.CommitDeps()).Execute(t.Context(), transfer.RemoveInput{Vault: vault, Records: records}); err != nil {
+			t.Error(err)
+		}
+		if err := p.own.TryForgetRemovals(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	sync(t, p.b, target)
+
+	live := p.getLiveHeads(t)
+	if len(live) != 1 || bytes.Equal(live[0].GetRevision().GetFileId(), fileID) || len(live[0].GetRevision().GetParentRev()) != 0 {
+		t.Fatalf("live files = %d, want one new file with no parent, as the server holds the version of the pruned one", len(live))
+	}
+	records, err := p.b.State.ReadRecords(t.Context(), target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(records) != 1 || !bytes.Equal(records[0].FileID, live[0].GetRevision().GetFileId()) {
+		t.Errorf("records = %d, want the one of the new file only", len(records))
+	}
+}

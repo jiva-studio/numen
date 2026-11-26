@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
 
 func (p *pair) getHead(t *testing.T) uint64 {
@@ -70,5 +72,46 @@ func TestPullChanges_KeepsTheHighestHeadForAFreshUseCaseAndStaysSameOnTheSameSer
 	}
 	if after := p.b.Link(t, target); after.HighSeq != before.HighSeq || before.HighSeq == 0 {
 		t.Errorf("highest head = %d after a restart, want %d kept", after.HighSeq, before.HighSeq)
+	}
+}
+
+func TestPullChanges_ReportsWentBackWhenTheHeadIsBelowWhatItSawButAboveTheHeldPosition(t *testing.T) {
+	p := newOwnPair(t)
+	kept := p.own.CreateSnapshot(t)
+	p.push(t, "Plan.md", "tea", nil)
+	p.push(t, "Shopping list.md", "milk", nil)
+	deps := p.b.PullDeps()
+	deps.Blobs = &missingFirstBlob{BlobDownloader: deps.Blobs}
+	if _, err := pull.NewPullChanges(deps).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll}); err == nil {
+		t.Fatal("pull reported no error for a missing blob")
+	}
+	seen := p.b.Link(t, target)
+	if seen.ServerSeq >= seen.HighSeq {
+		t.Fatalf("position = %d, highest head = %d, want the position held below it", seen.ServerSeq, seen.HighSeq)
+	}
+	p.own.RollBack(t, kept)
+	p.push(t, "Food.md", "eggs", nil)
+
+	result := p.pull(t, trustAll)
+
+	if result.Verdict != restore.WentBack || len(result.Applied) != 0 {
+		t.Errorf("result = %+v, want WentBack and nothing applied", result)
+	}
+	if _, ok := p.b.ReadNote(target, "Food.md"); ok {
+		t.Error("a note of a server that went back was applied")
+	}
+}
+
+func TestPullChanges_ReportsSameWhenTheServerForgotRemovalsWhileTheDeviceWasAway(t *testing.T) {
+	w := newAway(t)
+	w.forgetRemoval(t, "Shopping list.md", w.shopping)
+
+	result := w.pull(t, trustAll)
+
+	if result.Verdict != restore.Same {
+		t.Errorf("verdict = %v, want Same after the server forgot removals", result.Verdict)
+	}
+	if link := w.b.Link(t, target); link.HighSeq <= w.getHead(t) {
+		t.Errorf("highest head = %d, want the head of the forgotten removal above the %d of the notes left", link.HighSeq, w.getHead(t))
 	}
 }

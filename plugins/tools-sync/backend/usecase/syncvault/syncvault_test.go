@@ -23,6 +23,7 @@ const (
 )
 
 type pair struct {
+	own    *synctest.OwnStack
 	server *synctest.Server
 	a, b   *synctest.Computer
 }
@@ -30,6 +31,14 @@ type pair struct {
 func newPair(t *testing.T) *pair {
 	t.Helper()
 	return newPairOnPlan(t, synctest.DefaultPlan)
+}
+
+func newOwnPair(t *testing.T) *pair {
+	t.Helper()
+	own := synctest.GetOwnStack(t)
+	p := newPair(t)
+	p.own = own
+	return p
 }
 
 func newPairOnPlan(t *testing.T, plan string) *pair {

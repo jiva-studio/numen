@@ -344,3 +344,21 @@ func TestCloud_WatchSignsInOnceAndOpensAgainAfterAnUnauthenticatedOpen(t *testin
 		t.Errorf("sign-ins = %d, want 1", refreshes)
 	}
 }
+
+func TestCloud_ReadsTheRestoreEpochAndTheKeyThatSignsIt(t *testing.T) {
+	own := synctest.GetOwnStack(t)
+	c, _ := newWorld(t)
+	id := own.IssueRestoreEpoch(t)
+
+	epoch, key, err := c.Cloud.GetRestoreEpoch(t.Context())
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if epoch == nil || !bytes.Equal(epoch.GetId(), id) {
+		t.Fatalf("epoch = %v, want id %x", epoch, id)
+	}
+	if err := syncprotocol.CheckRestoreEpoch(key, epoch); err != nil {
+		t.Errorf("CheckRestoreEpoch = %v, want nil", err)
+	}
+}
