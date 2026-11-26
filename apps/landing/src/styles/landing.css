@@ -15,6 +15,18 @@
   }
 }
 
+/* The application's window stylesheet fixes the page to one screen and makes its text unselectable; a page scrolls and is read. */
+html,
+body {
+  block-size: auto;
+  overscroll-behavior: auto;
+}
+
+body {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 @layer base {
   *,
   *::before,
@@ -92,8 +104,7 @@
 
 /* ------------------------------- Site Header ------------------------------ */
 .site-header {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 30;
   display: flex;
   align-items: center;
