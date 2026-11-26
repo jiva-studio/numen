@@ -10,7 +10,6 @@ import {
   type CatalogPlugin,
   getAvatarUrl,
   getBugReportUrl,
-  getContributorName,
   getContributorUrl,
   getFeatureRequestUrl,
   getInitial,
@@ -37,7 +36,7 @@ const systems = plugin.platforms.map((platform) => ({
   icon: SYSTEM_ICONS[getPlatformSystem(platform)],
 }))
 const people = plugin.contributors.map((person) => ({
-  name: getContributorName(person),
+  name: person.name,
   avatar: getAvatarUrl(person, 52),
   url: getContributorUrl(person),
 }))
