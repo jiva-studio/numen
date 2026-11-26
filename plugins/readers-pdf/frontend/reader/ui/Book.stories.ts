@@ -122,7 +122,7 @@ type Story = StoryObj<typeof meta>
 export const Reading: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'reader', app: 'docs' }, { name: 'reader' }],
+    screenshot: [{ name: 'reader', app: 'docs' }],
   },
   render: () => ({
     components: { Reader },
@@ -139,7 +139,7 @@ export const Reading: Story = {
       }
     },
     template: `
-      <div style="height: 100vh">
+      <div style="height: 100%">
         <Reader
           style="height: 100%"
           :pages="pages"
@@ -159,5 +159,21 @@ export const Reading: Story = {
       await expect(page).not.toBeNull()
       await expect(page?.querySelectorAll('.reader__highlight').length).toBeGreaterThan(0)
     })
+  },
+}
+
+/** The book in a tab of the window, beside the note that cites the page. */
+export const InTheWindow: Story = {
+  ...Reading,
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Boltzmann 1877', icon: 'book' },
+      behind: [{ title: 'Shannon 1948', icon: 'book' }],
+      note: 'after',
+      share: 0.55,
+      selected: 'Reading/Boltzmann 1877.pdf',
+    },
+    screenshot: [{ name: 'reader' }],
   },
 }

@@ -3,7 +3,7 @@
  * corpus: each story is run in a browser by `@storybook/addon-vitest`.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, waitFor } from 'storybook/test'
+import { expect, userEvent, waitFor } from 'storybook/test'
 import { createTask } from '../testing/tasks'
 import TasksStatus from './TasksStatus.vue'
 
@@ -61,13 +61,51 @@ export const Idle: Story = { play: assertIdle }
 
 /** Tasks run: the ring is filled by the progress and the chip counts the tasks done. */
 export const Active: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'status', width: 360, height: 32, drawn: 500 }],
-  },
   args: { tasks: RUNNING },
   play: assertActive,
 }
 
 /** A task failed: the chip keeps its text and says how many failed. */
 export const Failed: Story = { args: { tasks: FAILED }, play: assertFailed }
+
+const INDEXING = [
+  createTask({
+    id: 'embed',
+    label: 'Embed the notes of Physics',
+    progress: { completedCount: 46, total: 84 },
+    allowed: { cancel: true },
+  }),
+  createTask({
+    id: 'transcribe',
+    label: 'Transcribe Lecture 4.mp3',
+    progress: { completedCount: 31, total: 50 },
+    allowed: { cancel: true },
+  }),
+  createTask({
+    id: 'ocr',
+    label: 'Recognise the text of Boltzmann 1877.pdf',
+    progress: { completedCount: 12, total: 40 },
+    allowed: { cancel: true },
+  }),
+]
+
+/** The chip in the title bar of the window, with the tasks of the vault open under it. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-status' },
+    screenshot: [{ name: 'status' }],
+  },
+  args: { tasks: INDEXING },
+  render: (args) => ({
+    components: { TasksStatus },
+    setup: () => ({ args }),
+    template: '<TasksStatus v-bind="args" />',
+  }),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(getChip(canvasElement))
+    await waitFor(() =>
+      expect(canvasElement.querySelector('.tasks-status__popover-container')).not.toBeNull(),
+    )
+  },
+}
