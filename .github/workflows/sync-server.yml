@@ -1,8 +1,8 @@
 name: Sync Server
 
 # The tests that need the real sync server, started from its private images (tests/server): the Go
-# tests of plugins/tools-sync and the acceptance scenarios tagged @live. Called by ci.yml with the
-# area a change touches. GitHub gives a pull request from a fork no access to the private packages,
+# tests of plugins/tools-sync and the acceptance scenarios tagged @sync-server. Called by ci.yml with the
+# area a change touches. GitHub gives a pull request from a fork or from Dependabot no access to the private packages,
 # and tests/server/stack.lock holds no digests until numen-cloud publishes the images: the job then
 # runs no test and says so in its summary. It never uploads the images or prints the server log
 # unfiltered.
@@ -34,10 +34,13 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          ACTOR: ${{ github.actor }}
         run: |
           reason=
           if [ "$EVENT" = pull_request ] && [ "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
             reason="the pull request is from a fork, which has no access to the private server images"
+          elif [ "$ACTOR" = "dependabot[bot]" ]; then
+            reason="the pull request is from Dependabot, which has no access to the private server images"
           elif ! grep -qE '^NUMEN_SYNC_IMAGE=.+' tests/server/stack.lock || ! grep -qE '^NUMEN_SYNC_DEVTOOLS_IMAGE=.+' tests/server/stack.lock; then
             reason="tests/server/stack.lock holds no image digests"
           fi
@@ -86,14 +89,104 @@ jobs:
           fi
           exit "$status"
 
-      # The acceptance task wires the scenarios tagged @live here: the debug binaries and the plugins
-      # built, then `npm run acceptance:live` in tests/acceptance/desktop with the settings of
-      # `make sync_stack_env`, and the skipped count printed as in the step above.
-      - name: Run the @live acceptance scenarios
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.plan.outputs.run == 'true'
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        if: steps.plan.outputs.run == 'true'
+        uses: ./.github/actions/install-node-modules
+
+      # The GTK and WebKitGTK runtime libraries the window links against, and the engine.
+      - if: steps.plan.outputs.run == 'true'
+        uses: ./.github/actions/setup-playwright
+        with:
+          browsers: chromium
+          packages: libgtk-4-1 libwebkitgtk-6.0-4
+
+      # The archive desktop-e2e.yml builds on main (the plugins and the debug binaries), found by the
+      # same key; a change that alters what the archive is made from builds it here the same way.
+      - id: key
+        if: steps.plan.outputs.run == 'true'
+        run: echo "key=e2e-build-${ImageOS:-unknown}-$(.github/scripts/hash-e2e-build.sh)-all" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Restore the build archive
+        if: steps.plan.outputs.run == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/e2e-build.tar
+          key: ${{ steps.key.outputs.key }}
+
+      - id: need
         if: steps.plan.outputs.run == 'true'
         run: |
-          echo "::warning title=@live scenarios did not run::the step that runs them is not wired yet"
-          echo "@live acceptance scenarios did not run: the step that runs them is not wired yet" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ -s "$RUNNER_TEMP/e2e-build.tar" ]; then
+            tar -xf "$RUNNER_TEMP/e2e-build.tar"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.need.outputs.build == 'true'
+        uses: ./.github/actions/setup-webkit
+
+      - name: Build UI library
+        if: steps.need.outputs.build == 'true'
+        uses: ./.github/actions/build-ui
+        with:
+          shell: 'true'
+
+      - name: Build the plugins, the windows and the debug binaries
+        if: steps.need.outputs.build == 'true'
+        env:
+          BUILD_FLASHCARDS: "true"
+        run: .github/scripts/run-e2e-build.sh
+
+      - name: Build the account tool
+        if: steps.plan.outputs.run == 'true'
+        run: |
+          go build -C tools/syncaccount -o bin/syncaccount .
+          if ldd apps/desktop/numen-debug | grep 'not found'; then exit 1; fi
+
+      # The scenarios tagged @sync-server, not those tagged @own-server. PLAYWRIGHT_VIDEO records every
+      # scenario; the next step keeps the videos of the failed ones alone.
+      - name: Run the acceptance scenarios
+        if: steps.plan.outputs.run == 'true'
+        working-directory: tests/acceptance/desktop
+        env:
+          NUMEN_SYNC_TEST_REQUIRED: "1"
+          PLAYWRIGHT_VIDEO: "1"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/acceptance.json
+        run: |
+          eval "$(make -C ../../.. -s sync_stack_env)"
+          status=0
+          npm run acceptance:sync -- --project=chromium --reporter=list,json || status=$?
+          if [ -s "$PLAYWRIGHT_JSON_OUTPUT_NAME" ]; then
+            echo "Acceptance scenarios against the real server: $(jq -r '.stats | "\(.expected) passed, \(.unexpected) failed, \(.flaky) flaky, \(.skipped) skipped"' "$PLAYWRIGHT_JSON_OUTPUT_NAME")" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
+
+      # Videos show the app with invented data. The report and the traces are not uploaded: the
+      # report holds the log of the app's server for each failed scenario.
+      - name: Collect the videos of the failed scenarios
+        if: ${{ failure() && steps.plan.outputs.run == 'true' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/failed-videos"
+          if [ -s "$RUNNER_TEMP/acceptance.json" ]; then
+            jq -r '.. | objects | select(.status? == "unexpected" or .status? == "flaky") | .results[]?.attachments[]? | select(.name == "video") | .path' "$RUNNER_TEMP/acceptance.json" | sort -u | while IFS= read -r video; do
+              cp --parents "$video" "$RUNNER_TEMP/failed-videos" || true
+            done
+          fi
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ failure() && steps.plan.outputs.run == 'true' }}
+        with:
+          name: sync-server-acceptance-videos
+          path: ${{ runner.temp }}/failed-videos/
+          if-no-files-found: ignore
+          retention-days: 7
 
       # Only the lines of the rpc log, never the raw log: the log of a public job is public.
       - name: Print the rpc lines of the server log
