@@ -264,6 +264,9 @@ func (p *pass) sendBatch(ctx context.Context, vault transfer.Vault, records []tr
 		}
 		for i, one := range again {
 			outcomes[one.index] = second[i]
+			if second[i].Status == transfer.Committed && len(one.replaced) > 0 {
+				records = slices.DeleteFunc(records, func(record transfer.FileRecord) bool { return bytes.Equal(record.FileID, one.replaced) })
+			}
 		}
 	}
 	p.recordClashes(outcomes)
@@ -280,10 +283,13 @@ func (p *pass) recordClashes(outcomes []transfer.Outcome) {
 }
 
 // repeat is a file whose revision the server refused because the head of the file is a removal, or is gone, with the
-// parent the file is committed under the second time.
+// parent the file is committed under the second time. A file whose head is gone is committed as a new file and
+// replaced names the id it had: the server keeps the version of a pruned file, which no call reads, so only a new id
+// is sure to be accepted.
 type repeat struct {
-	index int
-	file  transfer.File
+	index    int
+	file     transfer.File
+	replaced []byte
 }
 
 func getEditsOverRemovals(files []transfer.File, outcomes []transfer.Outcome) []repeat {
@@ -293,15 +299,17 @@ func getEditsOverRemovals(files []transfer.File, outcomes []transfer.Outcome) []
 			continue
 		}
 		file := files[i]
+		var replaced []byte
 		switch {
 		case outcome.Head == nil && len(file.ParentRev) > 0:
-			file.ParentRev = nil
+			replaced = file.FileID
+			file.FileID, file.ParentRev, file.ParentVersion = nil, nil, 0
 		case outcome.Head != nil && outcome.Head.GetRevision().GetDeleted():
 			file.ParentRev, file.ParentVersion = outcome.Head.GetRevId(), outcome.Head.GetRevision().GetFileVersion()
 		default:
 			continue
 		}
-		again = append(again, repeat{index: i, file: file})
+		again = append(again, repeat{index: i, file: file, replaced: replaced})
 	}
 	return again
 }

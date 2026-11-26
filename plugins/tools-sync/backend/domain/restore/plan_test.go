@@ -74,7 +74,7 @@ func TestPlanRecovery_SkipsHeadWithHigherVersionWhenNoteIsRemovedLocally(t *test
 	wantAction(t, got, restore.Keep, 1)
 }
 
-func TestPlanRecovery_SendsTheLocalNoteOverAnOlderHeadFromTheHighestVersionKnown(t *testing.T) {
+func TestPlanRecovery_SendsTheLocalNoteOverAnOlderHeadFromTheVersionOfTheHead(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
 	records := []restore.SyncedFile{record(1, "a.md", milk, 7)}
@@ -85,8 +85,35 @@ func TestPlanRecovery_SendsTheLocalNoteOverAnOlderHeadFromTheHighestVersionKnown
 	got := restore.PlanRecovery(records, heads(older), map[string]string{"a.md": milk})
 
 	action := wantAction(t, got, restore.Send, 1)
-	if action.ParentVersion != 6 {
-		t.Errorf("parent version = %d, want 6 so the new revision continues above both", action.ParentVersion)
+	if action.ParentVersion != 4 {
+		t.Errorf("parent version = %d, want 4 of the head the server holds, as the server takes only the head plus one", action.ParentVersion)
+	}
+}
+
+func TestPlanRecovery_TombstonesAFileFromTheVersionOfTheHead(t *testing.T) {
+	t.Parallel()
+	records := []restore.SyncedFile{record(1, "a.md", note.Hash([]byte("milk")), 8)}
+	records[0].Version = 6
+	older := head(1, "a.md", 7)
+	older.Version = 4
+
+	got := restore.PlanRecovery(records, heads(older), map[string]string{})
+
+	if action := wantAction(t, got, restore.Tombstone, 1); action.ParentVersion != 4 {
+		t.Errorf("parent version = %d, want 4 of the head the server holds", action.ParentVersion)
+	}
+}
+
+func TestPlanRecovery_RecreatesAFileFromNoVersionWhenTheServerHoldsNoHead(t *testing.T) {
+	t.Parallel()
+	milk := note.Hash([]byte("milk"))
+	records := []restore.SyncedFile{record(1, "a.md", milk, 7)}
+	records[0].Version = 6
+
+	got := restore.PlanRecovery(records, heads(), map[string]string{"a.md": milk})
+
+	if action := wantAction(t, got, restore.Recreate, 1); action.ParentVersion != 0 {
+		t.Errorf("parent version = %d, want 0: the server takes version 1 for a file it holds no head of", action.ParentVersion)
 	}
 }
 

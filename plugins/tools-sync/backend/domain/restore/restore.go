@@ -154,8 +154,9 @@ type Head struct {
 }
 
 // Action is what a recovery does with a file. ParentRev is the head the commit goes on top of, or the head to adopt,
-// and empty for Recreate and Keep. ParentVersion is the highest signed version of the file this device or the server
-// holds: a commit or a record of the file continues from it.
+// and empty for Recreate and Keep. ParentVersion is the version of the head the server holds, and 0 where it holds
+// none: the server takes only the version of its head plus one, so a commit or a record of the file continues from it
+// and never from a version this device alone remembers.
 type Action struct {
 	Kind          ActionKind
 	FileID        []byte
@@ -205,12 +206,12 @@ func planRecord(record SyncedFile, head Head, isFound bool, hash string, isLocal
 
 func planChange(action Action, head Head, record SyncedFile, isFound bool, hash string, isLocal bool) Action {
 	isUsable := isFound && !head.IsBlobMissing
-	action.ParentVersion = max(head.Version, record.Version)
+	action.ParentVersion = head.Version
 	switch {
 	case isUsable && isLocal && isSameContent(head, hash):
-		action.Kind, action.ParentRev, action.ParentVersion = Adopt, head.Rev, head.Version
+		action.Kind, action.ParentRev = Adopt, head.Rev
 	case isLocal && !isFound:
-		action.Kind, action.ParentVersion = Recreate, record.Version
+		action.Kind = Recreate
 	case isUsable && isNewer(head, record):
 		action.ParentVersion = 0
 	case isLocal:
