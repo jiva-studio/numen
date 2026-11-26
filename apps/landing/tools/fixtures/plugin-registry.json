@@ -2,6 +2,7 @@
   "schema": 1,
   "generatedAt": "2026-11-26T07:30:00.000Z",
   "contentHash": "4f0c2a9d6b1e8f7a3c5d9e0b2a4c6e8f1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d",
+  "featured": ["md.numen.engines.transcription"],
   "plugins": [
     {
       "id": "md.numen.engines.transcription",
@@ -10,6 +11,7 @@
       "description": "Transcribes audio and video files on this computer",
       "category": "engines",
       "feature": "transcription",
+      "icon": "audio-lines",
       "targets": ["desktop.editor"],
       "isOfficial": true,
       "isPaid": false,
@@ -31,6 +33,7 @@
         "url": "https://github.com/jiva-studio/numen/tree/main/plugins/engines-transcription"
       },
       "author": "Jiva Studio",
+      "contributors": [{ "name": "Ada Example", "commits": 12 }],
       "license": "AGPL-3.0",
       "platforms": ["macos", "windows", "linux"],
       "readme": {
@@ -97,6 +100,7 @@
       "description": "Synchronizes your vaults across devices",
       "category": "tools",
       "feature": "",
+      "icon": "wrench",
       "targets": ["desktop.editor", "desktop.flashcards"],
       "isOfficial": true,
       "isPaid": true,
@@ -112,6 +116,7 @@
         "url": "https://github.com/jiva-studio/numen/tree/main/plugins/tools-sync"
       },
       "author": "Jiva Studio",
+      "contributors": [],
       "license": "AGPL-3.0",
       "platforms": ["macos", "windows", "linux"],
       "readme": null,
@@ -133,6 +138,7 @@
       "description": "Counts the words of a note",
       "category": "tools",
       "feature": "word count",
+      "icon": "wrench",
       "targets": ["desktop.editor"],
       "isOfficial": false,
       "isPaid": false,
@@ -148,6 +154,7 @@
         "tag": "v2.0.0"
       },
       "author": "Example Author",
+      "contributors": [],
       "license": "MIT",
       "platforms": ["linux"],
       "readme": { "intro": "Counts words.", "text": "Counts words.\n\n\n\nMore about counting." },

@@ -53,9 +53,10 @@ NUMEN_PLUGIN_REGISTRY_FILE=../../.registry/latest.json npm run dev
 
 `tools/fixtures/plugin-registry.json` is a small registry for the same purpose.
 
-The cards are HTML. The search and the filters over them are a Vue island
-(`src/components/plugins/PluginFilters.vue`) drawn with `@numen/ui`, which the
-build reaches through `libs/ui/components/dist`; `prebuild` builds it.
+The pages are HTML. The search and the category links of the catalog are a
+small script (`src/scripts/plugin-catalog.ts`) that hides the rows they do not
+pass. A plugin icon is the lucide icon the registry names, drawn as inline SVG
+at build time from the icon data of `@lucide/vue`.
 
 ## Where it is published
 

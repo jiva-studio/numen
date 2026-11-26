@@ -12,7 +12,7 @@ import {
   parseRegistry,
   readRegistry,
 } from '../src/components/plugins/registry.ts'
-import { isCardShown } from '../src/scripts/plugin-catalog.ts'
+import { isEntryShown } from '../src/scripts/plugin-catalog.ts'
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/plugin-registry.json', import.meta.url))
 
@@ -60,29 +60,30 @@ test('a registry of another schema or with no plugins is rejected', () => {
   assert.throws(() => parseRegistry('{"schema":1,"plugins":[]}', 'x'), /not a plugin registry/)
 })
 
-const card = {
-  search: 'word count counts the words of a note example author',
-  category: 'tools',
-  apps: ['desktop.editor'],
-  isPaid: false,
-  isOfficial: false,
-}
+test('a registry lists the ids it features', async () => {
+  const registry = await readRegistry({ [REGISTRY_FILE_VARIABLE]: FIXTURE }, refuseFetch)
 
-const noFilter = { query: '', category: '', app: '', price: '', isOfficialOnly: false }
-
-test('a card is shown when every search word is in its text', () => {
-  assert.equal(isCardShown(card, { ...noFilter, query: 'count note' }), true)
-  assert.equal(isCardShown(card, { ...noFilter, query: 'count pdf' }), false)
+  assert.deepEqual(registry.featured, ['md.numen.engines.transcription'])
+  assert.throws(
+    () => parseRegistry(JSON.stringify({ ...registry, featured: undefined }), 'x'),
+    /not a plugin registry/,
+  )
 })
 
-test('a card is hidden by a category, an app, a price or the official filter it does not match', () => {
-  assert.equal(isCardShown(card, { ...noFilter, category: 'views' }), false)
-  assert.equal(isCardShown(card, { ...noFilter, app: 'desktop.flashcards' }), false)
-  assert.equal(isCardShown(card, { ...noFilter, price: 'paid' }), false)
-  assert.equal(isCardShown(card, { ...noFilter, price: 'free' }), true)
-  assert.equal(isCardShown(card, { ...noFilter, isOfficialOnly: true }), false)
+const entry = { search: 'word count counts the words of a note example author', category: 'tools' }
+
+const noFilter = { query: '', category: '' }
+
+test('a row is shown when every search word is in its text', () => {
+  assert.equal(isEntryShown(entry, { ...noFilter, query: 'count note' }), true)
+  assert.equal(isEntryShown(entry, { ...noFilter, query: 'count pdf' }), false)
+})
+
+test('a row is hidden by a category it is not in', () => {
+  assert.equal(isEntryShown(entry, { ...noFilter, category: 'views' }), false)
+  assert.equal(isEntryShown(entry, { ...noFilter, category: 'tools' }), true)
 })
 
 test('a search matches whatever the case and the spaces around it', () => {
-  assert.equal(isCardShown(card, { ...noFilter, query: '  Word COUNT ' }), true)
+  assert.equal(isEntryShown(entry, { ...noFilter, query: '  Word COUNT ' }), true)
 })

@@ -1,72 +1,37 @@
 ---
-import { getImage } from 'astro:assets'
-import type { ImageMetadata } from 'astro'
-import { type CatalogPlugin, getPublishedUrl } from './catalog'
+/** Up to three screenshots of a plugin as 16:10 thumbnails; each opens the full image. */
+import { type CatalogPlugin } from './catalog'
+import { listShots } from './screenshots'
 
 interface Props {
   plugin: CatalogPlugin
 }
 
 const { plugin } = Astro.props
-
-const files = import.meta.glob<{ default: ImageMetadata }>(
-  '../../../../../plugins/*/screenshots/*.webp',
-  { eager: true },
+const shots = await listShots(plugin, 3)
+const images = shots.flatMap((shot) =>
+  [
+    { image: shot.light, theme: shot.dark ? 'img-light' : undefined },
+    { image: shot.dark, theme: shot.light ? 'img-dark' : undefined },
+  ].flatMap(({ image, theme }) =>
+    image ? [{ ...image, theme, alt: `${plugin.name}: ${shot.name}` }] : [],
+  ),
 )
-const repositoryImages = new Map(
-  Object.entries(files).map(([key, module]) => [key.slice(key.indexOf('plugins/')), module.default]),
-)
-
-type Shot = { src: string; width?: number; height?: number }
-
-const shown = { format: 'webp' as const, quality: 84 }
-
-const getShot = async (path: string | null): Promise<Shot | null> => {
-  if (path === null) return null
-  if (plugin.source.kind === 'external') return { src: getPublishedUrl(path) }
-  const image = repositoryImages.get(path)
-  if (!image) return null
-  const { src } = await getImage({ src: image, ...shown })
-  return { src, width: image.width / 2, height: image.height / 2 }
-}
-
-const shots = (
-  await Promise.all(
-    plugin.screenshots.map(async (one) => ({
-      name: one.name,
-      light: await getShot(one.light),
-      dark: await getShot(one.dark),
-    })),
-  )
-).filter((one) => one.light !== null || one.dark !== null)
 ---
 
 {
-  shots.length > 0 && (
+  images.length > 0 && (
     <div class="plugin-shots">
-      {shots.map((shot) => (
-        <figure class="window-artifact plugin-shot">
-          {shot.light && (
-            <img
-              class={shot.dark ? 'img-light' : undefined}
-              src={shot.light.src}
-              width={shot.light.width}
-              height={shot.light.height}
-              alt={`${plugin.name}: ${shot.name}`}
-              loading="lazy"
-            />
-          )}
-          {shot.dark && (
-            <img
-              class={shot.light ? 'img-dark' : undefined}
-              src={shot.dark.src}
-              width={shot.dark.width}
-              height={shot.dark.height}
-              alt={`${plugin.name}: ${shot.name}`}
-              loading="lazy"
-            />
-          )}
-        </figure>
+      {images.map((image) => (
+        <a class:list={['plugin-shot', image.theme]} href={image.src} target="_blank" rel="noopener">
+          <img
+            src={image.src}
+            width={image.width}
+            height={image.height}
+            alt={image.alt}
+            loading="lazy"
+          />
+        </a>
       ))}
     </div>
   )

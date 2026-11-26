@@ -42,7 +42,6 @@
   --font-body: 'Nunito Sans Variable', sans-serif;
   --font-display: 'Nunito Sans Variable', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --numen-font-sans: var(--font-body);
 }
 
 :root[data-theme='dark'] {

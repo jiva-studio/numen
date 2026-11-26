@@ -1,7 +1,8 @@
 ---
 /**
- * The page of one plugin: a compact header with its facts, then Overview (README and screenshots),
- * Scorecard (checks, permissions, settings, commands, downloads, tests) and Changelog as tabs.
+ * The page of one plugin: its head, then Overview (screenshots and README), Access & tests (checks,
+ * permissions, settings, commands, downloads, tests) and Version history as tabs, beside a side
+ * column of contributors, compatibility, source, issue links and related plugins.
  */
 import { getCollection, render, type CollectionEntry } from 'astro:content'
 import Page from '../../layouts/Page.astro'
@@ -11,7 +12,8 @@ import PluginScreenshots from '../../components/plugins/PluginScreenshots.astro'
 import PluginScorecard from '../../components/plugins/PluginScorecard.astro'
 import PluginChangelog from '../../components/plugins/PluginChangelog.astro'
 import PluginHeader from '../../components/plugins/PluginHeader.astro'
-import type { CatalogPlugin } from '../../components/plugins/catalog'
+import PluginSidebar from '../../components/plugins/PluginSidebar.astro'
+import { type CatalogPlugin, listRelated } from '../../components/plugins/catalog'
 import '../../styles/plugins.css'
 
 export async function getStaticPaths() {
@@ -26,71 +28,78 @@ interface Props {
 const { entry } = Astro.props
 const plugin = entry.data as CatalogPlugin
 const { Content } = entry.rendered ? await render(entry) : { Content: null }
+const plugins = (await getCollection('plugins')).map((one) => one.data as CatalogPlugin)
+const related = listRelated(plugin, plugins)
 
 const title = `${plugin.name} — numen plugins`
 const description = plugin.readme?.intro || plugin.description
 const tabs = [
   { id: 'overview', key: 'plugin_tab_overview', text: 'Overview' },
-  { id: 'scorecard', key: 'plugin_tab_scorecard', text: 'Scorecard' },
-  { id: 'changelog', key: 'plugin_tab_changelog', text: 'Changelog' },
+  { id: 'access', key: 'plugin_tab_access', text: 'Access & tests' },
+  { id: 'history', key: 'plugin_tab_history', text: 'Version history' },
 ]
 ---
 
 <Page title={title} description={description}>
   <SiteHeader />
 
-  <main class="band plugin-page">
-    <div class="container">
-      <PluginHeader plugin={plugin} />
+  <main class="plugin-page">
+    <PluginHeader plugin={plugin} />
 
-      <div class="plugin-tabs" role="tablist">
-        {
-          tabs.map((tab, index) => (
-            <button
-              type="button"
-              role="tab"
-              id={`tab-${tab.id}`}
-              aria-controls={`panel-${tab.id}`}
-              aria-selected={index === 0 ? 'true' : 'false'}
-              tabindex={index === 0 ? 0 : -1}
-              data-plugin-tab
-              data-i18n={tab.key}
-            >
-              {tab.text}
-            </button>
-          ))
-        }
+    <div class="plugin-tabs" role="tablist">
+      {
+        tabs.map((tab, index) => (
+          <button
+            type="button"
+            role="tab"
+            id={`tab-${tab.id}`}
+            aria-controls={`panel-${tab.id}`}
+            aria-selected={index === 0 ? 'true' : 'false'}
+            tabindex={index === 0 ? 0 : -1}
+            data-plugin-tab
+            data-i18n={tab.key}
+          >
+            {tab.text}
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="plugin-body">
+      <div class="plugin-panels">
+        <section class="plugin-panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+          {
+            plugin.isPaid && (
+              <p class="plugin-muted" data-i18n="plugin_paid_note">
+                This plugin is paid. You buy it in the Numen app.
+              </p>
+            )
+          }
+          <PluginScreenshots plugin={plugin} />
+          {
+            Content ? (
+              <div class="plugin-prose plugin-readme">
+                <h2>{plugin.name}</h2>
+                <Content />
+              </div>
+            ) : (
+              <p class="plugin-muted" data-i18n="plugin_no_readme">
+                This plugin has no README.
+              </p>
+            )
+          }
+        </section>
+
+        <section class="plugin-panel" id="panel-access" role="tabpanel" aria-labelledby="tab-access">
+          <PluginScorecard plugin={plugin} />
+        </section>
+
+        <section class="plugin-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
+          <PluginChangelog plugin={plugin} />
+        </section>
       </div>
 
-      <section class="plugin-panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
-        {
-          plugin.isPaid && (
-            <p class="plugin-muted" data-i18n="plugin_paid_note">
-              This plugin is paid. You buy it in the Numen app.
-            </p>
-          )
-        }
-        <PluginScreenshots plugin={plugin} />
-        {
-          Content ? (
-            <div class="plugin-prose">
-              <Content />
-            </div>
-          ) : (
-            <p class="plugin-muted" data-i18n="plugin_no_readme">
-              This plugin has no README.
-            </p>
-          )
-        }
-      </section>
-
-      <section class="plugin-panel" id="panel-scorecard" role="tabpanel" aria-labelledby="tab-scorecard">
-        <PluginScorecard plugin={plugin} />
-      </section>
-
-      <section class="plugin-panel" id="panel-changelog" role="tabpanel" aria-labelledby="tab-changelog">
-        <PluginChangelog plugin={plugin} />
-      </section>
+      <PluginSidebar plugin={plugin} related={related} />
     </div>
   </main>
 

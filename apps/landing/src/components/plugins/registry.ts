@@ -24,6 +24,8 @@ type PluginSetting = { key: string; title: string; description: string }
 
 type PluginCommand = { id: string; title: string }
 
+type PluginContributor = { name: string; commits: number }
+
 type PluginLicense = { id: string; title: string; description: string }
 
 type PluginScreenshot = { name: string; light: string | null; dark: string | null }
@@ -76,6 +78,7 @@ export type RegistryPlugin = {
   description: string
   category: string
   feature: string
+  icon: string
   targets: string[]
   isOfficial: boolean
   isPaid: boolean
@@ -86,6 +89,7 @@ export type RegistryPlugin = {
   commands: PluginCommand[]
   source: PluginSource
   author: string
+  contributors: PluginContributor[]
   license: string | null
   platforms: string[]
   readme: { intro: string; text: string } | null
@@ -103,6 +107,7 @@ type Registry = {
   schema: number
   generatedAt: string
   contentHash: string
+  featured: string[]
   plugins: RegistryPlugin[]
 }
 
@@ -114,6 +119,8 @@ const isPlugin = (value: unknown): boolean =>
   typeof value.id === 'string' &&
   typeof value.name === 'string' &&
   typeof value.version === 'string' &&
+  typeof value.icon === 'string' &&
+  Array.isArray(value.contributors) &&
   Array.isArray(value.targets) &&
   Array.isArray(value.checks) &&
   isObject(value.source)
@@ -124,6 +131,7 @@ export function parseRegistry(text: string, origin: string): Registry {
   if (
     !isObject(value) ||
     value.schema !== REGISTRY_SCHEMA ||
+    !Array.isArray(value.featured) ||
     !Array.isArray(value.plugins) ||
     value.plugins.length === 0 ||
     !value.plugins.every(isPlugin)

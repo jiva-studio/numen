@@ -1,6 +1,6 @@
 /**
- * What the catalog pages derive from a registry entry: names of applications and platforms,
- * sizes, dates and the address of a screenshot.
+ * What the catalog pages derive from the registry entries: names of applications and platforms,
+ * sizes, dates, the address of a screenshot, the featured and related plugins and issue links.
  */
 import {
   DOWNLOADS_BASE,
@@ -9,9 +9,13 @@ import {
   type RegistryPlugin,
 } from './registry'
 
-/** A registry entry with its README and release notes rendered, as the content collection keeps it. */
+/**
+ * A registry entry with its release notes rendered and its place in the featured list, as the
+ * content collection keeps it.
+ */
 export type CatalogPlugin = Omit<RegistryPlugin, 'changelog'> & {
   changelog: (PluginChange & { notesHtml: string | null })[]
+  featuredRank: number | null
 }
 
 /** The applications a plugin target names. */
@@ -105,4 +109,56 @@ export function getSearchText(
 /** The path of a plugin's page. */
 export function getPluginPath(id: string): string {
   return `/plugins/${id}`
+}
+
+/** How many featured plugins the catalog shows as cards. */
+export const FEATURED_CARDS = 3
+
+/** How many featured plugins the catalog shows as icons above its title. */
+export const HERO_ICONS = 7
+
+/** The featured plugins, in the order of the registry's featured list. */
+export function listFeatured(plugins: readonly CatalogPlugin[]): CatalogPlugin[] {
+  return plugins
+    .filter((one) => one.featuredRank !== null)
+    .sort((a, b) => (a.featuredRank ?? 0) - (b.featuredRank ?? 0))
+}
+
+/**
+ * Up to `count` plugins to show beside `plugin`: those of its category by name, then the featured
+ * plugins of other categories.
+ */
+export function listRelated(
+  plugin: CatalogPlugin,
+  plugins: readonly CatalogPlugin[],
+  count = 3,
+): CatalogPlugin[] {
+  const others = plugins.filter((one) => one.id !== plugin.id)
+  const sameCategory = others
+    .filter((one) => one.category === plugin.category)
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const featured = listFeatured(others).filter((one) => one.category !== plugin.category)
+  return [...sameCategory, ...featured].slice(0, count)
+}
+
+/** The first letter of a name in upper case, for an avatar. */
+export function getInitial(name: string): string {
+  return [...name.trim()][0]?.toUpperCase() ?? '?'
+}
+
+const getIssueUrl = (plugin: CatalogPlugin, template: string | null): string => {
+  const query = new URLSearchParams()
+  if (plugin.source.kind === 'internal' && template !== null) query.set('template', template)
+  query.set('title', `${plugin.name}: `)
+  return `https://github.com/${plugin.source.repo}/issues/new?${query.toString()}`
+}
+
+/** A new GitHub issue reporting a bug of the plugin, titled with its name. */
+export function getBugReportUrl(plugin: CatalogPlugin): string {
+  return getIssueUrl(plugin, 'bug.yml')
+}
+
+/** A new GitHub issue asking for a feature of the plugin, titled with its name. */
+export function getFeatureRequestUrl(plugin: CatalogPlugin): string {
+  return getIssueUrl(plugin, 'task.yml')
 }

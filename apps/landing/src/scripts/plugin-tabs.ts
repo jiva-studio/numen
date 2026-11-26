@@ -10,7 +10,10 @@ function selectTab(tabs: HTMLElement[], selected: HTMLElement): void {
   }
 }
 
-/** Wires the Overview, Scorecard and Changelog tabs of a plugin page; the first tab starts selected. */
+/**
+ * Wires the Overview, Access & tests and Version history tabs of a plugin page; the first tab
+ * starts selected.
+ */
 export function initPluginTabs(): void {
   const tabs = [...document.querySelectorAll<HTMLElement>('[data-plugin-tab]')]
   const first = tabs[0]

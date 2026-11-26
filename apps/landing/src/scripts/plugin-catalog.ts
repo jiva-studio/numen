@@ -1,64 +1,52 @@
-/** A plugin card's filter values, read from its data attributes. */
-type CardFilter = {
-  search: string
-  category: string
-  apps: string[]
-  isPaid: boolean
-  isOfficial: boolean
-}
+/** A catalog row's filter values, read from its data attributes. */
+type EntryFilter = { search: string; category: string }
 
-/** The values of the filter bar; an empty string chooses every value. */
-export type CatalogFilter = {
-  query: string
-  category: string
-  app: string
-  price: string
-  isOfficialOnly: boolean
-}
+/** The search text and the chosen category; an empty category chooses every one. */
+export type CatalogFilter = { query: string; category: string }
 
-function readCard(card: HTMLElement): CardFilter {
-  return {
-    search: card.dataset.search ?? '',
-    category: card.dataset.category ?? '',
-    apps: (card.dataset.apps ?? '').split(' ').filter(Boolean),
-    isPaid: card.dataset.paid === 'true',
-    isOfficial: card.dataset.official === 'true',
-  }
-}
-
-function isPriceShown(isPaid: boolean, price: string): boolean {
-  if (price === 'free') return !isPaid
-  if (price === 'paid') return isPaid
-  return true
-}
-
-/** Whether a card passes the filter: every search word, and each chosen value. */
-export function isCardShown(card: CardFilter, filter: CatalogFilter): boolean {
+/** Whether a row passes the filter: every search word, and the chosen category. */
+export function isEntryShown(entry: EntryFilter, filter: CatalogFilter): boolean {
   const words = filter.query.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  if (!words.every((word) => card.search.includes(word))) return false
-  if (filter.category !== '' && card.category !== filter.category) return false
-  if (filter.app !== '' && !card.apps.includes(filter.app)) return false
-  if (!isPriceShown(card.isPaid, filter.price)) return false
-  return !filter.isOfficialOnly || card.isOfficial
+  if (!words.every((word) => entry.search.includes(word))) return false
+  return filter.category === '' || entry.category === filter.category
 }
 
-/** Hides the catalog cards the filter does not pass, and shows the empty note when none is left. */
-export function showMatchingCards(filter: CatalogFilter): void {
+function showMatchingEntries(filter: CatalogFilter): void {
   let shown = 0
-  for (const card of document.querySelectorAll<HTMLElement>('[data-plugin-card]')) {
-    const isShown = isCardShown(readCard(card), filter)
-    card.hidden = !isShown
+  for (const row of document.querySelectorAll<HTMLElement>('[data-plugin-entry]')) {
+    const entry = { search: row.dataset.search ?? '', category: row.dataset.category ?? '' }
+    const isShown = isEntryShown(entry, filter)
+    row.hidden = !isShown
     if (isShown) shown += 1
   }
   const empty = document.querySelector<HTMLElement>('[data-plugin-empty]')
   if (empty) empty.hidden = shown > 0
 }
 
-/** Calls `onChange` with the page language now and whenever it changes; returns the stop function. */
-export function watchPageLanguage(onChange: (lang: string) => void): () => void {
-  const root = document.documentElement
-  const observer = new MutationObserver(() => onChange(root.lang))
-  observer.observe(root, { attributes: true, attributeFilter: ['lang'] })
-  onChange(root.lang)
-  return () => observer.disconnect()
+/** Wires the search field and the category links of the catalog to the rows of all plugins. */
+export function initPluginCatalog(): void {
+  const filter: CatalogFilter = { query: '', category: '' }
+  const search = document.querySelector<HTMLInputElement>('[data-plugin-search]')
+  const categories = [...document.querySelectorAll<HTMLButtonElement>('[data-plugin-category]')]
+  search?.addEventListener('input', () => {
+    filter.query = search.value
+    showMatchingEntries(filter)
+  })
+  search?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return
+    search.value = ''
+    filter.query = ''
+    showMatchingEntries(filter)
+  })
+  for (const button of categories) {
+    button.addEventListener('click', () => {
+      filter.category = button.dataset.pluginCategory ?? ''
+      for (const one of categories) one.setAttribute('aria-pressed', String(one === button))
+      showMatchingEntries(filter)
+    })
+  }
+  if (search?.value) {
+    filter.query = search.value
+    showMatchingEntries(filter)
+  }
 }
