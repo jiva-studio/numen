@@ -6,7 +6,8 @@
   "description": "Acceptance scenarios of the desktop application, in Gherkin",
   "scripts": {
     "acceptance:gen": "bddgen -c playwright.config.ts",
-    "acceptance:test": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts --grep-invert @live",
+    "acceptance:test": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts --grep-invert \"@live|@sync-server\"",
+    "acceptance:sync": "bddgen -c playwright.config.ts && playwright test -c playwright.config.ts --grep @sync-server --grep-invert @own-server",
     "acceptance:smoke": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts --grep @smoke",
     "acceptance:live": "bddgen -c playwright.config.ts && NUMEN_ACCEPTANCE_LIVE=1 playwright test -c playwright.config.ts --grep @live",
     "acceptance:report": "node scripts/report.mjs",
@@ -16,7 +17,6 @@
     "acceptance:lint": "node scripts/lint-features.mjs && eslint . && npm run -s acceptance:unit && node scripts/check-acceptance.mjs",
     "acceptance:unit": "vitest run",
     "acceptance:check": "node scripts/check-acceptance.mjs",
-    "acceptance:identity": "cd ../../../tools/syncserver && go run ./cmd/seedidentity -out ../../tests/acceptance/desktop/assets/identities",
     "acceptance:steps": "node scripts/list-acceptance-steps.mjs"
   },
   "devDependencies": {

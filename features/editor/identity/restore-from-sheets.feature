@@ -1,3 +1,4 @@
+@sync-server
 Feature: Restore an identity from two sheets
   A person gets the identity back from any two sheets of a recovery kit.
 

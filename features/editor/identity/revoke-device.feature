@@ -1,3 +1,4 @@
+@sync-server
 Feature: Revoke a device
 
   A person removes a lost device from the identity. The removed device loses its access.

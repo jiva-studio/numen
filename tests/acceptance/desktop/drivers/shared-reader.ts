@@ -76,7 +76,7 @@ export class SharedReaderDriver {
     const scenario = new Scenario(this.parts.first.page, this.parts.viewport)
     scenario.createVault(HOME_VAULT)
     scenario.setPluginSetting(SYNC_PLUGIN, 'receivedFolder', path.join(scenario.getWorld().root, RECEIVED_FOLDER))
-    await this.parts.sync.setPlugin(scenario)
+    this.parts.sync.setPlugin(scenario)
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
     const identity = new IdentityDriver(scenario, settings)

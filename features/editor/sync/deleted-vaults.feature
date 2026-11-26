@@ -1,3 +1,4 @@
+@sync-server
 Feature: Numen Sync after the cloud deleted the vaults
 
   The cloud deletes the vaults 60 days after the subscription ends. The notes on the computers stay.
@@ -18,12 +19,14 @@ Feature: Numen Sync after the cloud deleted the vaults
 
   Rule: A deleted vault is not a deletion of notes
 
+    @own-server
     Scenario: The notes stay on the computer
       When the subscription ended 70 days ago
       Then the vault "Test" has the note "Shopping list" with the text "milk"
 
   Rule: A new subscription sends the vault again
 
+    @own-server
     Scenario: The vault is sent again after the subscription is bought again
       Given the subscription ended 70 days ago
       And the person opens the page "Identity and licenses"

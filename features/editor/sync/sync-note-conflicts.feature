@@ -1,3 +1,4 @@
+@sync-server
 Feature: Sync a note changed on two computers
 
   Numen Sync keeps the latest version of a note and saves the other version in a conflict copy next to it.
@@ -11,6 +12,7 @@ Feature: Sync a note changed on two computers
 
   Rule: The latest version stays and the other is kept in a conflict copy
 
+    @own-server
     Scenario: A note changed on two computers keeps the latest version
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
@@ -22,6 +24,7 @@ Feature: Sync a note changed on two computers
       Then the vault "Test" has the note "Shopping list" with the text "eggs"
       And the second computer has the note "Shopping list" with the text "eggs" in its vault "Copy"
 
+    @own-server
     Scenario: The other version is kept in a conflict copy
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
@@ -33,6 +36,7 @@ Feature: Sync a note changed on two computers
       Then the vault "Test" has a conflict copy of the note "Shopping list" with the text "bread"
       And the second computer has a conflict copy of the note "Shopping list" with the text "bread" in its vault "Copy"
 
+    @own-server
     Scenario: Numen Sync warns about a note changed on two computers
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
@@ -43,6 +47,7 @@ Feature: Sync a note changed on two computers
       When the sync server runs again
       Then the person is told "1 note changed on two computers"
 
+    @own-server
     Scenario: The same text on both computers makes no conflict copy
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
@@ -53,6 +58,7 @@ Feature: Sync a note changed on two computers
       Then the vault "Test" has no conflict copy of the note "Shopping list"
       And the second computer has no conflict copy of the note "Shopping list" in its vault "Copy"
 
+    @own-server
     Scenario: A note changed on one computer only makes no conflict copy
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
@@ -62,6 +68,7 @@ Feature: Sync a note changed on two computers
       Then the second computer has the note "Shopping list" with the text "bread" in its vault "Copy"
       And the vault "Test" has no conflict copy of the note "Shopping list"
 
+    @own-server
     Scenario: A second conflict keeps the first conflict copy
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
@@ -81,6 +88,7 @@ Feature: Sync a note changed on two computers
 
   Rule: A rename is not a conflict
 
+    @own-server
     Scenario: A note renamed on one computer and changed on the other keeps the change
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"

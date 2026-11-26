@@ -1,3 +1,4 @@
+@sync-server
 Feature: Numen Sync plans
 
   A subscription has a plan. The plan sets how much the cloud holds for the identity.
@@ -37,6 +38,7 @@ Feature: Numen Sync plans
       When the person buys the plan "Basic"
       Then the page does not offer to buy a plan
 
+    @own-server
     Scenario: An ended subscription still shows its plan
       Given the person opens the page "Identity and licenses"
       And the person buys the plan "Plus"
@@ -47,6 +49,7 @@ Feature: Numen Sync plans
 
   Rule: The page shows how much of the plan is used
 
+    @own-server
     Scenario: The used space is shown against the plan
       Given the person opens the page "Identity and licenses"
       And the person buys the plan "Plus"
@@ -56,6 +59,7 @@ Feature: Numen Sync plans
 
   Rule: A full plan stops new changes
 
+    @own-server
     Scenario: A note stays on this computer when the plan is full
       Given the person opens the page "Identity and licenses"
       And the person buys the plan "Basic"

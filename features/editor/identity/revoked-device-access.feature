@@ -1,3 +1,4 @@
+@sync-server
 Feature: A revoked device has no access
 
   A device that was revoked cannot read or write the notes of the identity.

@@ -1,3 +1,4 @@
+@sync-server
 Feature: Sync files between computers
 
   Numen Sync sends every file of a connected vault to the identity and brings it to every computer.

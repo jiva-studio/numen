@@ -1,3 +1,4 @@
+@sync-server
 Feature: Receive changes within seconds
 
   A change reaches the other computer within seconds, also when the computers do not look for changes by themselves.
@@ -18,6 +19,7 @@ Feature: Receive changes within seconds
 
   Rule: A computer receives changes again after its connection drops
 
+    @own-server
     Scenario: A note written after the connection drops still arrives
       Given the second computer goes offline for a moment
       When the person writes the note "Shopping list" with the text "milk" in the vault "Test"
@@ -25,6 +27,7 @@ Feature: Receive changes within seconds
 
   Rule: A computer receives changes again after the server was away
 
+    @own-server
     Scenario: A note written after the server runs again arrives
       Given the sync server stops
       And the sync server runs again

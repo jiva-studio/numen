@@ -2,8 +2,8 @@ import type { ComputerName, Holder, Wait } from '../drivers/computer.js'
 import type { PlanSpec } from '../drivers/sync.js'
 import { Given, Then, When } from '../support/bdd.js'
 
-Given('a sync server runs', async ({ person }) => {
-  await person.sync.start()
+Given('a sync server runs', ({ person }) => {
+  person.sync.start()
 })
 
 Given('the sync server needs a newer Numen', async ({ person }) => {
@@ -113,8 +113,8 @@ Then('{holder} has no conflict copy of the note {string}{inside}', async ({ pers
   await person.computers.expectNoConflictCopy(holder, title, vault)
 })
 
-Given('a sync server that sells subscriptions runs', async ({ person }) => {
-  await person.sync.startSellingSubscriptions()
+Given('a sync server that sells subscriptions runs', ({ person }) => {
+  person.sync.startSellingSubscriptions()
 })
 
 When('the subscription ended {int} days ago', async ({ person }, days: number) => {

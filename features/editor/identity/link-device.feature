@@ -1,3 +1,4 @@
+@sync-server
 Feature: Link a device to the identity
 
   A device that has the identity links a new device with a QR code. The 12 recovery words are not typed.

@@ -1,3 +1,4 @@
+@sync-server
 Feature: Numen Sync signs in
 
   Numen Sync signs in to the sync server with the identity of this device.
@@ -29,6 +30,7 @@ Feature: Numen Sync signs in
 
   Rule: Numen Sync asks for an update when the server needs a newer Numen
 
+    @own-server
     Scenario: An old Numen is asked to update
       Given the person creates an identity
       And the sync server needs a newer Numen
@@ -38,6 +40,7 @@ Feature: Numen Sync signs in
 
   Rule: Numen Sync signs in again when the server signs it out
 
+    @own-server
     Scenario: Numen Sync signs in again after the server signs this device out
       Given the person creates an identity
       And the application "editor" starts

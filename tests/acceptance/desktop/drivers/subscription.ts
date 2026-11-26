@@ -2,6 +2,7 @@
 import { expect, type Locator, type Page } from 'playwright/test'
 import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
+import { getCheckoutId, sendPayment, requireStack } from './sync-stack.js'
 
 const PAGE = 'Identity and licenses'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
@@ -12,7 +13,6 @@ const CURRENT_PLAN = 'Current plan'
 const SWITCH_QUESTION = /^Switch to .+\?$/
 const CANCEL = 'Cancel'
 const RENEWS = 'Renews'
-const PAYMENT_RECEIVED = 'Payment received'
 const PAYMENT_ROUTE = /\/pay\//
 /** The plugin reads the subscription when the card opens and every 3 seconds while a payment is awaited. */
 const SUBSCRIPTION_LIMIT_MS = 20_000
@@ -78,11 +78,15 @@ export class SubscriptionDriver {
     return opened
   }
 
-  /** Pays on the page of the stand-in and waits until the card shows the subscription as active. */
-  async startPurchase(): Promise<void> {
-    const payment = await this.openPayment()
-    await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
+  private async completePayment(payment: Page): Promise<void> {
+    await payment.waitForURL(PAYMENT_ROUTE)
+    await sendPayment(requireStack(), getCheckoutId(payment.url()))
     await payment.close()
+  }
+
+  /** Pays at the stand-in and waits until the card shows the subscription as active. */
+  async startPurchase(): Promise<void> {
+    await this.completePayment(await this.openPayment())
     await this.expectActive()
   }
 
@@ -97,14 +101,12 @@ export class SubscriptionDriver {
     await this.expectSubscription(formatDay(day))
   }
 
-  /** Buys the plan of a name on the page of the stand-in and waits until the card shows the subscription as active. */
+  /** Buys the plan of a name at the stand-in and waits until the card shows the subscription as active. */
   async choosePlan(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
     const opened = this.scenario.page.waitForEvent('popup')
     await card.getByRole('button', { name: getChoosePattern(name) }).click()
-    const payment = await opened
-    await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
-    await payment.close()
+    await this.completePayment(await opened)
     await this.expectActive()
   }
 

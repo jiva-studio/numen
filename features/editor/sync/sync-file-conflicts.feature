@@ -1,3 +1,4 @@
+@sync-server
 Feature: Sync a file changed on two computers
 
   Numen Sync keeps the latest version of a file that is not a note and does not keep the other version.
@@ -11,6 +12,7 @@ Feature: Sync a file changed on two computers
 
   Rule: The latest version of a file replaces the other version
 
+    @own-server
     Scenario: A file changed on two computers keeps the latest version
       Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
@@ -21,6 +23,7 @@ Feature: Sync a file changed on two computers
       When the sync server runs again
       Then the vault "Test" has the same file "Papers/Report.pdf" as the second computer
 
+    @own-server
     Scenario: A file changed on two computers has no copy
       Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
@@ -33,6 +36,7 @@ Feature: Sync a file changed on two computers
 
   Rule: A rename is not a conflict
 
+    @own-server
     Scenario: A file renamed on one computer and changed on the other keeps the change
       Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
@@ -45,6 +49,7 @@ Feature: Sync a file changed on two computers
 
   Rule: Two computers that make the same path end with one file
 
+    @own-server
     Scenario: The same note made on two computers ends as one note
       Given the sync server stops
       And the person writes the note "Daily/Monday" with the text "tea" in the vault "Test"
@@ -54,6 +59,7 @@ Feature: Sync a file changed on two computers
       And the second computer has the note "Daily/Monday" with the text "tea" in its vault "Copy"
       And the vault "Test" has no conflict copy of the note "Daily/Monday"
 
+    @own-server
     Scenario: The same path with another text keeps both texts
       Given the sync server stops
       And the person writes the note "Daily/Monday" with the text "tea" in the vault "Test"

@@ -5,10 +5,12 @@
  */
 import { test as bdd } from 'playwright-bdd'
 import { Person } from '../drivers/person.js'
+import { isStackRequired, NO_STACK_MESSAGE, readStack, SYNC_SERVER_TAG } from '../drivers/sync-stack.js'
 import { createVideoRecorder, isVideoOn } from './video.js'
 
 export const test = bdd.extend<{ person: Person }>({
   person: async ({ page, viewport }, use, testInfo) => {
+    if (testInfo.tags.includes(SYNC_SERVER_TAG) && readStack() === undefined && !isStackRequired()) testInfo.skip(true, NO_STACK_MESSAGE)
     const recorder = isVideoOn() ? createVideoRecorder(testInfo, viewport) : undefined
     const person = new Person(page, viewport, recorder?.videoRecording, testInfo.tags.includes('@live'))
     try {

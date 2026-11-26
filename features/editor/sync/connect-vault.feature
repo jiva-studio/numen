@@ -1,3 +1,4 @@
+@sync-server
 Feature: Connect a vault to Numen Sync
 
   A person connects a vault to their identity as a new synced vault, or to a synced vault that exists.

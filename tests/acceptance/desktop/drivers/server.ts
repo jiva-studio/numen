@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { STAND_IN_CONNECTION, STAND_IN_MODEL, startStandIns } from '../../../e2e/desktop/scripts/stand-ins.mjs'
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
 import { applyEnvironment, type EnvironmentSetting, type EnvironmentTargets } from './environment.js'
-import { KEY_FILE_SETTINGS, writeSeedKeys, type IdentityComputer } from './identity-seed.js'
+import { KEY_FILE_SETTINGS, writeSeedKeys, type IdentityComputer, type IdentitySeed } from './identity-seed.js'
 import type { Application } from './rules.js'
 import type { JsonObject } from '../../../e2e/desktop/tests/support/json.js'
 
@@ -86,7 +86,7 @@ export interface ServerOptions {
   readonly programs: readonly string[]
   readonly isLive: boolean
   readonly pluginSettings: Readonly<Record<string, Readonly<Record<string, string>>>>
-  readonly identity?: IdentityComputer
+  readonly identity?: { readonly computer: IdentityComputer; readonly seed: IdentitySeed }
 }
 
 interface Services {
@@ -251,7 +251,7 @@ export class Server {
         ? path.join(home, 'Library', 'Application Support', 'numen')
         : path.join(this.state, 'config', 'numen')
     fs.mkdirSync(folder, { recursive: true })
-    if (this.options.identity !== undefined) writeSeedKeys(folder, this.options.identity)
+    if (this.options.identity !== undefined) writeSeedKeys(folder, this.options.identity.computer, this.options.identity.seed)
     const settings = standIns === undefined ? this.getLiveSettings() : {
       v: 1,
       connections: [

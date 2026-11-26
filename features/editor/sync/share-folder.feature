@@ -1,3 +1,4 @@
+@sync-server
 Feature: Share a folder with another person
 
   A person shares a folder of a synced vault. The reader sees the folder as a vault of its own and only reads it.

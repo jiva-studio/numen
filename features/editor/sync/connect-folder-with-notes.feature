@@ -1,3 +1,4 @@
+@sync-server
 Feature: Connect a folder that holds notes
 
   Numen Sync joins the notes of a folder with the notes of a synced vault and keeps every note.

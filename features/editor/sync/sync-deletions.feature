@@ -1,3 +1,4 @@
+@sync-server
 Feature: Sync deleted files between computers
 
   Numen Sync removes a file on every computer when the person removes it on one.

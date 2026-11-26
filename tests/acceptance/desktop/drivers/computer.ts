@@ -5,7 +5,7 @@
 import { expect, type ViewportSize } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
 import { DevicesDriver } from './devices.js'
-import { writeSeedServerState, type IdentityComputer } from './identity-seed.js'
+import type { IdentityComputer } from './identity-seed.js'
 import { IdentityDriver } from './identity.js'
 import { SubscriptionDriver } from './subscription.js'
 import { DEFAULT_VAULT } from './rules.js'
@@ -144,21 +144,16 @@ export class ComputerDriver {
     return this.owner.identity.hasGivenIdentity() ? computer : undefined
   }
 
-  /** Gives the person the identity of the test identities on the first computer, and makes the sync server know its account. */
-  async giveIdentity(): Promise<void> {
+  /** Makes the account of the scenario on the sync server, buying the plan when one is named, and gives the person its keys on the first computer. */
+  async giveIdentity(plan?: string): Promise<void> {
     const { identity, sync } = this.owner
-    const state = sync.getStateDir()
-    if (state === undefined) throw new Error('no sync server ran: begin with a sync server runs')
-    identity.give('first')
-    await sync.pause()
-    writeSeedServerState(state)
-    await sync.resume()
+    identity.give('first', await sync.makeAccount(plan))
   }
 
   private async startComputer(vault: string, identity?: IdentityComputer): Promise<SecondComputer> {
     const scenario = new Scenario(this.first.page, this.viewport)
     scenario.createVault(vault)
-    await this.owner.sync.setPlugin(scenario)
+    this.owner.sync.setPlugin(scenario)
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
     const started = {
@@ -169,7 +164,7 @@ export class ComputerDriver {
       devices: new DevicesDriver(scenario, settings),
       settings,
     }
-    if (identity !== undefined) started.identity.give(identity)
+    if (identity !== undefined) started.identity.give(identity, this.owner.sync.getSeed())
     await application.startApplication('editor')
     return started
   }

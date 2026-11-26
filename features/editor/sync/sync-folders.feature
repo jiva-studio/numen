@@ -1,3 +1,4 @@
+@sync-server
 Feature: Sync a moved folder between computers
 
   Numen Sync sends a folder that moves as one change.

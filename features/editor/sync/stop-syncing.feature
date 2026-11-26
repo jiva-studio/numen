@@ -1,3 +1,4 @@
+@sync-server
 Feature: Stop syncing a vault
 
   A person stops syncing a vault on one device. The notes stay on the device and in the cloud.

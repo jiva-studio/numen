@@ -1,3 +1,4 @@
+@sync-server
 Feature: Numen Sync plan change
 
   A person moves an active subscription to a larger or a smaller plan, and is asked before the change is made.
@@ -27,6 +28,7 @@ Feature: Numen Sync plan change
       And the page shows the plan "Basic" as the current plan
       And the page does not offer to change the plan to "Basic"
 
+    @own-server
     Scenario: An ended subscription offers to buy, not to change
       Given the subscription ended 3 days ago
       When the person opens the page "Identity and licenses"

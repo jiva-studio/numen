@@ -54,7 +54,7 @@ require (
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
-	github.com/jiva-studio/numen/libs/shared/identity v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/shared/identity v0.0.0
 	github.com/jiva-studio/numen/libs/shared/note v0.0.0
 	github.com/zalando/go-keyring v0.2.8
 )

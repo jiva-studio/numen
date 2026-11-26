@@ -17,7 +17,7 @@ import {
   SHEETS_IN_KIT,
   WORDS_ON_SHEET,
 } from './identity-kit.js'
-import { getSeedFingerprint, getSeedWords, type IdentityComputer } from './identity-seed.js'
+import type { IdentityComputer, IdentitySeed } from './identity-seed.js'
 import type { Scenario } from './scenario.js'
 import type { SettingsDriver } from './settings.js'
 
@@ -66,15 +66,20 @@ export class IdentityDriver {
     return (await value.innerText()).trim()
   }
 
-  /** Gives this computer the keys of the test identities: the application finds them at its start and treats the person as one who set the identity up. */
-  give(computer: IdentityComputer): void {
-    this.scenario.setIdentity(computer)
-    this.words = getSeedWords()
-    this.account = getSeedFingerprint()
+  /** Gives this computer the keys of the identity of the scenario: the application finds them at its start and treats the person as one who set the identity up. */
+  give(computer: IdentityComputer, seed: IdentitySeed): void {
+    this.scenario.setIdentity(computer, seed)
+    this.words = seed.words
+    this.account = seed.fingerprint
     this.isSeeded = true
   }
 
-  /** Whether the identity of the person came from the test identities. */
+  /** Whether the person has recovery words: they were shown by a new identity or given by the identity of the scenario. */
+  hasWords(): boolean {
+    return this.words.length > 0
+  }
+
+  /** Whether the identity of the person came from the identity of the scenario. */
   hasGivenIdentity(): boolean {
     return this.isSeeded
   }

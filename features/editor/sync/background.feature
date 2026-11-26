@@ -1,3 +1,4 @@
+@sync-server
 Feature: Numen Sync keeps working
 
   Numen Sync works while it is on, also when nobody uses it.

@@ -1,3 +1,4 @@
+@sync-server
 Feature: Numen Sync after the subscription ends
 
   Changes are sent for 7 days after the end of the subscription. Then the vaults in the cloud can only be read.
@@ -20,11 +21,13 @@ Feature: Numen Sync after the subscription ends
 
   Rule: Changes are sent for 7 days after the end
 
+    @own-server
     Scenario: A note is sent after the subscription ended
       Given the subscription ended 3 days ago
       When the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
 
+    @own-server
     Scenario: The page warns that the subscription ended
       When the subscription ended 3 days ago
       And the person opens the page "Identity and licenses"
@@ -33,17 +36,20 @@ Feature: Numen Sync after the subscription ends
 
   Rule: Changes are not sent after the 7 days
 
+    @own-server
     Scenario: A note stays on this computer
       Given the subscription ended 10 days ago
       When the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       Then the person is told "Subscription ended: changes stay on this device"
       And the second computer does not have the file "Shopping list.md" in its vault "Copy"
 
+    @own-server
     Scenario: The page tells that the vaults can only be read
       When the subscription ended 10 days ago
       And the person opens the page "Identity and licenses"
       Then the person is told "Read only"
 
+    @own-server
     Scenario: The page tells that the cloud deleted the vaults
       When the subscription ended 70 days ago
       And the person opens the page "Identity and licenses"
@@ -51,6 +57,7 @@ Feature: Numen Sync after the subscription ends
 
   Rule: A new subscription opens the writes again
 
+    @own-server
     Scenario: A note is sent after the subscription is bought again
       Given the subscription ended 10 days ago
       And the person opens the page "Identity and licenses"

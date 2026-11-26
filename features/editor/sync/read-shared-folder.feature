@@ -1,3 +1,4 @@
+@sync-server
 Feature: Read a shared folder
 
   A shared folder is read only. The reader needs an identity and no subscription.

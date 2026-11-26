@@ -1,3 +1,4 @@
+@sync-server
 Feature: Numen Sync subscription
 
   One subscription belongs to the identity of a person. It covers every vault and every computer of the identity.
@@ -32,6 +33,7 @@ Feature: Numen Sync subscription
       And the person is told "Needs an identity"
       And the page does not offer to buy the subscription
 
+    @own-server
     Scenario: The page tells when the server is away
       Given the sync server stops
       When the person opens the page "Identity and licenses"

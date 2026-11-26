@@ -3,11 +3,13 @@ import { Given } from '../support/bdd.js'
 
 /** The vault the second computer of the person keeps the synced vault in. */
 const SECOND_COMPUTER_VAULT = 'Copy'
+/** The plan a person who syncs a vault has bought: the stand-in of the payment sells it, and the server takes writes only from an account that has one. */
+const SYNCED_PLAN = 'prod_basic'
 
 const startFirstComputer = async (person: Person, vault: string): Promise<void> => {
   if (!person.scenario.hasWorld) person.vault.createEmptyVault(vault)
-  if (person.sync.getStateDir() === undefined) await person.sync.start()
-  await person.computers.giveIdentity()
+  if (!person.sync.isStarted()) person.sync.start()
+  await person.computers.giveIdentity(SYNCED_PLAN)
   await person.application.startApplication('editor')
 }
 

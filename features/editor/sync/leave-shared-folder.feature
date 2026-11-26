@@ -1,3 +1,4 @@
+@sync-server
 Feature: Leave a shared folder
 
   A reader leaves a folder another person shares. It stops receiving changes and keeps the notes it has.

@@ -1,3 +1,4 @@
+@sync-server
 Feature: Pause the sync when many files are removed
 
   Numen Sync asks before it sends the removal of many files.

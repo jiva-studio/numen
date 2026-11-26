@@ -49,6 +49,7 @@ use (
 	./tools/checks/structure/go
 	./tools/checks/style/comments
 	./tools/epochkey
+	./tools/syncaccount
 	./tools/syncserver
 )
 

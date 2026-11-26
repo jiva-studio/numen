@@ -1,3 +1,4 @@
+@sync-server
 Feature: Numen Sync plan and the notes in the cloud
 
   A plan sets how much the cloud holds. A change of the plan never deletes the notes in the cloud.
@@ -19,6 +20,7 @@ Feature: Numen Sync plan and the notes in the cloud
 
   Rule: A larger plan opens space
 
+    @own-server
     Scenario: A note is sent after a full plan is made larger
       Given the cloud holds 10 GB
       When the person changes the plan to "Plus"
@@ -27,6 +29,7 @@ Feature: Numen Sync plan and the notes in the cloud
 
   Rule: A smaller plan never deletes notes
 
+    @own-server
     Scenario: A plan smaller than the notes keeps them in the cloud
       Given the person writes the note "Archive" with the text "old" in the vault "Test"
       And the person changes the plan to "Pro"
@@ -35,6 +38,7 @@ Feature: Numen Sync plan and the notes in the cloud
       Then the person is told "20 GB of 10 GB"
       And the second computer has the note "Archive" with the text "old" in its vault "Copy"
 
+    @own-server
     Scenario: Changes are sent again when the notes fit the plan
       Given the person changes the plan to "Pro"
       And the cloud holds 20 GB
