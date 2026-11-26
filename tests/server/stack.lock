@@ -1,5 +1,0 @@
-# The images of the real sync server, by digest. They are published as private packages (tag main); `make sync_stack_bump` writes this file.
-# While the digests are empty, `make sync_stack_up` takes the images from NUMEN_SYNC_IMAGE and NUMEN_SYNC_DEVTOOLS_IMAGE in the environment.
-NUMEN_SYNC_IMAGE=ghcr.io/jiva-studio/numen-sync@sha256:06a3b53fe11be15c396fb177ed7e80a0929851254a220ff5ed355edbd0f76e02
-NUMEN_SYNC_DEVTOOLS_IMAGE=ghcr.io/jiva-studio/numen-sync-devtools@sha256:5c78447176f9df5e47da2d363996afb44c3e4f7e95fc1bf555e9d14ab4195a45
-NUMEN_SYNC_PINNED_ON=2026-11-26

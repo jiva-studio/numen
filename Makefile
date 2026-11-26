@@ -572,10 +572,6 @@ sync_stack_fresh: ## recreate a stand empty after a full run: make sync_stack_fr
 	@test -n "$(PROJECT)" || { echo "give the project to recreate: make sync_stack_fresh PROJECT=name [COMPOSE=file]" >&2; exit 2; }
 	bash $(TESTS)/server/stack.sh fresh "$(PROJECT)" $(COMPOSE)
 
-.PHONY: sync_stack_bump
-sync_stack_bump: ## pin the digests of the tag main of both server packages in tests/server/stack.lock
-	@bash $(TESTS)/server/bump.sh
-
 .PHONY: sync_stack_env
 sync_stack_env: ## print the settings of the running stack: eval "$$(make -s sync_stack_env)"
 	@bash $(TESTS)/server/stack.sh env

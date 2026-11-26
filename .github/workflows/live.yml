@@ -1,9 +1,10 @@
 name: Live
 
-# The tests that need the real sync server, started from its private images (tests/server): the Go
-# tests of plugins/tools-sync and the acceptance scenarios tagged @live. Called by ci.yml with the
-# area a change touches, and by live-latest.yml with latest: true, which tests the newest images instead of the pinned ones. GitHub gives a pull request from a fork or from Dependabot no access to the private packages,
-# and tests/server/stack.lock holds no digests until the images of the real server are published: the job then
+# The tests that need the real sync server, started from the newest images of its private packages
+# (tests/server): the Go tests of plugins/tools-sync and the acceptance scenarios tagged @live. They
+# do not run on a pull request. reports.yml calls this workflow at night, and the videos of its
+# scenarios go into the same report as the others; it can also be started by hand.
+# GitHub gives a run from a fork or from Dependabot no access to the private packages: the job then
 # runs no test and says so in its summary. It never uploads the images or prints the server log
 # unfiltered.
 # Two stacks run one after the other. The Go suite runs against the first; the tests that roll back its
@@ -12,20 +13,16 @@ name: Live
 on:
   workflow_call:
     inputs:
-      live:
-        type: boolean
-        required: true
-      latest:
-        description: Test the images tagged main, not the digests of tests/server/stack.lock.
-        type: boolean
-        default: false
-    outputs:
-      image:
-        description: Digest of the server image the tests ran against, when latest is set.
-        value: ${{ jobs.live.outputs.image }}
-      devtools:
-        description: Digest of the test tools image the tests ran against, when latest is set.
-        value: ${{ jobs.live.outputs.devtools }}
+      features:
+        description: feature files under features/ the scenarios run from, separated by spaces; empty is all
+        type: string
+        default: ''
+  workflow_dispatch:
+    inputs:
+      features:
+        description: feature files under features/ the scenarios run from, separated by spaces; empty is all
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -33,15 +30,11 @@ permissions:
 jobs:
   live:
     name: Live Tests
-    if: inputs.live
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     permissions:
       contents: read
       packages: read
-    outputs:
-      image: ${{ steps.images.outputs.image }}
-      devtools: ${{ steps.images.outputs.devtools }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -52,15 +45,14 @@ jobs:
           EVENT: ${{ github.event_name }}
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           ACTOR: ${{ github.actor }}
-          LATEST: ${{ inputs.latest }}
         run: |
           reason=
           if [ "$EVENT" = pull_request ] && [ "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
             reason="the pull request is from a fork, which has no access to the private server images"
           elif [ "$ACTOR" = "dependabot[bot]" ]; then
             reason="the pull request is from Dependabot, which has no access to the private server images"
-          elif [ "$LATEST" != true ] && { ! grep -qE '^NUMEN_SYNC_IMAGE=.+' tests/server/stack.lock || ! grep -qE '^NUMEN_SYNC_DEVTOOLS_IMAGE=.+' tests/server/stack.lock; }; then
-            reason="tests/server/stack.lock holds no image digests"
+          elif [ "$GITHUB_REPOSITORY" != jiva-studio/numen ]; then
+            reason="the repository is a fork, which has no access to the private server images"
           fi
           if [ -n "$reason" ]; then
             echo "::warning title=Real server tests did not run::$reason"
@@ -86,35 +78,7 @@ jobs:
             exit 1
           fi
 
-      - name: Check the pinned images
-        if: steps.plan.outputs.run == 'true' && !inputs.latest
-        run: tests/server/check-pin.sh
-
-      # The tag main of both packages, read once as digests: every step then runs the same images, and
-      # the caller can pin exactly what passed.
-      - name: Read the newest images
-        id: images
-        if: steps.plan.outputs.run == 'true' && inputs.latest
-        run: |
-          image=$(docker buildx imagetools inspect ghcr.io/jiva-studio/numen-sync:main --format '{{.Manifest.Digest}}')
-          devtools=$(docker buildx imagetools inspect ghcr.io/jiva-studio/numen-sync-devtools:main --format '{{.Manifest.Digest}}')
-          case "$image$devtools" in
-            sha256:*sha256:*) ;;
-            *)
-              echo "::error title=No newest images::The tag main of numen-sync or numen-sync-devtools cannot be read."
-              exit 1
-              ;;
-          esac
-          {
-            echo "NUMEN_SYNC_IMAGE=ghcr.io/jiva-studio/numen-sync@$image"
-            echo "NUMEN_SYNC_DEVTOOLS_IMAGE=ghcr.io/jiva-studio/numen-sync-devtools@$devtools"
-          } >> "$GITHUB_ENV"
-          {
-            echo "image=$image"
-            echo "devtools=$devtools"
-          } >> "$GITHUB_OUTPUT"
-          echo "newest images: numen-sync@$image numen-sync-devtools@$devtools" | tee -a "$GITHUB_STEP_SUMMARY"
-
+      # Pulls the newest images tagged main, then starts them.
       - name: Start the server
         if: steps.plan.outputs.run == 'true'
         run: make sync_stack_up
@@ -204,25 +168,41 @@ jobs:
           if ldd apps/desktop/numen-debug | grep 'not found'; then exit 1; fi
 
       # The scenarios tagged @live, not those tagged @own-server; the model scenario skips without its key. PLAYWRIGHT_VIDEO records every
-      # scenario; the next step keeps the videos of the failed ones alone.
+      # scenario. The blob report holds all the videos for the merged report of reports.yml; the failed ones are also
+      # collected below for a run started by hand.
       - name: Run the acceptance scenarios
         if: steps.plan.outputs.run == 'true'
         working-directory: tests/acceptance/desktop
         env:
+          FEATURES: ${{ inputs.features }}
           NUMEN_SYNC_TEST_REQUIRED: "1"
           PLAYWRIGHT_VIDEO: "1"
+          PWTEST_BLOB_DO_NOT_REMOVE: "1"
+          PLAYWRIGHT_BLOB_OUTPUT_DIR: ${{ github.workspace }}/tests/acceptance/desktop/acceptance-blobs
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: run-linux-sync.zip
           PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/acceptance.json
         run: |
           eval "$(make -C ../../.. -s sync_stack_env)"
           status=0
-          npm run acceptance:live -- --project=chromium --reporter=list,json || status=$?
+          read -ra features <<< "$FEATURES"
+          npm run acceptance:live -- --project=chromium --reporter=list,json,blob "${features[@]}" || status=$?
           if [ -s "$PLAYWRIGHT_JSON_OUTPUT_NAME" ]; then
             echo "Acceptance scenarios against the real server: $(jq -r '.stats | "\(.expected) passed, \(.unexpected) failed, \(.flaky) flaky, \(.skipped) skipped"' "$PLAYWRIGHT_JSON_OUTPUT_NAME")" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
           exit "$status"
 
-      # Videos show the app with invented data. The report and the traces are not uploaded: the
-      # report holds the log of the app's server for each failed scenario.
+      # The blob report is named like the others, so that the report job of reports.yml merges it. It holds the
+      # videos, the traces of failed scenarios and, for each failed scenario, the log of the app's own server (invented
+      # data); the log of the sync server stays in its container.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() && steps.plan.outputs.run == 'true' }}
+        with:
+          name: acceptance-blobs-live-sync-linux
+          path: tests/acceptance/desktop/acceptance-blobs/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # Videos show the app with invented data.
       - name: Collect the videos of the failed scenarios
         if: ${{ failure() && steps.plan.outputs.run == 'true' }}
         run: |

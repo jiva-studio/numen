@@ -1,4 +1,4 @@
-# The real sync server and what it needs, for the tests of Numen Sync. The two images are private; their digests are in stack.lock.
+# The real sync server and what it needs, for the tests of Numen Sync. The two images are private packages, tagged main; NUMEN_SYNC_IMAGE and NUMEN_SYNC_DEVTOOLS_IMAGE name others, such as a local build.
 # Bring it up with `make sync_stack_up`; `make sync_stack_env` prints the settings the tests read.
 # The ports are on 127.0.0.1 only. A second stack beside this one takes other ports: stack.sh derives the four from NUMEN_SYNC_PORT_BASE (default 8787). Development keys and passwords: this stack holds no real data.
 # The real server cannot delete uploaded files: a full test run leaves about 1.8 GB in the bucket, and the Docker disk fills. After a full run recreate the stand
@@ -51,14 +51,14 @@ services:
     restart: "no"
 
   keys:
-    image: ${NUMEN_SYNC_DEVTOOLS_IMAGE:?set NUMEN_SYNC_DEVTOOLS_IMAGE or fill tests/server/stack.lock}
+    image: ${NUMEN_SYNC_DEVTOOLS_IMAGE:-ghcr.io/jiva-studio/numen-sync-devtools:main}
     entrypoint: ["/bin/sh", "-c"]
     command: ["/numen-sync-dev keys -dir /keys -not-before $$(date +%s) -days 365 && chmod 755 /keys && chmod 644 /keys/epoch-signing-key /keys/epoch-certificate.json"]
     volumes: ["keys:/keys"]
     restart: "no"
 
   payment:
-    image: ${NUMEN_SYNC_DEVTOOLS_IMAGE:?set NUMEN_SYNC_DEVTOOLS_IMAGE or fill tests/server/stack.lock}
+    image: ${NUMEN_SYNC_DEVTOOLS_IMAGE:-ghcr.io/jiva-studio/numen-sync-devtools:main}
     entrypoint: ["/numen-sync-dev"]
     command:
       - payment
@@ -79,7 +79,7 @@ services:
       retries: 20
 
   sync:
-    image: ${NUMEN_SYNC_IMAGE:?set NUMEN_SYNC_IMAGE or fill tests/server/stack.lock}
+    image: ${NUMEN_SYNC_IMAGE:-ghcr.io/jiva-studio/numen-sync:main}
     environment:
       NUMEN_SYNC_ENV: dev
       NUMEN_SYNC_LISTEN_ADDR: 0.0.0.0:8787

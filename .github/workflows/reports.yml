@@ -75,6 +75,20 @@ jobs:
       features: ${{ inputs.features }}
       video: true
 
+  # The scenarios and Go tests that need the real sync server, from the newest images (live.yml). Only at night and by
+  # hand: a push to main does not start them. They run after the acceptance job, which saves the build they restore.
+  # The blobs of their scenarios, with the videos, join the others in the report.
+  live-sync:
+    name: Real server
+    needs: [acceptance]
+    if: ${{ !cancelled() && github.event_name != 'push' && contains(inputs.environments, 'linux') }}
+    uses: ./.github/workflows/live.yml
+    permissions:
+      contents: read
+      packages: read
+    with:
+      features: ${{ inputs.features }}
+
   e2e:
     name: End-to-End
     if: ${{ inputs.specs && contains(inputs.environments, 'linux') }}
@@ -201,8 +215,8 @@ jobs:
 
   report:
     name: Report
-    needs: [acceptance, acceptance-live]
-    if: ${{ !cancelled() && (needs.acceptance.result == 'success' || needs.acceptance-live.result == 'success') }}
+    needs: [acceptance, acceptance-live, live-sync]
+    if: ${{ !cancelled() && (needs.acceptance.result == 'success' || needs.acceptance-live.result == 'success' || needs.live-sync.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

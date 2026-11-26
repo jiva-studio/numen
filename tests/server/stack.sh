@@ -10,15 +10,14 @@ here=$(cd "$(dirname "$0")" && pwd)
 project=numen-sync-test
 file=$here/compose.yaml
 
-read_lock() {
-  local line key
-  while IFS= read -r line; do
-    case "$line" in '' | '#'*) continue ;; esac
-    key=${line%%=*}
-    if [ -z "${!key:-}" ]; then export "$key=${line#*=}"; fi
-  done <"$here/stack.lock"
-  if [ -z "${NUMEN_SYNC_IMAGE:-}" ] || [ -z "${NUMEN_SYNC_DEVTOOLS_IMAGE:-}" ]; then
-    echo "no server images: run make sync_stack_bump, or set NUMEN_SYNC_IMAGE and NUMEN_SYNC_DEVTOOLS_IMAGE" >&2
+# The newest images of the private packages, unless the environment names others.
+pull_images() {
+  if [ -n "${NUMEN_SYNC_IMAGE:-}" ] || [ -n "${NUMEN_SYNC_DEVTOOLS_IMAGE:-}" ]; then
+    echo "using the images named in the environment; nothing is pulled" >&2
+    return
+  fi
+  if ! compose pull --quiet; then
+    echo "::error title=No access to the server images::The images cannot be pulled. Add the repository jiva-studio/numen with Read in the package settings of both numen-sync and numen-sync-devtools (Packages, package settings, Manage Actions access), or log in to ghcr.io with a token that can read them." >&2
     exit 1
   fi
 }
@@ -30,7 +29,7 @@ compose() { docker compose -p "$project" -f "$file" "$@"; }
 
 print_env() {
   local root
-  root=$(docker run --rm -v "${project}_keys:/keys:ro" --entrypoint cat "$NUMEN_SYNC_DEVTOOLS_IMAGE" /keys/root-public.hex)
+  root=$(docker run --rm -v "${project}_keys:/keys:ro" --entrypoint cat "${NUMEN_SYNC_DEVTOOLS_IMAGE:-ghcr.io/jiva-studio/numen-sync-devtools:main}" /keys/root-public.hex)
   echo "export NUMEN_SYNC_TEST_URL=http://127.0.0.1:$NUMEN_SYNC_PORT_SERVER"
   echo "export NUMEN_SYNC_TEST_ROOT_KEY=$root"
   echo "export NUMEN_SYNC_TEST_PAYMENT_URL=http://127.0.0.1:$NUMEN_SYNC_PORT_CONTROL"
@@ -39,16 +38,14 @@ print_env() {
 
 case "${1:-}" in
   up)
-    read_lock
+    pull_images
     compose up --detach --wait --quiet-pull
     ;;
   down)
     project=${2:-$project}
-    read_lock
     compose down --volumes
     ;;
   env)
-    read_lock
     print_env
     ;;
   fresh)
@@ -58,7 +55,7 @@ case "${1:-}" in
     fi
     project=$2
     file=${3:-$file}
-    read_lock
+    pull_images
     echo "removing the containers and volumes of the project $project:" >&2
     compose ps --all --format '  container {{.Name}} ({{.Service}})' >&2
     docker volume ls --filter "label=com.docker.compose.project=$project" --format '  volume {{.Name}}' >&2
