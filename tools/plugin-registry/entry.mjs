@@ -2,6 +2,8 @@
  * The parts of a registry entry read from a plugin's own files, the same for a plugin of this
  * repository and one of another: the manifest's fields, the README and the screenshots.
  */
+import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { toJson } from '@bufbuild/protobuf'
 import { ManifestSchema } from '../../libs/shared/protocol/src/numen/v1/manifest_pb.ts'
 import { describePermission } from '../../libs/plugin/manager/src/words.ts'
@@ -28,19 +30,40 @@ export const CATEGORY_ICONS = {
 /** The lucide icon of a plugin of no known category that declares no icon. */
 export const DEFAULT_ICON = 'puzzle'
 
+const require = createRequire(import.meta.url)
+
+/** Whether `@lucide/vue` has an icon file of the name `name`. */
+export const isLucideIcon = (name) => {
+  if (typeof name !== 'string' || !/^[a-z0-9-]+$/.test(name)) return false
+  try {
+    require.resolve(`@lucide/vue/dist/esm/icons/${name}.mjs`)
+    return true
+  } catch {
+    return false
+  }
+}
+
 /**
- * The lucide icon a plugin is shown with: the first icon its manifest declares on a tab kind, a
- * command, a slot or a setting, in that order, else the icon of its category.
+ * The lucide icon a plugin is shown with: the icon `plugins/registry.json` names for its id, else
+ * the first icon its manifest declares on a tab kind, a command, a slot or a setting, in that
+ * order, else the icon of its category.
  *
  * @param {Record<string, any>} json - the output of `toManifestJson`
+ * @param {Record<string, string>} [icons] - lucide names by plugin id
  * @returns {string}
  */
-export const getIcon = (json) => {
+export const getIcon = (json, icons = {}) => {
   const contributes = json.contributes ?? {}
   const declared = [contributes.tabKinds, contributes.commands, contributes.slots, json.settings]
     .flatMap((list) => list ?? [])
     .find((one) => one.icon)?.icon
-  return declared ?? CATEGORY_ICONS[contributes.category] ?? DEFAULT_ICON
+  return icons[json.id] ?? declared ?? CATEGORY_ICONS[contributes.category] ?? DEFAULT_ICON
+}
+
+const readKnownIcon = (json, icons) => {
+  const icon = getIcon(json, icons)
+  if (!isLucideIcon(icon)) throw new Error(`${json.id}: "${icon}" is not a lucide icon`)
+  return icon
 }
 
 /**
@@ -113,10 +136,27 @@ const getTextKinds = (textKinds = []) =>
 
 const getThemes = (themes = []) => themes.map((one) => ({ id: one.id, name: one.name ?? one.id }))
 
-const getSlots = (slots = [], commands = []) =>
+const SHARED_COMMANDS = JSON.parse(
+  readFileSync(new URL('../../libs/shared/protocol/commands.json', import.meta.url), 'utf8'),
+).commands
+
+const getCommandTitle = (id, commands, handlers) => {
+  if (id === undefined) return undefined
+  return (
+    commands.find((one) => one.id === id)?.title ??
+    handlers.find((one) => one.command === id)?.title ??
+    SHARED_COMMANDS.find((one) => one.id === id)?.title
+  )
+}
+
+/**
+ * The slot entries, each titled by itself, else by the command or the handler of the plugin it
+ * runs, else by the shared command it runs.
+ */
+const getSlots = (slots = [], commands = [], handlers = []) =>
   slots.map((one) => ({
     slot: one.slot,
-    title: one.title ?? commands.find((command) => command.id === one.command)?.title ?? '',
+    title: one.title ?? getCommandTitle(one.command, commands, handlers) ?? '',
     target: one.command ?? one.view ?? one.submenu ?? '',
   }))
 
@@ -140,12 +180,13 @@ const getLicenses = (licenses = []) =>
 export const toManifestJson = (manifest) => toJson(ManifestSchema, manifest)
 
 /**
- * The catalog fields of a manifest in the schema's JSON form.
+ * The catalog fields of a manifest in the schema's JSON form. An icon lucide does not have throws.
  *
  * @param {Record<string, any>} json - the output of `toManifestJson`
+ * @param {Record<string, string>} [icons] - lucide names by plugin id, from `plugins/registry.json`
  * @returns {object} the fields of the entry the manifest gives
  */
-export const describeManifest = (json) => {
+export const describeManifest = (json, icons = {}) => {
   const contributes = json.contributes ?? {}
   const licenses = getLicenses(contributes.licenses)
   return {
@@ -155,7 +196,7 @@ export const describeManifest = (json) => {
     description: json.description ?? '',
     category: contributes.category ?? '',
     feature: contributes.feature ?? '',
-    icon: getIcon(json),
+    icon: readKnownIcon(json, icons),
     targets: json.targets ?? [],
     isOfficial: json.id.startsWith(OFFICIAL_PREFIX),
     isPaid: licenses.length > 0,
@@ -167,7 +208,7 @@ export const describeManifest = (json) => {
     fileTypes: getFileTypes(contributes.readers, contributes.tabKinds),
     textKinds: getTextKinds(contributes.textKinds),
     themes: getThemes(contributes.themes),
-    slots: getSlots(contributes.slots, contributes.commands),
+    slots: getSlots(contributes.slots, contributes.commands, contributes.handlers),
     connectionTypes: getConnectionTypes(contributes.connectionTypes),
     searchFunctions: getSearchFunctions(contributes.searchFunctions),
   }

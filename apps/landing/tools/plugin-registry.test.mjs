@@ -3,7 +3,7 @@
  * goes to the network.
  */
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
@@ -13,6 +13,7 @@ import {
   readRegistry,
 } from '../src/components/plugins/registry.ts'
 import {
+  getSlotPlace,
   listContributionSections,
   listQualitySections,
 } from '../src/components/plugins/sections.ts'
@@ -113,6 +114,61 @@ test('the Contributions tab shows only the sections with rows', async () => {
   )
   assert.deepEqual(readRows(sections[2]), [['Transcript', 'transcript']])
   assert.equal(sections[0].rows.find((row) => row.isNew)?.value[0][0].text, 'link:open')
+})
+
+test('a slot row names what the plugin puts there and the place in the window, in words', async () => {
+  const plugin = await readPlugin('md.numen.engines.transcription')
+  const slots = listContributionSections({
+    ...plugin,
+    slots: [
+      { slot: 'fileTree.context', title: 'Transcribe', target: 'app:file.createText' },
+      { slot: 'titleBar.status', title: '', target: 'sync' },
+      { slot: 'ledger.board', title: 'Ledger', target: 'board' },
+    ],
+  }).find((one) => one.id === 'slots')
+
+  assert.deepEqual(readRows(slots), [
+    ['Transcribe', 'File tree menu'],
+    ['sync', 'Title bar'],
+    ['Ledger', 'ledger.board'],
+  ])
+  assert.deepEqual(slots.rows[0].value[0][0], {
+    text: 'File tree menu',
+    key: 'plugin_slot_fileTree_context',
+    isCode: false,
+  })
+  assert.equal(slots.rows[1].name[0].isCode, true)
+  assert.equal(slots.rows[2].value[0][0].isCode, true)
+})
+
+const ROOT = new URL('../../../', import.meta.url)
+
+const readJson = (path) => JSON.parse(readFileSync(new URL(path, ROOT), 'utf8'))
+
+/** The slots of the application and every slot a plugin of the repository draws or fills. */
+const listKnownSlots = () => {
+  const names = new Set(readJson('libs/shared/protocol/slots.json').slots.map((one) => one.name))
+  for (const folder of readdirSync(new URL('plugins/', ROOT), { withFileTypes: true })) {
+    const manifest = `plugins/${folder.name}/manifest.json`
+    if (!existsSync(new URL(manifest, ROOT))) continue
+    const contributes = readJson(manifest).contributes ?? {}
+    for (const one of [...(contributes.slots ?? []), ...(contributes.slotPoints ?? [])]) {
+      names.add(one.slot)
+    }
+  }
+  return [...names]
+}
+
+test('every slot of the application and of the plugins has words in each language', async () => {
+  const { EN } = await import('../src/scripts/i18n-en.ts')
+  const { RU } = await import('../src/scripts/i18n-ru.ts')
+  const { SR } = await import('../src/scripts/i18n-sr.ts')
+
+  for (const slot of listKnownSlots()) {
+    const place = getSlotPlace(slot)
+    assert.equal(place.isCode, false, slot)
+    assert.ok(RU[place.key] && SR[place.key] && EN[place.key], slot)
+  }
 })
 
 test('a plugin that adds nothing has no Contributions sections', async () => {

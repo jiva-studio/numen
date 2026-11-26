@@ -80,6 +80,7 @@ export const listCommitAccounts = async (github, repo, path) => {
  * @param {string} context.root - the repository root
  * @param {string | null} context.license - the SPDX id of the repository
  * @param {Map<string, object>} context.previousById - the entries of the previous registry
+ * @param {Record<string, string>} context.icons - lucide names by plugin id
  * @param {Map<string, number>} context.knownSizes - download sizes by SHA-256
  * @param {(url: string) => Promise<number | null>} context.getSize - the size of a file at a URL
  * @param {(path: string) => Promise<Map<string, { login: string, avatarUrl: string | null }>>} context.getCommitAccounts
@@ -91,7 +92,7 @@ export const collectInternal = async (folder, context) => {
   const dir = join(context.root, 'plugins', folder)
   const { manifest, warnings } = readManifestFile(join(dir, MANIFEST_FILE))
   const json = toManifestJson(manifest)
-  const fields = describeManifest(json)
+  const fields = describeManifest(json, context.icons)
   const readme = splitReadme(readOptional(join(dir, 'README.md')))
   const screenshots = pairScreenshots(
     listScreenshotFiles(join(dir, 'screenshots')),

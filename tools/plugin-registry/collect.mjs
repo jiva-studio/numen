@@ -37,10 +37,12 @@ import {
 import { readQualityFiles } from './quality.mjs'
 import {
   assertFeaturedKnown,
+  assertIconsKnown,
   assertNoCollision,
   createRegistry,
   formatRegistry,
   readFeatured,
+  readIcons,
   readSources,
 } from './registry.mjs'
 
@@ -108,6 +110,7 @@ export const collectRegistry = async ({
   generatedAt = new Date().toISOString(),
 }) => {
   const previousById = new Map((previous?.plugins ?? []).map((one) => [one.id, one]))
+  const icons = readIcons(sources)
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
   const github = createGitHub({ token, fetcher })
   const context = {
@@ -115,6 +118,7 @@ export const collectRegistry = async ({
     outDir,
     previousById,
     license: readRepositoryLicense(root),
+    icons,
     knownSizes: listKnownSizes(previous),
     getSize: isOffline ? async () => null : (url) => fetchSize(url, fetcher),
     quality: await readQualityFiles(quality, fetcher),
@@ -131,9 +135,13 @@ export const collectRegistry = async ({
     internals.map((one, index) => ({ id: one.id, folder: folders[index] })),
   )
   const externals = await collectExternals(externalSources, context, isOffline)
-  const plugins = [...internals, ...externals]
+  const plugins = [...internals, ...externals].map((one) => ({
+    ...one,
+    icon: icons[one.id] ?? one.icon,
+  }))
   const featured = readFeatured(sources)
   assertFeaturedKnown(featured, plugins)
+  assertIconsKnown(icons, plugins)
   return createRegistry(plugins, generatedAt, featured)
 }
 

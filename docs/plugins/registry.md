@@ -6,7 +6,8 @@ The plugin catalog of numen.md (`/plugins`) is built from one JSON file, the reg
 
 Every folder of `plugins/` with a `manifest.json` is in the registry. Its entry takes:
 
-- the manifest, read against the schema of `manifest.proto`: besides its id, name and permissions, the settings, commands, tab kinds, file types of its readers, text kinds, themes, slots, connection types and search functions it contributes;
+- the manifest, read against the schema of `manifest.proto`: besides its id, name and permissions, the settings, commands, tab kinds, file types of its readers, text kinds, themes, slots, connection types and search functions it contributes; a slot entry is titled by its own title, else by the title of the plugin's command or handler it runs, else by the title of the shared command in `libs/shared/protocol/commands.json`;
+- the downloads: the `dependencies` of the manifest, each with the size of its file for every platform, read from the Content-Length of a HEAD request, else from the Content-Range total of a GET of the first byte, at each source URL in turn until one answers; a file whose SHA-256 the previous registry has a size for is not asked again, and `--offline` asks none;
 - `README.md`: the text before `<!-- more -->` is the introduction the catalog search and the page description use, and the whole README is the Overview of the plugin page;
 - `screenshots/<name>-light.webp` and `screenshots/<name>-dark.webp`, one pair per screenshot;
 - the changelog: the commits that touched the folder, grouped by the commit that changed the `version` of the manifest;
@@ -14,7 +15,7 @@ Every folder of `plugins/` with a `manifest.json` is in the registry. Its entry 
 - the mutation score and the coverage of the nightly `mutation.yml` and `coverage.yml`, which publish them at `plugins/quality/mutation.json` and `plugins/quality/coverage.json`;
 - the tests of the folder, counted from the source without running them: Go functions `Test…` and `Fuzz…` in `*_test.go`, TypeScript cases `it(` and `test(` in `*.test.ts` (an `.each` table counts once), and the stories exported from `*.stories.ts`, which run as browser tests; `node_modules`, `dist` and `testdata` are left out.
 
-Every entry, internal or external, has an `icon`: the lucide name of the first icon its manifest declares on a tab kind, a command, a slot or a setting, else the icon of its category (`agents` bot, `connections` plug, `engines` cpu, `readers` book-open, `themes` palette, `tools` wrench, `views` layout-panel-left).
+Every entry, internal or external, has an `icon`: the lucide name `icons` in `plugins/registry.json` gives for its id (`{ "icons": { "<id>": "<lucide name>" } }`), else the first icon its manifest declares on a tab kind, a command, a slot or a setting, else the icon of its category (`agents` bot, `connections` plug, `engines` cpu, `readers` book-open, `themes` palette, `tools` wrench, `views` layout-panel-left). A name that has no icon file in `@lucide/vue`, or an id of `icons` that is not in the registry, fails the collection; an external plugin whose manifest names an unknown icon keeps its previous entry, or is left out when it has none.
 
 ## Featured plugins
 

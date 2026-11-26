@@ -240,6 +240,7 @@ const readJsonFile = (bytes) => {
  * @param {object} context
  * @param {ReturnType<typeof createGitHub>} context.github
  * @param {Map<string, object>} context.previousById - the entries of the previous registry
+ * @param {Record<string, string>} [context.icons] - lucide names by plugin id
  * @param {Map<string, number>} context.knownSizes - download sizes by SHA-256
  * @param {(url: string) => Promise<number | null>} context.getSize
  * @param {string} context.outDir - the folder the registry is written to
@@ -268,7 +269,7 @@ export const collectExternal = async (source, context) => {
   if (json.id !== source.id) {
     throw new Error(`${source.repo}@${tag} declares the id ${json.id}, the registry lists ${source.id}`)
   }
-  const fields = describeManifest(json)
+  const fields = describeManifest(json, context.icons)
   const readmeBytes = await github.getFile(source.repo, tag, 'README.md')
   const readme = splitReadme(readmeBytes === null ? null : readmeBytes.toString('utf8'))
   const repository = await github.getJson(`/repos/${source.repo}`)

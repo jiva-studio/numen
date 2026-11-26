@@ -12,6 +12,7 @@ import { execTool } from '../shared/tools.mjs'
 import { countContributors, groupByVersion, isBot } from './changelog.mjs'
 import { createCheck } from './checks.mjs'
 import { collectRegistry } from './collect.mjs'
+import { describeDownloads, fetchSize } from './downloads.mjs'
 import {
   describeManifest,
   getIcon,
@@ -293,9 +294,11 @@ test('the contributions a person sees are read from the manifest', () => {
         textKinds: [{ kind: 'page-text', title: 'Text layer' }],
         themes: [{ id: 'amber', name: 'Amber', file: 'themes/amber.css' }],
         commands: [{ id: 'tree.open', title: 'Open the file tree' }],
+        handlers: [{ command: 'app:file.createText', title: 'Recognize text' }],
         slots: [
           { slot: 'fileTree.context', command: 'app:file.createText' },
           { slot: 'titleBar.commands', command: 'tree.open' },
+          { slot: 'titleBar.status', view: 'sync', title: 'Sync status' },
         ],
         connectionTypes: [{ id: 'openai', title: 'OpenAI', description: 'Models from OpenAI.' }],
         searchFunctions: { version: 1, functions: [{ name: 'hasOpenTask', description: 'open tasks' }] },
@@ -308,13 +311,113 @@ test('the contributions a person sees are read from the manifest', () => {
   assert.deepEqual(fields.textKinds, [{ kind: 'page-text', title: 'Text layer' }])
   assert.deepEqual(fields.themes, [{ id: 'amber', name: 'Amber' }])
   assert.deepEqual(fields.slots, [
-    { slot: 'fileTree.context', title: '', target: 'app:file.createText' },
+    { slot: 'fileTree.context', title: 'Recognize text', target: 'app:file.createText' },
     { slot: 'titleBar.commands', title: 'Open the file tree', target: 'tree.open' },
+    { slot: 'titleBar.status', title: 'Sync status', target: 'sync' },
   ])
   assert.deepEqual(fields.connectionTypes, [
     { id: 'openai', title: 'OpenAI', description: 'Models from OpenAI.' },
   ])
   assert.deepEqual(fields.searchFunctions, [{ name: 'hasOpenTask', description: 'open tasks' }])
+})
+
+test('a slot entry that runs a shared command the plugin does not handle takes the title of the shared command', () => {
+  const fields = describeManifest(
+    manifest('1.0.0', {
+      contributes: {
+        category: 'tools',
+        slots: [
+          { slot: 'fileTree.context', command: 'app:file.createText' },
+          { slot: 'plexGraph.context', command: 'app:file.copyPath' },
+        ],
+      },
+    }),
+  )
+
+  assert.deepEqual(fields.slots, [
+    { slot: 'fileTree.context', title: 'Create text', target: 'app:file.createText' },
+    { slot: 'plexGraph.context', title: '', target: 'app:file.copyPath' },
+  ])
+})
+
+/** A fetch that answers each method of a URL from `routes`, and records what it was asked. */
+const createSizeFetcher = (routes, requests = []) => async (url, init) => {
+  const method = init?.method ?? 'GET'
+  requests.push(`${method} ${url}${init?.headers?.Range ? ` ${init.headers.Range}` : ''}`)
+  const route = routes[`${method} ${url}`]
+  if (!route) return new Response(null, { status: 404 })
+  return new Response(method === 'HEAD' ? null : (route.body ?? 'x'), {
+    status: route.status ?? 200,
+    headers: route.headers ?? {},
+  })
+}
+
+const ARCHIVE = 'https://example.org/releases/runtime-linux-x64.tgz'
+const MIRROR = 'https://mirror.example.org/runtime-linux-x64.tgz'
+
+test('the size of a file is the Content-Length its server answers a HEAD request with', async () => {
+  const fetcher = createSizeFetcher({ [`HEAD ${ARCHIVE}`]: { headers: { 'content-length': '8257032' } } })
+
+  assert.equal(await fetchSize(ARCHIVE, fetcher), 8257032)
+})
+
+test('a server that answers HEAD without a length is asked for the first byte, and the range total is the size', async () => {
+  const requests = []
+  const fetcher = createSizeFetcher(
+    {
+      [`HEAD ${ARCHIVE}`]: {},
+      [`GET ${ARCHIVE}`]: { status: 206, headers: { 'content-range': 'bytes 0-0/13060028' } },
+    },
+    requests,
+  )
+
+  assert.equal(await fetchSize(ARCHIVE, fetcher), 13060028)
+  assert.deepEqual(requests, [`HEAD ${ARCHIVE}`, `GET ${ARCHIVE} bytes=0-0`])
+})
+
+test('a server that ignores the range answers with the whole file, whose length is the size', async () => {
+  const fetcher = createSizeFetcher({
+    [`HEAD ${ARCHIVE}`]: { status: 405 },
+    [`GET ${ARCHIVE}`]: { body: 'archive', headers: { 'content-length': '7' } },
+  })
+
+  assert.equal(await fetchSize(ARCHIVE, fetcher), 7)
+})
+
+test('a file its server does not have, or a server that cannot be reached, has no size', async () => {
+  const refuse = async () => {
+    throw new TypeError('fetch failed')
+  }
+
+  assert.equal(await fetchSize(ARCHIVE, createSizeFetcher({})), null)
+  assert.equal(await fetchSize(ARCHIVE, refuse), null)
+})
+
+test('a download whose first URL answers with no size is asked at its mirror', async () => {
+  const fetcher = createSizeFetcher({ [`HEAD ${MIRROR}`]: { headers: { 'content-length': '8257032' } } })
+  const dependencies = [
+    {
+      id: 'onnxruntime',
+      kind: 'runtime',
+      version: '1.23.0',
+      sources: [{ platform: 'linux/amd64', sourceUrls: [ARCHIVE, MIRROR], checksumSha256: 'aa' }],
+    },
+    { id: 'model', kind: 'model', version: '1', sourceUrl: ARCHIVE, checksumSha256: 'bb' },
+  ]
+
+  const downloads = await describeDownloads(dependencies, new Map([['bb', 42]]), (url) =>
+    fetchSize(url, fetcher),
+  )
+
+  assert.deepEqual(downloads, [
+    {
+      id: 'onnxruntime',
+      kind: 'runtime',
+      version: '1.23.0',
+      platforms: [{ platform: 'linux/amd64', size: 8257032, sha256: 'aa' }],
+    },
+    { id: 'model', kind: 'model', version: '1', platforms: [{ platform: 'any', size: 42, sha256: 'bb' }] },
+  ])
 })
 
 const commitAs = (root, name, email, date) => {
@@ -418,6 +521,41 @@ test('the icon is the first one the manifest declares on a tab kind, a command, 
     getIcon({ settings: [{ key: 'model', icon: 'audio-lines' }], contributes: { category: 'engines' } }),
     'audio-lines',
   )
+})
+
+test('the icons map of the sources file names the icon before the manifest does', async () => {
+  await withRepository(async (root) => {
+    writeFileSync(
+      join(root, 'plugins', 'registry.json'),
+      JSON.stringify({ icons: { 'org.example.notes': 'scan-text' }, external: [] }),
+    )
+
+    assert.equal((await collectOffline(root)).plugins[0].icon, 'scan-text')
+  })
+})
+
+test('an icon lucide does not have is an error', async () => {
+  await withRepository(async (root) => {
+    const file = join(root, 'plugins', 'registry.json')
+    writeFileSync(file, JSON.stringify({ icons: { 'org.example.notes': 'heading' }, external: [] }))
+
+    await assert.rejects(collectOffline(root), /org\.example\.notes names "heading", which is not a lucide icon/)
+    assert.throws(
+      () => describeManifest(manifest('1.0.0', { contributes: { slots: [{ slot: 'titleBar', view: 'bar', icon: 'no-such-icon' }] } })),
+      /"no-such-icon" is not a lucide icon/,
+    )
+  })
+})
+
+test('an icon for an id that no plugin has is an error', async () => {
+  await withRepository(async (root) => {
+    writeFileSync(
+      join(root, 'plugins', 'registry.json'),
+      JSON.stringify({ icons: { 'org.example.missing': 'cloud' }, external: [] }),
+    )
+
+    await assert.rejects(collectOffline(root), /icons of org\.example\.missing, which is not in the registry/)
+  })
 })
 
 test('a plugin that declares no icon takes the icon of its category', async () => {
