@@ -38,7 +38,10 @@ const description =
         <p data-i18n="plugins_lede">What each plugin does, what it can access, and how it is tested.</p>
       </header>
 
-      <PluginFilters client:load categories={categories} apps={apps} />
+      {/* Client only: hydrating a server-drawn Teleport to body takes the page apart. */}
+      <div class="plugin-filters-slot">
+        <PluginFilters client:only="vue" categories={categories} apps={apps} />
+      </div>
 
       <ul class="plugin-grid">
         {plugins.map((plugin) => <PluginCard plugin={plugin} />)}

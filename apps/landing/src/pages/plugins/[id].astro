@@ -51,7 +51,7 @@ const tabs = [
               role="tab"
               id={`tab-${tab.id}`}
               aria-controls={`panel-${tab.id}`}
-              aria-selected={String(index === 0)}
+              aria-selected={index === 0 ? 'true' : 'false'}
               tabindex={index === 0 ? 0 : -1}
               data-plugin-tab
               data-i18n={tab.key}

@@ -68,7 +68,7 @@ const quality = (plugin.quality?.entries ?? []).flatMap((entry) => {
     ) : (
       <ul class="plugin-rows">
         {plugin.permissions.map((permission) => (
-          <li class="plugin-row">
+          <li class="plugin-row plugin-row--wide">
             <span class="plugin-row__name">
               {permission.description}
               {added.has(permission.id) && (

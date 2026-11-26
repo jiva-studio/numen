@@ -27,7 +27,7 @@ const { plugin } = Astro.props
   </div>
   <p class="plugin-head__lede">{plugin.description}</p>
   <p class="plugin-facts">
-    <span>{plugin.version}</span>
+    <span>v{plugin.version}</span>
     {
       plugin.updatedAt && (
         <span>

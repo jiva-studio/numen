@@ -20,14 +20,19 @@ function readCard(card: HTMLElement): CardFilter {
   }
 }
 
+function isPriceShown(isPaid: boolean, price: string): boolean {
+  if (price === 'free') return !isPaid
+  if (price === 'paid') return isPaid
+  return true
+}
+
 /** Whether a card passes the filter: every search word, and each chosen value. */
 export function isCardShown(card: CardFilter, filter: CatalogFilter): boolean {
   const words = filter.query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   if (!words.every((word) => card.search.includes(word))) return false
   if (filter.category !== '' && card.category !== filter.category) return false
   if (filter.app !== '' && !card.apps.includes(filter.app)) return false
-  if (filter.price === 'free' && card.isPaid) return false
-  if (filter.price === 'paid' && !card.isPaid) return false
+  if (!isPriceShown(card.isPaid, filter.price)) return false
   return !filter.isOfficialOnly || card.isOfficial
 }
 

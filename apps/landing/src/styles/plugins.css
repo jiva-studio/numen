@@ -1,13 +1,13 @@
 /* ------------------------------ Plugin catalog ----------------------------- */
 .plugin-band,
 .plugin-page {
+  min-height: 70vh;
   padding-top: 2.5rem;
   padding-bottom: 5rem;
 }
 
 .plugin-band a:focus-visible,
-.plugin-page :is(a, button):focus-visible,
-.plugin-filters input:focus-visible {
+.plugin-page :is(a, button):focus-visible {
   outline: 2px solid var(--rust);
   outline-offset: 2px;
 }
@@ -32,12 +32,16 @@
   line-height: 1.5;
 }
 
+.plugin-filters-slot {
+  min-height: var(--numen-action-size);
+  margin-bottom: 1.5rem;
+}
+
 .plugin-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem 0.75rem;
-  margin-bottom: 1.5rem;
   font-size: var(--numen-font-size);
 }
 
@@ -45,7 +49,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1 1 14rem;
+  flex: 1 1 12rem;
   max-width: 22rem;
 }
 
@@ -75,6 +79,11 @@
   line-height: 1;
 }
 
+.plugin-filters__search input:focus {
+  outline: 1px solid var(--numen-accent);
+  outline-offset: -1px;
+}
+
 .plugin-filters__search input::placeholder {
   color: var(--numen-hushed);
 }
@@ -84,7 +93,7 @@
 }
 
 .plugin-filters .plugin-filters__select {
-  width: 11rem;
+  width: 10rem;
 }
 
 .plugin-filters__switch {
@@ -185,6 +194,7 @@
 .plugin-muted {
   margin: 0 0 1rem;
   color: var(--muted);
+  font-size: 0.875rem;
 }
 
 .plugin-sr {
@@ -338,11 +348,29 @@
 
 .plugin-prose code {
   padding: 0.0625rem 0.25rem;
+  border: 1px solid var(--border);
   border-radius: 0.25rem;
-  background: var(--sage);
+  background: var(--card-bg);
+}
+
+.plugin-prose :is(ul, ol) {
+  padding-left: 1.25rem;
+}
+
+.plugin-prose ul {
+  list-style: disc;
+}
+
+.plugin-prose ol {
+  list-style: decimal;
+}
+
+.plugin-prose li + li {
+  margin-top: 0.25rem;
 }
 
 .plugin-section {
+  max-width: 46rem;
   margin-bottom: 2rem;
 }
 
@@ -361,9 +389,9 @@
 
 .plugin-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 13.75rem minmax(0, 1fr);
   align-items: baseline;
-  gap: 1rem;
+  gap: 0.75rem;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--border);
 }
@@ -373,8 +401,11 @@
 }
 
 .plugin-row--check {
-  grid-template-columns: 1rem 11rem minmax(0, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: 1rem 12rem minmax(0, 1fr);
+}
+
+.plugin-row--wide {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .plugin-row__name {
@@ -449,10 +480,14 @@
   list-style: none;
 }
 
+.plugin-changelog {
+  max-width: 46rem;
+}
+
 .plugin-changelog > li {
   display: grid;
-  grid-template-columns: 10rem minmax(0, 1fr);
-  gap: 1rem;
+  grid-template-columns: 13.75rem minmax(0, 1fr);
+  gap: 0.75rem;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--border);
   font-size: 0.875rem;
@@ -483,7 +518,8 @@
 
 .plugin-changelog ul {
   margin: 0;
-  padding-left: 1rem;
+  padding: 0;
+  list-style: none;
   line-height: 1.5;
 }
 
@@ -491,7 +527,7 @@
   margin-top: 0.25rem;
 }
 
-@media (max-width: 68rem) {
+@media (max-width: 60rem) {
   .plugin-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -509,6 +545,10 @@
   }
   .plugin-row--check .plugin-row__detail {
     grid-column: 2;
+  }
+  .plugin-row:not(.plugin-row--check, .plugin-row--wide) {
+    grid-template-columns: 1fr;
+    gap: 0.125rem;
   }
   .plugin-changelog > li {
     grid-template-columns: 1fr;
