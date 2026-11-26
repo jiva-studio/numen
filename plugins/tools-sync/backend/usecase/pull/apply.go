@@ -290,7 +290,6 @@ func (r *run) download(ctx context.Context, stored *syncv1.StoredRevision, meta 
 	return r.deps.Downloads.Forget(ctx, r.in.VaultID, rev.GetFileId())
 }
 
-// settleWrite is settleFailure for the write of a file, where the host refusing the file stops that file only.
 func (r *run) settleWrite(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, err error) error {
 	settled := r.settleFailure(ctx, stored, meta, err)
 	if settled != nil && errors.Is(settled, err) && ctx.Err() == nil {

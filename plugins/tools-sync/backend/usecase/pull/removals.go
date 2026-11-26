@@ -31,7 +31,7 @@ func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, 
 	version := stored.GetRevision().GetFileVersion()
 	if !isKnown {
 		if version > r.link.GetFloor(stored.GetRevision().GetFileId()) {
-			r.link.AddRetired(vaultlink.RetiredFile{FileID: stored.GetRevision().GetFileId(), Version: version})
+			r.link.AddRetired(vaultlink.RetiredFile{FileID: stored.GetRevision().GetFileId(), Version: version, At: 0})
 		}
 		return nil
 	}
@@ -42,7 +42,7 @@ func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, 
 	switch {
 	case hash == "":
 		r.removeRecord(record.FileID)
-		r.link.AddRetired(vaultlink.RetiredFile{FileID: record.FileID, Version: version})
+		r.link.AddRetired(vaultlink.RetiredFile{FileID: record.FileID, Version: version, At: 0})
 	case hash != record.BaseHash:
 		record.HeadRev, record.Version = stored.GetRevId(), version
 		r.setRecord(record)
@@ -77,7 +77,7 @@ func (r *run) settleRemoval(ctx context.Context, one removal, isKept bool) error
 		_, err := r.moves.RemoveFile(ctx, one.record.Path, getBaseline(one.stat, one.isListed))
 		if err == nil || errors.Is(err, host.ErrNotExist) {
 			r.removeRecord(one.record.FileID)
-			r.link.AddRetired(vaultlink.RetiredFile{FileID: one.record.FileID, Version: one.version})
+			r.link.AddRetired(vaultlink.RetiredFile{FileID: one.record.FileID, Version: one.version, At: 0})
 			return nil
 		}
 		if !errors.Is(err, host.ErrStale) {

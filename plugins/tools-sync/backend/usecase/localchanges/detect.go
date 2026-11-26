@@ -69,8 +69,21 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 	for _, move := range scan.Moves {
 		moved[move.Record.Path] = true
 	}
+	removals, kept, err := u.findRemovals(ctx, in, gone, moved, since)
+	if err != nil {
+		return transfer.Scan{}, err
+	}
+	scan.Removals = removals
+	if maps.Equal(since, kept) {
+		return scan, nil
+	}
+	return scan, u.deps.State.WriteAbsences(ctx, in.VaultID, kept)
+}
+
+func (u *DetectMoves) findRemovals(ctx context.Context, in transfer.ScanInput, gone []transfer.FileRecord, moved map[string]bool, since map[string]int64) ([]transfer.FileRecord, map[string]int64, error) {
 	now := u.deps.Clock.Now().UnixNano()
 	kept := map[string]int64{}
+	var removals []transfer.FileRecord
 	for _, record := range gone {
 		if moved[record.Path] {
 			continue
@@ -83,16 +96,15 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 		if time.Duration(now-first) < u.deps.Delay() {
 			continue
 		}
-		if isGone, err := u.isGone(ctx, in, record); err != nil {
-			return transfer.Scan{}, err
-		} else if isGone {
-			scan.Removals = append(scan.Removals, record)
+		isGone, err := u.isGone(ctx, in, record)
+		if err != nil {
+			return nil, nil, err
+		}
+		if isGone {
+			removals = append(removals, record)
 		}
 	}
-	if maps.Equal(since, kept) {
-		return scan, nil
-	}
-	return scan, u.deps.State.WriteAbsences(ctx, in.VaultID, kept)
+	return removals, kept, nil
 }
 
 func (u *DetectMoves) isGone(ctx context.Context, in transfer.ScanInput, record transfer.FileRecord) (bool, error) {

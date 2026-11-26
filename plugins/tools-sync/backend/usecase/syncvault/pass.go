@@ -199,7 +199,7 @@ func (p *pass) keepRemoved(ctx context.Context, outcomes []transfer.Outcome) err
 	var removed []vaultlink.RemovedFile
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
-			removed = append(removed, vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1})
+			removed = append(removed, vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1, At: 0})
 		}
 	}
 	if len(removed) == 0 {

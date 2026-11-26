@@ -248,7 +248,7 @@ func (r *recovery) remove(ctx context.Context, removals []transfer.FileRecord) e
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
 			r.records = slices.DeleteFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
-			gone := vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1}
+			gone := vaultlink.RemovedFile{FileID: outcome.FileID, Path: outcome.Path, HeadRev: outcome.RevID, Version: outcome.Record.Version + 1, At: 0}
 			r.link.AddRemoved(gone)
 			r.removed = append(r.removed, gone)
 		}

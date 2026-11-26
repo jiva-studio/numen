@@ -116,15 +116,10 @@ func (r *run) execute(ctx context.Context) error {
 	}
 	since := r.link.ServerSeq
 	for pages := 1; ; pages++ {
-		page, err := r.deps.Revisions.GetChanges(ctx, r.remote, since, 0)
+		page, err := r.fetchPage(ctx, since)
 		if err != nil {
 			return err
 		}
-		r.result.EpochID = page.GetRestoreEpochId()
-		r.result.Verdict = restore.GetVerdict(
-			restore.Memory{EpochID: r.link.RestoreEpochID, Cursor: r.link.ServerSeq, HighSeq: r.link.HighSeq, PinnedKey: nil},
-			restore.Look{EpochID: r.result.EpochID, HeadSeq: page.GetHeadSeq(), SignKey: nil},
-		)
 		if r.result.Verdict != restore.Same {
 			return nil
 		}
@@ -145,6 +140,19 @@ func (r *run) execute(ctx context.Context) error {
 		}
 		since = page.GetNextSeq()
 	}
+}
+
+func (r *run) fetchPage(ctx context.Context, since uint64) (*syncv1.GetChangesResponse, error) {
+	page, err := r.deps.Revisions.GetChanges(ctx, r.remote, since, 0)
+	if err != nil {
+		return nil, err
+	}
+	r.result.EpochID = page.GetRestoreEpochId()
+	r.result.Verdict = restore.GetVerdict(
+		restore.Memory{EpochID: r.link.RestoreEpochID, Cursor: r.link.ServerSeq, HighSeq: r.link.HighSeq, PinnedKey: nil},
+		restore.Look{EpochID: r.result.EpochID, HeadSeq: page.GetHeadSeq(), SignKey: nil},
+	)
+	return page, nil
 }
 
 func (r *run) raiseHighSeq(ctx context.Context, head uint64) error {
