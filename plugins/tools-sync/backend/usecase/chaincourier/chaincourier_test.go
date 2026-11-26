@@ -399,8 +399,6 @@ type rolledBackServer struct {
 
 func (s rolledBackServer) GetAccountChain(context.Context) ([]byte, error) { return s.forked, nil }
 
-// newForkedByWords returns a device that holds a chain with a revoke that another device signed, and the dependencies over a server
-// whose chain replaces that revoke with a device the recovery key added.
 func newForkedByWords(t *testing.T) (observer *synctest.Computer, deps chaincourier.Deps, clock *synctest.Clock) {
 	t.Helper()
 	clock = synctest.NewClock(synctest.GetStart())

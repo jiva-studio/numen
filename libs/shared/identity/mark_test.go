@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-func TestChainMark_HoldsAtLeastSixteenBytesOfTheHash(t *testing.T) {
+func TestChainMark_HasAtLeastSixteenBytesOfTheHash(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
 

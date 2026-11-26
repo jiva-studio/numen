@@ -12,7 +12,7 @@ afterEach(() => {
 })
 
 const WARNING =
-  'The sync server cannot be checked against your recovery kit. If you have another device, confirm on it that the devices listed are yours.'
+  'The sync server cannot be checked against your recovery kit. If you have another device, open it and confirm the devices listed are yours.'
 
 describe('the restore dialogs', () => {
   it('tell the person that the sync server cannot be checked against the recovery kit', () => {

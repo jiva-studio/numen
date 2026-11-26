@@ -172,7 +172,7 @@ export const WORDS = {
   confirmationCode: (code: string): string => `Code ${code}`,
   requestFingerprint: (fingerprint: string): string => `Fingerprint ${fingerprint}`,
   fingerprintNote:
-    'The code only shows that the person has the link. Ask the person to read you their fingerprint from Numen, and allow only if it is the same as this one.',
+    'The code only shows the person has the link. Ask the person to read you their fingerprint from Numen, and allow only if it is the same as this one.',
   fingerprintConfirm: 'The fingerprint is the same',
   approve: 'Approve',
   decline: 'Decline',

@@ -120,7 +120,7 @@ describe('the identity store', () => {
     const { store } = createStore(createClient({ create }))
     const answer = await store.create(WORDS)
     expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
-    expect(create).toHaveBeenCalledExactlyOnceWith(WORDS, true)
+    expect(create).toHaveBeenCalledExactlyOnceWith(WORDS)
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
   })
 

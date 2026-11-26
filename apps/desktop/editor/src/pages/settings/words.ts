@@ -126,7 +126,7 @@ export const WORDS = {
   identityKeeping: 'Keeping…',
   identityCancel: 'Cancel',
   restoreUnverifiedNote:
-    'The sync server cannot be checked against your recovery kit. If you have another device, confirm on it that the devices listed are yours.',
+    'The sync server cannot be checked against your recovery kit. If you have another device, open it and confirm the devices listed are yours.',
   restoreWordsHint: 'Enter your 12 recovery words.',
   restoreSheetsHint: 'Take two of your three recovery sheets and scan their QR codes one after the other.',
   restoreTypedTitle: 'Recovery kit: type',
