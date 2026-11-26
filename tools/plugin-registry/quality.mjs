@@ -1,0 +1,88 @@
+/**
+ * The quality of a plugin as the registry shows it. A plugin of this repository takes the numbers
+ * of the nightly mutation and coverage workflows (`tools/shared/plugin-quality.mjs`); a plugin of
+ * another repository takes the `quality.json` its author publishes.
+ */
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { listPluginTargets } from '../shared/plugin-quality.mjs'
+
+const KINDS = ['mutation', 'coverage']
+
+const readFromFolder = (dir, kind) => {
+  const file = join(dir, `${kind}.json`)
+  return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null
+}
+
+const readFromUrl = async (base, kind, fetcher) => {
+  const response = await fetcher(`${base.replace(/\/+$/, '')}/${kind}.json`)
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error(`${kind}.json was answered with ${response.status}`)
+  return response.json()
+}
+
+/**
+ * The quality files at `source`, a folder or an https URL holding `mutation.json` and
+ * `coverage.json`, as maps by target. A missing file is an empty map; no source is two empty maps.
+ *
+ * @param {string | null} source
+ * @param {typeof fetch} fetcher
+ * @returns {Promise<{ mutation: Map<string, object>, coverage: Map<string, object> }>}
+ */
+export const readQualityFiles = async (source, fetcher = fetch) => {
+  const files = {}
+  for (const kind of KINDS) {
+    let file = null
+    if (source?.startsWith('https://')) file = await readFromUrl(source, kind, fetcher)
+    else if (source) file = readFromFolder(source, kind)
+    files[kind] = new Map((file?.targets ?? []).map((one) => [one.target, one]))
+  }
+  return files
+}
+
+const getLatest = (...dates) => dates.filter(Boolean).sort().at(-1) ?? null
+
+/**
+ * The quality of the plugin folder `folder`, one entry per measured target; null when nothing was
+ * measured.
+ */
+export const getInternalQuality = (folder, files) => {
+  const entries = listPluginTargets(folder).flatMap(({ target, kind }) => {
+    const mutation = files.mutation.get(target)
+    const coverage = files.coverage.get(target)
+    if (!mutation && !coverage) return []
+    return [
+      {
+        target,
+        kind,
+        mutationScore: mutation?.mutationScore ?? null,
+        coverage: coverage?.coverage ?? null,
+        measuredAt: getLatest(mutation?.measuredAt, coverage?.measuredAt),
+      },
+    ]
+  })
+  return entries.length === 0 ? null : { reportedBy: 'numen', entries }
+}
+
+const readPercent = (value) =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100 ? value : null
+
+/** The quality an author reports in `quality.json`; null when the file is absent or names neither number. */
+export const getExternalQuality = (document) => {
+  if (document === null || typeof document !== 'object') return null
+  const mutationScore = readPercent(document.mutationScore)
+  const coverage = readPercent(document.coverage)
+  if (mutationScore === null && coverage === null) return null
+  return {
+    reportedBy: 'author',
+    entries: [
+      {
+        target: null,
+        kind: null,
+        mutationScore,
+        coverage,
+        measuredAt: typeof document.measuredAt === 'string' ? document.measuredAt : null,
+      },
+    ],
+  }
+}
