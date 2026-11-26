@@ -1,8 +1,14 @@
 /** A plugin card's filter values, read from its data attributes. */
 type CardFilter = { search: string; category: string; apps: string[]; isPaid: boolean; isOfficial: boolean }
 
-/** The values of the filter form. */
-type FormFilter = { query: string; category: string; app: string; price: string; isOfficialOnly: boolean }
+/** The values of the filter bar; an empty string chooses every value. */
+export type CatalogFilter = {
+  query: string
+  category: string
+  app: string
+  price: string
+  isOfficialOnly: boolean
+}
 
 function readCard(card: HTMLElement): CardFilter {
   return {
@@ -14,24 +20,9 @@ function readCard(card: HTMLElement): CardFilter {
   }
 }
 
-function readForm(form: HTMLFormElement): FormFilter {
-  const data = new FormData(form)
-  const read = (name: string): string => {
-    const value = data.get(name)
-    return typeof value === 'string' ? value : ''
-  }
-  return {
-    query: read('query').trim().toLowerCase(),
-    category: read('category'),
-    app: read('app'),
-    price: read('price'),
-    isOfficialOnly: data.get('official') !== null,
-  }
-}
-
 /** Whether a card passes the filter: every search word, and each chosen value. */
-export function isCardShown(card: CardFilter, filter: FormFilter): boolean {
-  const words = filter.query.split(/\s+/).filter(Boolean)
+export function isCardShown(card: CardFilter, filter: CatalogFilter): boolean {
+  const words = filter.query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   if (!words.every((word) => card.search.includes(word))) return false
   if (filter.category !== '' && card.category !== filter.category) return false
   if (filter.app !== '' && !card.apps.includes(filter.app)) return false
@@ -40,26 +31,23 @@ export function isCardShown(card: CardFilter, filter: FormFilter): boolean {
   return !filter.isOfficialOnly || card.isOfficial
 }
 
-function applyFilter(form: HTMLFormElement, cards: HTMLElement[], empty: HTMLElement | null): void {
-  const filter = readForm(form)
+/** Hides the catalog cards the filter does not pass, and shows the empty note when none is left. */
+export function showMatchingCards(filter: CatalogFilter): void {
   let shown = 0
-  for (const card of cards) {
+  for (const card of document.querySelectorAll<HTMLElement>('[data-plugin-card]')) {
     const isShown = isCardShown(readCard(card), filter)
     card.hidden = !isShown
     if (isShown) shown += 1
   }
+  const empty = document.querySelector<HTMLElement>('[data-plugin-empty]')
   if (empty) empty.hidden = shown > 0
 }
 
-/** Wires the search and the filters of the plugin catalog. */
-export function initPluginCatalog(): void {
-  const form = document.querySelector<HTMLFormElement>('[data-plugin-filters]')
-  if (!form) return
-  const cards = [...document.querySelectorAll<HTMLElement>('[data-plugin-card]')]
-  const empty = document.querySelector<HTMLElement>('[data-plugin-empty]')
-  const onChange = (): void => applyFilter(form, cards, empty)
-  form.addEventListener('input', onChange)
-  form.addEventListener('change', onChange)
-  form.addEventListener('submit', (event) => event.preventDefault())
-  onChange()
+/** Calls `onChange` with the page language now and whenever it changes; returns the stop function. */
+export function watchPageLanguage(onChange: (lang: string) => void): () => void {
+  const root = document.documentElement
+  const observer = new MutationObserver(() => onChange(root.lang))
+  observer.observe(root, { attributes: true, attributeFilter: ['lang'] })
+  onChange(root.lang)
+  return () => observer.disconnect()
 }

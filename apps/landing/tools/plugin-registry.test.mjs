@@ -82,3 +82,7 @@ test('a card is hidden by a category, an app, a price or the official filter it 
   assert.equal(isCardShown(card, { ...noFilter, price: 'free' }), true)
   assert.equal(isCardShown(card, { ...noFilter, isOfficialOnly: true }), false)
 })
+
+test('a search matches whatever the case and the spaces around it', () => {
+  assert.equal(isCardShown(card, { ...noFilter, query: '  Word COUNT ' }), true)
+})

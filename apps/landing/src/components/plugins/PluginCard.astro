@@ -1,16 +1,16 @@
 ---
-import { type CatalogPlugin, getCategoryName, getPluginPath, getSearchText } from './catalog'
+import { type CatalogPlugin, getAppNames, getCategoryName, getPluginPath, getSearchText } from './catalog'
 
 interface Props {
   plugin: CatalogPlugin
 }
 
 const { plugin } = Astro.props
-const summary = plugin.readme?.intro || plugin.description
+const meta = [getCategoryName(plugin.category), ...getAppNames(plugin.targets)].join(' · ')
 ---
 
 <li
-  class="u-card plugin-card"
+  class="plugin-card"
   data-plugin-card
   data-search={getSearchText(plugin)}
   data-category={plugin.category}
@@ -18,18 +18,11 @@ const summary = plugin.readme?.intro || plugin.description
   data-paid={String(plugin.isPaid)}
   data-official={String(plugin.isOfficial)}
 >
-  <span class="u-card__tag">{getCategoryName(plugin.category)}</span>
-  <h2><a href={getPluginPath(plugin.id)}>{plugin.name}</a></h2>
-  <p class="plugin-card__author">{plugin.author}</p>
-  <p>{summary}</p>
-  <p class="plugin-tags">
-    {
-      plugin.isPaid ? (
-        <span class="plugin-tag" data-i18n="plugins_paid">Paid</span>
-      ) : (
-        <span class="plugin-tag" data-i18n="plugins_free">Free</span>
-      )
-    }
-    {plugin.isOfficial && <span class="plugin-tag" data-i18n="plugins_official">Official</span>}
-  </p>
+  <div class="plugin-card__head">
+    <h2><a href={getPluginPath(plugin.id)}>{plugin.name}</a></h2>
+    {plugin.isPaid && <span class="plugin-badge" data-i18n="plugins_paid">Paid</span>}
+    {!plugin.isOfficial && <span class="plugin-badge" data-i18n="plugins_community">Community</span>}
+  </div>
+  <p class="plugin-card__text">{plugin.description}</p>
+  <p class="plugin-card__meta">{meta}</p>
 </li>

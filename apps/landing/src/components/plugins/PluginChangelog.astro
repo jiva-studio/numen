@@ -10,7 +10,7 @@ const { plugin } = Astro.props
 
 {
   plugin.changelog.length === 0 ? (
-    <p class="plugin-empty" data-i18n="plugin_changelog_none">
+    <p class="plugin-muted" data-i18n="plugin_changelog_none">
       No released versions yet.
     </p>
   ) : (
@@ -18,16 +18,19 @@ const { plugin } = Astro.props
       {plugin.changelog.map((change) => (
         <li>
           <h3>
-            {change.version} <time datetime={change.date}>{formatDate(change.date)}</time>
+            {change.version}
+            <time datetime={change.date}>{formatDate(change.date)}</time>
           </h3>
-          {change.changes && (
-            <ul>
-              {change.changes.map((line) => (
-                <li>{line}</li>
-              ))}
-            </ul>
-          )}
-          {change.notesHtml && <div class="plugin-prose" set:html={change.notesHtml} />}
+          <div>
+            {change.changes && (
+              <ul>
+                {change.changes.map((line) => (
+                  <li>{line}</li>
+                ))}
+              </ul>
+            )}
+            {change.notesHtml && <div class="plugin-prose" set:html={change.notesHtml} />}
+          </div>
         </li>
       ))}
     </ol>

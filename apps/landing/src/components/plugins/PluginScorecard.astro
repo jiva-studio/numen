@@ -14,24 +14,44 @@ interface Props {
 
 const { plugin } = Astro.props
 const added = new Set(plugin.permissionsAdded)
+
+const STATUS_MARKS: Readonly<Record<string, string>> = {
+  pass: 'M5 12.5 9.5 17 19 7.5',
+  warn: 'M12 6.5v7M12 17.5v.5',
+  fail: 'M7 7l10 10M17 7 7 17',
+  info: 'M12 11v6.5M12 6.5v.5',
+  skipped: 'M7 12h10',
+}
+
+const quality = (plugin.quality?.entries ?? []).flatMap((entry) => {
+  const kind = getQualityKind(entry)
+  return [
+    entry.mutationScore === null
+      ? null
+      : { key: 'plugin_mutation', name: 'Mutation score', kind, value: entry.mutationScore },
+    entry.coverage === null ? null : { key: 'plugin_coverage', name: 'Coverage', kind, value: entry.coverage },
+  ].filter((row) => row !== null)
+})
 ---
 
 <section class="plugin-section" aria-labelledby="plugin-checks">
   <h2 id="plugin-checks" data-i18n="plugin_checks">Checks</h2>
-  <p class="plugin-muted" data-i18n="plugin_checks_lede">
-    The registry runs these checks on the plugin every night.
-  </p>
-  <ul class="plugin-checks">
+  <ul class="plugin-rows">
     {
       plugin.checks.map((check) => (
-        <li class="plugin-check" data-status={check.status}>
-          <span class="plugin-check__status" data-i18n={`plugin_status_${check.status}`}>
-            {EN[`plugin_status_${check.status}`] ?? check.status}
+        <li class="plugin-row plugin-row--check" data-status={check.status}>
+          <span class="plugin-status">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d={STATUS_MARKS[check.status] ?? STATUS_MARKS.info} />
+            </svg>
+            <span class="plugin-sr" data-i18n={`plugin_status_${check.status}`}>
+              {EN[`plugin_status_${check.status}`] ?? check.status}
+            </span>
           </span>
-          <strong data-i18n={`plugin_check_${check.id}`}>
+          <span class="plugin-row__name" data-i18n={`plugin_check_${check.id}`}>
             {EN[`plugin_check_${check.id}`] ?? check.id}
-          </strong>
-          <span class="plugin-muted">{check.detail}</span>
+          </span>
+          <span class="plugin-row__detail">{check.detail}</span>
         </li>
       ))
     }
@@ -46,15 +66,18 @@ const added = new Set(plugin.permissionsAdded)
         This plugin asks for no permissions.
       </p>
     ) : (
-      <ul class="plugin-list">
+      <ul class="plugin-rows">
         {plugin.permissions.map((permission) => (
-          <li>
-            <span>{permission.description}</span> <code>{permission.id}</code>
-            {added.has(permission.id) && (
-              <span class="plugin-tag" data-i18n="plugin_permission_added">
-                New in this version
-              </span>
-            )}
+          <li class="plugin-row">
+            <span class="plugin-row__name">
+              {permission.description}
+              {added.has(permission.id) && (
+                <span class="plugin-new" data-i18n="plugin_permission_added">
+                  New in this version
+                </span>
+              )}
+            </span>
+            <code class="plugin-row__detail">{permission.id}</code>
           </li>
         ))}
       </ul>
@@ -68,11 +91,11 @@ const added = new Set(plugin.permissionsAdded)
       <h2 id="plugin-settings" data-i18n="plugin_settings">
         Settings it adds
       </h2>
-      <ul class="plugin-list">
+      <ul class="plugin-rows">
         {plugin.settings.map((setting) => (
-          <li>
-            <strong>{setting.title}</strong>
-            {setting.description && <span class="plugin-muted"> — {setting.description}</span>}
+          <li class="plugin-row">
+            <span class="plugin-row__name">{setting.title}</span>
+            <span class="plugin-row__detail">{setting.description}</span>
           </li>
         ))}
       </ul>
@@ -86,9 +109,11 @@ const added = new Set(plugin.permissionsAdded)
       <h2 id="plugin-commands" data-i18n="plugin_commands">
         Commands it adds
       </h2>
-      <ul class="plugin-list">
+      <ul class="plugin-rows">
         {plugin.commands.map((command) => (
-          <li>{command.title}</li>
+          <li class="plugin-row">
+            <span class="plugin-row__name">{command.title}</span>
+          </li>
         ))}
       </ul>
     </section>
@@ -103,22 +128,24 @@ const added = new Set(plugin.permissionsAdded)
         It declares no downloads.
       </p>
     ) : (
-      <ul class="plugin-list">
+      <ul class="plugin-rows">
         {plugin.downloads.map((download) => (
-          <li>
-            <strong>{download.id}</strong> {download.version}
-            <ul class="plugin-sublist">
+          <li class="plugin-row">
+            <span class="plugin-row__name">
+              {download.id} {download.version}
+            </span>
+            <span class="plugin-row__detail plugin-sizes">
               {download.platforms.map((file) => (
-                <li>
-                  {getPlatformName(file.platform)}:{' '}
+                <span>
+                  {getPlatformName(file.platform)}{' '}
                   {file.size === null ? (
                     <span data-i18n="plugin_size_unknown">size unknown</span>
                   ) : (
                     formatSize(file.size)
                   )}
-                </li>
+                </span>
               ))}
-            </ul>
+            </span>
           </li>
         ))}
       </ul>
@@ -132,11 +159,16 @@ const added = new Set(plugin.permissionsAdded)
       <h2 id="plugin-artifacts" data-i18n="plugin_artifacts">
         Release artifacts
       </h2>
-      <ul class="plugin-list">
+      <ul class="plugin-rows">
         {plugin.artifacts.map((artifact) => (
-          <li>
-            <a href={artifact.url}>{artifact.name}</a> {formatSize(artifact.size)}
-            {artifact.sha256 && <code class="plugin-hash">{artifact.sha256}</code>}
+          <li class="plugin-row">
+            <span class="plugin-row__name">
+              <a href={artifact.url}>{artifact.name}</a>
+            </span>
+            <span class="plugin-row__detail">
+              {formatSize(artifact.size)}
+              {artifact.sha256 && <code class="plugin-hash">{artifact.sha256}</code>}
+            </span>
           </li>
         ))}
       </ul>
@@ -147,44 +179,28 @@ const added = new Set(plugin.permissionsAdded)
 <section class="plugin-section" aria-labelledby="plugin-quality">
   <h2 id="plugin-quality" data-i18n="plugin_quality">Tests</h2>
   {
-    plugin.quality === null ? (
+    quality.length === 0 ? (
       <p class="plugin-muted" data-i18n="plugin_quality_none">
         Not measured yet.
       </p>
     ) : (
-      <>
-        <dl class="plugin-quality">
-          {plugin.quality.entries.map((entry) => (
-            <>
-              {entry.mutationScore !== null && (
-                <>
-                  <dt>
-                    <span data-i18n="plugin_mutation">Mutation score</span> {getQualityKind(entry)}
-                  </dt>
-                  <dd>{formatPercent(entry.mutationScore)}</dd>
-                </>
-              )}
-              {entry.coverage !== null && (
-                <>
-                  <dt>
-                    <span data-i18n="plugin_coverage">Coverage</span> {getQualityKind(entry)}
-                  </dt>
-                  <dd>{formatPercent(entry.coverage)}</dd>
-                </>
-              )}
-            </>
-          ))}
-        </dl>
-        {plugin.quality.reportedBy === 'author' ? (
-          <p class="plugin-muted" data-i18n="plugin_quality_author">
-            Reported by the author.
-          </p>
-        ) : (
-          <p class="plugin-muted" data-i18n="plugin_quality_numen">
-            Measured every night by Numen CI.
-          </p>
-        )}
-      </>
+      <ul class="plugin-rows">
+        {quality.map((row) => (
+          <li class="plugin-row">
+            <span class="plugin-row__name">
+              <span data-i18n={row.key}>{row.name}</span> {row.kind}
+            </span>
+            <span class="plugin-row__value">{formatPercent(row.value)}</span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  {
+    plugin.quality?.reportedBy === 'author' && (
+      <p class="plugin-muted" data-i18n="plugin_quality_author">
+        Reported by the author.
+      </p>
     )
   }
 </section>

@@ -1,12 +1,14 @@
 ---
 /**
- * The plugin catalog: every plugin of the registry, with search and filters.
+ * The plugin catalog: every plugin of the registry as a card, with the search and the filters over
+ * them.
  */
 import { getCollection } from 'astro:content'
 import Page from '../../layouts/Page.astro'
 import SiteHeader from '../../components/page/SiteHeader.astro'
 import SiteFooter from '../../components/page/SiteFooter.astro'
 import PluginCard from '../../components/plugins/PluginCard.astro'
+import PluginFilters from '../../components/plugins/PluginFilters.vue'
 import {
   APP_NAMES,
   type CatalogPlugin,
@@ -18,7 +20,8 @@ import '../../styles/plugins.css'
 const plugins = (await getCollection('plugins'))
   .map((entry) => entry.data as CatalogPlugin)
   .sort((a, b) => a.name.localeCompare(b.name))
-const categories = listCategories(plugins)
+const categories = listCategories(plugins).map((id) => ({ id, text: getCategoryName(id) }))
+const apps = Object.entries(APP_NAMES).map(([id, text]) => ({ id, text }))
 
 const title = 'Plugins — numen'
 const description =
@@ -28,55 +31,19 @@ const description =
 <Page title={title} description={description}>
   <SiteHeader />
 
-  <main class="band plugins-band">
+  <main class="band plugin-band">
     <div class="container">
-      <div class="section-head">
-        <p class="section-kicker" data-i18n="plugins_kicker">Plugins</p>
+      <header class="plugin-intro">
         <h1 data-i18n="plugins_title">Plugins for Numen</h1>
-        <p data-i18n="plugins_lede">
-          What each plugin does, what it can access, and how it is tested.
-        </p>
-      </div>
+        <p data-i18n="plugins_lede">What each plugin does, what it can access, and how it is tested.</p>
+      </header>
 
-      <form class="plugin-filters" role="search" data-plugin-filters>
-        <label class="plugin-field plugin-field--search">
-          <span data-i18n="plugins_search">Search</span>
-          <input type="search" name="query" autocomplete="off" />
-        </label>
-        <label class="plugin-field">
-          <span data-i18n="plugins_category">Category</span>
-          <select name="category">
-            <option value="" data-i18n="plugins_category_all">All categories</option>
-            {categories.map((category) => <option value={category}>{getCategoryName(category)}</option>)}
-          </select>
-        </label>
-        <label class="plugin-field">
-          <span data-i18n="plugins_app">App</span>
-          <select name="app">
-            <option value="" data-i18n="plugins_app_all">All apps</option>
-            {Object.entries(APP_NAMES).map(([target, name]) => <option value={target}>{name}</option>)}
-          </select>
-        </label>
-        <label class="plugin-field">
-          <span data-i18n="plugins_price">Price</span>
-          <select name="price">
-            <option value="" data-i18n="plugins_price_all">Free and paid</option>
-            <option value="free" data-i18n="plugins_free">Free</option>
-            <option value="paid" data-i18n="plugins_paid">Paid</option>
-          </select>
-        </label>
-        <label class="plugin-field plugin-field--check">
-          <input type="checkbox" name="official" />
-          <span data-i18n="plugins_official_only">Official only</span>
-        </label>
-      </form>
+      <PluginFilters client:load categories={categories} apps={apps} />
 
       <ul class="plugin-grid">
         {plugins.map((plugin) => <PluginCard plugin={plugin} />)}
       </ul>
-      <p class="plugin-empty" data-plugin-empty data-i18n="plugins_none" hidden>
-        No plugin matches.
-      </p>
+      <p class="plugin-muted" data-plugin-empty data-i18n="plugins_none" hidden>No plugin matches.</p>
     </div>
   </main>
 
@@ -84,9 +51,7 @@ const description =
 
   <script>
     import { initSiteControls } from '../../scripts/site-controls'
-    import { initPluginCatalog } from '../../scripts/plugin-catalog'
 
     initSiteControls()
-    initPluginCatalog()
   </script>
 </Page>

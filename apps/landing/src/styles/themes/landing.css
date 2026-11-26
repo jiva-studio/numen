@@ -15,6 +15,7 @@
   --card-bg: #fffbf2;
   --sage: #ede2cf;
   --rust: #b5522f;
+  --pass: #4c7a3c;
   --gold: #d4943a;
   --muted: #6e6254;
   --border: #e2d7c5;
@@ -41,6 +42,7 @@
   --font-body: 'Nunito Sans Variable', sans-serif;
   --font-display: 'Nunito Sans Variable', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --numen-font-sans: var(--font-body);
 }
 
 :root[data-theme='dark'] {
@@ -58,6 +60,7 @@
   --card-bg: #25201b;
   --sage: #201b17;
   --rust: #e8836b;
+  --pass: #94bd7f;
   --gold: #e9a23b;
   --muted: #a89c8e;
   --border: #373029;

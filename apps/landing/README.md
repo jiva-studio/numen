@@ -53,6 +53,10 @@ NUMEN_PLUGIN_REGISTRY_FILE=../../.registry/latest.json npm run dev
 
 `tools/fixtures/plugin-registry.json` is a small registry for the same purpose.
 
+The cards are HTML. The search and the filters over them are a Vue island
+(`src/components/plugins/PluginFilters.vue`) drawn with `@numen/ui`, which the
+build reaches through `libs/ui/components/dist`; `prebuild` builds it.
+
 ## Where it is published
 
 `site` in `astro.config.mjs` is what canonical URLs are built from, and is the

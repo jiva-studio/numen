@@ -1,0 +1,47 @@
+---
+import {
+  type CatalogPlugin,
+  formatDate,
+  getAppNames,
+  getCategoryName,
+  getPlatformName,
+} from './catalog'
+
+interface Props {
+  plugin: CatalogPlugin
+}
+
+const { plugin } = Astro.props
+---
+
+<header class="plugin-head">
+  <nav class="plugin-crumbs" aria-label="Breadcrumb">
+    <a href="/plugins" data-i18n="nav_plugins">Plugins</a>
+    <span aria-hidden="true">/</span>
+    <span>{getCategoryName(plugin.category)}</span>
+  </nav>
+  <div class="plugin-head__title">
+    <h1>{plugin.name}</h1>
+    {plugin.isPaid && <span class="plugin-badge" data-i18n="plugins_paid">Paid</span>}
+    {!plugin.isOfficial && <span class="plugin-badge" data-i18n="plugins_community">Community</span>}
+  </div>
+  <p class="plugin-head__lede">{plugin.description}</p>
+  <p class="plugin-facts">
+    <span>{plugin.version}</span>
+    {
+      plugin.updatedAt && (
+        <span>
+          <span data-i18n="plugin_updated">Updated</span>{' '}
+          <time datetime={plugin.updatedAt}>{formatDate(plugin.updatedAt)}</time>
+        </span>
+      )
+    }
+    {!plugin.isOfficial && <span>{plugin.author}</span>}
+    {plugin.license && <span>{plugin.license}</span>}
+    <span>
+      <span data-i18n="plugin_apps">Works in</span> {getAppNames(plugin.targets).join(', ')}
+    </span>
+    <span>{plugin.platforms.map(getPlatformName).join(', ')}</span>
+    <a href={plugin.source.url} target="_blank" rel="noopener" data-i18n="plugin_source">Source code</a>
+  </p>
+</header>
