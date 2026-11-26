@@ -59,10 +59,6 @@ type Story = StoryObj<typeof meta>
 
 /** The item over the vectors and the chunks that should carry one, and its popover with one row per kind that holds sources. */
 export const Open: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'index', width: 640, height: 440, drawn: 3_000 }],
-  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(await canvas.findByRole('button', { name: /12,480/ }))
@@ -119,4 +115,19 @@ export const OpenAndClose: Story = {
     await userEvent.click(within(popover).getByRole('button', { name: 'Close index stats' }))
     await expect(args.onClose).toHaveBeenCalledTimes(1)
   },
+}
+
+/** The item in the title bar of the window, with its popover open over the note. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-status' },
+    screenshot: [{ name: 'index' }],
+  },
+  render: (args) => ({
+    components: { StatsIndicator },
+    setup: () => ({ args }),
+    template: '<StatsIndicator v-bind="args" />',
+  }),
+  play: Open.play,
 }

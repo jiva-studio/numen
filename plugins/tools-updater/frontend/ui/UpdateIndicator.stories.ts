@@ -38,10 +38,6 @@ type Story = StoryObj<typeof meta>
 
 /** An update waits: the chip names the new version and says an update is available. */
 export const Available: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'update', width: 640, height: 90, drawn: 1_000 }],
-  },
   play: async ({ canvasElement }) => {
     const chip = within(canvasElement).getByRole('button')
     await expect(chip.textContent?.trim()).toBe('v2026.11.12')
@@ -51,4 +47,19 @@ export const Available: Story = {
       'Update available',
     )
   },
+}
+
+/** The chip in the title bar of the window while an update waits, its tooltip shown. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-status' },
+    screenshot: [{ name: 'update' }],
+  },
+  render: (args) => ({
+    components: { UpdateIndicator },
+    setup: () => ({ args }),
+    template: '<UpdateIndicator v-bind="args" />',
+  }),
+  play: Available.play,
 }

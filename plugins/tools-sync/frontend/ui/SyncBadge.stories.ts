@@ -25,10 +25,6 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Syncing: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'sync', width: 110, height: 34, drawn: 500 }],
-  },
   args: {
     phase: 'syncing',
   },
@@ -60,4 +56,20 @@ export const Hidden: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.queryByRole('status')).toBeNull()
   },
+}
+
+/** The badge in the title bar of the window while the vault syncs. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-status' },
+    screenshot: [{ name: 'sync' }],
+  },
+  args: { phase: 'syncing' },
+  render: (args) => ({
+    components: { SyncBadge },
+    setup: () => ({ args }),
+    template: '<SyncBadge v-bind="args" />',
+  }),
+  play: Syncing.play,
 }

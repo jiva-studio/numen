@@ -81,10 +81,6 @@ type Story = StoryObj<typeof meta>
 
 /** The chip opened: the tasks due under Overdue, Today, Next 7 days and No date. */
 export const Opened: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'tasks-due', width: 760, height: 380, drawn: 3_000 }],
-  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Tasks due: 8' }))
@@ -99,5 +95,66 @@ export const Opened: Story = {
         .getAllByRole('heading')
         .map((one) => one.textContent?.replace(/\s+/g, ' ').trim()),
     ).toEqual(['Overdue 2', 'Today 3', 'Next 7 days 2', 'No date 1'])
+  },
+}
+
+const task = (path: string, line: number, text: string, due = '') =>
+  createTask({ path, line, text, ...(due ? { due } : {}) })
+
+/** The tasks a vault of physics notes has due. */
+const PHYSICS = {
+  overdue: {
+    tasks: [
+      task('Physics/Entropy.md', 31, 'Check the units in the Boltzmann formula', '2026-04-10'),
+      task('Reading list.md', 4, 'Return Shannon 1948 to the library', '2026-04-12'),
+    ],
+    total: 2,
+    revision: 1,
+  },
+  today: {
+    tasks: [
+      task("Computation/Landauer's principle.md", 12, 'Work out kT ln 2 at room temperature', TODAY),
+      task('Lectures/Lecture 4.md', 3, 'Correct the transcript of Lecture 4', TODAY),
+      task("Physics/Maxwell's demon.md", 18, 'Add the Szilard engine', TODAY),
+    ],
+    total: 3,
+    revision: 1,
+  },
+  nextSevenDays: {
+    tasks: [
+      task('Physics/Free energy.md', 7, 'Derive the Helmholtz form', '2026-04-16'),
+      task('Reading list.md', 9, 'Read Bennett 1982', '2026-04-19'),
+    ],
+    total: 2,
+    revision: 1,
+  },
+  none: {
+    tasks: [task('Inbox.md', 2, 'Ask about the Gibbs paradox')],
+    total: 1,
+    revision: 1,
+  },
+}
+
+/** The chip in the title bar of the window, opened on the tasks due. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-status' },
+    screenshot: [{ name: 'tasks-due' }],
+  },
+  args: { api: createFakeApi({ tasks: PHYSICS }).api },
+  render: (args) => ({
+    components: { TodosStatus },
+    setup: () => ({ args }),
+    template: '<TodosStatus v-bind="args" />',
+  }),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Tasks due: 8' }))
+    const lists = await within(document.body).findByRole('dialog', { name: 'Tasks due' })
+    await waitFor(() =>
+      expect(
+        within(lists).getByRole('checkbox', { name: taskDoneLabel('Add the Szilard engine') }),
+      ).toBeVisible(),
+    )
   },
 }

@@ -165,6 +165,7 @@ export const Reading: Story = {
 /** The book in a tab of the window, beside the note that cites the page. */
 export const InTheWindow: Story = {
   ...Reading,
+  tags: ['screenshot'],
   parameters: {
     frame: {
       place: 'tab',

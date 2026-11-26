@@ -111,10 +111,6 @@ const getRowOf = (popover: HTMLElement, name: string) =>
  * the worst health item of an unhealthy plugin, and the time until an idle one stops.
  */
 export const Open: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'plugins', width: 640, height: 250, drawn: 3_000 }],
-  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)
@@ -177,5 +173,34 @@ export const Unavailable: Story = {
     await expect(trigger.textContent?.trim()).toBe('◈–')
     await userEvent.click(trigger)
     await expect(canvas.queryByRole('dialog')).toBeNull()
+  },
+}
+
+const NAMES = ['Embeddings', 'Claude Code', 'Index stats', 'Transcription', 'Notes']
+
+/** The plugins of the window, by the names they are installed under. */
+const INSTALLED: readonly PluginProcess[] = PLUGINS.map((one, index) => ({
+  ...one,
+  pluginName: NAMES[index]!,
+  healthText: one.healthText && 'The transcriber does not answer since the model was updated',
+}))
+
+/** The item in the title bar of the window, with the running plugins listed under it. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-status' },
+    screenshot: [{ name: 'plugins' }],
+  },
+  args: { processes: INSTALLED },
+  render: (args) => ({
+    components: { PluginsIndicator },
+    setup: () => ({ args }),
+    template: '<PluginsIndicator v-bind="args" />',
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: '5 plugins running' }))
+    await expect(await canvas.findByRole('dialog', { name: 'Running plugins' })).toBeVisible()
   },
 }
