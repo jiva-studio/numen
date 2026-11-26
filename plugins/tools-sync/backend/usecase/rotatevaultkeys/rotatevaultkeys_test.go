@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
-	"github.com/jiva-studio/numen/tools/syncserver/wiretest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/wiretest"
 )
 
 const vault = "Test"

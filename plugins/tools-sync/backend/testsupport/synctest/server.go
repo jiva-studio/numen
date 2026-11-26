@@ -22,7 +22,7 @@ import (
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
-	"github.com/jiva-studio/numen/tools/syncserver/wiretest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/wiretest"
 )
 
 // Server is a proxy of the test in front of the real sync server: a switch that makes it unreachable, a hook that loses one response, a hook that runs after the server answered, and the counters of the calls.

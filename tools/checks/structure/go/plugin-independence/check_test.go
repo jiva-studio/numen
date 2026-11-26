@@ -48,7 +48,6 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 		{load.NumenRoot + "libs/sharedx/onnx", true},
 		{load.NumenRoot + "libs/plugin/catalog", true},
 		{load.NumenRoot + "libs/shared/protocol/gen/numen/v1", true},
-		{load.SyncServerModule + "/fakeserver", false},
 		{"golang.org/x/net/html", false},
 		{"github.com/jiva-studio/other", false},
 	} {

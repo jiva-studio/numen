@@ -6,7 +6,7 @@
 # fails the run with its name.
 #
 # Needs: ANDROID_SDK_ROOT, JAVA_HOME, adb and emulator on PATH, the AVD numen-arm64, node with playwright,
-# and a fakesync binary (tools/syncserver/cmd/fakesync) for the sync server.
+# and a sync server the emulator reaches at 10.0.2.2.
 set -euo pipefail
 
 AVD="${AVD:-numen-arm64}"
@@ -29,7 +29,7 @@ todo() {
 }
 
 start_emulator() { todo start_emulator; }          # emulator -avd "$AVD" -no-window; adb wait-for-device
-start_server() { todo start_server; }              # fakesync on SERVER_PORT with a vault "Test" holding a note and Books/Guide.pdf of 5 MB
+start_server() { todo start_server; }              # the sync server on SERVER_PORT with a vault "Test" holding a note and Books/Guide.pdf of 5 MB
 install_debug_apk() { todo install_debug_apk; }    # make -C apps/mobile debug; adb install -r
 restore_identity() { todo restore_identity; }      # debug build only: recovery words by an intent extra
 connect_webview() { todo connect_webview; }        # adb forward of the webview devtools socket; playwright connectOverCDP

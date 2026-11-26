@@ -12,7 +12,7 @@ import (
 )
 
 // The tests of this file run the scenarios of features/mobile/sync on real pieces: a computer and a phone with
-// their use cases over the fake sync server, the test host of the SDK and a clock set by hand. The network
+// their use cases over the real sync server, the test host of the SDK and a clock set by hand. The network
 // stream is the one thing a test replaces with a fake.
 
 const (

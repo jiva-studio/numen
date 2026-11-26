@@ -207,7 +207,7 @@ jobs:
         if: steps.need.outputs.build == 'true'
         run: |
           shopt -s nullglob
-          files=(plugins/plugins-index.json plugins/*/bin plugins/*/dist tools/syncserver/bin)
+          files=(plugins/plugins-index.json plugins/*/bin plugins/*/dist)
           for binary in apps/desktop/numen-debug apps/desktop/numen-flashcards-debug; do
             if [ -e "$binary" ]; then files+=("$binary"); fi
           done

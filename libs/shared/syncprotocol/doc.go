@@ -3,6 +3,5 @@
 // values only, so a use case may import it; the clients of the sign-in, catalog, revision, blob and account services are in
 // the package client.
 //
-// The plugin and the server share it. client.SignInClient is the Go client that hides the RPC library from the plugin,
-// and fakeserver is a local server for tests.
+// The plugin and the server share it. client.SignInClient is the Go client that hides the RPC library from the plugin.
 package syncprotocol

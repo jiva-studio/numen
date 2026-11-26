@@ -50,7 +50,6 @@ use (
 	./tools/checks/style/comments
 	./tools/epochkey
 	./tools/syncaccount
-	./tools/syncserver
 )
 
 replace (

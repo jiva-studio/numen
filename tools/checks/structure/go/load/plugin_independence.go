@@ -21,9 +21,6 @@ const NotesModule = NumenRoot + "libs/shared/note"
 // plugins need that does not depend on numen. Each folder below it is a module of its own.
 const SharedLibraries = NumenRoot + "libs/shared"
 
-// SyncServerModule is the fake sync server of the tests, which plugin tests import through go.work.
-const SyncServerModule = NumenRoot + "tools/syncserver"
-
 func IsSharedLibrary(path string) bool {
 	return IsWithin(path, SharedLibraries)
 }
@@ -44,8 +41,6 @@ func GetPluginDependencyRefusal(mod, dep string) string {
 	case IsWithin(dep, Wire):
 		return "a plugin names no wire type; the protocol is the wire between the core and the plugin SDK"
 	case IsSharedLibrary(dep):
-		return ""
-	case IsWithin(dep, SyncServerModule):
 		return ""
 	case IsWithin(dep, "connectrpc.com/connect"), IsWithin(dep, "google.golang.org/protobuf"):
 		return "a plugin calls and answers the core through the plugin SDK, not through the RPC library"

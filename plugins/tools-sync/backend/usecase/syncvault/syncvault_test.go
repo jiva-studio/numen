@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
-	"github.com/jiva-studio/numen/tools/syncserver/wiretest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/wiretest"
 )
 
 const (

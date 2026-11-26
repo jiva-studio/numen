@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
-	"github.com/jiva-studio/numen/tools/syncserver/wiretest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/wiretest"
 )
 
 type setup struct {

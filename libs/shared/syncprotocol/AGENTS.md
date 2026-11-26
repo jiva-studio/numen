@@ -4,7 +4,7 @@ The protocol between Numen Sync and the sync server, shared by the plugin and by
 
 ## A leaf
 
-The module requires `connectrpc.com/connect`, `google.golang.org/protobuf`, `golang.org/x/crypto` and `github.com/klauspost/compress` (for `blobcipher`). Nothing else imports it: a chain and a key are `bytes` in the messages, so a client needs no key code. The `go/shared-leaf` check fails on a requirement of a module outside `libs/shared`. The fake sync server and its test helpers are not in this module: they live in `tools/syncserver`, which imports the protocol; the protocol never imports it.
+The module requires `connectrpc.com/connect`, `google.golang.org/protobuf`, `golang.org/x/crypto` and `github.com/klauspost/compress` (for `blobcipher`). Nothing else imports it: a chain and a key are `bytes` in the messages, so a client needs no key code. The `go/shared-leaf` check fails on a requirement of a module outside `libs/shared`.
 
 ## Generated code is never edited
 
