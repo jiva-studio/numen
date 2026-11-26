@@ -249,13 +249,11 @@ export const MediaOfALink: Story = {
   },
 }
 
-const pane =
-  (open: readonly string[], given: Room) =>
-  () => ({
-    components: { FilesTab },
-    setup: () => ({ state: createFilesTab(open, given) }),
-    template: '<div class="numen h-full bg-surface"><FilesTab :state="state" /></div>',
-  })
+const pane = (open: readonly string[], given: Room) => () => ({
+  components: { FilesTab },
+  setup: () => ({ state: createFilesTab(open, given) }),
+  template: '<div class="numen h-full bg-surface"><FilesTab :state="state" /></div>',
+})
 
 const PHYSICS_ROOT: readonly Entry[] = [
   folder('Physics'),
@@ -277,7 +275,10 @@ const PHYSICS: Record<string, readonly Entry[]> = {
     file("Physics/Maxwell's demon.md"),
     file('Physics/The second law.md'),
   ],
-  Computation: [file("Computation/Landauer's principle.md"), file('Computation/Shannon entropy.md')],
+  Computation: [
+    file("Computation/Landauer's principle.md"),
+    file('Computation/Shannon entropy.md'),
+  ],
   Reading: [
     file('Reading/Boltzmann 1877.pdf', { isNote: false }),
     file('Reading/On Heat and Order.epub', { isNote: false }),

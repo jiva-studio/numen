@@ -112,12 +112,14 @@ const PLEX_FRAME = {
   selected: 'Physics/Entropy.md',
 }
 
-const childOf = (parent: string) => (title: string): RelatedName => ({
-  path: `Physics/${title}.md`,
-  title,
-  relation: 'child',
-  label: `${title}, child of ${parent}`,
-})
+const childOf =
+  (parent: string) =>
+  (title: string): RelatedName => ({
+    path: `Physics/${title}.md`,
+    title,
+    relation: 'child',
+    label: `${title}, child of ${parent}`,
+  })
 
 /** The children of a note written under its node, in a plex tab of the window. */
 export const InTheWindow: Story = {

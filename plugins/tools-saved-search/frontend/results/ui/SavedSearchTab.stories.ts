@@ -320,7 +320,10 @@ export const ShowsAFailedLastRun: Story = {
 
 const result = (path: string, kind: string, text: string, score: number, page?: number) => ({
   path,
-  title: path.split('/').pop()!.replace(/\.\w+$/, ''),
+  title: path
+    .split('/')
+    .pop()!
+    .replace(/\.\w+$/, ''),
   kind,
   ...(page ? { place: { page } } : {}),
   text,
@@ -336,8 +339,7 @@ const ERASING: GetResultsResponse = {
   ...FUSED,
   path: 'Physics/What erasing costs.md',
   title: 'What erasing costs',
-  query:
-    'kind in ["note", "pdf"]\n&& meaning("what it costs to erase a bit of memory")\n.top(30)',
+  query: 'kind in ["note", "pdf"]\n&& meaning("what it costs to erase a bit of memory")\n.top(30)',
   order: 'reranked',
   warnings: [],
   results: [

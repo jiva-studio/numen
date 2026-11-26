@@ -77,20 +77,17 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-const render = (
-  cues: readonly Cue[],
-  canCreateText: boolean,
-  isPlaying: boolean,
-  height = 'h-screen',
-) => () => ({
-  components: { RecordingTab },
-  setup: () => ({
-    path: PATH,
-    recordings: createRecordings(cues, canCreateText),
-    how: { audioPlayer: createPlayer(isPlaying), plays: () => true },
-  }),
-  template: `<div class="numen ${height} bg-surface"><RecordingTab :path="path" :recordings="recordings" :how="how" /></div>`,
-})
+const render =
+  (cues: readonly Cue[], canCreateText: boolean, isPlaying: boolean, height = 'h-screen') =>
+  () => ({
+    components: { RecordingTab },
+    setup: () => ({
+      path: PATH,
+      recordings: createRecordings(cues, canCreateText),
+      how: { audioPlayer: createPlayer(isPlaying), plays: () => true },
+    }),
+    template: `<div class="numen ${height} bg-surface"><RecordingTab :path="path" :recordings="recordings" :how="how" /></div>`,
+  })
 
 /** A lecture playing, with the words heard in it under the player. */
 export const Playing: Story = {

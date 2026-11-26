@@ -3,15 +3,7 @@ import WindowFrame from './WindowFrame.vue'
 
 /** The icons a tab of the window is drawn with. */
 export type TabIcon =
-  | 'note'
-  | 'book'
-  | 'plex'
-  | 'agent'
-  | 'audio'
-  | 'logs'
-  | 'search'
-  | 'settings'
-  | 'deck'
+  'note' | 'book' | 'plex' | 'agent' | 'audio' | 'logs' | 'search' | 'settings' | 'deck'
 
 export interface FrameTab {
   readonly title: string

@@ -91,9 +91,7 @@ const getRows = () => [...document.querySelectorAll('.headings__row')]
 export const Nesting: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'parts', app: 'docs', over: '.node' },
-    ],
+    screenshot: [{ name: 'parts', app: 'docs', over: '.node' }],
   },
   play: async ({ canvasElement }) => {
     const view = getView(canvasElement)

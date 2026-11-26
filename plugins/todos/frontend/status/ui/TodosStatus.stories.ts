@@ -113,7 +113,12 @@ const PHYSICS = {
   },
   today: {
     tasks: [
-      task("Computation/Landauer's principle.md", 12, 'Work out kT ln 2 at room temperature', TODAY),
+      task(
+        "Computation/Landauer's principle.md",
+        12,
+        'Work out kT ln 2 at room temperature',
+        TODAY,
+      ),
       task('Lectures/Lecture 4.md', 3, 'Correct the transcript of Lecture 4', TODAY),
       task("Physics/Maxwell's demon.md", 18, 'Add the Szilard engine', TODAY),
     ],

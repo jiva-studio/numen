@@ -58,10 +58,14 @@ const getRowIcon = (id: string, isOpen: boolean) => {
     <slot v-if="frame.place === 'title-bar'" />
     <header v-else class="window-frame__title-bar">
       <span class="window-frame__controls" aria-hidden="true">
-        <i class="window-frame__close" /><i class="window-frame__minimize" /><i class="window-frame__maximize" />
+        <i class="window-frame__close" />
+        <i class="window-frame__minimize" />
+        <i class="window-frame__maximize" />
       </span>
       <span class="window-frame__commands">
-        <FolderTree :size="15" /><Waypoints :size="15" /><FilePlus :size="15" />
+        <FolderTree :size="15" />
+        <Waypoints :size="15" />
+        <FilePlus :size="15" />
       </span>
       <span class="window-frame__title">{{ title }}</span>
       <span class="window-frame__status">
@@ -72,16 +76,25 @@ const getRowIcon = (id: string, isOpen: boolean) => {
     <div class="window-frame__body">
       <section v-if="hasFiles" class="window-frame__pane window-frame__pane--files">
         <div class="window-frame__strip">
-          <span class="window-frame__tab" data-showing><FolderTree class="window-frame__tab-icon" />Files<b>×</b></span>
+          <span class="window-frame__tab" data-showing>
+            <FolderTree class="window-frame__tab-icon" />
+            Files
+            <b>×</b>
+          </span>
         </div>
         <div class="window-frame__content">
           <div v-if="frame.place === 'files'" class="window-frame__fill"><slot /></div>
           <div v-else class="window-frame__fill">
-          <Tree :rows="ROWS" :open="OPEN" :selected="frame.selected ? [frame.selected] : []" name="Vault files">
-            <template #icon="{ id, isOpen }">
-              <component :is="getRowIcon(id, isOpen)" class="window-frame__row-icon" />
-            </template>
-          </Tree>
+            <Tree
+              :rows="ROWS"
+              :open="OPEN"
+              :selected="frame.selected ? [frame.selected] : []"
+              name="Vault files"
+            >
+              <template #icon="{ id, isOpen }">
+                <component :is="getRowIcon(id, isOpen)" class="window-frame__row-icon" />
+              </template>
+            </Tree>
           </div>
         </div>
       </section>
@@ -92,12 +105,20 @@ const getRowIcon = (id: string, isOpen: boolean) => {
         :style="{ flexGrow: isTab ? 1 - share : 1 }"
       >
         <div class="window-frame__strip">
-          <span class="window-frame__tab" data-showing><FileText class="window-frame__tab-icon" />{{ NOTE_TAB.title }}<b>×</b></span>
+          <span class="window-frame__tab" data-showing>
+            <FileText class="window-frame__tab-icon" />
+            {{ NOTE_TAB.title }}
+            <b>×</b>
+          </span>
         </div>
         <div class="window-frame__content window-frame__note"><Prose :text="NOTE.text" /></div>
       </section>
 
-      <section v-if="isTab" class="window-frame__pane" :style="{ flexGrow: frame.note ? share : 1 }">
+      <section
+        v-if="isTab"
+        class="window-frame__pane"
+        :style="{ flexGrow: frame.note ? share : 1 }"
+      >
         <div class="window-frame__strip">
           <span
             v-for="(tab, index) in storyTabs"
@@ -105,10 +126,14 @@ const getRowIcon = (id: string, isOpen: boolean) => {
             class="window-frame__tab"
             :data-showing="index === 0 || undefined"
           >
-            <component :is="TAB_ICONS[tab.icon]" class="window-frame__tab-icon" />{{ tab.title }}<b v-if="index === 0">×</b>
+            <component :is="TAB_ICONS[tab.icon]" class="window-frame__tab-icon" />
+            {{ tab.title }}
+            <b v-if="index === 0">×</b>
           </span>
         </div>
-        <div class="window-frame__content"><div class="window-frame__fill"><slot /></div></div>
+        <div class="window-frame__content">
+          <div class="window-frame__fill"><slot /></div>
+        </div>
       </section>
 
       <section
@@ -117,7 +142,11 @@ const getRowIcon = (id: string, isOpen: boolean) => {
         :style="{ flexGrow: 1 - share }"
       >
         <div class="window-frame__strip">
-          <span class="window-frame__tab" data-showing><FileText class="window-frame__tab-icon" />{{ NOTE_TAB.title }}<b>×</b></span>
+          <span class="window-frame__tab" data-showing>
+            <FileText class="window-frame__tab-icon" />
+            {{ NOTE_TAB.title }}
+            <b>×</b>
+          </span>
         </div>
         <div class="window-frame__content window-frame__note"><Prose :text="NOTE.text" /></div>
       </section>
@@ -125,7 +154,8 @@ const getRowIcon = (id: string, isOpen: boolean) => {
 
     <slot v-if="frame.place === 'status-bar'" />
     <footer v-else class="window-frame__status-bar">
-      <span>Ln 14, Col 6</span><span>412 words</span>
+      <span>Ln 14, Col 6</span>
+      <span>412 words</span>
     </footer>
   </div>
 </template>
