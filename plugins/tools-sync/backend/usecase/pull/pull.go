@@ -123,9 +123,6 @@ func (r *run) execute(ctx context.Context) error {
 		if r.result.Verdict != restore.Same {
 			return nil
 		}
-		if err := r.raiseHighSeq(ctx, page.GetHeadSeq()); err != nil {
-			return err
-		}
 		if page.GetReset_() {
 			return r.reconcile(ctx)
 		}
@@ -152,7 +149,10 @@ func (r *run) fetchPage(ctx context.Context, since uint64) (*syncv1.GetChangesRe
 		restore.Memory{EpochID: r.link.RestoreEpochID, Cursor: r.link.ServerSeq, HighSeq: r.link.HighSeq, PinnedKey: nil},
 		restore.Look{EpochID: r.result.EpochID, HeadSeq: page.GetHeadSeq(), SignKey: nil},
 	)
-	return page, nil
+	if r.result.Verdict != restore.Same {
+		return page, nil
+	}
+	return page, r.raiseHighSeq(ctx, page.GetHeadSeq())
 }
 
 func (r *run) raiseHighSeq(ctx context.Context, head uint64) error {
