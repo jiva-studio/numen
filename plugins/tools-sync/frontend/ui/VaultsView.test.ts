@@ -278,7 +278,8 @@ describe('VaultsView', () => {
     expect(rows[0]?.text()).toContain('1 MB of 4 MB')
     const ring = rows[0]?.find('[role="progressbar"]')
     expect(ring?.attributes('aria-valuenow')).toBe('25')
-    expect(ring?.find('svg.sync-ring').exists()).toBe(true)
+    expect(ring?.attributes('aria-label')).toBe('Sync progress')
+    expect(ring?.classes()).toContain('progress-ring')
     expect(rows[0]?.find('.vault-row__progress').exists()).toBe(false)
     expect(rows[1]?.text()).toContain('Calm')
     expect(rows[1]?.find('[role="progressbar"]').exists()).toBe(false)
@@ -292,7 +293,7 @@ describe('VaultsView', () => {
     })
 
     const ring = wrapper.get('[role="progressbar"]')
-    expect(ring.attributes('aria-busy')).toBe('true')
+    expect(ring.attributes('data-known')).toBe('false')
     expect(ring.attributes('aria-valuenow')).toBeUndefined()
   })
 

@@ -4,7 +4,7 @@
  * every synced vault with its state and, while it syncs, its progress.
  */
 import { ref, useTemplateRef, watch } from 'vue'
-import { isPageMove, useMenuDismissal } from '@numen/ui'
+import { Tooltip, isPageMove, useMenuDismissal, useTooltip } from '@numen/ui'
 import type { SyncState } from '../model/sync'
 import { WORDS as words } from '../words'
 import SyncBadge from './SyncBadge.vue'
@@ -15,6 +15,7 @@ const props = defineProps<{ state: SyncState }>()
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
+const tip = useTooltip()
 const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
@@ -49,23 +50,44 @@ function onClose(): void {
       role="dialog"
       :aria-label="words.vaultsTitle"
     >
-      <h3 class="sync-indicator__title">{{ words.vaultsTitle }}</h3>
-      <p v-if="props.state.rows.value.length === 0" class="sync-indicator__empty">
-        {{ words.noVaultsTitle }}
-      </p>
-      <ul v-else class="sync-card__list">
-        <VaultRow
-          v-for="row in props.state.rows.value"
-          :key="row.id"
-          :name="row.name"
-          :kind="row.kind"
-          :status="row.status"
-          :qualifier="row.qualifier"
-          :facts="row.facts"
-          :is-transferring="row.isTransferring"
-          :progress="row.progress"
-        />
-      </ul>
+      <div class="sync-indicator__header">
+        <span class="sync-indicator__title">{{ words.vaultsTitle }}</span>
+        <button
+          type="button"
+          class="sync-indicator__close-btn"
+          :aria-label="words.close"
+          @mouseenter="tip.open($event, words.close)"
+          @mouseleave="tip.close"
+          @focus="tip.open($event, words.close)"
+          @blur="tip.close"
+          @click="onClose"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="sync-indicator__body">
+        <p v-if="props.state.rows.value.length === 0" class="sync-indicator__empty">
+          {{ words.noVaultsTitle }}
+        </p>
+        <ul v-else class="sync-card__list">
+          <VaultRow
+            v-for="row in props.state.rows.value"
+            :key="row.id"
+            :name="row.name"
+            :kind="row.kind"
+            :status="row.status"
+            :qualifier="row.qualifier"
+            :facts="row.facts"
+            :is-transferring="row.isTransferring"
+            :progress="row.progress"
+          />
+        </ul>
+      </div>
+      <Teleport to="body">
+        <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+          {{ tip.text.value }}
+        </Tooltip>
+      </Teleport>
     </div>
   </div>
 </template>

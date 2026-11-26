@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * A row of the card "Synced vaults": a square icon tinted with the state (ringed with the progress while it syncs), the name, the state word (only while it syncs or has a problem) with its
+ * A row of the card "Synced vaults": a square icon tinted with the state (the progress ring while it transfers), the name, the state word (only while it syncs or has a problem) with its
  * qualifier or the last sync, the facts on a quiet line of their own, and what the person does with the vault on the right.
  */
 import { computed } from 'vue'
 import { Check, CircleAlert, CloudOff, RefreshCw } from '@lucide/vue'
 import type { VaultRowProps } from './VaultRow.types'
 import { WORDS as words } from '../words'
-import SyncRing from './SyncRing.vue'
+import { ProgressRing } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<VaultRowProps>()
@@ -16,26 +16,13 @@ const props = defineProps<VaultRowProps>()
 const ICONS = { ok: Check, syncing: RefreshCw, off: CloudOff, conflict: CircleAlert } as const
 const icon = computed(() => ICONS[props.kind])
 const shownFacts = computed(() => props.facts.filter((one) => one !== ''))
-const ring = computed(() => props.progress ?? null)
-const isIndeterminate = computed(() => ring.value === null)
-const percent = computed(() => Math.round(Math.min(Math.max(ring.value ?? 0, 0), 1) * 100))
+const ring = computed(() => props.progress ?? undefined)
 </script>
 
 <template>
   <li class="vault-row" :class="`vault-row--${kind}`">
-    <span
-      v-if="isTransferring"
-      class="vault-row__icon vault-row__icon--ring"
-      role="progressbar"
-      :aria-label="words.syncProgressName"
-      :aria-busy="isIndeterminate ? 'true' : undefined"
-      :aria-valuemin="isIndeterminate ? undefined : 0"
-      :aria-valuemax="isIndeterminate ? undefined : 100"
-      :aria-valuenow="isIndeterminate ? undefined : percent"
-    >
-      <SyncRing :progress="ring">
-        <component :is="icon" class="sync-ring__glyph" aria-hidden="true" />
-      </SyncRing>
+    <span v-if="isTransferring" class="vault-row__icon vault-row__icon--ring">
+      <ProgressRing :value="ring" :label="words.syncProgressName" />
     </span>
     <span v-else class="vault-row__icon" aria-hidden="true">
       <component :is="icon" />

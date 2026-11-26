@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Vault, VaultsClient } from '../api/vaults'
 import { createSyncState } from '../model/sync'
+import { WORDS as words } from '../words'
 import SyncIndicator from './SyncIndicator.vue'
 import { NO_TRANSFER } from './testing/vaultFixture'
 
@@ -62,15 +63,54 @@ describe('SyncIndicator', () => {
     ])
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
 
-    await wrapper.find('button').trigger('click')
+    await wrapper.find('.sync-indicator__trigger').trigger('click')
 
-    expect(wrapper.get('[role="dialog"] h3').text()).toBe('Synced vaults')
+    expect(wrapper.get('.sync-indicator__title').text()).toBe('Synced vaults')
     const rows = wrapper.findAll('[role="dialog"] li')
     expect(rows).toHaveLength(2)
     expect(rows[0]?.text()).toContain('Busy')
     expect(rows[0]?.find('[role="progressbar"]').attributes('aria-valuenow')).toBe('25')
     expect(rows[1]?.text()).toContain('Calm')
     expect(rows[1]?.text()).not.toContain('Connecting')
+    state.stop()
+  })
+
+  it('shows a header with the title and a close button named by the words', async () => {
+    const { wrapper, state } = await render([createVault()])
+    await wrapper.find('.sync-indicator__trigger').trigger('click')
+
+    const header = wrapper.get('.sync-indicator__header')
+    expect(header.get('.sync-indicator__title').text()).toBe(words.vaultsTitle)
+    expect(header.get('button').attributes('aria-label')).toBe(words.close)
+    state.stop()
+  })
+
+  it('shows the close word as a tooltip on hover', async () => {
+    const { wrapper, state } = await render([createVault()])
+    await wrapper.find('.sync-indicator__trigger').trigger('click')
+
+    await wrapper.get('.sync-indicator__close-btn').trigger('mouseenter')
+
+    expect(document.body.textContent).toContain(words.close)
+    wrapper.unmount()
+    state.stop()
+  })
+
+  it('closes the popover with its close button', async () => {
+    const { wrapper, state } = await render([createVault()])
+    await wrapper.find('.sync-indicator__trigger').trigger('click')
+
+    await wrapper.get('.sync-indicator__close-btn').trigger('click')
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    state.stop()
+  })
+
+  it('says no vault is synced under the header when there is none', async () => {
+    const { wrapper, state } = await render([])
+    await wrapper.find('.sync-indicator__trigger').trigger('click')
+
+    expect(wrapper.get('.sync-indicator__body').text()).toBe(words.noVaultsTitle)
     state.stop()
   })
 })

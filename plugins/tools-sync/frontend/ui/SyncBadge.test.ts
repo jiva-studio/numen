@@ -4,40 +4,29 @@ import SyncBadge from './SyncBadge.vue'
 import { WORDS } from '../words'
 
 describe('SyncBadge', () => {
-  it('renders the syncing spinner and label while synchronizing', () => {
-    const wrapper = mount(SyncBadge, {
-      props: { phase: 'syncing' },
-    })
+  it('pings the dot and names the state while synchronizing', () => {
+    const wrapper = mount(SyncBadge, { props: { phase: 'syncing' } })
 
-    const badge = wrapper.find('.sync-badge')
-    expect(badge.exists()).toBe(true)
-    expect(badge.find('.sync-badge__ring svg.sync-ring').exists()).toBe(true)
-    expect(badge.find('.sync-badge__label').text()).toBe(WORDS.syncingLabel)
+    const badge = wrapper.get('.sync-badge')
+    expect(badge.get('.sync-badge__dot').classes()).toContain('sync-badge__dot--syncing')
+    expect(badge.find('svg').exists()).toBe(false)
+    expect(badge.get('.sync-badge__label').text()).toBe(WORDS.syncingLabel)
     expect(badge.attributes('aria-label')).toBe(WORDS.syncingDetail)
   })
 
-  it('draws an arc of the share done on the ring and keeps it still', () => {
+  it('writes the percent next to the pinging dot', () => {
     const wrapper = mount(SyncBadge, { props: { phase: 'syncing', percent: 50 } })
 
-    const ring = wrapper.get('.sync-badge__ring svg.sync-ring')
-    const [arc, length] = (ring.get('.sync-ring__arc').attributes('stroke-dasharray') ?? '').split(
-      ' ',
-    )
-    expect(Number(arc) / Number(length)).toBeCloseTo(0.5)
-    expect(ring.classes()).not.toContain('sync-ring--indeterminate')
     expect(wrapper.get('.sync-badge__label').text()).toBe(WORDS.syncingPercent(50))
+    expect(wrapper.find('svg').exists()).toBe(false)
   })
 
-  it('orbits a short arc while the total is unknown', () => {
-    const wrapper = mount(SyncBadge, { props: { phase: 'syncing', percent: null } })
+  it('keeps the dot still when synced and when waiting', () => {
+    for (const phase of ['synced', 'waiting'] as const) {
+      const wrapper = mount(SyncBadge, { props: { phase } })
 
-    const ring = wrapper.get('svg.sync-ring')
-    const [arc, length] = (ring.get('.sync-ring__arc').attributes('stroke-dasharray') ?? '').split(
-      ' ',
-    )
-    expect(Number(arc) / Number(length)).toBeCloseTo(0.25)
-    expect(ring.classes()).toContain('sync-ring--indeterminate')
-    expect(wrapper.get('.sync-badge__label').text()).toBe(WORDS.syncingLabel)
+      expect(wrapper.get('.sync-badge__dot').classes()).not.toContain('sync-badge__dot--syncing')
+    }
   })
 
   it('renders the synced indicator once synchronization completes', () => {

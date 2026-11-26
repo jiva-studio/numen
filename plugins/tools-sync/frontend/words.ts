@@ -80,6 +80,7 @@ export const WORDS = {
   openSettings: 'Open the settings',
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',
   vaultsTitle: 'Synced vaults',
+  close: 'Close synced vaults',
   noVaultsTitle: 'No vault is synced yet',
   noVaultsText:
     'Right-click the top folder of a vault in the file tree and choose Sync this vault.',
