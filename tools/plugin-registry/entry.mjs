@@ -26,7 +26,7 @@ export const splitReadme = (source) => {
   if (source === null) return null
   const text = source
     .replace(/^\s*# [^\n]*\n/, '')
-    .replace(/<picture>[\s\S]*?<\/picture>\n?/g, '')
+    .replace(/<picture>[\s\S]*?<\/picture>\s*/g, '')
     .trim()
   const at = text.indexOf(README_MORE)
   return {

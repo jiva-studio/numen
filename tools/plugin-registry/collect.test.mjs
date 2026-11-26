@@ -120,9 +120,9 @@ test('the changelog groups commits by the version change of the manifest', async
       {
         version: '1.1.0',
         date: '2026-11-03T10:00:00Z',
-        changes: ['feat(notes): open links', 'test(notes): cover the editor'],
+        changes: ['open links'],
       },
-      { version: '1.0.0', date: '2026-11-01T10:00:00Z', changes: ['feat(notes): add notes'] },
+      { version: '1.0.0', date: '2026-11-01T10:00:00Z', changes: ['add notes'] },
     ])
     assert.equal(plugin.updatedAt, '2026-11-04T10:00:00Z')
   })
