@@ -12,10 +12,18 @@ import { execTool } from '../shared/tools.mjs'
 import { countContributors, groupByVersion, isBot } from './changelog.mjs'
 import { createCheck } from './checks.mjs'
 import { collectRegistry } from './collect.mjs'
-import { getIcon, listAddedPermissions, pairScreenshots, splitReadme } from './entry.mjs'
+import {
+  describeManifest,
+  getIcon,
+  listAddedPermissions,
+  pairScreenshots,
+  splitReadme,
+} from './entry.mjs'
 import { listCommitAccounts } from './internal.mjs'
 import { collectExternal, createGitHub, readArtifactPlatform } from './external.mjs'
+import { getExternalQuality } from './quality.mjs'
 import { assertNoCollision, getContentHash, readSources } from './registry.mjs'
+import { countTests } from './tests.mjs'
 
 const manifest = (version, extra = {}) => ({
   id: 'org.example.notes',
@@ -186,8 +194,127 @@ test('the quality of an internal plugin is read from the quality folder', async 
           measuredAt: '2026-11-26T00:00:00Z',
         },
       ],
+      tests: { go: 0, typescript: 0, stories: 0 },
     })
   })
+})
+
+const GO_TESTS = `package notes
+
+import "testing"
+
+func TestSave(t *testing.T) {}
+
+func TestMain(m *testing.M) {}
+
+func FuzzParse(f *testing.F) {}
+
+func testHelper(t *testing.T) {}
+`
+
+const TS_TESTS = `import { describe, expect, it, test } from 'vitest'
+
+describe('notes', () => {
+  it('saves', () => expect(1).toBe(1))
+  it.each([1, 2, 3])('keeps %i', () => {})
+  test.skip('waits', () => {})
+  const unit = 'it'
+})
+`
+
+const STORIES = `import type { Meta, StoryObj } from '@storybook/vue3'
+
+const meta = {} satisfies Meta
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const Empty: Story = {}
+export const Filled: Story = {}
+export const fixture = {}
+`
+
+test('the tests of a plugin folder are counted from its sources', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugin-tests-'))
+  try {
+    const write = (path, text) => {
+      mkdirSync(join(dir, path, '..'), { recursive: true })
+      writeFileSync(join(dir, path), text)
+    }
+    write('backend/notes_test.go', GO_TESTS)
+    write('backend/notes.go', 'package notes\n\nfunc TestLike(t *testing.T) {}\n')
+    write('backend/testdata/fixture_test.go', GO_TESTS)
+    write('frontend/model/notes.test.ts', TS_TESTS)
+    write('frontend/ui/Notes.stories.ts', STORIES)
+    write('node_modules/lib/lib.test.ts', TS_TESTS)
+
+    assert.deepEqual(countTests(dir), { go: 2, typescript: 3, stories: 2 })
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('an internal plugin with tests and no measurement lists its test counts', async () => {
+  await withRepository(async (root) => {
+    writeFileSync(join(root, 'plugins/notes/notes_test.go'), GO_TESTS)
+    const [plugin] = (await collectOffline(root)).plugins
+
+    assert.deepEqual(plugin.quality, {
+      reportedBy: 'numen',
+      entries: [],
+      tests: { go: 2, typescript: 0, stories: 0 },
+    })
+  })
+})
+
+test('an internal plugin with no tests and no measurement has no quality', async () => {
+  await withRepository(async (root) => {
+    const [plugin] = (await collectOffline(root)).plugins
+
+    assert.equal(plugin.quality, null)
+  })
+})
+
+test('an author who reports only test counts has no measured entry', () => {
+  assert.deepEqual(getExternalQuality({ tests: { stories: 4 } }), {
+    reportedBy: 'author',
+    entries: [],
+    tests: { go: 0, typescript: 0, stories: 4 },
+  })
+  assert.equal(getExternalQuality({ tests: { go: 1.5 } }), null)
+})
+
+test('the contributions a person sees are read from the manifest', () => {
+  const fields = describeManifest(
+    manifest('1.0.0', {
+      contributes: {
+        category: 'readers',
+        tabKinds: [{ kind: 'reader:reader-pdf', title: 'PDF Reader' }],
+        readers: [{ id: 'reader-pdf', contentTypes: ['application/pdf'] }],
+        textKinds: [{ kind: 'page-text', title: 'Text layer' }],
+        themes: [{ id: 'amber', name: 'Amber', file: 'themes/amber.css' }],
+        commands: [{ id: 'tree.open', title: 'Open the file tree' }],
+        slots: [
+          { slot: 'fileTree.context', command: 'app:file.createText' },
+          { slot: 'titleBar.commands', command: 'tree.open' },
+        ],
+        connectionTypes: [{ id: 'openai', title: 'OpenAI', description: 'Models from OpenAI.' }],
+        searchFunctions: { version: 1, functions: [{ name: 'hasOpenTask', description: 'open tasks' }] },
+      },
+    }),
+  )
+
+  assert.deepEqual(fields.tabKinds, [{ kind: 'reader:reader-pdf', title: 'PDF Reader' }])
+  assert.deepEqual(fields.fileTypes, [{ contentType: 'application/pdf', title: 'PDF Reader' }])
+  assert.deepEqual(fields.textKinds, [{ kind: 'page-text', title: 'Text layer' }])
+  assert.deepEqual(fields.themes, [{ id: 'amber', name: 'Amber' }])
+  assert.deepEqual(fields.slots, [
+    { slot: 'fileTree.context', title: '', target: 'app:file.createText' },
+    { slot: 'titleBar.commands', title: 'Open the file tree', target: 'tree.open' },
+  ])
+  assert.deepEqual(fields.connectionTypes, [
+    { id: 'openai', title: 'OpenAI', description: 'Models from OpenAI.' },
+  ])
+  assert.deepEqual(fields.searchFunctions, [{ name: 'hasOpenTask', description: 'open tasks' }])
 })
 
 const commitAs = (root, name, email, date) => {
@@ -468,7 +595,7 @@ const createRelease = () => ({
     text: '# Word Count\n\nCounts words.\n\n<!-- more -->\n\nMore.\n',
   },
   [`https://raw.githubusercontent.com/${REPO}/v2.0.0/quality.json`]: {
-    text: JSON.stringify({ coverage: 90, mutationScore: 70 }),
+    text: JSON.stringify({ coverage: 90, mutationScore: 70, tests: { go: 12, typescript: -1 } }),
   },
   [`https://api.github.com/repos/${REPO}`]: { json: { license: { spdx_id: 'MIT' } } },
   [`https://api.github.com/repos/${REPO}/contents/screenshots?ref=v2.0.0`]: {
@@ -568,6 +695,7 @@ test('an external plugin is read from its latest release', async () => {
       measuredAt: null,
     })
     assert.equal(entry.quality.reportedBy, 'author')
+    assert.deepEqual(entry.quality.tests, { go: 12, typescript: 0, stories: 0 })
   })
 })
 

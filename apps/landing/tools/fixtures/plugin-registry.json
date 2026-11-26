@@ -26,6 +26,13 @@
         { "key": "model", "title": "Model", "description": "Speech recognition model" }
       ],
       "commands": [],
+      "tabKinds": [],
+      "fileTypes": [],
+      "textKinds": [{ "kind": "transcript", "title": "Transcript" }],
+      "themes": [],
+      "slots": [{ "slot": "fileTree.context", "title": "", "target": "app:file.createText" }],
+      "connectionTypes": [],
+      "searchFunctions": [],
       "source": {
         "kind": "internal",
         "repo": "jiva-studio/numen",
@@ -98,7 +105,8 @@
             "coverage": 71.2,
             "measuredAt": "2026-11-26T05:00:00Z"
           }
-        ]
+        ],
+        "tests": { "go": 162, "typescript": 0, "stories": 0 }
       }
     },
     {
@@ -117,6 +125,13 @@
       "permissionsAdded": [],
       "settings": [],
       "commands": [],
+      "tabKinds": [],
+      "fileTypes": [],
+      "textKinds": [],
+      "themes": [],
+      "slots": [],
+      "connectionTypes": [],
+      "searchFunctions": [],
       "source": {
         "kind": "internal",
         "repo": "jiva-studio/numen",
@@ -155,6 +170,13 @@
       "permissionsAdded": [],
       "settings": [],
       "commands": [{ "id": "count", "title": "Count words" }],
+      "tabKinds": [],
+      "fileTypes": [],
+      "textKinds": [],
+      "themes": [],
+      "slots": [],
+      "connectionTypes": [],
+      "searchFunctions": [],
       "source": {
         "kind": "external",
         "repo": "example/numen-word-count",
@@ -194,7 +216,8 @@
         "reportedBy": "author",
         "entries": [
           { "target": null, "kind": null, "mutationScore": 70, "coverage": 90, "measuredAt": null }
-        ]
+        ],
+        "tests": { "go": 0, "typescript": 0, "stories": 0 }
       }
     }
   ]

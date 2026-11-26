@@ -24,6 +24,20 @@ type PluginSetting = { key: string; title: string; description: string }
 
 type PluginCommand = { id: string; title: string }
 
+type PluginTabKind = { kind: string; title: string }
+
+type PluginTextKind = { kind: string; title: string }
+
+type PluginFileType = { contentType: string; title: string }
+
+type PluginTheme = { id: string; name: string }
+
+type PluginSlot = { slot: string; title: string; target: string }
+
+type PluginConnectionType = { id: string; title: string; description: string }
+
+type PluginSearchFunction = { name: string; description: string }
+
 type PluginContributor = {
   name: string
   commits: number
@@ -50,9 +64,9 @@ type PluginArtifact = {
   url: string
 }
 
-type PluginCheckStatus = 'pass' | 'warn' | 'fail' | 'info' | 'skipped'
+export type PluginCheckStatus = 'pass' | 'warn' | 'fail' | 'info' | 'skipped'
 
-type PluginCheck = { id: string; status: PluginCheckStatus; detail: string }
+export type PluginCheck = { id: string; status: PluginCheckStatus; detail: string }
 
 export type PluginQualityEntry = {
   target: string | null
@@ -62,7 +76,13 @@ export type PluginQualityEntry = {
   measuredAt: string | null
 }
 
-type PluginQuality = { reportedBy: 'numen' | 'author'; entries: PluginQualityEntry[] }
+type PluginTests = { go: number; typescript: number; stories: number }
+
+type PluginQuality = {
+  reportedBy: 'numen' | 'author'
+  entries: PluginQualityEntry[]
+  tests: PluginTests
+}
 
 type PluginSource = {
   kind: 'internal' | 'external'
@@ -92,6 +112,13 @@ export type RegistryPlugin = {
   permissionsAdded: string[]
   settings: PluginSetting[]
   commands: PluginCommand[]
+  tabKinds: PluginTabKind[]
+  fileTypes: PluginFileType[]
+  textKinds: PluginTextKind[]
+  themes: PluginTheme[]
+  slots: PluginSlot[]
+  connectionTypes: PluginConnectionType[]
+  searchFunctions: PluginSearchFunction[]
   source: PluginSource
   author: string
   contributors: PluginContributor[]
