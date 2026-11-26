@@ -309,7 +309,7 @@ func (s *service) AdoptChain(_ context.Context, req *connect.Request[v1.AdoptCha
 		return nil, refuse(connect.CodeFailedPrecondition, "NO_IDENTITY")
 	}
 	chain, err := identity.ParseChain(req.Msg.GetChain())
-	if err != nil || !chain.IsExtensionOf(f.record.Chain) {
+	if err != nil || (!chain.IsExtensionOf(f.record.Chain) && !chain.IsPreferredOver(f.record.Chain)) {
 		return nil, refuse(connect.CodeInvalidArgument, "INVALID_CHAIN")
 	}
 	if wrapped, ok := chain.GetWrappedFor(f.record.Device.SignerKey()); ok && chain.Epoch() > f.record.Chain.Epoch() {
