@@ -34,7 +34,7 @@ type Story = StoryObj<Knobs>
 export const ShowsTheResults: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'results', width: 900, height: 600 }],
+    screenshot: [{ name: 'results', width: 800, height: 240 }],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
