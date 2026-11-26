@@ -132,11 +132,16 @@ func (s *stubServer) DeleteAccount(_ context.Context, req *connect.Request[syncv
 	return connect.NewResponse(&syncv1.DeleteAccountResponse{DeleteAt: 1_800_000_000}), nil
 }
 
-func (s *stubServer) ExportAccount(_ context.Context, req *connect.Request[syncv1.ExportAccountRequest]) (*connect.Response[syncv1.ExportAccountResponse], error) {
+func (s *stubServer) ExportAccount(_ context.Context, req *connect.Request[syncv1.ExportAccountRequest], stream *connect.ServerStream[syncv1.ExportAccountChunk]) error {
 	if err := s.record(req.Header()); err != nil {
-		return nil, err
+		return err
 	}
-	return connect.NewResponse(&syncv1.ExportAccountResponse{Document: []byte(`{"vaults":[]}`)}), nil
+	for _, part := range []string{`{"vau`, `lts"`, `:[]}`} {
+		if err := stream.Send(&syncv1.ExportAccountChunk{Data: []byte(part)}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *stubServer) GetAccountChainByRoot(_ context.Context, req *connect.Request[syncv1.GetAccountChainByRootRequest]) (*connect.Response[syncv1.GetAccountChainByRootResponse], error) {

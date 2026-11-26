@@ -545,29 +545,30 @@ func (*ExportAccountRequest) Descriptor() ([]byte, []int) {
 	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{10}
 }
 
-type ExportAccountResponse struct {
+type ExportAccountChunk struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// document is a UTF-8 JSON document that lists the device chain, the devices, the vaults, the metadata and sizes
-	// of the revisions, and the plan and payment references of the account. It holds no key and no text of a note.
-	Document      []byte `protobuf:"bytes,1,opt,name=document,proto3" json:"document,omitempty"`
+	// data is the next part of a UTF-8 JSON document that lists the device chain, the devices, the vaults, the metadata
+	// and sizes of the revisions, and the plan and payment references of the account. It holds no key and no text of
+	// a note. A chunk is at most 256 KiB and may end inside a JSON token.
+	Data          []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ExportAccountResponse) Reset() {
-	*x = ExportAccountResponse{}
+func (x *ExportAccountChunk) Reset() {
+	*x = ExportAccountChunk{}
 	mi := &file_numen_sync_v1_account_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ExportAccountResponse) String() string {
+func (x *ExportAccountChunk) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ExportAccountResponse) ProtoMessage() {}
+func (*ExportAccountChunk) ProtoMessage() {}
 
-func (x *ExportAccountResponse) ProtoReflect() protoreflect.Message {
+func (x *ExportAccountChunk) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_sync_v1_account_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -579,14 +580,14 @@ func (x *ExportAccountResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ExportAccountResponse.ProtoReflect.Descriptor instead.
-func (*ExportAccountResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ExportAccountChunk.ProtoReflect.Descriptor instead.
+func (*ExportAccountChunk) Descriptor() ([]byte, []int) {
 	return file_numen_sync_v1_account_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *ExportAccountResponse) GetDocument() []byte {
+func (x *ExportAccountChunk) GetData() []byte {
 	if x != nil {
-		return x.Document
+		return x.Data
 	}
 	return nil
 }
@@ -621,15 +622,15 @@ const file_numen_sync_v1_account_proto_rawDesc = "" +
 	"\tsignature\x18\x02 \x01(\fR\tsignature\"4\n" +
 	"\x15DeleteAccountResponse\x12\x1b\n" +
 	"\tdelete_at\x18\x01 \x01(\x03R\bdeleteAt\"\x16\n" +
-	"\x14ExportAccountRequest\"3\n" +
-	"\x15ExportAccountResponse\x12\x1a\n" +
-	"\bdocument\x18\x01 \x01(\fR\bdocument2\xf4\x03\n" +
+	"\x14ExportAccountRequest\"(\n" +
+	"\x12ExportAccountChunk\x12\x12\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data2\xf3\x03\n" +
 	"\x0eAccountService\x12`\n" +
 	"\x0fGetAccountChain\x12%.numen.sync.v1.GetAccountChainRequest\x1a&.numen.sync.v1.GetAccountChainResponse\x12r\n" +
 	"\x15GetAccountChainByRoot\x12+.numen.sync.v1.GetAccountChainByRootRequest\x1a,.numen.sync.v1.GetAccountChainByRootResponse\x12T\n" +
 	"\vAppendChain\x12!.numen.sync.v1.AppendChainRequest\x1a\".numen.sync.v1.AppendChainResponse\x12Z\n" +
-	"\rDeleteAccount\x12#.numen.sync.v1.DeleteAccountRequest\x1a$.numen.sync.v1.DeleteAccountResponse\x12Z\n" +
-	"\rExportAccount\x12#.numen.sync.v1.ExportAccountRequest\x1a$.numen.sync.v1.ExportAccountResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
+	"\rDeleteAccount\x12#.numen.sync.v1.DeleteAccountRequest\x1a$.numen.sync.v1.DeleteAccountResponse\x12Y\n" +
+	"\rExportAccount\x12#.numen.sync.v1.ExportAccountRequest\x1a!.numen.sync.v1.ExportAccountChunk0\x01BPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
 
 var (
 	file_numen_sync_v1_account_proto_rawDescOnce sync.Once
@@ -656,7 +657,7 @@ var file_numen_sync_v1_account_proto_goTypes = []any{
 	(*DeleteAccountRequest)(nil),          // 8: numen.sync.v1.DeleteAccountRequest
 	(*DeleteAccountResponse)(nil),         // 9: numen.sync.v1.DeleteAccountResponse
 	(*ExportAccountRequest)(nil),          // 10: numen.sync.v1.ExportAccountRequest
-	(*ExportAccountResponse)(nil),         // 11: numen.sync.v1.ExportAccountResponse
+	(*ExportAccountChunk)(nil),            // 11: numen.sync.v1.ExportAccountChunk
 }
 var file_numen_sync_v1_account_proto_depIdxs = []int32{
 	0,  // 0: numen.sync.v1.AccountService.GetAccountChain:input_type -> numen.sync.v1.GetAccountChainRequest
@@ -668,7 +669,7 @@ var file_numen_sync_v1_account_proto_depIdxs = []int32{
 	3,  // 6: numen.sync.v1.AccountService.GetAccountChainByRoot:output_type -> numen.sync.v1.GetAccountChainByRootResponse
 	5,  // 7: numen.sync.v1.AccountService.AppendChain:output_type -> numen.sync.v1.AppendChainResponse
 	9,  // 8: numen.sync.v1.AccountService.DeleteAccount:output_type -> numen.sync.v1.DeleteAccountResponse
-	11, // 9: numen.sync.v1.AccountService.ExportAccount:output_type -> numen.sync.v1.ExportAccountResponse
+	11, // 9: numen.sync.v1.AccountService.ExportAccount:output_type -> numen.sync.v1.ExportAccountChunk
 	5,  // [5:10] is the sub-list for method output_type
 	0,  // [0:5] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name

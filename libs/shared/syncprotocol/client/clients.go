@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -241,11 +242,19 @@ func (c *AccountClient) DeleteAccount(ctx context.Context, challengeID, signatur
 	return time.Unix(response.Msg.GetDeleteAt(), 0), nil
 }
 
-// ExportAccount returns the JSON document of what the server holds of the account of the session.
+// ExportAccount reads the stream of the JSON document of what the server holds of the account of the session and
+// returns the chunks joined in order.
 func (c *AccountClient) ExportAccount(ctx context.Context) ([]byte, error) {
-	response, err := c.rpc.ExportAccount(ctx, connect.NewRequest(&syncv1.ExportAccountRequest{}))
+	stream, err := c.rpc.ExportAccount(ctx, connect.NewRequest(&syncv1.ExportAccountRequest{}))
 	if err != nil {
 		return nil, syncprotocol.ReadCallError(err)
 	}
-	return response.Msg.GetDocument(), nil
+	var document []byte
+	for stream.Receive() {
+		document = append(document, stream.Msg().GetData()...)
+	}
+	if err := stream.Err(); err != nil {
+		return nil, errors.Join(syncprotocol.ReadCallError(err), stream.Close())
+	}
+	return document, stream.Close()
 }

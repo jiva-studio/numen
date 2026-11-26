@@ -61,10 +61,10 @@ type exportedVault struct {
 	Files int    `json:"files"`
 }
 
-func (s *Server) ExportAccount(_ context.Context, req *connect.Request[syncv1.ExportAccountRequest]) (*connect.Response[syncv1.ExportAccountResponse], error) {
+func (s *Server) ExportAccount(_ context.Context, req *connect.Request[syncv1.ExportAccountRequest], stream *connect.ServerStream[syncv1.ExportAccountChunk]) error {
 	session, err := s.authenticateSession(req.Header())
 	if err != nil {
-		return nil, err
+		return err
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -78,9 +78,14 @@ func (s *Server) ExportAccount(_ context.Context, req *connect.Request[syncv1.Ex
 	slices.SortFunc(exported.Vaults, func(a, b exportedVault) int { return strings.Compare(a.ID, b.ID) })
 	document, err := json.Marshal(exported)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&syncv1.ExportAccountResponse{Document: document}), nil
+	for chunk := range slices.Chunk(document, syncprotocol.MaxExportChunk) {
+		if err := stream.Send(&syncv1.ExportAccountChunk{Data: chunk}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Server) applyDeletion(account string, restore bool) error {

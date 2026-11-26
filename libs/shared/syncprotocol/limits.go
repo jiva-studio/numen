@@ -29,6 +29,7 @@ const (
 
 const (
 	MaxLinkMessage   = 256 << 10
+	MaxExportChunk   = 256 << 10
 	LinkWaitMax      = 20
 	MaxChainBytes    = 192 << 10
 	MaxActiveDevices = 32
