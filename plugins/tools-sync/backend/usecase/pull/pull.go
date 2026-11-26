@@ -57,9 +57,7 @@ type Deps struct {
 	Clock     ports.Clock
 	Health    ports.Health
 	LazyHeavy bool
-	// Retries holds when a file the host refused is tried again. It is optional: a pull without it keeps its own, so a
-	// pass built anew for each run forgets the waits.
-	Retries *Retries
+	Retries   *Retries
 }
 
 // PullChanges reads the changes after the position of the vault and applies them.

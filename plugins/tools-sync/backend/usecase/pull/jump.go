@@ -29,8 +29,6 @@ func isJump(rev *syncv1.Revision, floor uint64, record transfer.FileRecord, isKn
 	return rev.GetFileVersion() > floor && rev.GetFileVersion()-floor > maxVersionStep
 }
 
-// skipJump leaves a file whose revision jumps in version as it is: the position stays before the revision, so the file
-// stays named in the warning while the server serves it, and the pull goes on with the other files.
 func (r *run) skipJump(stored *syncv1.StoredRevision, meta note.Meta) error {
 	if err := checkRoom(len(r.jumped)); err != nil {
 		return err

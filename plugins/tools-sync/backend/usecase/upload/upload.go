@@ -84,8 +84,6 @@ func (r *plainReader) isChanged(now domain.FileStat) bool {
 	return now.Hash != r.stat.Hash || now.Size != r.stat.Size || !now.ModTime.Equal(r.stat.ModTime)
 }
 
-// check reads the stat of the file once more, after the last range was read: the host takes the stat before it reads the
-// bytes, so a write after the stat of the last range shows only here.
 func (r *plainReader) check() error {
 	got, err := r.read(0, 1)
 	if err != nil {

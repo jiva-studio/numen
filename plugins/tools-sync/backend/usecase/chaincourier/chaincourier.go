@@ -30,13 +30,13 @@ const (
 
 // Deps are what the courier needs.
 type Deps struct {
-	Identity ports.Identity
-	Core     ports.ChainCore
-	Chain    ports.Chain
-	Endorse  Endorser
-	Health   ports.Health
-	Clock    ports.Clock
-	IsIdle   func() bool
+	Identity  ports.Identity
+	Core      ports.ChainCore
+	Chain     ports.Chain
+	Endorse   Endorser
+	Health    ports.Health
+	Clock     ports.Clock
+	IsIdle    func() bool
 	Sightings ports.EntrySightings
 }
 
@@ -94,12 +94,12 @@ func (u *Publish) confirmRevoked(ctx context.Context, pending []byte) error {
 // Adopt gives the core the chain of the server when the server holds a longer one than the core, or one that outranks it at a fork,
 // and tells the person when another device added or removed devices lately.
 type Adopt struct {
-	deps     Deps
-	mu       sync.Mutex
-	isRaised bool
-	isClean  bool
-	seen     map[string]int64
-	isFresh  bool
+	deps      Deps
+	mu        sync.Mutex
+	isRaised  bool
+	isClean   bool
+	seen      map[string]int64
+	isFresh   bool
 	isUnsaved bool
 }
 

@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
 
-// fillFloors makes the device hold the removal of count other files, as a long life of a vault does.
 func (p *pair) fillFloors(t *testing.T, count int) {
 	t.Helper()
 	err := p.b.State.UpdateLink(t.Context(), target, func(link *vaultlink.Link) error {

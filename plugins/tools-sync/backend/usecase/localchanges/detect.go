@@ -80,7 +80,9 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 	return scan, u.deps.State.WriteAbsences(ctx, in.VaultID, kept)
 }
 
-func (u *DetectMoves) findRemovals(ctx context.Context, in transfer.ScanInput, gone []transfer.FileRecord, moved map[string]bool, since map[string]int64) ([]transfer.FileRecord, map[string]int64, error) {
+func (u *DetectMoves) findRemovals(
+	ctx context.Context, in transfer.ScanInput, gone []transfer.FileRecord, moved map[string]bool, since map[string]int64,
+) ([]transfer.FileRecord, map[string]int64, error) {
 	now := u.deps.Clock.Now().UnixNano()
 	kept := map[string]int64{}
 	var removals []transfer.FileRecord

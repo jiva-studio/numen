@@ -8,7 +8,7 @@ type FileSnapshot struct {
 	Size       int64  `json:"size"`
 	ModifiedAt int64  `json:"mtime"`
 	SourceID   int64  `json:"sourceId"`
-	SeenAt int64 `json:"seenAt,omitempty"`
+	SeenAt     int64  `json:"seenAt,omitempty"`
 }
 
 // IsSettled reports whether the file was left alone for the time at now: its time is that old, or, when its time is in

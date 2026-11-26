@@ -96,8 +96,6 @@ func (r *run) getRetryKey(stored *syncv1.StoredRevision) retryKey {
 	return retryKey{vault: r.in.VaultID, file: string(stored.GetRevision().GetFileId())}
 }
 
-// skipFile leaves a file the host refused as it is: the position stays before its revision, the file is named in the
-// warning and it is tried again after the wait.
 func (r *run) skipFile(stored *syncv1.StoredRevision, refusal *fileError) {
 	r.retries.fail(r.getRetryKey(stored), string(stored.GetRevId()), r.deps.Clock.Now())
 	r.keepUnsaved(stored, refusal.path)
