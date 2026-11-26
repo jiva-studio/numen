@@ -4,9 +4,9 @@
  */
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
+import type { LucideIconNode } from '@lucide/vue'
 
-/** The elements of an icon: a tag name and its attributes. */
-type IconNode = [string, Record<string, string | number>][]
+type IconNode = LucideIconNode[]
 
 /** The icon drawn for a name lucide does not have. */
 const FALLBACK_ICON = 'puzzle'
