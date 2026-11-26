@@ -97,7 +97,7 @@ func runSeed(ctx context.Context, args []string, out io.Writer) error {
 }
 
 func seedAccount(ctx context.Context, options seedOptions) (seedFile, error) {
-	made, err := makeIdentity(options.label, time.Now())
+	made, err := makeIdentity(options.label, newClock().Now())
 	if err != nil {
 		return seedFile{}, err
 	}
@@ -120,7 +120,7 @@ func seedAccount(ctx context.Context, options seedOptions) (seedFile, error) {
 }
 
 func signIn(ctx context.Context, client *http.Client, server string, device identity.DeviceKey, chain identity.Chain) (string, error) {
-	rpc := syncclient.NewSignInClient(server, client, time.Now)
+	rpc := syncclient.NewSignInClient(server, client, newClock().Now)
 	challenge, err := rpc.GetChallenge(ctx, device.Public().Sign)
 	if err != nil {
 		return "", err
@@ -176,17 +176,18 @@ func subscribe(ctx context.Context, client *http.Client, subscription *syncclien
 	if err != nil || !strings.HasPrefix(parsed.Path, "/pay/") {
 		return fmt.Errorf("the checkout address %q has no /pay/<id> path", address)
 	}
-	target := fmt.Sprintf("%s/pay?checkout=%s&period_end=%d", strings.TrimSuffix(control, "/"), url.QueryEscape(strings.TrimPrefix(parsed.Path, "/pay/")), time.Now().Add(subscribePeriod).Unix())
+	periodEnd := newClock().Now().Add(subscribePeriod).Unix()
+	target := fmt.Sprintf("%s/pay?checkout=%s&period_end=%d", strings.TrimSuffix(control, "/"), url.QueryEscape(strings.TrimPrefix(parsed.Path, "/pay/")), periodEnd)
 	if err := sendPaymentRequest(ctx, client, target); err != nil {
 		return err
 	}
-	deadline := time.Now().Add(subscribeTimeout)
+	deadline := newClock().Now().Add(subscribeTimeout)
 	for {
 		got, err := subscription.GetSubscription(ctx)
 		if err == nil && got.Phase == syncv1.SubscriptionPhase_SUBSCRIPTION_PHASE_ACTIVE && got.PlanID == plan {
 			return nil
 		}
-		if time.Now().After(deadline) {
+		if newClock().Now().After(deadline) {
 			return fmt.Errorf("the subscription to %s is not active after %s: phase %v: %w", plan, subscribeTimeout, got.Phase, err)
 		}
 		select {

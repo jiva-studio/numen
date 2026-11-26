@@ -19,7 +19,7 @@ import (
 	sharedidentity "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-var seededComputers = []string{"first", "second", "third"}
+func listSeededComputers() []string { return []string{"first", "second", "third"} }
 
 type seedFile struct {
 	Fingerprint string
@@ -58,7 +58,7 @@ func makeSeededIdentity(t *testing.T) seedFile {
 		t.Fatal(err)
 	}
 	devices := map[string]sharedidentity.DeviceKey{}
-	for i, name := range seededComputers {
+	for i, name := range listSeededComputers() {
 		if devices[name], err = sharedidentity.NewDeviceKey(rand.Reader); err != nil {
 			t.Fatal(err)
 		}
@@ -67,7 +67,7 @@ func makeSeededIdentity(t *testing.T) seedFile {
 		}
 	}
 	seed := seedFile{Fingerprint: chain.Root().Fingerprint().String(), Chain: chain.Bytes(), Computers: map[string]struct{ Credentials map[string]string }{}}
-	for _, name := range seededComputers {
+	for _, name := range listSeededComputers() {
 		wrapped, err := account.WrapForDevice(devices[name].Public())
 		if err != nil {
 			t.Fatal(err)
@@ -93,7 +93,7 @@ func TestTheApplicationReadsTheIdentityOfAScenario(t *testing.T) {
 		t.Fatal(err)
 	}
 	folder := filepath.Dir(path)
-	for _, computer := range seededComputers {
+	for _, computer := range listSeededComputers() {
 		t.Run(computer, func(t *testing.T) {
 			writeSeededComputer(t, folder, path, seed, computer)
 			store := getKeyStore()

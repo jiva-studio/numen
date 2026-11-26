@@ -55,7 +55,7 @@ func TestMakeIdentity_ListsTheComputersInTheChain(t *testing.T) {
 }
 
 func TestBuildSeedFile_OpensTheKeysOfEveryComputerForItsDevice(t *testing.T) {
-	made, err := makeIdentity("a scenario", time.Now())
+	made, err := makeIdentity("a scenario", newClock().Now())
 	if err != nil {
 		t.Fatal(err)
 	}

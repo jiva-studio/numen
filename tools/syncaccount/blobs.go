@@ -135,7 +135,7 @@ func (b bucket) fetch(ctx context.Context, path string, query url.Values) ([]byt
 	if err != nil {
 		return nil, err
 	}
-	b.sign(request, time.Now().UTC())
+	b.sign(request, newClock().Now().UTC())
 	response, err := b.client.Do(request)
 	if err != nil {
 		return nil, err

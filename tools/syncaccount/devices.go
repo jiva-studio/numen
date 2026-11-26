@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -44,7 +43,7 @@ func runListDevices(ctx context.Context, args []string, out io.Writer) error {
 func readDevices(ctx context.Context, server string, root identity.RecoveryKey) ([]string, error) {
 	client := &http.Client{Timeout: requestTimeout}
 	rootSignKey := root.Public().Sign
-	challenge, err := syncclient.NewSignInClient(server, client, time.Now).GetChainReadChallenge(ctx, rootSignKey)
+	challenge, err := syncclient.NewSignInClient(server, client, newClock().Now).GetChainReadChallenge(ctx, rootSignKey)
 	if err != nil {
 		return nil, err
 	}
