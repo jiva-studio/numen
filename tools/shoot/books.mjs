@@ -35,6 +35,16 @@ const waitForAnswer = async (url) => {
   throw new Error(`Storybook did not answer at ${url}`)
 }
 
+const stopAll = (started) => {
+  for (const one of started) {
+    try {
+      process.kill(-one.pid, 'SIGTERM')
+    } catch {
+      // The Storybook has already exited.
+    }
+  }
+}
+
 /**
  * Every Storybook named, answering. `getBase` is the address a Storybook is
  * served at; `close` stops what was started here.
@@ -48,11 +58,25 @@ export const openBooks = async (books) => {
       const port = process.env[given] ? Number(process.env[given]) : own
       if (!process.env[given]) {
         started.push(
-          spawnTool('npx', ['storybook', 'dev', '-p', String(port), '--no-open', '--quiet'], {
-            cwd: join(root, BOOKS[book]),
-            detached: true,
-            stdio: 'ignore',
-          }),
+          // npx runs in the nearest package folder, which is not the Storybook's own for the plugins'.
+          spawnTool(
+            'npx',
+            [
+              'storybook',
+              'dev',
+              '-p',
+              String(port),
+              '-c',
+              join(root, BOOKS[book], '.storybook'),
+              '--no-open',
+              '--quiet',
+            ],
+            {
+              cwd: join(root, BOOKS[book]),
+              detached: true,
+              stdio: 'ignore',
+            },
+          ),
         )
       }
       const base = `http://localhost:${port}`
@@ -60,14 +84,14 @@ export const openBooks = async (books) => {
       bases.set(book, base)
     }
   } catch (error) {
-    for (const one of started) process.kill(-one.pid, 'SIGTERM')
+    stopAll(started)
     throw error
   }
 
   return {
     getBase: (book) => bases.get(book),
     close: () => {
-      for (const one of started) process.kill(-one.pid, 'SIGTERM')
+      stopAll(started)
     },
   }
 }
