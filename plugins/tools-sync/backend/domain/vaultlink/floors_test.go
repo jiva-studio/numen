@@ -44,8 +44,8 @@ func TestLink_KeepsAFloorUntilTheEndOfItsRetentionAndDropsItAfter(t *testing.T) 
 	t.Parallel()
 	start := time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC)
 	var link vaultlink.Link
-	link.AddRetired(vaultlink.NewRetiredFile(fileID(1), 3, start))
-	link.AddRemoved(vaultlink.NewRemovedFile(fileID(2), "Draft.md", nil, 4, start))
+	link.AddRetired(vaultlink.CreateRetiredFile(fileID(1), 3, start))
+	link.AddRemoved(vaultlink.CreateRemovedFile(fileID(2), "Draft.md", nil, 4, start))
 
 	link.PruneFloors(start.Add(vaultlink.FloorRetention))
 	if link.GetFloor(fileID(1)) != 3 || link.GetFloor(fileID(2)) != 4 {
@@ -63,10 +63,10 @@ func TestLink_DropsTheFloorsOlderThanTheRetentionAndKeepsTheNewerOnes(t *testing
 	start := time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC)
 	later := start.Add(30 * 24 * time.Hour)
 	var link vaultlink.Link
-	link.AddRetired(vaultlink.NewRetiredFile(fileID(1), 3, start))
-	link.AddRetired(vaultlink.NewRetiredFile(fileID(2), 5, later))
-	link.AddRemoved(vaultlink.NewRemovedFile(fileID(3), "Old.md", nil, 4, start))
-	link.AddRemoved(vaultlink.NewRemovedFile(fileID(4), "New.md", nil, 6, later))
+	link.AddRetired(vaultlink.CreateRetiredFile(fileID(1), 3, start))
+	link.AddRetired(vaultlink.CreateRetiredFile(fileID(2), 5, later))
+	link.AddRemoved(vaultlink.CreateRemovedFile(fileID(3), "Old.md", nil, 4, start))
+	link.AddRemoved(vaultlink.CreateRemovedFile(fileID(4), "New.md", nil, 6, later))
 
 	link.PruneFloors(start.Add(vaultlink.FloorRetention + time.Hour))
 
@@ -80,8 +80,8 @@ func TestLink_KeepsTheTimeOfAFloorThroughASaveAndARead(t *testing.T) {
 	t.Parallel()
 	start := time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC)
 	var link vaultlink.Link
-	link.AddRetired(vaultlink.NewRetiredFile(fileID(1), 3, start))
-	link.AddRemoved(vaultlink.NewRemovedFile(fileID(2), "Draft.md", nil, 4, start))
+	link.AddRetired(vaultlink.CreateRetiredFile(fileID(1), 3, start))
+	link.AddRemoved(vaultlink.CreateRemovedFile(fileID(2), "Draft.md", nil, 4, start))
 	saved, err := json.Marshal(link)
 	if err != nil {
 		t.Fatal(err)

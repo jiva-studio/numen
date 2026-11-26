@@ -45,7 +45,7 @@ func (r *run) reconcile(ctx context.Context) error {
 func (r *run) forgetAbsent(present map[string]bool) {
 	for _, record := range slices.Clone(r.records) {
 		if !present[string(record.FileID)] {
-			r.link.MergeRetired([]vaultlink.RetiredFile{vaultlink.NewRetiredFile(record.FileID, record.Version, r.deps.Clock.Now())})
+			r.link.MergeRetired([]vaultlink.RetiredFile{vaultlink.CreateRetiredFile(record.FileID, record.Version, r.deps.Clock.Now())})
 			r.removeRecord(record.FileID)
 		}
 	}

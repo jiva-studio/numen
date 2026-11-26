@@ -125,8 +125,8 @@ type RemovedFile struct {
 	RemovedAt int64  `json:"removedAt,omitempty"`
 }
 
-// NewRemovedFile returns the removal of the file, made at the time.
-func NewRemovedFile(fileID []byte, path string, headRev []byte, version uint64, at time.Time) RemovedFile {
+// CreateRemovedFile returns the removal of the file, made at the time.
+func CreateRemovedFile(fileID []byte, path string, headRev []byte, version uint64, at time.Time) RemovedFile {
 	return RemovedFile{FileID: fileID, Path: path, HeadRev: headRev, Version: version, RemovedAt: at.Unix()}
 }
 
@@ -262,8 +262,8 @@ type RetiredFile struct {
 	RemovedAt int64  `json:"removedAt,omitempty"`
 }
 
-// NewRetiredFile returns the removal of the file at the version, applied at the time.
-func NewRetiredFile(fileID []byte, version uint64, at time.Time) RetiredFile {
+// CreateRetiredFile returns the removal of the file at the version, applied at the time.
+func CreateRetiredFile(fileID []byte, version uint64, at time.Time) RetiredFile {
 	return RetiredFile{FileID: fileID, Version: version, RemovedAt: at.Unix()}
 }
 

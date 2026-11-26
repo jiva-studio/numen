@@ -15,7 +15,7 @@ func (p *pair) fillFloors(t *testing.T, count int) {
 		for n := range count {
 			id := make([]byte, 16)
 			binary.BigEndian.PutUint64(id, uint64(n)+1)
-			link.AddRetired(vaultlink.NewRetiredFile(id, 2, p.b.Clock.Now()))
+			link.AddRetired(vaultlink.CreateRetiredFile(id, 2, p.b.Clock.Now()))
 		}
 		return nil
 	})
