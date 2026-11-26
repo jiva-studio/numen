@@ -1,5 +1,11 @@
 /** A plugin card's filter values, read from its data attributes. */
-type CardFilter = { search: string; category: string; apps: string[]; isPaid: boolean; isOfficial: boolean }
+type CardFilter = {
+  search: string
+  category: string
+  apps: string[]
+  isPaid: boolean
+  isOfficial: boolean
+}
 
 /** The values of the filter bar; an empty string chooses every value. */
 export type CatalogFilter = {

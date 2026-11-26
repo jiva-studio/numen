@@ -5,7 +5,11 @@
  */
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { Select, Switch } from '@numen/ui'
-import { type CatalogFilter, showMatchingCards, watchPageLanguage } from '../../scripts/plugin-catalog'
+import {
+  type CatalogFilter,
+  showMatchingCards,
+  watchPageLanguage,
+} from '../../scripts/plugin-catalog'
 import { getDictionary } from '../../scripts/site-controls'
 
 type Choice = { id: string; text: string }
@@ -30,7 +34,10 @@ const categoryChoices = computed(() => [
   { id: '', text: words.value.plugins_category_all ?? '' },
   ...props.categories,
 ])
-const appChoices = computed(() => [{ id: '', text: words.value.plugins_app_all ?? '' }, ...props.apps])
+const appChoices = computed(() => [
+  { id: '', text: words.value.plugins_app_all ?? '' },
+  ...props.apps,
+])
 const priceChoices = computed(() => [
   { id: '', text: words.value.plugins_price_all ?? '' },
   { id: 'free', text: words.value.plugins_free ?? '' },
