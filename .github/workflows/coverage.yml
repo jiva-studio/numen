@@ -34,6 +34,20 @@ jobs:
           go-version-file: libs/core/kernel/go.mod
           cache: false
 
+      - id: go-cache-path
+        run: |
+          echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+          echo "modules=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+      # The build and module cache the plugins' CI saves, read and never written.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.go-cache-path.outputs.build }}
+            ${{ steps.go-cache-path.outputs.modules }}
+          key: go-plugins-test-Linux-${{ github.sha }}
+          restore-keys: go-plugins-test-Linux-
+
       # A Go module that links the window needs the system browser's headers.
       - uses: ./.github/actions/setup-webkit
 
