@@ -9,20 +9,22 @@ import { readRegistry } from './components/plugins/registry'
 const plugins = defineCollection({
   loader: {
     name: 'numen-plugin-registry',
-    load: async ({ store, renderMarkdown, logger }) => {
+    load: async (context) => {
+      const { store, logger } = context
       const registry = await readRegistry()
       store.clear()
       for (const plugin of registry.plugins) {
         const changelog = await Promise.all(
           plugin.changelog.map(async (change) => ({
             ...change,
-            notesHtml: change.notes ? (await renderMarkdown(change.notes)).html : null,
+            notesHtml: change.notes ? (await context.renderMarkdown(change.notes)).html : null,
           })),
         )
         const rank = registry.featured.indexOf(plugin.id)
         const data = { ...plugin, changelog, featuredRank: rank === -1 ? null : rank }
         if (plugin.readme) {
-          store.set({ id: plugin.id, data, rendered: await renderMarkdown(plugin.readme.text) })
+          const rendered = await context.renderMarkdown(plugin.readme.text)
+          store.set({ id: plugin.id, data, rendered })
         } else {
           store.set({ id: plugin.id, data })
         }
