@@ -5,7 +5,7 @@ name: numen-sync-test
 
 services:
   postgres:
-    image: postgres:18
+    image: postgres:18@sha256:c699303802144847d238196173655dbbecf7a96aeca1565f2b02eb671a1f0b6b
     environment:
       POSTGRES_PASSWORD: postgres
     command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off"]
@@ -18,13 +18,13 @@ services:
       retries: 30
 
   bucket:
-    image: versity/versitygw
-    command: ["--access", "numendev", "--secret", "numendevsecret", "--port", ":7070", "--region", "us-east-1", "posix", "--sidecar", "/meta", "/data"]
+    image: versity/versitygw:v1.11.0@sha256:8319a530d08d537426e2f855bae5280709795dc73a3f0c347973ef915d6343c5
+    command: ["--access", "numendev", "--secret", "numendevsecret", "--port", ":8790", "--region", "us-east-1", "posix", "--sidecar", "/meta", "/data"]
     ports:
-      - "127.0.0.1:7070:7070"
+      - "127.0.0.1:8790:8790"
 
   bucket-init:
-    image: amazon/aws-cli
+    image: amazon/aws-cli:2.42.4@sha256:4a1a668837d5f97ced202e03827da1bc0b48cda946be89909cd7a02023f62921
     depends_on: [bucket]
     environment:
       AWS_ACCESS_KEY_ID: numendev
@@ -34,8 +34,8 @@ services:
     command:
       - |
         for i in $$(seq 1 30); do
-          if aws --endpoint-url http://bucket:7070 s3api head-bucket --bucket numen-sync 2>/dev/null \
-            || aws --endpoint-url http://bucket:7070 s3api create-bucket --bucket numen-sync 2>/dev/null; then
+          if aws --endpoint-url http://bucket:8790 s3api head-bucket --bucket numen-sync 2>/dev/null \
+            || aws --endpoint-url http://bucket:8790 s3api create-bucket --bucket numen-sync 2>/dev/null; then
             exit 0
           fi
           sleep 1
@@ -45,23 +45,26 @@ services:
     restart: "no"
 
   keys:
-    image: ${NUMEN_SYNC_DEV_IMAGE:?set NUMEN_SYNC_DEV_IMAGE or fill tests/server/stack.lock}
+    image: ${NUMEN_SYNC_DEVTOOLS_IMAGE:?set NUMEN_SYNC_DEVTOOLS_IMAGE or fill tests/server/stack.lock}
     entrypoint: ["/bin/sh", "-c"]
     command: ["/numen-sync-dev keys -dir /keys -not-before $$(date +%s) -days 365 && chmod 755 /keys && chmod 644 /keys/epoch-signing-key /keys/epoch-certificate.json"]
     volumes: ["keys:/keys"]
     restart: "no"
 
   payment:
-    image: ${NUMEN_SYNC_DEV_IMAGE:?set NUMEN_SYNC_DEV_IMAGE or fill tests/server/stack.lock}
+    image: ${NUMEN_SYNC_DEVTOOLS_IMAGE:?set NUMEN_SYNC_DEVTOOLS_IMAGE or fill tests/server/stack.lock}
     entrypoint: ["/numen-sync-dev"]
     command:
       - payment
       - -listen=0.0.0.0:8788
       - -public-url=http://127.0.0.1:8788
       - -control=0.0.0.0:8789
-      - -webhook-target=http://sync:8787/webhooks/creem
+      - -webhook-target=http://127.0.0.1:8787/webhooks/creem
       - -webhook-secret=whsec_numen_dev_standin_secret
+    # The server shares this container's network, so its port is published here too. The stand-in is at 127.0.0.1 for the server, which the real client
+    # accepts for a payment page over plain http, so no host name needs an entry in /etc/hosts.
     ports:
+      - "127.0.0.1:8787:8787"
       - "127.0.0.1:8788:8788"
       - "127.0.0.1:8789:8789"
     healthcheck:
@@ -77,16 +80,18 @@ services:
       NUMEN_SYNC_PUBLIC_URL: http://127.0.0.1:8787
       NUMEN_SYNC_DB_URL: postgres://numen_sync:numen_sync@postgres:5432/numen_sync?sslmode=disable
       NUMEN_SYNC_DB_MIGRATE_URL: postgres://numen_sync_owner:numen_sync_owner@postgres:5432/numen_sync?sslmode=disable
-      NUMEN_SYNC_BUCKET_ENDPOINT: http://bucket:7070
+      NUMEN_SYNC_BUCKET_ENDPOINT: http://bucket:8790
+      NUMEN_SYNC_BUCKET_PUBLIC_ENDPOINT: http://127.0.0.1:8790
       NUMEN_SYNC_BUCKET_REGION: us-east-1
       NUMEN_SYNC_BUCKET_NAME: numen-sync
       NUMEN_SYNC_BUCKET_ACCESS_KEY_ID: numendev
       NUMEN_SYNC_BUCKET_SECRET_ACCESS_KEY: numendevsecret
-      NUMEN_SYNC_HEALTH_TOKEN: numen-test-health-token
-      NUMEN_SYNC_PAYMENT_API_URL: http://payment:8788
+      NUMEN_SYNC_HEALTH_TOKEN: numen-dev-health-token
+      NUMEN_SYNC_PAYMENT_API_URL: http://127.0.0.1:8788
       NUMEN_SYNC_PAYMENT_API_KEY: creem_test_standin
       NUMEN_SYNC_PAYMENT_WEBHOOK_SECRET: whsec_numen_dev_standin_secret
       NUMEN_SYNC_PAYMENT_MODE: test
+      NUMEN_SYNC_PAYMENT_PLANS_INTERVAL: 5s
       NUMEN_SYNC_LIMIT_SIGN_IN_SOURCE_PER_MINUTE: "100000"
       NUMEN_SYNC_LIMIT_ACCOUNTS_NEW_SOURCE_PER_HOUR: "100000"
       NUMEN_SYNC_LIMIT_ACCOUNTS_NEW_GLOBAL_PER_HOUR: "100000"
@@ -94,7 +99,7 @@ services:
       NUMEN_SYNC_EPOCH_SIGNING_KEY_FILE: /keys/epoch-signing-key
       NUMEN_SYNC_EPOCH_CERTIFICATE_FILE: /keys/epoch-certificate.json
     volumes: ["keys:/keys:ro"]
-    ports: ["127.0.0.1:8787:8787"]
+    network_mode: "service:payment"
     depends_on:
       postgres: {condition: service_healthy}
       bucket-init: {condition: service_completed_successfully}

@@ -567,6 +567,10 @@ sync_stack_up: ## start the real sync server of the tests (tests/server)
 sync_stack_down: ## stop the real sync server of the tests and drop its data
 	bash $(TESTS)/server/stack.sh down
 
+.PHONY: sync_stack_bump
+sync_stack_bump: ## pin the digests of the tag main of both server packages in tests/server/stack.lock
+	@bash $(TESTS)/server/bump.sh
+
 .PHONY: sync_stack_env
 sync_stack_env: ## print the settings of the running stack: eval "$$(make -s sync_stack_env)"
 	@bash $(TESTS)/server/stack.sh env

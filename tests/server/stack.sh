@@ -7,7 +7,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 project=numen-sync-test
 url=http://127.0.0.1:8787
 payment_url=http://127.0.0.1:8789
-bucket_url=http://127.0.0.1:7070
+bucket_url=http://127.0.0.1:8790
 
 read_lock() {
   local line key
@@ -16,8 +16,8 @@ read_lock() {
     key=${line%%=*}
     if [ -z "${!key:-}" ]; then export "$key=${line#*=}"; fi
   done <"$here/stack.lock"
-  if [ -z "${NUMEN_SYNC_IMAGE:-}" ] || [ -z "${NUMEN_SYNC_DEV_IMAGE:-}" ]; then
-    echo "no server images: fill tests/server/stack.lock, or set NUMEN_SYNC_IMAGE and NUMEN_SYNC_DEV_IMAGE" >&2
+  if [ -z "${NUMEN_SYNC_IMAGE:-}" ] || [ -z "${NUMEN_SYNC_DEVTOOLS_IMAGE:-}" ]; then
+    echo "no server images: run make sync_stack_bump, or set NUMEN_SYNC_IMAGE and NUMEN_SYNC_DEVTOOLS_IMAGE" >&2
     exit 1
   fi
 }
@@ -35,7 +35,7 @@ case "${1:-}" in
     ;;
   env)
     read_lock
-    root=$(docker run --rm -v "${project}_keys:/keys:ro" --entrypoint cat "$NUMEN_SYNC_DEV_IMAGE" /keys/root-public.hex)
+    root=$(docker run --rm -v "${project}_keys:/keys:ro" --entrypoint cat "$NUMEN_SYNC_DEVTOOLS_IMAGE" /keys/root-public.hex)
     echo "export NUMEN_SYNC_TEST_URL=$url"
     echo "export NUMEN_SYNC_TEST_ROOT_KEY=$root"
     echo "export NUMEN_SYNC_TEST_PAYMENT_URL=$payment_url"
