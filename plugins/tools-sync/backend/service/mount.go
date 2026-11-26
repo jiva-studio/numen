@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/vaultnames"
 )
 
 const (
@@ -46,7 +47,7 @@ func (a *App) Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	vaults := hostvault.New(host.NewClient(endpoint), host.NewStoreClient(endpoint))
+	vaults := hostvault.New(host.NewClient(endpoint), host.NewStoreClient(endpoint), vaultnames.New())
 	client := account.NewClient(endpoint)
 	a.runtime = newRuntime(parts{
 		identity: accountadapter.New(client),

@@ -6,7 +6,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/vaultnames"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
@@ -14,12 +13,12 @@ import (
 type Vaults struct {
 	client *host.Client
 	store  *host.StoreClient
-	names  *vaultnames.Edge
+	names  ports.Names
 }
 
-// New returns the vaults served by the clients of the host.
-func New(client *host.Client, store *host.StoreClient) *Vaults {
-	return &Vaults{client: client, store: store, names: vaultnames.New()}
+// New returns the vaults served by the clients of the host, with the names of their notes put by names.
+func New(client *host.Client, store *host.StoreClient, names ports.Names) *Vaults {
+	return &Vaults{client: client, store: store, names: names}
 }
 
 // GetVaults lists every vault of the installation.
