@@ -100,5 +100,8 @@ export const EN: Record<string, string> = {
   close_title: 'Download Numen.',
   close_lede:
     'Free during the alpha for macOS, Windows, and Linux. Includes both Numen and Numen Flashcards.',
-  footer_privacy: 'Privacy-first: no account, no email, no telemetry. Open source under AGPL-3.0.',
+  footer_product: 'Product',
+  footer_resources: 'Resources',
+  footer_issues: 'Report an issue',
+  footer_code: 'Source code',
 }

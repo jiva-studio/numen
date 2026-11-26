@@ -100,6 +100,8 @@ export const RU: Record<string, string> = {
   close_title: 'Скачать Numen.',
   close_lede:
     'Бесплатно на время альфы для macOS, Windows и Linux. Включает оба приложения: Numen и Numen Flashcards.',
-  footer_privacy:
-    'Приватность прежде всего: без аккаунта, без email, без телеметрии. Открытый код под AGPL-3.0.',
+  footer_product: 'Продукт',
+  footer_resources: 'Ресурсы',
+  footer_issues: 'Сообщить о проблеме',
+  footer_code: 'Исходный код',
 }
