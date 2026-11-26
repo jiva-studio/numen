@@ -2,6 +2,8 @@ package vaultlink_test
 
 import (
 	"encoding/binary"
+	"encoding/json"
+	"slices"
 	"testing"
 	"time"
 
@@ -41,10 +43,9 @@ func TestLink_KeepsEveryFloorOfAFileThisDeviceRemovedHoweverManyWere(t *testing.
 func TestLink_KeepsAFloorUntilTheEndOfItsRetentionAndDropsItAfter(t *testing.T) {
 	t.Parallel()
 	start := time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC)
-	link := vaultlink.Link{
-		Retired: []vaultlink.RetiredFile{{FileID: fileID(1), Version: 3, At: start.Unix()}},
-		Removed: []vaultlink.RemovedFile{{FileID: fileID(2), Version: 4, At: start.Unix()}},
-	}
+	var link vaultlink.Link
+	link.AddRetired(vaultlink.NewRetiredFile(fileID(1), 3, start))
+	link.AddRemoved(vaultlink.NewRemovedFile(fileID(2), "Draft.md", nil, 4, start))
 
 	link.PruneFloors(start.Add(vaultlink.FloorRetention))
 	if link.GetFloor(fileID(1)) != 3 || link.GetFloor(fileID(2)) != 4 {
@@ -57,16 +58,45 @@ func TestLink_KeepsAFloorUntilTheEndOfItsRetentionAndDropsItAfter(t *testing.T) 
 	}
 }
 
-func TestLink_DatesAFloorThatHasNoDateWhenItIsFirstPrunedAndKeepsItForTheRetention(t *testing.T) {
+func TestLink_DropsTheFloorsOlderThanTheRetentionAndKeepsTheNewerOnes(t *testing.T) {
+	t.Parallel()
+	start := time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC)
+	later := start.Add(30 * 24 * time.Hour)
+	var link vaultlink.Link
+	link.AddRetired(vaultlink.NewRetiredFile(fileID(1), 3, start))
+	link.AddRetired(vaultlink.NewRetiredFile(fileID(2), 5, later))
+	link.AddRemoved(vaultlink.NewRemovedFile(fileID(3), "Old.md", nil, 4, start))
+	link.AddRemoved(vaultlink.NewRemovedFile(fileID(4), "New.md", nil, 6, later))
+
+	link.PruneFloors(start.Add(vaultlink.FloorRetention + time.Hour))
+
+	got := []uint64{link.GetFloor(fileID(1)), link.GetFloor(fileID(2)), link.GetFloor(fileID(3)), link.GetFloor(fileID(4))}
+	if want := []uint64{0, 5, 0, 6}; !slices.Equal(got, want) {
+		t.Errorf("floors = %v, want %v: the removals older than the retention dropped, the newer kept", got, want)
+	}
+}
+
+func TestLink_KeepsTheTimeOfAFloorThroughASaveAndARead(t *testing.T) {
 	t.Parallel()
 	start := time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC)
 	var link vaultlink.Link
-	link.AddRetired(vaultlink.RetiredFile{FileID: fileID(1), Version: 3})
+	link.AddRetired(vaultlink.NewRetiredFile(fileID(1), 3, start))
+	link.AddRemoved(vaultlink.NewRemovedFile(fileID(2), "Draft.md", nil, 4, start))
+	saved, err := json.Marshal(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored vaultlink.Link
+	if err := json.Unmarshal(saved, &restored); err != nil {
+		t.Fatal(err)
+	}
 
-	link.PruneFloors(start)
-	link.PruneFloors(start.Add(vaultlink.FloorRetention))
-
-	if got := link.GetFloor(fileID(1)); got != 3 {
-		t.Errorf("floor = %d, want 3: the retention counts from the first look at it", got)
+	restored.PruneFloors(start.Add(vaultlink.FloorRetention))
+	if restored.GetFloor(fileID(1)) != 3 || restored.GetFloor(fileID(2)) != 4 {
+		t.Fatalf("floors = %d and %d at the last moment of the retention, want 3 and 4", restored.GetFloor(fileID(1)), restored.GetFloor(fileID(2)))
+	}
+	restored.PruneFloors(start.Add(vaultlink.FloorRetention + time.Second))
+	if restored.GetFloor(fileID(1)) != 0 || restored.GetFloor(fileID(2)) != 0 {
+		t.Errorf("floors = %d and %d one second after the retention, want both dropped: the saved time was lost", restored.GetFloor(fileID(1)), restored.GetFloor(fileID(2)))
 	}
 }

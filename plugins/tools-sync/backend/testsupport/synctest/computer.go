@@ -383,7 +383,7 @@ func (c *Computer) RestoreDeps() restore.Deps {
 	return restore.Deps{
 		Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State, Catalog: c.Cloud, Chain: c.Cloud, Identity: c.Account, Revisions: c.Cloud,
 		Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Commit: commit.NewCommitRevisions(c.CommitDeps()),
-		Remove: commit.NewCommitRemovals(c.CommitDeps()),
+		Remove: commit.NewCommitRemovals(c.CommitDeps()), Clock: c.Clock,
 	}
 }
 

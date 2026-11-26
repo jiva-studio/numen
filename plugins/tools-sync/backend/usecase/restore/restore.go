@@ -49,6 +49,7 @@ type Deps struct {
 	State     State
 	Commit    Committer
 	Remove    Remover
+	Clock     ports.Clock
 }
 
 // State is the link and the records of a vault.

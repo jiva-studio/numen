@@ -80,7 +80,7 @@ func NewSyncVaultReading(deps Deps, shares syncvault.SharesReader) *syncvault.Sy
 	recovery := restore.Deps{
 		Address: deps.Restore.Address, Epochs: deps.Restore.Epochs, Mirror: deps.Restore.Mirror,
 		Catalog: deps.Catalog, Chain: deps.Chain, Identity: deps.Identity, Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host,
-		State: deps.State, Commit: commit.NewCommitRevisions(commitDeps), Remove: commit.NewCommitRemovals(commitDeps),
+		State: deps.State, Commit: commit.NewCommitRevisions(commitDeps), Remove: commit.NewCommitRemovals(commitDeps), Clock: deps.Clock,
 	}
 	recoverAccount := restore.NewRecoverAccount(recovery)
 	sharing := sharewire.NewShareDeps(deps.Deps)

@@ -118,11 +118,16 @@ func IsRemoteID(text string) bool {
 // RemovedFile is a file this device removed on the server: its id, its path, the revision of the removal and its
 // signed version. A restored server that holds the file again gets the removal sent again.
 type RemovedFile struct {
-	FileID  []byte `json:"fileId"`
-	Path    string `json:"path"`
-	HeadRev []byte `json:"headRev"`
-	Version uint64 `json:"version"`
-	At      int64  `json:"at,omitempty"`
+	FileID    []byte `json:"fileId"`
+	Path      string `json:"path"`
+	HeadRev   []byte `json:"headRev"`
+	Version   uint64 `json:"version"`
+	RemovedAt int64  `json:"removedAt,omitempty"`
+}
+
+// NewRemovedFile returns the removal of the file, made at the time.
+func NewRemovedFile(fileID []byte, path string, headRev []byte, version uint64, at time.Time) RemovedFile {
+	return RemovedFile{FileID: fileID, Path: path, HeadRev: headRev, Version: version, RemovedAt: at.Unix()}
 }
 
 // AddRemoved records a removal in place of an older one of the same file.
@@ -252,9 +257,14 @@ func (r *ShareRecord) RecordRevision(fileID, revID []byte, version uint64) {
 
 // RetiredFile is a file another computer removed and this device applied: its id and the signed version of the removal.
 type RetiredFile struct {
-	FileID  []byte `json:"fileId"`
-	Version uint64 `json:"version"`
-	At      int64  `json:"at,omitempty"`
+	FileID    []byte `json:"fileId"`
+	Version   uint64 `json:"version"`
+	RemovedAt int64  `json:"removedAt,omitempty"`
+}
+
+// NewRetiredFile returns the removal of the file at the version, applied at the time.
+func NewRetiredFile(fileID []byte, version uint64, at time.Time) RetiredFile {
+	return RetiredFile{FileID: fileID, Version: version, RemovedAt: at.Unix()}
 }
 
 // AddRetired records the removal of a file in place of an older one.
@@ -267,23 +277,11 @@ func (l *Link) AddRetired(one RetiredFile) {
 // offline, so an old signed revision of a removed file stays refused for that long.
 const FloorRetention = 2 * 365 * 24 * time.Hour
 
-// PruneFloors dates the floors that have no date as of now and drops the ones older than FloorRetention. Nothing else
-// drops a floor.
+// PruneFloors drops the floors removed more than FloorRetention before now. Nothing else drops a floor.
 func (l *Link) PruneFloors(now time.Time) {
-	stamp := now.Unix()
 	limit := now.Add(-FloorRetention).Unix()
-	for i := range l.Removed {
-		if l.Removed[i].At == 0 {
-			l.Removed[i].At = stamp
-		}
-	}
-	for i := range l.Retired {
-		if l.Retired[i].At == 0 {
-			l.Retired[i].At = stamp
-		}
-	}
-	l.Removed = slices.DeleteFunc(l.Removed, func(one RemovedFile) bool { return one.At < limit })
-	l.Retired = slices.DeleteFunc(l.Retired, func(one RetiredFile) bool { return one.At < limit })
+	l.Removed = slices.DeleteFunc(l.Removed, func(one RemovedFile) bool { return one.RemovedAt < limit })
+	l.Retired = slices.DeleteFunc(l.Retired, func(one RetiredFile) bool { return one.RemovedAt < limit })
 }
 
 // GetFloor returns the highest signed version at which this device saw the file removed, or 0 for a file it never saw
