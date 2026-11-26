@@ -768,7 +768,7 @@ const createFetcher = (routes, requests) => async (url, init = {}) => {
 const VERIFIERS = {
   canVerifyAttestation: () => true,
   verifyAttestation: async () => createCheck('attestation', 'pass', 'verified'),
-  scanVulnerabilities: async () => createCheck('vulnerabilities', 'skipped', 'not installed'),
+  inspectRelease: async () => null,
 }
 
 const withOutput = async (check) => {
@@ -811,6 +811,9 @@ test('an external plugin is read from its latest release', async () => {
     assert.deepEqual(entry.platforms, ['linux'])
     assert.equal(entry.artifacts[0].sha256, ARTIFACT_SHA)
     assert.equal(entry.checks.find((one) => one.id === 'attestation').status, 'pass')
+    assert.equal(entry.checks.find((one) => one.id === 'vulnerabilities').status, 'skipped')
+    assert.equal(entry.checks.find((one) => one.id === 'mutation').status, 'warn')
+    assert.equal(entry.checks.find((one) => one.id === 'tests').status, 'pass')
     assert.deepEqual(entry.screenshots, [
       {
         name: 'main',

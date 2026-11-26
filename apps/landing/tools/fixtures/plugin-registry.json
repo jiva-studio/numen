@@ -93,7 +93,29 @@
         { "id": "readme", "status": "pass", "detail": "README.md with an introduction." },
         { "id": "screenshots", "status": "pass", "detail": "1 in light and dark." },
         { "id": "permissions", "status": "warn", "detail": "This version adds: link:open." },
-        { "id": "updated", "status": "info", "detail": "2026-11-24T09:00:00Z" }
+        {
+          "id": "network",
+          "status": "info",
+          "detail": "Yes, read from the code and the manifest.\nDownloads from: huggingface.co."
+        },
+        { "id": "vulnerabilities", "status": "fail", "detail": "1 known: GO-2026-0001." }
+      ],
+      "dependencies": {
+        "packages": [
+          { "ecosystem": "go", "name": "github.com/yalue/onnxruntime_go", "version": "v1.21.0", "license": "MIT" },
+          { "ecosystem": "npm", "name": "@lucide/vue", "version": "1.72.0", "license": null }
+        ],
+        "indirect": { "go": 4, "npm": 0 }
+      },
+      "vulnerabilities": [
+        {
+          "id": "GO-2026-0001",
+          "url": "https://osv.dev/vulnerability/GO-2026-0001",
+          "summary": "Header parsing loops",
+          "ecosystem": "Go",
+          "name": "golang.org/x/net",
+          "version": "0.62.0"
+        }
       ],
       "quality": {
         "reportedBy": "numen",

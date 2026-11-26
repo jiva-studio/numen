@@ -1,10 +1,10 @@
 /**
  * The tests a plugin folder holds, counted from its source without running them: Go test and fuzz
  * functions in `*_test.go`, TypeScript test cases in `*.test.ts` and stories in `*.stories.ts`,
- * which run as browser tests.
+ * which run as browser tests; and the Vue components no story shows.
  */
-import { readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 
 const SKIPPED_FOLDERS = new Set(['node_modules', 'dist', 'testdata', '.git'])
 
@@ -44,4 +44,35 @@ export const countTests = (dir) => {
     counts[counter.kind] += readFileSync(file, 'utf8').match(counter.pattern)?.length ?? 0
   }
   return counts
+}
+
+const VUE_IMPORT = /(?:from\s+|import\s*\(\s*)["'](\.{1,2}\/[^"']+\.vue)["']/g
+
+/**
+ * The Vue components of the folder `frontend` of `dir` and the ones no story shows: a component
+ * has a story when a `*.stories.ts` of the plugin imports its file by a relative path. Null when
+ * the plugin has no `frontend` folder.
+ *
+ * @param {string} dir - the plugin folder
+ * @returns {{ components: string[], unstoried: string[] } | null} paths relative to `dir`
+ */
+export const listUnstoriedComponents = (dir) => {
+  const frontend = join(dir, 'frontend')
+  if (!existsSync(frontend)) return null
+  const files = listFiles(dir)
+  const storied = new Set(
+    files
+      .filter((file) => file.endsWith('.stories.ts'))
+      .flatMap((file) =>
+        [...readFileSync(file, 'utf8').matchAll(VUE_IMPORT)].map((match) =>
+          resolve(dirname(file), match[1]),
+        ),
+      ),
+  )
+  const components = files.filter((file) => file.startsWith(frontend + sep) && file.endsWith('.vue')).sort()
+  const toName = (file) => relative(dir, file).split(sep).join('/')
+  return {
+    components: components.map(toName),
+    unstoried: components.filter((file) => !storied.has(file)).map(toName),
+  }
 }

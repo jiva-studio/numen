@@ -84,6 +84,27 @@ type PluginQuality = {
   tests: PluginTests
 }
 
+export type PluginDependency = {
+  ecosystem: 'go' | 'npm'
+  name: string
+  version: string
+  license: string | null
+}
+
+type PluginDependencies = {
+  packages: PluginDependency[]
+  indirect: { go: number; npm: number }
+}
+
+export type PluginVulnerability = {
+  id: string
+  url: string
+  summary: string
+  ecosystem: string
+  name: string
+  version: string
+}
+
 type PluginSource = {
   kind: 'internal' | 'external'
   repo: string
@@ -93,8 +114,9 @@ type PluginSource = {
 }
 
 /**
- * A plugin as the registry lists it: manifest fields, README, screenshots, changelog, checks and
- * test numbers.
+ * A plugin as the registry lists it: manifest fields, README, screenshots, changelog, checks,
+ * third-party dependencies, known vulnerabilities and test numbers. A registry collected before
+ * the dependencies were read has neither of the two.
  */
 export type RegistryPlugin = {
   id: string
@@ -131,6 +153,8 @@ export type RegistryPlugin = {
   downloads: PluginDownload[]
   artifacts: PluginArtifact[]
   checks: PluginCheck[]
+  dependencies?: PluginDependencies
+  vulnerabilities?: PluginVulnerability[]
   quality: PluginQuality | null
 }
 

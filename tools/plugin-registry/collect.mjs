@@ -19,7 +19,8 @@
  *
  * `--quality` holds `mutation.json` and `coverage.json` (`tools/shared/plugin-quality.mjs`).
  * `--offline` asks nothing over the network: download sizes are unknown, external plugins keep
- * their previous entries, and contributors have no GitHub accounts. Online, the accounts are asked
+ * their previous entries, contributors have no GitHub accounts, Go licenses come from the module
+ * cache only and the vulnerability scan is skipped. Online, the accounts are asked
  * for only with GITHUB_TOKEN (or GH_TOKEN) set.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -35,6 +36,7 @@ import {
   readRepositoryLicense,
 } from './internal.mjs'
 import { readQualityFiles } from './quality.mjs'
+import { createSourceReaders } from './source.mjs'
 import {
   assertFeaturedKnown,
   assertIconsKnown,
@@ -94,7 +96,9 @@ const collectExternals = async (sources, context, isOffline) => {
  * @param {string} options.sources - the external sources file
  * @param {boolean} options.isOffline
  * @param {typeof fetch} [options.fetcher]
- * @param {object} [options.verifiers] - the attestation and vulnerability checks of external plugins
+ * @param {object} [options.verifiers] - the attestation and source checks of external plugins
+ * @param {ReturnType<typeof createSourceReaders>} [options.readers] - the license and vulnerability
+ *   readers
  * @param {string} [options.generatedAt]
  * @returns {Promise<object>} the registry
  */
@@ -107,6 +111,7 @@ export const collectRegistry = async ({
   isOffline,
   fetcher = fetch,
   verifiers,
+  readers = createSourceReaders({ root, isOffline }),
   generatedAt = new Date().toISOString(),
 }) => {
   const previousById = new Map((previous?.plugins ?? []).map((one) => [one.id, one]))
@@ -124,6 +129,7 @@ export const collectRegistry = async ({
     quality: await readQualityFiles(quality, fetcher),
     github,
     getCommitAccounts: isOffline || !token ? NO_ACCOUNTS : createAccountReader(github),
+    readers,
     ...(verifiers ? { verifiers } : {}),
   }
   const folders = listPluginNames(join(root, 'plugins'))
