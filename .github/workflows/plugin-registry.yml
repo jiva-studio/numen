@@ -44,7 +44,7 @@ jobs:
           cache-key: plugin-registry
 
       - name: Install osv-scanner
-        run: go install github.com/google/osv-scanner/v2/cmd/osv-scanner@OSV_VERSION
+        run: go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.7.1
 
       - uses: ./.github/actions/install-lock-packages
         with:
