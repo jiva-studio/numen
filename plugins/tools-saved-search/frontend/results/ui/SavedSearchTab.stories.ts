@@ -387,7 +387,9 @@ export const InTheWindow: Story = {
   args: { response: ERASING },
   play: async ({ canvasElement }) => {
     await waitFor(() =>
-      expect(within(canvasElement).getByRole('button', { name: /^Landauer's principle/ })).toBeVisible(),
+      expect(
+        within(canvasElement).getByRole('button', { name: /^Landauer's principle/ }),
+      ).toBeVisible(),
     )
   },
 }
