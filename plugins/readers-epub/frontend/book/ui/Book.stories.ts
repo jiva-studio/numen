@@ -46,7 +46,6 @@ const room =
     `,
   })
 
-/** The pane of a window a book is opened in. */
 const PANE: Decorator = (story) => ({
   components: { story },
   template: `

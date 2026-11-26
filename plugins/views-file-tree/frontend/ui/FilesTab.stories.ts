@@ -8,6 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import type { Component } from 'vue'
 import { AudioLines, Book, FileText, Folder, FolderOpen } from '@lucide/vue'
+import { getPointerPosition } from '@numen/ui/testing'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { createFileTree, ROOT } from '../model/useFileTree'
@@ -191,12 +192,11 @@ const TEMPLATES: Room = {
 
 const getMenuItem = (name: string) => within(document.body).findByRole('menuitem', { name })
 
-/** A right click past the name of a row, so the menu leaves the row in sight. */
 const openMenuOn = async (row: HTMLElement) => {
-  const box = row.getBoundingClientRect()
+  const corner = getPointerPosition(row, 0, 1)
   await userEvent.pointer({
     target: row,
-    coords: { clientX: box.left + 160, clientY: box.bottom },
+    coords: { clientX: corner.clientX + 160, clientY: corner.clientY },
     keys: '[MouseRight]',
   })
 }
@@ -294,7 +294,6 @@ const PHYSICS: Record<string, readonly Entry[]> = {
   ],
 }
 
-/** The icon the window gives each kind of entry. */
 const getPhysicsIcon = (entry: Entry | null, isOpen: boolean): Component => {
   if (entry?.isFolder) return isOpen ? FolderOpen : Folder
   if (/\.(pdf|epub)$/.test(entry?.name ?? '')) return Book

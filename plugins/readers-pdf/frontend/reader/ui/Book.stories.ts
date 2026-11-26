@@ -118,39 +118,42 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+const renderBook = (height: string) => () => ({
+  components: { Reader },
+  setup() {
+    const page = ref(BOOK_FIRST)
+    return {
+      height,
+      page,
+      pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
+      picture: (pageIndex: number) => renderPage(pageIndex),
+      highlightsOn: (pageIndex: number) => (pageIndex === BOOK_FIRST ? HIGHLIGHTS : []),
+      go: (targetPage: number) => {
+        page.value = Math.min(Math.max(targetPage, 0), BOOK_LEAVES - 1)
+      },
+    }
+  },
+  template: `
+    <div :style="{ height }">
+      <Reader
+        style="height: 100%"
+        :pages="pages"
+        :at="page"
+        :picture="picture"
+        :highlights="highlightsOn"
+        @go="go"
+      />
+    </div>
+  `,
+})
+
 /** The book open at the page the search landed on. */
 export const Reading: Story = {
   tags: ['screenshot'],
   parameters: {
     screenshot: [{ name: 'reader', app: 'docs' }],
   },
-  render: () => ({
-    components: { Reader },
-    setup() {
-      const page = ref(BOOK_FIRST)
-      return {
-        page,
-        pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
-        picture: (pageIndex: number) => renderPage(pageIndex),
-        highlightsOn: (pageIndex: number) => (pageIndex === BOOK_FIRST ? HIGHLIGHTS : []),
-        go: (targetPage: number) => {
-          page.value = Math.min(Math.max(targetPage, 0), BOOK_LEAVES - 1)
-        },
-      }
-    },
-    template: `
-      <div style="height: 100%">
-        <Reader
-          style="height: 100%"
-          :pages="pages"
-          :at="page"
-          :picture="picture"
-          :highlights="highlightsOn"
-          @go="go"
-        />
-      </div>
-    `,
-  }),
+  render: renderBook('100vh'),
   play: async ({ canvasElement }) => {
     // Reading means the document is open at the page the search landed on,
     // with the passage it found highlighted on it.
@@ -177,4 +180,5 @@ export const InTheWindow: Story = {
     },
     screenshot: [{ name: 'reader' }],
   },
+  render: renderBook('100%'),
 }

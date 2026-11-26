@@ -3,33 +3,33 @@ import type { Row } from '@numen/ui'
 /** The vault the window is drawn over: notes on entropy, the papers they cite, two lectures and a deck. */
 export const VAULT_NAME = 'Physics'
 
-const file = (path: string): Row => ({
+const createFileRow = (path: string): Row => ({
   id: path,
   name: path.split('/').pop() ?? path,
   hasChildren: false,
 })
 
-const folder = (path: string, names: readonly string[]): Row => ({
+const createFolderRow = (path: string, names: readonly string[]): Row => ({
   id: path,
   name: path,
   hasChildren: true,
-  rows: names.map((name) => file(`${path}/${name}`)),
+  rows: names.map((name) => createFileRow(`${path}/${name}`)),
 })
 
 export const ROWS: readonly Row[] = [
-  folder('Physics', [
+  createFolderRow('Physics', [
     'Entropy.md',
     'Entropy of mixing.md',
     'Free energy.md',
     "Maxwell's demon.md",
     'The second law.md',
   ]),
-  folder('Computation', ["Landauer's principle.md", 'Shannon entropy.md']),
-  folder('Reading', ['Boltzmann 1877.pdf', 'On Heat and Order.epub', 'Shannon 1948.pdf']),
-  folder('Lectures', ['Lecture 4.mp3', 'Lecture 5.mp3']),
-  folder('Decks', ['Sanskrit roots.md']),
-  file('Inbox.md'),
-  file('Reading list.md'),
+  createFolderRow('Computation', ["Landauer's principle.md", 'Shannon entropy.md']),
+  createFolderRow('Reading', ['Boltzmann 1877.pdf', 'On Heat and Order.epub', 'Shannon 1948.pdf']),
+  createFolderRow('Lectures', ['Lecture 4.mp3', 'Lecture 5.mp3']),
+  createFolderRow('Decks', ['Sanskrit roots.md']),
+  createFileRow('Inbox.md'),
+  createFileRow('Reading list.md'),
 ]
 
 export const OPEN = ['Physics', 'Computation', 'Reading', 'Lectures', 'Decks']

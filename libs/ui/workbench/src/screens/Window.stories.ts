@@ -399,7 +399,6 @@ interface Screen {
   readonly panel?: 'search' | 'commands' | null
   readonly commands?: readonly PaletteGroup[]
   readonly selected?: readonly string[]
-  /** Whether the title bar and the status bar the plugins draw are stood in for above and below the panes. */
   readonly hasBars?: boolean
 }
 
@@ -487,6 +486,8 @@ const screen = ({
           <section v-else-if="id === AGENT" class="h-full" aria-label="Agent" />
           <div
             v-else-if="id === BOOK"
+            role="region"
+            aria-label="Pages"
             style="block-size: 100%; overflow: auto; display: flex; justify-content: center; padding: 24px"
           >
             <img :src="book" alt="Page 373 of Boltzmann 1877" style="inline-size: 100%; max-inline-size: 612px; block-size: auto; align-self: flex-start" />

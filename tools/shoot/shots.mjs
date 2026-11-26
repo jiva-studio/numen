@@ -3,7 +3,7 @@
  *
  * A story is a screenshot when it carries the tag `screenshot` and an array of shots in
  * `parameters.screenshot`. A shot is written to `<into>/<name>-{light,dark}.webp`, where `into`
- * is the `screenshots/` folder of the plugin the story stands in, of the plugin `plugin` names, or
+ * is the `screenshots/` folder of the plugin that holds the story, of the plugin `plugin` names, or
  * the `src/assets/` folder of the app `app` names. The values of a shot are literals.
  */
 import { existsSync } from 'node:fs'
@@ -121,7 +121,7 @@ const readStoryFile = (path, text) => {
   }
 }
 
-/** The plugin folder a story file stands in, or undefined outside `plugins/`. */
+/** The plugin folder that holds a story file, or undefined outside `plugins/`. */
 const getHomePlugin = (file) => {
   const parts = file.split(sep)
   return parts[0] === 'plugins' ? parts[1] : undefined

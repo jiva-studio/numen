@@ -309,7 +309,7 @@ const ANTIGRAVITY_FIRST: typeof AGENT_ROWS = [
   AGENT_ROWS[0]!,
 ]
 
-const renderChoosing = (rows: typeof AGENT_ROWS) => () => ({
+const renderModelPicker = (rows: typeof AGENT_ROWS) => () => ({
   components: { Tab: createPaneTab(createChoosingState(rows)) },
   template: '<Tab />',
 })
@@ -338,7 +338,7 @@ export const ChoosingAModel: Story = {
     frame: AGENT_FRAME,
     screenshot: [{ name: 'models', plugin: 'agents-claude' }],
   },
-  render: renderChoosing(AGENT_ROWS),
+  render: renderModelPicker(AGENT_ROWS),
   play: openModels('Claude Code · Sonnet 5.5'),
 }
 
@@ -349,6 +349,6 @@ export const ChoosingAnAntigravityModel: Story = {
     frame: AGENT_FRAME,
     screenshot: [{ name: 'models', plugin: 'agents-antigravity' }],
   },
-  render: renderChoosing(ANTIGRAVITY_FIRST),
+  render: renderModelPicker(ANTIGRAVITY_FIRST),
   play: openModels('Antigravity · Gemini 4 Argon'),
 }
