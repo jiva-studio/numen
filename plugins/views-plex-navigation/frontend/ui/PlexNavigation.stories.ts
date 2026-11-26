@@ -44,13 +44,13 @@ export const NoHistory: Story = {
 
 /** The notes around Entropy, drawn as a stand-in for the plex the view is a slot of. */
 const PLEX_NODES = [
-  { title: 'Thermodynamics', x: -100, y: -120, relation: 'parent' },
-  { title: 'Information theory', x: 100, y: -120, relation: 'parent' },
-  { title: "Maxwell's demon", x: -290, y: 0, relation: 'jump' },
-  { title: "Landauer's principle", x: 290, y: 0, relation: 'jump' },
-  { title: 'The second law', x: -200, y: 130, relation: 'child' },
-  { title: 'Heat death', x: 0, y: 130, relation: 'child' },
-  { title: 'Free energy', x: 200, y: 130, relation: 'child' },
+  { title: 'Thermodynamics', x: -90, y: -120, relation: 'parent' },
+  { title: 'Information theory', x: 90, y: -120, relation: 'parent' },
+  { title: "Maxwell's demon", x: -190, y: 0, relation: 'jump' },
+  { title: "Landauer's principle", x: 190, y: 0, relation: 'jump' },
+  { title: 'The second law', x: -170, y: 140, relation: 'child' },
+  { title: 'Heat death', x: 0, y: 140, relation: 'child' },
+  { title: 'Free energy', x: 170, y: 140, relation: 'child' },
 ] as const
 
 const NODE_BOX =
@@ -68,7 +68,7 @@ const PLEX_HELPERS = {
     'background:var(--numen-accent);color:var(--numen-accent-ink);border:none',
   getBelowStyle: (x: number, y: number) =>
     `position:absolute;inline-size:12rem;left:calc(50% + ${x - 96}px);top:calc(45% + ${y + 22}px);` +
-    'display:flex;justify-content:center',
+    'display:flex;justify-content:center;z-index:1',
 }
 
 const renderBoard = (view: string) => `
@@ -94,7 +94,7 @@ export const InTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
     frame: PLEX_FRAME,
-    screenshot: [{ name: 'navigation', over: '[aria-label="Back"]' }],
+    screenshot: [{ name: 'navigation' }],
   },
   render: (args) => ({
     components: { PlexNavigation },

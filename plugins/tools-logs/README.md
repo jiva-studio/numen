@@ -6,7 +6,7 @@ Structured application log viewer for Numen. Open it to see what the application
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/logs-dark.webp">
-  <img alt="The log entries with one opened to its properties" src="screenshots/logs-light.webp">
+  <img alt="The logs open in the window beside a note, a failed request opened to its properties" src="screenshots/logs-light.webp">
 </picture>
 
 ## What You Can Do

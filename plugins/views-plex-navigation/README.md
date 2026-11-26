@@ -6,7 +6,7 @@ Back and Forward buttons at the top of a Plex board retrace the nodes you visite
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/navigation-dark.webp">
-  <img alt="The Back and Forward buttons of the plex" src="screenshots/navigation-light.webp">
+  <img alt="The plex in the window with the Back and Forward buttons at its top" src="screenshots/navigation-light.webp">
 </picture>
 
 ## What You Can Do

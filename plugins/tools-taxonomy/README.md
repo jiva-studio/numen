@@ -6,7 +6,7 @@ Reads the tags of your notes from their frontmatter, finds notes by tag in searc
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/file-tags-dark.webp">
-  <img alt="Tags beside a file in the tree" src="screenshots/file-tags-light.webp">
+  <img alt="The file tree of the window with the tags of each file at the end of its row" src="screenshots/file-tags-light.webp">
 </picture>
 
 ## What You Can Do

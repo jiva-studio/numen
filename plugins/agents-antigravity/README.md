@@ -6,7 +6,7 @@ Use Google Antigravity (`agy`) installed on your computer to chat with your vaul
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/models-dark.webp">
-  <img alt="The models of each agent in the model picker" src="screenshots/models-light.webp">
+  <img alt="The agent beside a note, its model picker open on the models of Antigravity" src="screenshots/models-light.webp">
 </picture>
 
 ## What You Can Do

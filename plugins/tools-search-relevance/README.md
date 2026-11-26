@@ -6,7 +6,7 @@ Sets how similar a note must be to your search to appear in the results. Matches
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/relevance-dark.webp">
-  <img alt="The search relevance threshold and a checked query" src="screenshots/relevance-light.webp">
+  <img alt="The settings of the window with the search relevance threshold and a checked query" src="screenshots/relevance-light.webp">
 </picture>
 
 ## What You Can Do

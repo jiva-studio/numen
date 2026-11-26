@@ -6,7 +6,7 @@ Recognizes text in scanned PDFs and images on your computer so their contents ca
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/recognise-dark.webp">
-  <img alt="The commands over a scanned book, offering to recognise its text" src="screenshots/recognise-light.webp">
+  <img alt="The window with a scanned book open and the commands offering to recognise its text" src="screenshots/recognise-light.webp">
 </picture>
 
 ## What You Can Do

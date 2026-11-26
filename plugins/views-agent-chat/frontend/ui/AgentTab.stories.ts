@@ -279,11 +279,13 @@ const AGENT_OPTIONS: Readonly<Record<string, readonly string[]>> = {
   'c-antigravity:model': ['Gemini 4 Argon', 'Gemini 3.8 Flash'],
 }
 
-const createChoosingState = (deps: AgentTabDeps): AgentTabState => {
+const createChoosingState =
+  (rows: typeof AGENT_ROWS) =>
+  (deps: AgentTabDeps): AgentTabState => {
   const { host } = createAgentConnections(
     { frames: [] },
     {
-      rows: AGENT_ROWS,
+      rows,
       listOptions: (connectionId, field) =>
         (AGENT_OPTIONS[`${connectionId}:${field}`] ?? []).map((title) => ({
           value: title.toLowerCase().replace(/ /g, '-'),
@@ -305,36 +307,50 @@ const createChoosingState = (deps: AgentTabDeps): AgentTabState => {
   return useAgentConversation(conversation, deps, choice)
 }
 
-/** The models of the agents set up, opened from the composer of the agent in the window. */
+/** The rows of the agents with Antigravity first, on a model of its own. */
+const ANTIGRAVITY_FIRST: typeof AGENT_ROWS = [
+  { ...AGENT_ROWS[1]!, options: { model: 'gemini-4-argon' } },
+  AGENT_ROWS[0]!,
+]
+
+const renderChoosing = (rows: typeof AGENT_ROWS) => () => ({
+  components: { Tab: createPaneTab(createChoosingState(rows)) },
+  template: '<Tab />',
+})
+
+const openModels =
+  (picker: string): NonNullable<Story['play']> =>
+  async ({ canvasElement }) => {
+    await userEvent.click(await within(canvasElement).findByRole('button', { name: picker }))
+    const list = await within(document.body).findByRole('listbox', { name: 'Model' })
+    await waitFor(() => expect(within(list).getByRole('option', { name: 'Opus 5.5' })).toBeVisible())
+  }
+
+const AGENT_FRAME = {
+  place: 'tab',
+  tab: { title: 'Agent', icon: 'agent' },
+  note: 'before',
+  share: 0.45,
+}
+
+/** The models of the agents set up, opened from the composer of the agent in the window on Claude Code. */
 export const ChoosingAModel: Story = {
   tags: ['screenshot'],
   parameters: {
-    frame: {
-      place: 'tab',
-      tab: { title: 'Agent', icon: 'agent' },
-      note: 'before',
-      share: 0.45,
-    },
-    screenshot: [
-      { name: 'models', plugin: 'agents-claude' },
-      { name: 'models', plugin: 'agents-antigravity' },
-    ],
+    frame: AGENT_FRAME,
+    screenshot: [{ name: 'models', plugin: 'agents-claude' }],
   },
-  render: () => ({
-    components: { Tab: createPaneTab(createChoosingState) },
-    template: '<Tab />',
-  }),
-  play: async ({ canvasElement }) => {
-    const picker = await within(canvasElement).findByRole('button', {
-      name: 'Claude Code · Sonnet 5.5',
-    })
-    await userEvent.click(picker)
-    await waitFor(() =>
-      expect(
-        within(within(document.body).getByRole('listbox', { name: 'Model' })).getAllByRole(
-          'option',
-        ),
-      ).toHaveLength(5),
-    )
+  render: renderChoosing(AGENT_ROWS),
+  play: openModels('Claude Code · Sonnet 5.5'),
+}
+
+/** The models of the agents set up, opened from the composer of the agent in the window on Antigravity. */
+export const ChoosingAnAntigravityModel: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: AGENT_FRAME,
+    screenshot: [{ name: 'models', plugin: 'agents-antigravity' }],
   },
+  render: renderChoosing(ANTIGRAVITY_FIRST),
+  play: openModels('Antigravity · Gemini 4 Argon'),
 }

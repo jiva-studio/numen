@@ -6,7 +6,7 @@ Shows in the title bar how many plugins run, so you can see that Numen starts on
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/plugins-dark.webp">
-  <img alt="The running plugins with their memory and time" src="screenshots/plugins-light.webp">
+  <img alt="The window with the running plugins opened from the title bar" src="screenshots/plugins-light.webp">
 </picture>
 
 ## What You Can Do

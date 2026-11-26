@@ -6,7 +6,7 @@ Opens EPUB books in a two-column or one-column page reader, extracts their text 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/book-dark.webp">
-  <img alt="An EPUB book open on a page" src="screenshots/book-light.webp">
+  <img alt="An EPUB book open in a tab of the window, set in two columns" src="screenshots/book-light.webp">
 </picture>
 
 ## What You Can Do

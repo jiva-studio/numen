@@ -6,7 +6,7 @@ Synchronizes your vaults across devices when the **Numen Sync** license is activ
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/sync-dark.webp">
-  <img alt="The sync badge while syncing" src="screenshots/sync-light.webp">
+  <img alt="The window with the sync badge in the title bar while syncing" src="screenshots/sync-light.webp">
 </picture>
 
 ## What You Can Do

@@ -6,7 +6,7 @@ Shows the background tasks of the window in the title bar: whether any run, and 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/status-dark.webp">
-  <img alt="The tasks chip in the title bar" src="screenshots/status-light.webp">
+  <img alt="The window with the background tasks opened from the chip in the title bar" src="screenshots/status-light.webp">
 </picture>
 
 ## What You Can Do

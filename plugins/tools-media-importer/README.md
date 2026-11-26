@@ -6,7 +6,7 @@ Save web articles and online videos (such as YouTube lectures) into your vault f
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/download-media-dark.webp">
-  <img alt="The media of a link note offered to download" src="screenshots/download-media-light.webp">
+  <img alt="The file tree of the window with the media of a link note offered to download" src="screenshots/download-media-light.webp">
 </picture>
 
 ## What You Can Do

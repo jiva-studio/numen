@@ -6,7 +6,7 @@ Provides meaning-based search across your vault so you can find related notes, b
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/search-dark.webp">
-  <img alt="Search results grouped by name, text and meaning" src="screenshots/search-light.webp">
+  <img alt="The window with the search open over it, results grouped by name, text and meaning" src="screenshots/search-light.webp">
 </picture>
 
 ## What You Can Do

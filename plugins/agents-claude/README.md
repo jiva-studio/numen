@@ -6,7 +6,7 @@ Use Anthropic Claude Code (`claude`) installed on your computer to answer questi
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/models-dark.webp">
-  <img alt="The models of each agent in the model picker" src="screenshots/models-light.webp">
+  <img alt="The agent beside a note, its model picker open on the models of Claude Code" src="screenshots/models-light.webp">
 </picture>
 
 ## What You Can Do

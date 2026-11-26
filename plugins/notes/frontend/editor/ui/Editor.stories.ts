@@ -918,8 +918,6 @@ How many arrangements a state could have been made of, counted the same way in a
 and in a **message**. Boltzmann counted the microstates a temperature leaves open;
 Shannon counted the messages a channel could have sent.
 
-$$S = k_B \\ln W$$
-
 ## Where the two meet
 
 A demon that sorts fast molecules from slow ones appears to lower the entropy of the
@@ -932,9 +930,9 @@ cleared, at kT ln 2 a bit.
 | Shannon | messages of a channel | 1948 |
 | Landauer | the cost of erasing a bit | 1961 |
 
-- [x] Read Boltzmann 1877, § 6
-- [ ] Check the units in the formula
-- [ ] Ask about the Gibbs paradox
+- Boltzmann, 1877 — *Über die Beziehung*, p. 373
+- Shannon, 1948 — the same logarithm, in bits
+- Landauer, 1961 — what clearing one bit costs
 
 > The measure is not about heat. It is about how much a description leaves open.
 `

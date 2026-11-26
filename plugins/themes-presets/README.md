@@ -6,12 +6,12 @@ Forty-four ready-made color themes for the editor and the flashcards window.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/dracula-dark.webp">
-  <img alt="The window in the Dracula theme" src="screenshots/dracula-light.webp">
+  <img alt="The window with a note open, in the Dracula theme" src="screenshots/dracula-light.webp">
 </picture>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/solarized-dark.webp">
-  <img alt="The window in the Solarized theme" src="screenshots/solarized-light.webp">
+  <img alt="The window with a note open, in the Solarized theme" src="screenshots/solarized-light.webp">
 </picture>
 
 ## What You Can Do

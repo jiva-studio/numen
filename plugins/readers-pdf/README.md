@@ -6,7 +6,7 @@ Opens PDF documents in a horizontal page reader with zoom controls, extracts the
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/reader-dark.webp">
-  <img alt="A PDF book open on a page" src="screenshots/reader-light.webp">
+  <img alt="A PDF book open in the window beside a note, the passage a search found highlighted" src="screenshots/reader-light.webp">
 </picture>
 
 ## What You Can Do

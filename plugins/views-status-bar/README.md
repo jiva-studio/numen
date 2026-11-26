@@ -6,7 +6,7 @@ Draws a bar at the bottom of the window with the commands and views that plugins
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/status-bar-dark.webp">
-  <img alt="The status bar with a menu of items opened" src="screenshots/status-bar-light.webp">
+  <img alt="The window with a menu of items opened from the status bar" src="screenshots/status-bar-light.webp">
 </picture>
 
 ## What You Can Do

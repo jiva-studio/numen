@@ -6,7 +6,7 @@ Shows in the title bar how many vectors the search index holds, so you can watch
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/index-dark.webp">
-  <img alt="The index statistics opened from the status chip" src="screenshots/index-light.webp">
+  <img alt="The window with the index statistics opened from the title bar" src="screenshots/index-light.webp">
 </picture>
 
 ## What You Can Do

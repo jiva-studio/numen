@@ -6,7 +6,7 @@ Leave the pointer on a note in the plex and the headings of that note appear und
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/headings-dark.webp">
-  <img alt="The headings of a note opened under its node" src="screenshots/headings-light.webp">
+  <img alt="The plex in the window, the headings of the note in focus hung under its node" src="screenshots/headings-light.webp">
 </picture>
 
 ## What You Can Do

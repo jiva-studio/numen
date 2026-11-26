@@ -6,6 +6,8 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import type { Component } from 'vue'
+import { AudioLines, Book, FileText, Folder, FolderOpen } from '@lucide/vue'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { createFileTree, ROOT } from '../model/useFileTree'
@@ -40,6 +42,7 @@ interface Room {
   readonly vault: Record<string, readonly Entry[]>
   readonly entries: readonly SlotItem[]
   readonly items: Readonly<Record<string, readonly CommandItem[]>>
+  readonly getEntryIcon?: (entry: Entry | null, isOpen: boolean) => Component
 }
 
 const PLAIN: Room = { vault: VAULT, entries: ROW_MENU, items: {} }
@@ -49,6 +52,7 @@ const createFilesTab = (open: readonly string[], room: Room): FilesTabState => {
   const state: FilesTabState = useFilesTab(list, {
     window: {
       ...renderDeps,
+      ...(room.getEntryIcon ? { getEntryIcon: room.getEntryIcon } : {}),
       openEntry: () => undefined,
       setDraggedPaths: () => undefined,
       showError: () => undefined,
@@ -290,6 +294,14 @@ const PHYSICS: Record<string, readonly Entry[]> = {
   ],
 }
 
+/** The icon the window gives each kind of entry. */
+const getPhysicsIcon = (entry: Entry | null, isOpen: boolean): Component => {
+  if (entry?.isFolder) return isOpen ? FolderOpen : Folder
+  if (/\.(pdf|epub)$/.test(entry?.name ?? '')) return Book
+  if (entry?.name.endsWith('.mp3')) return AudioLines
+  return FileText
+}
+
 /** The tree of the vault in the window, three folders open and a note chosen. */
 export const InTheWindow: Story = {
   tags: ['screenshot'],
@@ -297,7 +309,11 @@ export const InTheWindow: Story = {
     frame: { place: 'files' },
     screenshot: [{ name: 'files' }],
   },
-  render: pane(['Physics', 'Computation', 'Reading'], { ...PLAIN, vault: PHYSICS }),
+  render: pane(['Physics', 'Computation', 'Reading'], {
+    ...PLAIN,
+    vault: PHYSICS,
+    getEntryIcon: getPhysicsIcon,
+  }),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(17))
     await userEvent.click(within(canvasElement).getByRole('treeitem', { name: /^Entropy\.md/ }))
@@ -308,6 +324,7 @@ export const InTheWindow: Story = {
 const PHYSICS_TEMPLATES: Room = {
   ...TEMPLATES,
   vault: PHYSICS,
+  getEntryIcon: getPhysicsIcon,
   items: {
     [FROM_TEMPLATE.command]: [
       { id: 'Templates/Derivation.md', title: 'Derivation' },
@@ -337,6 +354,7 @@ export const TemplatesInTheWindow: Story = {
 /** A vault with a link note to a recorded talk, and the row menu the Media Importer plugin adds to. */
 const PHYSICS_LINKS: Room = {
   ...LINKS,
+  getEntryIcon: getPhysicsIcon,
   vault: {
     ...PHYSICS,
     [ROOT]: [

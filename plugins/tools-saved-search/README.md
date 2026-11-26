@@ -6,7 +6,7 @@ Keeps queries of the search language as notes of the vault, and shows their resu
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/results-dark.webp">
-  <img alt="The results of a saved search" src="screenshots/results-light.webp">
+  <img alt="A saved search open in the window beside a note, its passages under the query" src="screenshots/results-light.webp">
 </picture>
 
 ## What It Enables

@@ -6,7 +6,7 @@ Browse, organize, rename, and manage all the notes, books, documents, and record
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/files-dark.webp">
-  <img alt="The files of a vault with a folder opened" src="screenshots/files-light.webp">
+  <img alt="The file tree of the window with three folders open and a note chosen" src="screenshots/files-light.webp">
 </picture>
 
 ## What You Can Do

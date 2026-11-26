@@ -154,7 +154,9 @@ export const InTheWindow: Story = {
     template: '<TodosStatus v-bind="args" />',
   }),
   play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Tasks due: 8' }))
+    const chip = within(canvasElement).getByRole('button', { name: 'Tasks due: 8' })
+    await userEvent.click(chip)
+    await userEvent.unhover(chip)
     const lists = await within(document.body).findByRole('dialog', { name: 'Tasks due' })
     await waitFor(() =>
       expect(

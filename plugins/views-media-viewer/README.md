@@ -6,7 +6,7 @@ Play audio and video recordings and the media of link notes alongside their text
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/recording-dark.webp">
-  <img alt="A recording playing beside its transcript" src="screenshots/recording-light.webp">
+  <img alt="A lecture playing in the window beside a note, its transcript under the player" src="screenshots/recording-light.webp">
 </picture>
 
 ## What You Can Do

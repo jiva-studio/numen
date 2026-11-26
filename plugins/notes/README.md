@@ -6,7 +6,7 @@ Write and organize Markdown notes with live formatting, `[[wikilinks]]`, tables,
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/editor-dark.webp">
-  <img alt="A note in the editor with headings, lists, a table and code" src="screenshots/editor-light.webp">
+  <img alt="A note open in the window with a formula, a table and tasks" src="screenshots/editor-light.webp">
 </picture>
 
 ## What You Can Do

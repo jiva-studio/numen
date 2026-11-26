@@ -6,7 +6,7 @@ Explore your notes as an interactive visual map showing how ideas connect as par
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/map-dark.webp">
-  <img alt="A plex of notes around the one in focus" src="screenshots/map-light.webp">
+  <img alt="The plex of a note in the window beside the note itself" src="screenshots/map-light.webp">
 </picture>
 
 ## What You Can Do

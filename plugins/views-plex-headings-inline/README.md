@@ -6,7 +6,7 @@ Under each note of the plex, small grey lines write the headings of that note, e
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/headings-dark.webp">
-  <img alt="The headings of a note under its node" src="screenshots/headings-light.webp">
+  <img alt="The plex in the window, the headings of the note in focus written under its node" src="screenshots/headings-light.webp">
 </picture>
 
 ## What You Can Do

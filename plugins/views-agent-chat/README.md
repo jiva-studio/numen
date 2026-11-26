@@ -6,7 +6,7 @@ Open a conversation tab to ask AI assistants questions about your vault, find pa
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/agent-dark.webp">
-  <img alt="A conversation with an agent" src="screenshots/agent-light.webp">
+  <img alt="The agent beside a note, its answer linking to notes of the vault" src="screenshots/agent-light.webp">
 </picture>
 
 ## What You Can Do

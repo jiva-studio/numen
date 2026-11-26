@@ -6,7 +6,7 @@ Shows a notice when a newer build of Numen is published, with a link to its down
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/update-dark.webp">
-  <img alt="The chip offering a new version" src="screenshots/update-light.webp">
+  <img alt="The window with the chip in the title bar offering a new version" src="screenshots/update-light.webp">
 </picture>
 
 ## What You Can Do

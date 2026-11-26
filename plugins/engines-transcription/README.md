@@ -6,7 +6,7 @@ Turns your audio and video recordings into interactive, time-stamped transcripts
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/transcript-dark.webp">
-  <img alt="A time-stamped transcript" src="screenshots/transcript-light.webp">
+  <img alt="A lecture open in the window, its transcript with a time against each paragraph" src="screenshots/transcript-light.webp">
 </picture>
 
 ## What You Can Do

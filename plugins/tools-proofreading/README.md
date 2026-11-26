@@ -6,7 +6,7 @@ Cleans up spelling, punctuation, and recognition errors in audio transcripts and
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/proofread-dark.webp">
-  <img alt="The commands over a scanned book, offering to proofread its text" src="screenshots/proofread-light.webp">
+  <img alt="The window with a scanned book open and the commands offering to proofread its text" src="screenshots/proofread-light.webp">
 </picture>
 
 ## What You Can Do

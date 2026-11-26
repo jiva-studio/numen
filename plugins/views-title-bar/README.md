@@ -6,7 +6,7 @@ Draws the bar at the top of each window: the buttons of the commands the plugins
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/title-bar-dark.webp">
-  <img alt="The title bar with the vault name and commands" src="screenshots/title-bar-light.webp">
+  <img alt="The window with its title bar, the list of vaults opened from the title" src="screenshots/title-bar-light.webp">
 </picture>
 
 ## What You Can Do
