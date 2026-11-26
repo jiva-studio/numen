@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Numen Sync signs in
 
   Numen Sync signs in to the sync server with the identity of this device.

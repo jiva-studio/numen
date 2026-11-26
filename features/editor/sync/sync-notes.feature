@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Sync notes between computers
 
   Numen Sync sends the notes of a connected vault to the identity and brings them to every computer.

@@ -6,10 +6,9 @@
   "description": "Acceptance scenarios of the desktop application, in Gherkin",
   "scripts": {
     "acceptance:gen": "bddgen -c playwright.config.ts",
-    "acceptance:test": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts --grep-invert \"@live|@sync-server\"",
-    "acceptance:sync": "bddgen -c playwright.config.ts && playwright test -c playwright.config.ts --grep @sync-server --grep-invert @own-server",
+    "acceptance:test": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts --grep-invert @live",
     "acceptance:smoke": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts --grep @smoke",
-    "acceptance:live": "bddgen -c playwright.config.ts && NUMEN_ACCEPTANCE_LIVE=1 playwright test -c playwright.config.ts --grep @live",
+    "acceptance:live": "bddgen -c playwright.config.ts && NUMEN_ACCEPTANCE_LIVE=1 playwright test -c playwright.config.ts --grep @live --grep-invert @own-server",
     "acceptance:report": "node scripts/report.mjs",
     "acceptance:merge": "playwright merge-reports -c report.config.ts acceptance-blobs",
     "report": "playwright show-report",

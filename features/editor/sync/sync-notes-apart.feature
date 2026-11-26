@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Sync notes when the computers are apart
 
   Numen Sync keeps every note when the server is away or when two computers change the same note.

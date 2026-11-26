@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Numen Sync plan and the notes in the cloud
 
   A plan sets how much the cloud holds. A change of the plan never deletes the notes in the cloud.

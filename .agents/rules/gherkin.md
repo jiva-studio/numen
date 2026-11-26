@@ -55,10 +55,11 @@ Feature: Delete a note
 
 ## 6. Tags
 
-A tag on a Feature or a Scenario selects it for a run. Only two exist; do not add others.
+A tag on a Feature or a Scenario selects it for a run. Only these exist; do not add others.
 
 - `@smoke`: a main journey of the product. A pull request runs the `@smoke` scenarios and the `@smoke` specs of `tests/e2e/desktop/` in Chromium alone. A push to main and the nightly run every test (only the nightly publishes the report), in both engines, so a test that must gate pull requests needs the tag.
-- `@live`: reaches the network or a real model. `npm run acceptance:test` skips it; `npm run acceptance:live` and the nightly run it. Never combine it with `@smoke`.
+- `@live`: reaches real things that really run: the real sync server (`NUMEN_SYNC_TEST_URL`, from `make sync_stack_up`; the scenario skips without it and fails when `NUMEN_SYNC_TEST_REQUIRED=1`) or the real model (with `@model` as well; it skips without `NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY`). `npm run acceptance:test` skips it; `npm run acceptance:live` and the nightly run it, except `@own-server`. Never combine it with `@smoke`.
+- `@model`: with `@live`, the scenario needs the real model: it starts no stand-ins. `@own-server`: the scenario needs its own sync server process, clock or data, which the shared stack does not give.
 
 Mark a scenario `@smoke` when it is a main journey (make a note, open a file, search, change a setting, ask the agent, review a card), runs in about two seconds, gives the same result on every run, and needs no network and no stand-in that is missing. Do not mark one that is slow, needs a restart of the application, repeats a journey a smoke scenario already covers, or checks an edge of a rule. Put the tag on a Scenario, not on a Feature, and on a Scenario Outline only when every example is fast.
 

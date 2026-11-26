@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Numen Sync plans
 
   A subscription has a plan. The plan sets how much the cloud holds for the identity.

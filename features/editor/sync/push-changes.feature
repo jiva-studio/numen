@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Receive changes within seconds
 
   A change reaches the other computer within seconds, also when the computers do not look for changes by themselves.

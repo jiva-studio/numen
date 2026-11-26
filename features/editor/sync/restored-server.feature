@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Numen Sync after the server is restored from a backup
 
   The operator can restore the sync server to an earlier backup. The computers keep their notes and send them again.

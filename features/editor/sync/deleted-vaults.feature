@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Numen Sync after the cloud deleted the vaults
 
   The cloud deletes the vaults 60 days after the subscription ends. The notes on the computers stay.

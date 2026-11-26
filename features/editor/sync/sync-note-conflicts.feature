@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Sync a note changed on two computers
 
   Numen Sync keeps the latest version of a note and saves the other version in a conflict copy next to it.

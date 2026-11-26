@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Numen Sync plan change
 
   A person moves an active subscription to a larger or a smaller plan, and is asked before the change is made.

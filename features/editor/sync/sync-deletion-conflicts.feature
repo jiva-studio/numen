@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Sync a file removed on one computer and changed on the other
 
   Numen Sync keeps a changed file when the other computer removes it.

@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: End the access to a shared folder
 
   A person removes the access of a device to a folder. The reader keeps what it has and gets nothing more.

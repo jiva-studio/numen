@@ -1,7 +1,7 @@
 name: Sync Server
 
 # The tests that need the real sync server, started from its private images (tests/server): the Go
-# tests of plugins/tools-sync and the acceptance scenarios tagged @sync-server. Called by ci.yml with the
+# tests of plugins/tools-sync and the acceptance scenarios tagged @live. Called by ci.yml with the
 # area a change touches. GitHub gives a pull request from a fork or from Dependabot no access to the private packages,
 # and tests/server/stack.lock holds no digests until numen-cloud publishes the images: the job then
 # runs no test and says so in its summary. It never uploads the images or prints the server log
@@ -150,7 +150,7 @@ jobs:
           go build -C tools/syncaccount -o bin/syncaccount .
           if ldd apps/desktop/numen-debug | grep 'not found'; then exit 1; fi
 
-      # The scenarios tagged @sync-server, not those tagged @own-server. PLAYWRIGHT_VIDEO records every
+      # The scenarios tagged @live, not those tagged @own-server; the model scenario skips without its key. PLAYWRIGHT_VIDEO records every
       # scenario; the next step keeps the videos of the failed ones alone.
       - name: Run the acceptance scenarios
         if: steps.plan.outputs.run == 'true'
@@ -162,7 +162,7 @@ jobs:
         run: |
           eval "$(make -C ../../.. -s sync_stack_env)"
           status=0
-          npm run acceptance:sync -- --project=chromium --reporter=list,json || status=$?
+          npm run acceptance:live -- --project=chromium --reporter=list,json || status=$?
           if [ -s "$PLAYWRIGHT_JSON_OUTPUT_NAME" ]; then
             echo "Acceptance scenarios against the real server: $(jq -r '.stats | "\(.expected) passed, \(.unexpected) failed, \(.flaky) flaky, \(.skipped) skipped"' "$PLAYWRIGHT_JSON_OUTPUT_NAME")" | tee -a "$GITHUB_STEP_SUMMARY"
           fi

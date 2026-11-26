@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Sync large files between computers
 
   Numen Sync sends a large file and goes on after a break.

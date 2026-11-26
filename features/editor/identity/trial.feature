@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: A trial of a plan of Numen Sync
 
   A person who starts with a trial of a plan sees the day the trial ends and keeps the access until then, also when

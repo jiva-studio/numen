@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Sync after a long absence
 
   Numen Sync brings a computer up to date when it was away longer than the sync server keeps the removals.

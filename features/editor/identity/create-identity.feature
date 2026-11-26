@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Create an identity
   A person keeps an identity on this device, made with 12 recovery words.
 

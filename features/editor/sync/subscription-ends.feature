@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Numen Sync after the subscription ends
 
   Changes are sent for 7 days after the end of the subscription. Then the vaults in the cloud can only be read.

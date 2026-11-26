@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Numen Sync subscription
 
   One subscription belongs to the identity of a person. It covers every vault and every computer of the identity.

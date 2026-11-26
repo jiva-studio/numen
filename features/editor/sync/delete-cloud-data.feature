@@ -1,4 +1,4 @@
-@sync-server
+@live
 Feature: Delete cloud data
 
   The person can delete everything Numen Sync holds of the identity. The notes on the computers stay.
