@@ -14,9 +14,10 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/slowwatchtest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/ownstacktest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/slowwatchtest"
 )
 
 func newWorld(t *testing.T) (*synctest.Computer, *synctest.Server) {
@@ -346,9 +347,9 @@ func TestCloud_WatchSignsInOnceAndOpensAgainAfterAnUnauthenticatedOpen(t *testin
 }
 
 func TestCloud_ReadsTheRestoreEpochAndTheKeyThatSignsIt(t *testing.T) {
-	own := synctest.GetOwnStack(t)
+	own := ownstacktest.Get(t)
 	c, _ := newWorld(t)
-	id := own.IssueRestoreEpoch(t)
+	id := own.CreateRestoreEpoch(t)
 
 	epoch, key, err := c.Cloud.GetRestoreEpoch(t.Context())
 

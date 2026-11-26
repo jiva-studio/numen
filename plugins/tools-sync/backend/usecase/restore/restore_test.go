@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/ownstacktest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	usecase "github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/restore"
 )
@@ -22,7 +23,7 @@ const (
 )
 
 type pair struct {
-	own    *synctest.OwnStack
+	own    *ownstacktest.Stack
 	server *synctest.Server
 	a      *synctest.Computer
 	words  []string
@@ -39,7 +40,7 @@ func newFirst(t *testing.T) *pair {
 
 func newOwnFirst(t *testing.T) *pair {
 	t.Helper()
-	own := synctest.GetOwnStack(t)
+	own := ownstacktest.Get(t)
 	p := newFirst(t)
 	p.own = own
 	return p
@@ -172,10 +173,10 @@ func TestRecoverVault_SkipsRevisionWithBadSignature(t *testing.T) {
 	}
 }
 
-func (p *pair) restoreAndAnnounce(t *testing.T, kept synctest.Snapshot) {
+func (p *pair) restoreAndAnnounce(t *testing.T, kept ownstacktest.Snapshot) {
 	t.Helper()
 	p.own.RollBack(t, kept)
-	p.own.IssueRestoreEpoch(t)
+	p.own.CreateRestoreEpoch(t)
 }
 
 func TestRecoverAccount_SendsTheCachedCatalogEntriesTheServerLost(t *testing.T) {
@@ -327,7 +328,7 @@ func TestRecoverAccount_DropsTheCachedCatalogOfAnotherIdentityAndSendsNothing(t 
 func TestRecoverVault_RefusesAnEpochIdThatTheSignedAnnouncementDoesNotName(t *testing.T) {
 	p := newOwnFirst(t)
 	p.a.Connect(t, source)
-	p.own.IssueRestoreEpoch(t)
+	p.own.CreateRestoreEpoch(t)
 	claimed := p.a.RestoreDeps()
 	claimed.Revisions = synctest.EpochClaim{Revisions: claimed.Revisions, ID: bytes.Repeat([]byte{0xAB}, 16)}
 
@@ -344,7 +345,7 @@ func TestRecoverVault_RefusesAnEpochIdThatTheSignedAnnouncementDoesNotName(t *te
 func TestRecoverVault_StoresTheEpochIdOfTheSignedAnnouncement(t *testing.T) {
 	p := newOwnFirst(t)
 	p.a.Connect(t, source)
-	announced := p.own.IssueRestoreEpoch(t)
+	announced := p.own.CreateRestoreEpoch(t)
 
 	if err := usecase.NewRecoverVault(p.a.RestoreDeps()).Execute(t.Context(), source); err != nil {
 		t.Fatal(err)

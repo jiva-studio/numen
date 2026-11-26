@@ -12,7 +12,7 @@ import (
 
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/wiretest"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/wiretest"
 )
 
 const (

@@ -104,7 +104,7 @@ func TestPlanRecovery_TombstonesAFileFromTheVersionOfTheHead(t *testing.T) {
 	}
 }
 
-func TestPlanRecovery_RecreatesAFileFromNoVersionWhenTheServerHoldsNoHead(t *testing.T) {
+func TestPlanRecovery_RecreatesAFileFromNoVersionWhenTheServerHasNoHead(t *testing.T) {
 	t.Parallel()
 	milk := note.Hash([]byte("milk"))
 	records := []restore.SyncedFile{record(1, "a.md", milk, 7)}

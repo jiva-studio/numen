@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/ownstacktest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
@@ -31,7 +32,7 @@ const (
 )
 
 type pair struct {
-	own    *synctest.OwnStack
+	own    *ownstacktest.Stack
 	server *synctest.Server
 	a, b   *synctest.Computer
 	vault  transfer.Vault
@@ -51,7 +52,7 @@ func newPair(t *testing.T) *pair {
 
 func newOwnPair(t *testing.T) *pair {
 	t.Helper()
-	own := synctest.GetOwnStack(t)
+	own := ownstacktest.Get(t)
 	p := newPair(t)
 	p.own = own
 	return p
@@ -372,7 +373,7 @@ func TestPullChanges_KeepsPositionOnRevisionOfUnfetchedEpoch(t *testing.T) {
 func TestPullChanges_AppliesNoPageForAnEpochThatThisDeviceHasNotRun(t *testing.T) {
 	p := newOwnPair(t)
 	p.push(t, "Shopping list.md", "milk", nil)
-	id := p.own.IssueRestoreEpoch(t)
+	id := p.own.CreateRestoreEpoch(t)
 
 	result := p.pull(t, trustAll)
 

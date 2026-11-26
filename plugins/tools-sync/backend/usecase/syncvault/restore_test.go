@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/ownstacktest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 )
@@ -65,11 +66,20 @@ func rewind(t *testing.T, c *synctest.Computer) {
 	}
 }
 
-func backup(t *testing.T, p *pair) synctest.Snapshot { return p.own.CreateSnapshot(t) }
+func backup(t *testing.T, p *pair) ownstacktest.Snapshot {
+	t.Helper()
+	return p.own.CreateSnapshot(t)
+}
 
-func restoreServer(t *testing.T, p *pair, kept synctest.Snapshot) { p.own.RollBack(t, kept) }
+func restoreServer(t *testing.T, p *pair, kept ownstacktest.Snapshot) {
+	t.Helper()
+	p.own.RollBack(t, kept)
+}
 
-func announce(t *testing.T, p *pair) []byte { return p.own.IssueRestoreEpoch(t) }
+func announce(t *testing.T, p *pair) []byte {
+	t.Helper()
+	return p.own.CreateRestoreEpoch(t)
+}
 
 func TestSyncVault_SendsANoteCreatedAfterTheBackupToTheRestoredServerWithItsOldFileID(t *testing.T) {
 	p := newOwnPair(t)
@@ -216,7 +226,7 @@ func TestSyncVault_ListsTheVaultConnectedAfterTheBackupAgain(t *testing.T) {
 }
 
 func TestSyncVault_SendsTheChainOfDevicesTheRestoredServerLost(t *testing.T) {
-	stack := synctest.GetOwnStack(t)
+	stack := ownstacktest.Get(t)
 	clock := synctest.NewClock(synctest.GetStart())
 	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
