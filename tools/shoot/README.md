@@ -47,6 +47,29 @@ A story outside `plugins/` names a plugin or an app in every shot.
 
 The values are literals: the check reads the story sources with the TypeScript parser and does not run them.
 
+## A plugin inside the window
+
+A plugin's picture shows the plugin in the window. A story in the plugins' Storybook that sets `parameters.frame` is drawn inside a stand-in of the window: the title bar, the file tree of an invented vault of physics notes, the panes with their tabs, and the status bar. The frame is `libs/plugin/sdk-ts/stories/.storybook/frame/`; a plugin imports nothing of it, since a plugin reaches only `@numen/plugin-sdk` and `@numen/ui`.
+
+```ts
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'tab', tab: { title: 'Boltzmann 1877', icon: 'book' }, note: 'after' },
+    screenshot: [{ name: 'reader' }],
+  },
+}
+```
+
+| `place` | Where the story is drawn |
+| --- | --- |
+| `tab` | In the pane of the tab `tab`, in front of the tabs `behind`, with a note in a pane `before` or `after` it taking `1 - share` of the width. |
+| `files` | In place of the file tree. |
+| `title-bar`, `status-bar` | In place of the bar. |
+| `title-status` | In the status slot at the end of the title bar; a popover it opens is drawn over the window. |
+
+`selected` chooses a row of the file tree by its path, `files: false` draws the window without it, and `title` names the vault in the title bar. The window shots of `@numen/workbench` draw the same bars with `hasBars` of `Window.stories.ts`.
+
 ## Taking them
 
 Each shot is drawn in the Storybook that declares its story: the components' in `libs/ui/components`, the shell's in `libs/ui/workbench`, the editor's in `apps/desktop/editor`, or the plugins' in `libs/plugin/sdk-ts/stories`. The run starts the Storybooks its shots need and stops them afterwards. `STORYBOOK_PORT`, `STORYBOOK_SHELL_PORT`, `STORYBOOK_EDITOR_PORT` and `STORYBOOK_PLUGINS_PORT` name Storybooks already running. The shell's and the plugins' Storybooks use `@numen/ui` and `@numen/workbench` through their builds: run `npm run build` in `libs/ui/components`, then in `libs/ui/workbench`, first.
