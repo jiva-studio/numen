@@ -35,7 +35,7 @@ message Revision {
   bytes share_root_id = 9;
   // deleted marks a tombstone: no blob, enc_meta may be empty, path_hash and parent_rev are set.
   bool deleted = 10;
-  // epoch is the key epoch of the vault or the share root; stored and signed, not checked.
+  // epoch is the key epoch of the vault or the share root; stored and signed. The server refuses a revision outside every share whose epoch is below the highest epoch of the vault, and reports CONFLICT_KIND_SHARE_EPOCH for a share revision whose epoch is not the current epoch of the share.
   uint32 epoch = 11;
   // author_device_sign_key is 32 bytes.
   bytes author_device_sign_key = 12;

@@ -99,7 +99,7 @@ type Revision struct {
 	ShareRootId []byte `protobuf:"bytes,9,opt,name=share_root_id,json=shareRootId,proto3" json:"share_root_id,omitempty"`
 	// deleted marks a tombstone: no blob, enc_meta may be empty, path_hash and parent_rev are set.
 	Deleted bool `protobuf:"varint,10,opt,name=deleted,proto3" json:"deleted,omitempty"`
-	// epoch is the key epoch of the vault or the share root; stored and signed, not checked.
+	// epoch is the key epoch of the vault or the share root; stored and signed. The server refuses a revision outside every share whose epoch is below the highest epoch of the vault, and reports CONFLICT_KIND_SHARE_EPOCH for a share revision whose epoch is not the current epoch of the share.
 	Epoch uint32 `protobuf:"varint,11,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	// author_device_sign_key is 32 bytes.
 	AuthorDeviceSignKey []byte `protobuf:"bytes,12,opt,name=author_device_sign_key,json=authorDeviceSignKey,proto3" json:"author_device_sign_key,omitempty"`
