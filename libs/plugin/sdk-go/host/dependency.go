@@ -26,11 +26,25 @@ func (c *DependencyClient) FetchModelFile(ctx context.Context, address, digest s
 	if err != nil {
 		return "", err
 	}
-	if code := res.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		if detail := res.Msg.GetDetail(); detail != "" {
-			return "", errors.New(detail)
-		}
-		return "", fail(code)
+	return getFetchedPath(res.Msg.GetPath(), res.Msg.GetError(), res.Msg.GetDetail())
+}
+
+// FetchDependency returns the path of the model that the manifest of the plugin declares under id.
+// The host fetches it first when it is not on this machine.
+func (c *DependencyClient) FetchDependency(ctx context.Context, id string) (string, error) {
+	res, err := c.rpc.FetchDependency(ctx, connect.NewRequest(&v1.FetchDependencyRequest{Id: id}))
+	if err != nil {
+		return "", err
 	}
-	return res.Msg.GetPath(), nil
+	return getFetchedPath(res.Msg.GetPath(), res.Msg.GetError(), res.Msg.GetDetail())
+}
+
+func getFetchedPath(path string, code v1.ErrorCode, detail string) (string, error) {
+	if code == v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		return path, nil
+	}
+	if detail != "" {
+		return "", errors.New(detail)
+	}
+	return "", fail(code)
 }
