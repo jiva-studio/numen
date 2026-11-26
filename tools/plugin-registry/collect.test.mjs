@@ -258,8 +258,26 @@ test('commits after the last version change belong to no version', () => {
   ]
 
   assert.deepEqual(groupByVersion(commits, new Map([['a', '1.0.0'], ['b', '1.0.0']])), [
-    { version: '1.0.0', date: '1', changes: ['feat: a'] },
+    { version: '1.0.0', date: '1', changes: ['a'] },
   ])
+})
+
+test('a version lists its features and fixes only', () => {
+  const commits = [
+    { hash: 'c', date: '3', subject: 'refactor: c' },
+    { hash: 'b', date: '2', subject: 'fix(pdf): b' },
+    { hash: 'a', date: '1', subject: 'chore: a' },
+  ]
+  const versions = new Map([['a', '1.0.0'], ['b', '1.1.0'], ['c', '1.2.0']])
+
+  assert.deepEqual(groupByVersion(commits, versions), [
+    { version: '1.1.0', date: '2', changes: ['b'] },
+  ])
+})
+
+test('a README loses the pictures of its screenshots', () => {
+  const readme = '# T\n\nWrites.\n\n<!-- more -->\n\n<picture>\n  <img src="screenshots/a-light.webp">\n</picture>\n\n## Use'
+  assert.equal(splitReadme(readme).text, 'Writes.\n\n\n\n## Use')
 })
 
 test('a version seen before keeps the permissions it added', () => {

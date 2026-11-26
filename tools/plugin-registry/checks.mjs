@@ -54,7 +54,7 @@ export const checkPermissions = (permissions, added) => {
 /** When the plugin last changed: its last commit or its last release. */
 export const checkUpdated = (date) =>
   date
-    ? createCheck('updated', 'info', date)
+    ? createCheck('updated', 'info', date.slice(0, 10))
     : createCheck('updated', 'warn', 'No commit or release date.')
 
 /** Every release artifact has a SHA-256 digest. */

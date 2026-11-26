@@ -39,22 +39,33 @@ const readVersions = (root, path) => {
 /**
  * Groups commits into versions. A commit whose manifest declares a version other than the one
  * before closes a version with itself and the commits since the previous one; the commits after the
- * last version change belong to no released version and are left out.
+ * last version change belong to no released version and are left out. Only features and fixes are
+ * listed, without their type, and a version with neither is left out.
  *
  * @param {{ hash: string, date: string, subject: string }[]} commits - newest first
  * @param {Map<string, string>} versions - the version declared at a commit, where one may have changed
  * @param {number} limit - how many versions to keep
  * @returns {{ version: string, date: string, changes: string[] }[]} newest first
  */
+/** The type of a commit a person using the plugin notices: a feature or a fix. */
+const NOTICED = /^(feat|fix)(\([^)]*\))?!?: /
+
+/** The subject of a commit a person notices without its type, or null for any other commit. */
+export const readNoticedChange = (subject) => {
+  const match = NOTICED.exec(subject)
+  return match ? subject.slice(match[0].length) : null
+}
+
 export const groupByVersion = (commits, versions, limit = CHANGELOG_VERSIONS) => {
   const groups = []
   let current = null
   let pending = []
   for (const commit of [...commits].reverse()) {
-    pending.push(commit.subject)
+    const change = readNoticedChange(commit.subject)
+    if (change !== null) pending.push(change)
     const version = versions.get(commit.hash)
     if (version === undefined || version === current) continue
-    groups.push({ version, date: commit.date, changes: pending.reverse() })
+    if (pending.length > 0) groups.push({ version, date: commit.date, changes: pending.reverse() })
     current = version
     pending = []
   }

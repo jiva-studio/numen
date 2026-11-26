@@ -16,14 +16,18 @@ const SCREENSHOT = /^(.+)-(light|dark)\.webp$/
 
 /**
  * A README split for the catalog: `intro` is the text before `<!-- more -->` and `text` is the
- * whole README, both without the first-level heading the README opens with.
+ * whole README, both without the first-level heading the README opens with and without the
+ * `<picture>` blocks of its screenshots, which the page shows from the screenshots folder.
  *
  * @param {string | null} source - the README, or null when the plugin has none
  * @returns {{ intro: string, text: string, hasIntro: boolean } | null}
  */
 export const splitReadme = (source) => {
   if (source === null) return null
-  const text = source.replace(/^\s*# [^\n]*\n/, '').trim()
+  const text = source
+    .replace(/^\s*# [^\n]*\n/, '')
+    .replace(/<picture>[\s\S]*?<\/picture>\n?/g, '')
+    .trim()
   const at = text.indexOf(README_MORE)
   return {
     intro: (at === -1 ? '' : text.slice(0, at)).trim(),
