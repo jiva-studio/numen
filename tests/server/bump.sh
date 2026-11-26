@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # Writes stack.lock: the digest of the tag main of both private packages and today's date. Needs `gh auth login` with the read:packages scope.
+# usage: bump.sh [IMAGE_DIGEST DEVTOOLS_DIGEST]. With the two digests (sha256:...) it writes them and reads no registry, as the nightly run does for the images it tested.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
 owner=jiva-studio
 
-if ! gh auth status >/dev/null 2>&1; then
+if [ "$#" -ne 0 ] && [ "$#" -ne 2 ]; then
+  echo "usage: bump.sh [IMAGE_DIGEST DEVTOOLS_DIGEST]" >&2
+  exit 2
+fi
+if [ "$#" -eq 0 ] && ! gh auth status >/dev/null 2>&1; then
   echo "not logged in to GitHub: run gh auth login (scope read:packages)" >&2
   exit 1
 fi
@@ -26,8 +31,20 @@ read_digest() {
   esac
 }
 
-image=$(read_digest numen-sync)
-devtools=$(read_digest numen-sync-devtools)
+if [ "$#" -eq 2 ]; then
+  image=$1
+  devtools=$2
+  case "$image$devtools" in
+    sha256:*sha256:*) ;;
+    *)
+      echo "the digests must start with sha256:" >&2
+      exit 2
+      ;;
+  esac
+else
+  image=$(read_digest numen-sync)
+  devtools=$(read_digest numen-sync-devtools)
+fi
 
 cat >"$here/stack.lock" <<LOCK
 # The images of the real sync server, by digest. They are published as private packages (tag main); \`make sync_stack_bump\` writes this file.

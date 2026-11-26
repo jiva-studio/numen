@@ -1,0 +1,97 @@
+name: Live Latest
+
+# Tells when the newest image of the real sync server no longer works with this client. Once a night
+# it runs the same tests as live.yml, but against the images tagged main of both packages, not the
+# digests of tests/server/stack.lock. A red run is the notice; it blocks nothing, because ci.yml does
+# not call it and the CI check does not wait for it.
+# A green run whose digests differ from the pin, or whose pin is getting old, opens or updates one
+# pull request that moves tests/server/stack.lock to the images it just tested, so that the pin
+# follows the server without anyone remembering it. A red run opens none.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-latest
+  cancel-in-progress: false
+
+jobs:
+  live:
+    name: Live Tests against the newest images
+    if: github.repository == 'jiva-studio/numen'
+    uses: ./.github/workflows/live.yml
+    permissions:
+      contents: read
+      packages: read
+    with:
+      live: true
+      latest: true
+
+  pin:
+    name: Move the pin
+    needs: [live]
+    if: needs.live.result == 'success' && needs.live.outputs.image != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - id: plan
+        env:
+          IMAGE: ${{ needs.live.outputs.image }}
+          DEVTOOLS: ${{ needs.live.outputs.devtools }}
+        run: |
+          pinned_on=$(sed -n 's/^NUMEN_SYNC_PINNED_ON=//p' tests/server/stack.lock)
+          age_days=$((($(date -u +%s) - $(date -u -d "${pinned_on:-1970-01-01}" +%s)) / 86400))
+          if ! grep -q "@$IMAGE\$" tests/server/stack.lock || ! grep -q "@$DEVTOOLS\$" tests/server/stack.lock; then
+            echo "move=true" >> "$GITHUB_OUTPUT"
+            echo "the newest images differ from the pin and passed" | tee -a "$GITHUB_STEP_SUMMARY"
+          elif [ "$age_days" -ge 20 ]; then
+            echo "move=true" >> "$GITHUB_OUTPUT"
+            echo "the pin is $age_days days old and the images it names passed again" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "the pin is current and the images passed" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # The job token may not list package versions, so the digests are the ones the tests ran against,
+      # read from the registry by tag with docker buildx imagetools in the live job.
+      - name: Write the pin and push the branch
+        if: steps.plan.outputs.move == 'true'
+        env:
+          IMAGE: ${{ needs.live.outputs.image }}
+          DEVTOOLS: ${{ needs.live.outputs.devtools }}
+        run: |
+          git switch -C live/pin-bump
+          bash tests/server/bump.sh "$IMAGE" "$DEVTOOLS"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/server/stack.lock
+          git commit -m "Move the pinned images of the real server"
+          git push --force origin live/pin-bump
+
+      - name: Open or update the pull request
+        if: steps.plan.outputs.move == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: ${{ needs.live.outputs.image }}
+          DEVTOOLS: ${{ needs.live.outputs.devtools }}
+        run: |
+          body=$(printf '%s\n\n%s\n\n%s\n\n%s\n' \
+            "Problem: the pin in tests/server/stack.lock follows the real server only when someone moves it, and a pin older than 30 days fails the Live job." \
+            "Cause: the nightly run of live-latest.yml tested the images tagged main ($IMAGE, $DEVTOOLS) and they passed." \
+            "Change: tests/server/stack.lock names those digests and today's date." \
+            "A pull request opened by a workflow starts its checks only after a person with write access approves them: click Approve and run on the waiting runs.")
+          number=$(gh pr list --head live/pin-bump --state open --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh pr edit "$number" --body "$body"
+            echo "updated pull request #$number" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            gh pr create --head live/pin-bump --base "${GITHUB_REF_NAME}" --title "Move the pinned images of the real server" --body "$body"
+          fi

@@ -2,16 +2,30 @@ name: Live
 
 # The tests that need the real sync server, started from its private images (tests/server): the Go
 # tests of plugins/tools-sync and the acceptance scenarios tagged @live. Called by ci.yml with the
-# area a change touches. GitHub gives a pull request from a fork or from Dependabot no access to the private packages,
+# area a change touches, and by live-latest.yml with latest: true, which tests the newest images instead of the pinned ones. GitHub gives a pull request from a fork or from Dependabot no access to the private packages,
 # and tests/server/stack.lock holds no digests until the images of the real server are published: the job then
 # runs no test and says so in its summary. It never uploads the images or prints the server log
 # unfiltered.
+# Two stacks run one after the other. The Go suite runs against the first; the tests that roll back its
+# database or age its records skip there. The second stack, with its own project name and ports, runs
+# those tests alone, one package at a time.
 on:
   workflow_call:
     inputs:
       live:
         type: boolean
         required: true
+      latest:
+        description: Test the images tagged main, not the digests of tests/server/stack.lock.
+        type: boolean
+        default: false
+    outputs:
+      image:
+        description: Digest of the server image the tests ran against, when latest is set.
+        value: ${{ jobs.live.outputs.image }}
+      devtools:
+        description: Digest of the test tools image the tests ran against, when latest is set.
+        value: ${{ jobs.live.outputs.devtools }}
 
 permissions:
   contents: read
@@ -21,10 +35,13 @@ jobs:
     name: Live Tests
     if: inputs.live
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: read
       packages: read
+    outputs:
+      image: ${{ steps.images.outputs.image }}
+      devtools: ${{ steps.images.outputs.devtools }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -35,13 +52,14 @@ jobs:
           EVENT: ${{ github.event_name }}
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           ACTOR: ${{ github.actor }}
+          LATEST: ${{ inputs.latest }}
         run: |
           reason=
           if [ "$EVENT" = pull_request ] && [ "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
             reason="the pull request is from a fork, which has no access to the private server images"
           elif [ "$ACTOR" = "dependabot[bot]" ]; then
             reason="the pull request is from Dependabot, which has no access to the private server images"
-          elif ! grep -qE '^NUMEN_SYNC_IMAGE=.+' tests/server/stack.lock || ! grep -qE '^NUMEN_SYNC_DEVTOOLS_IMAGE=.+' tests/server/stack.lock; then
+          elif [ "$LATEST" != true ] && { ! grep -qE '^NUMEN_SYNC_IMAGE=.+' tests/server/stack.lock || ! grep -qE '^NUMEN_SYNC_DEVTOOLS_IMAGE=.+' tests/server/stack.lock; }; then
             reason="tests/server/stack.lock holds no image digests"
           fi
           if [ -n "$reason" ]; then
@@ -69,8 +87,33 @@ jobs:
           fi
 
       - name: Check the pinned images
-        if: steps.plan.outputs.run == 'true'
+        if: steps.plan.outputs.run == 'true' && !inputs.latest
         run: tests/server/check-pin.sh
+
+      # The tag main of both packages, read once as digests: every step then runs the same images, and
+      # the caller can pin exactly what passed.
+      - name: Read the newest images
+        id: images
+        if: steps.plan.outputs.run == 'true' && inputs.latest
+        run: |
+          image=$(docker buildx imagetools inspect ghcr.io/jiva-studio/numen-sync:main --format '{{.Manifest.Digest}}')
+          devtools=$(docker buildx imagetools inspect ghcr.io/jiva-studio/numen-sync-devtools:main --format '{{.Manifest.Digest}}')
+          case "$image$devtools" in
+            sha256:*sha256:*) ;;
+            *)
+              echo "::error title=No newest images::The tag main of numen-sync or numen-sync-devtools cannot be read."
+              exit 1
+              ;;
+          esac
+          {
+            echo "NUMEN_SYNC_IMAGE=ghcr.io/jiva-studio/numen-sync@$image"
+            echo "NUMEN_SYNC_DEVTOOLS_IMAGE=ghcr.io/jiva-studio/numen-sync-devtools@$devtools"
+          } >> "$GITHUB_ENV"
+          {
+            echo "image=$image"
+            echo "devtools=$devtools"
+          } >> "$GITHUB_OUTPUT"
+          echo "newest images: numen-sync@$image numen-sync-devtools@$devtools" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Start the server
         if: steps.plan.outputs.run == 'true'
@@ -82,16 +125,22 @@ jobs:
           NUMEN_SYNC_TEST_REQUIRED: "1"
         run: |
           eval "$(make -s sync_stack_env)"
-          status=0
-          (cd plugins/tools-sync && go test -json ./...) > "$RUNNER_TEMP/go-test.json" || status=$?
-          skipped=$(jq -s '[.[] | select(.Action == "skip" and .Test != null)] | length' "$RUNNER_TEMP/go-test.json")
-          passed=$(jq -s '[.[] | select(.Action == "pass" and .Test != null)] | length' "$RUNNER_TEMP/go-test.json")
-          failed=$(jq -s '[.[] | select(.Action == "fail" and .Test != null)] | length' "$RUNNER_TEMP/go-test.json")
-          echo "Go tests of plugins/tools-sync against the real server: $passed passed, $failed failed, $skipped skipped" | tee -a "$GITHUB_STEP_SUMMARY"
-          if [ "$status" -ne 0 ]; then
-            jq -r 'select(.Action == "output") | .Output' "$RUNNER_TEMP/go-test.json" | grep -vE '^(=== |\s*--- (PASS|SKIP)|PASS$|ok )' || true
-          fi
-          exit "$status"
+          .github/scripts/live-go-tests.sh "Go tests of plugins/tools-sync against the real server" ./...
+
+      # The tests that roll back the database or age its records act on every account of their stack,
+      # so they get one that no other test uses, on other ports, and run one package at a time.
+      - name: Run the Go tests that need a stack of their own
+        if: steps.plan.outputs.run == 'true'
+        env:
+          NUMEN_SYNC_PORT_BASE: "18787"
+          NUMEN_SYNC_OWN_STACK: numen-sync-own
+          NUMEN_SYNC_OWN_STACK_REQUIRED: "1"
+          NUMEN_SYNC_TEST_REQUIRED: "1"
+        run: |
+          settings=$(bash tests/server/stack.sh fresh "$NUMEN_SYNC_OWN_STACK")
+          eval "$settings"
+          .github/scripts/live-go-tests.sh "Go tests of plugins/tools-sync against a stack of their own" -p 1 -count=1 -timeout 10m \
+            ./backend/internal/adapter/cloud/... ./backend/usecase/pull/... ./backend/usecase/restore/... ./backend/usecase/share/... ./backend/usecase/syncvault/...
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: steps.plan.outputs.run == 'true'
@@ -196,11 +245,15 @@ jobs:
       - name: Print the rpc lines of the server log
         if: ${{ failure() && steps.plan.outputs.run == 'true' }}
         run: |
-          container=$(docker ps -aq --filter label=com.docker.compose.project=numen-sync-test --filter label=com.docker.compose.service=sync)
-          if [ -n "$container" ]; then
-            docker logs --tail 5000 "$container" 2>&1 | grep -iE '\brpc\b' | tail -n 200 || true
-          fi
+          for project in numen-sync-test numen-sync-own; do
+            container=$(docker ps -aq --filter label=com.docker.compose.project=$project --filter label=com.docker.compose.service=sync)
+            if [ -n "$container" ]; then
+              docker logs --tail 5000 "$container" 2>&1 | grep -iE '\brpc\b' | tail -n 200 || true
+            fi
+          done
 
-      - name: Stop the server
+      - name: Stop the servers
         if: ${{ always() && steps.plan.outputs.run == 'true' }}
-        run: make sync_stack_down
+        run: |
+          NUMEN_SYNC_PORT_BASE=18787 bash tests/server/stack.sh down numen-sync-own || true
+          make sync_stack_down

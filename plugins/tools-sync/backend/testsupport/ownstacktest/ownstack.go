@@ -25,6 +25,10 @@ import (
 // variables of the stack must point at that same stack.
 const Env = "NUMEN_SYNC_OWN_STACK"
 
+// EnvRequired set to 1 makes a test that needs an own stack fail, not skip, when Env is not set. Only the job step that starts an own stack sets it; NUMEN_SYNC_TEST_REQUIRED does not, because
+// the step that runs the shared stack has none.
+const EnvRequired = "NUMEN_SYNC_OWN_STACK_REQUIRED"
+
 const (
 	ownDatabase    = "numen_sync"
 	ownOwner       = "numen_sync_owner"
@@ -45,13 +49,13 @@ type Snapshot struct {
 	file string
 }
 
-// Get returns the own stack named by Env. The database goes back to its state at the call when the test ends, so no test leaves an epoch, an account or a pruned record to the next. The test skips when the variable is not set, and fails then when synctest.EnvRequired is 1. A test that uses
+// Get returns the own stack named by Env. The database goes back to its state at the call when the test ends, so no test leaves an epoch, an account or a pruned record to the next. The test skips when the variable is not set, and fails then when EnvRequired is 1. A test that uses
 // it must not call t.Parallel, and the packages that use it run one at a time (go test -p 1).
 func Get(t *testing.T) *Stack {
 	t.Helper()
 	project := os.Getenv(Env)
 	if project == "" {
-		if os.Getenv(synctest.EnvRequired) != "1" {
+		if os.Getenv(EnvRequired) != "1" {
 			t.Skip("no own sync stack: set " + Env + " to the compose project of a stack that no other test uses")
 		}
 		t.Fatalf("no own sync stack: set %s to the compose project of a stack that no other test uses, and %s to its address", Env, synctest.EnvURL)

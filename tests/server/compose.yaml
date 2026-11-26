@@ -1,6 +1,6 @@
 # The real sync server and what it needs, for the tests of Numen Sync. The two images are private; their digests are in stack.lock.
 # Bring it up with `make sync_stack_up`; `make sync_stack_env` prints the settings the tests read.
-# The ports are on 127.0.0.1 only. Development keys and passwords: this stack holds no real data.
+# The ports are on 127.0.0.1 only. A second stack beside this one takes other ports: stack.sh derives the four from NUMEN_SYNC_PORT_BASE (default 8787). Development keys and passwords: this stack holds no real data.
 # The real server cannot delete uploaded files: a full test run leaves about 1.8 GB in the bucket, and the Docker disk fills. After a full run recreate the stand
 # empty with `make sync_stack_fresh PROJECT=<name> [COMPOSE=<file>]`; it names what it removes first and refuses to run without the project name.
 # A stand made from an older copy of this file lacks NUMEN_SYNC_LIMIT_REQUESTS_ENABLED=false (as the stand numen-dev does); recreating it from this file makes the link tests fast.
@@ -27,7 +27,7 @@ services:
       - bucket-data:/data
       - bucket-meta:/meta
     ports:
-      - "127.0.0.1:8790:8790"
+      - "127.0.0.1:${NUMEN_SYNC_PORT_BUCKET:-8790}:8790"
 
   bucket-init:
     image: amazon/aws-cli:2.42.4@sha256:4a1a668837d5f97ced202e03827da1bc0b48cda946be89909cd7a02023f62921
@@ -63,16 +63,16 @@ services:
     command:
       - payment
       - -listen=0.0.0.0:8788
-      - -public-url=http://127.0.0.1:8788
+      - -public-url=http://127.0.0.1:${NUMEN_SYNC_PORT_PAYMENT:-8788}
       - -control=0.0.0.0:8789
       - -webhook-target=http://127.0.0.1:8787/webhooks/creem
       - -webhook-secret=whsec_numen_dev_standin_secret
     # The server shares this container's network, so its port is published here too. The stand-in is at 127.0.0.1 for the server, which the real client
     # accepts for a payment page over plain http, so no host name needs an entry in /etc/hosts.
     ports:
-      - "127.0.0.1:8787:8787"
-      - "127.0.0.1:8788:8788"
-      - "127.0.0.1:8789:8789"
+      - "127.0.0.1:${NUMEN_SYNC_PORT_SERVER:-8787}:8787"
+      - "127.0.0.1:${NUMEN_SYNC_PORT_PAYMENT:-8788}:8788"
+      - "127.0.0.1:${NUMEN_SYNC_PORT_CONTROL:-8789}:8789"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8789/checkouts"]
       interval: 3s
@@ -83,11 +83,11 @@ services:
     environment:
       NUMEN_SYNC_ENV: dev
       NUMEN_SYNC_LISTEN_ADDR: 0.0.0.0:8787
-      NUMEN_SYNC_PUBLIC_URL: http://127.0.0.1:8787
+      NUMEN_SYNC_PUBLIC_URL: http://127.0.0.1:${NUMEN_SYNC_PORT_SERVER:-8787}
       NUMEN_SYNC_DB_URL: postgres://numen_sync:numen_sync@postgres:5432/numen_sync?sslmode=disable
       NUMEN_SYNC_DB_MIGRATE_URL: postgres://numen_sync_owner:numen_sync_owner@postgres:5432/numen_sync?sslmode=disable
       NUMEN_SYNC_BUCKET_ENDPOINT: http://bucket:8790
-      NUMEN_SYNC_BUCKET_PUBLIC_ENDPOINT: http://127.0.0.1:8790
+      NUMEN_SYNC_BUCKET_PUBLIC_ENDPOINT: http://127.0.0.1:${NUMEN_SYNC_PORT_BUCKET:-8790}
       NUMEN_SYNC_BUCKET_REGION: us-east-1
       NUMEN_SYNC_BUCKET_NAME: numen-sync
       NUMEN_SYNC_BUCKET_ACCESS_KEY_ID: numendev

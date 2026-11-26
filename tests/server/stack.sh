@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Brings the test stack of the real sync server up and down, and prints the settings the tests read.
-# usage: stack.sh up | down | env | fresh PROJECT [COMPOSE_FILE]
+# usage: stack.sh up | down [PROJECT] | env | fresh PROJECT [COMPOSE_FILE]
+# The four published ports are NUMEN_SYNC_PORT_BASE (default 8787) and the next three: the server, the payment page, the payment control, the bucket. A stack beside another takes a different project name and base.
 # fresh drops the containers and volumes of the named project, then brings it up again from COMPOSE_FILE (default: compose.yaml here) and prints its settings.
 # The real server cannot delete uploaded files, so a stack that ran a full test run holds gigabytes in its bucket; fresh empties it.
 set -euo pipefail
@@ -22,17 +23,18 @@ read_lock() {
   fi
 }
 
+base=${NUMEN_SYNC_PORT_BASE:-8787}
+export NUMEN_SYNC_PORT_SERVER=$base NUMEN_SYNC_PORT_PAYMENT=$((base + 1)) NUMEN_SYNC_PORT_CONTROL=$((base + 2)) NUMEN_SYNC_PORT_BUCKET=$((base + 3))
+
 compose() { docker compose -p "$project" -f "$file" "$@"; }
 
 print_env() {
-  local root ports
+  local root
   root=$(docker run --rm -v "${project}_keys:/keys:ro" --entrypoint cat "$NUMEN_SYNC_DEVTOOLS_IMAGE" /keys/root-public.hex)
-  # The four published ports in order: the server, the payment page, the payment control, the bucket.
-  mapfile -t ports < <(compose config | sed -n 's/^ *published: "\{0,1\}\([0-9]*\)"\{0,1\}$/\1/p' | sort -n)
-  echo "export NUMEN_SYNC_TEST_URL=http://127.0.0.1:${ports[0]}"
+  echo "export NUMEN_SYNC_TEST_URL=http://127.0.0.1:$NUMEN_SYNC_PORT_SERVER"
   echo "export NUMEN_SYNC_TEST_ROOT_KEY=$root"
-  echo "export NUMEN_SYNC_TEST_PAYMENT_URL=http://127.0.0.1:${ports[2]}"
-  echo "export NUMEN_SYNC_TEST_BUCKET_URL=http://127.0.0.1:${ports[3]}"
+  echo "export NUMEN_SYNC_TEST_PAYMENT_URL=http://127.0.0.1:$NUMEN_SYNC_PORT_CONTROL"
+  echo "export NUMEN_SYNC_TEST_BUCKET_URL=http://127.0.0.1:$NUMEN_SYNC_PORT_BUCKET"
 }
 
 case "${1:-}" in
@@ -41,6 +43,7 @@ case "${1:-}" in
     compose up --detach --wait --quiet-pull
     ;;
   down)
+    project=${2:-$project}
     read_lock
     compose down --volumes
     ;;
@@ -64,7 +67,7 @@ case "${1:-}" in
     print_env
     ;;
   *)
-    echo "usage: stack.sh up | down | env | fresh PROJECT [COMPOSE_FILE]" >&2
+    echo "usage: stack.sh up | down [PROJECT] | env | fresh PROJECT [COMPOSE_FILE]" >&2
     exit 2
     ;;
 esac
