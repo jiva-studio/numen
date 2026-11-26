@@ -10,10 +10,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
-var (
-	encoderSum  = strings.Repeat("e", 64)
-	decoderSum  = strings.Repeat("d", 64)
-	detectorSum = strings.Repeat("c", 64)
+const (
+	encoderSum  = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+	decoderSum  = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+	detectorSum = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
 )
 
 func readModelManifest(t *testing.T) manifest.Manifest {
@@ -45,7 +45,7 @@ func readModelManifest(t *testing.T) manifest.Manifest {
 	return m
 }
 
-func TestTheRequirementsOfAPluginHoldNoModelUnderAnyOption(t *testing.T) {
+func TestPluginRequirementsExcludeModelsForEveryOption(t *testing.T) {
 	m := readModelManifest(t)
 	for model, want := range map[string][]string{
 		"large": {"speech-runtime"},
@@ -89,7 +89,7 @@ func TestAPluginFindsOnlyTheModelsItsManifestDeclares(t *testing.T) {
 	}
 }
 
-func TestADeclaredModelFileIsStoredByItsChecksumUnderItsTitle(t *testing.T) {
+func TestADeclaredModelFileIsKeyedByItsChecksumWithItsTitle(t *testing.T) {
 	m := readModelManifest(t)
 	for id, title := range map[string]string{"large-encoder": "Large encoder", "small-decoder": "small-decoder"} {
 		declared, ok := m.FindModelDependency(id)

@@ -42,7 +42,7 @@ func readSpeechManifest(t *testing.T) manifest.Manifest {
 func TestTheHostFetchesOnlyAModelTheManifestOfTheCallingPluginDeclares(t *testing.T) {
 	registry := provision.NewObservedRegistry(nil, provision.NewPlaceholderProvisioner(t.TempDir()))
 	callers := newCallers().asCallers()
-	callers.DeclaredDependencies = plugindependency.NewFetchDeclared(
+	callers.DeclaredDependencies = plugindependency.NewFetchDeclaredModel(
 		declaredModels{"md.numen.a": readSpeechManifest(t)},
 		func() pluginport.DependencyRegistry { return registry },
 	)

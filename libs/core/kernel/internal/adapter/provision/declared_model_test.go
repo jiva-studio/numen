@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -31,7 +32,9 @@ const (
 	declaredWait  = 5 * time.Second
 )
 
-var encoderBytes = []byte("weights of an example speech encoder")
+func getEncoderBytes() []byte {
+	return []byte("weights of an example speech encoder")
+}
 
 type declaredManifests map[string]manifest.Manifest
 
@@ -92,20 +95,20 @@ func readDeclaredManifest(t *testing.T, pluginID string, dependencies ...string)
 	return m
 }
 
-func newDeclaredFetch(manifests declaredManifests, registry *Registry) *plugindependency.FetchDeclared {
-	return plugindependency.NewFetchDeclared(manifests, func() pluginport.DependencyRegistry { return registry })
+func newDeclaredFetch(manifests declaredManifests, registry *Registry) *plugindependency.FetchDeclaredModel {
+	return plugindependency.NewFetchDeclaredModel(manifests, func() pluginport.DependencyRegistry { return registry })
 }
 
-func newSpeechFetch(t *testing.T, server *modelServer, offline bool, addresses ...string) (*plugindependency.FetchDeclared, *FileProvisioner, *Registry) {
+func newSpeechFetch(t *testing.T, server *modelServer, offline bool, addresses ...string) (*plugindependency.FetchDeclaredModel, *FileProvisioner, *Registry) {
 	t.Helper()
 	files := newTestProvisioner(t, offline)
 	files.cfg.Client = server.Client()
 	registry := NewObservedRegistry(nil, files)
-	manifests := declaredManifests{speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, encoderBytes, addresses...))}
+	manifests := declaredManifests{speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, getEncoderBytes(), addresses...))}
 	return newDeclaredFetch(manifests, registry), files, registry
 }
 
-func readFetched(t *testing.T, path string) []byte {
+func readModelFile(t *testing.T, path string) []byte {
 	t.Helper()
 	got, err := os.ReadFile(path)
 	if err != nil {
@@ -114,8 +117,22 @@ func readFetched(t *testing.T, path string) []byte {
 	return got
 }
 
+func listStoredFiles(t *testing.T, dir string) []string {
+	t.Helper()
+	var paths []string
+	if err := filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
+		if err == nil && !entry.IsDir() {
+			paths = append(paths, path)
+		}
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return paths
+}
+
 func TestADeclaredModelIsFetchedFromItsFirstSource(t *testing.T) {
-	server := newModelServer(t, map[string][]byte{"/first/encoder.onnx": encoderBytes, "/mirror/encoder.onnx": encoderBytes})
+	server := newModelServer(t, map[string][]byte{"/first/encoder.onnx": getEncoderBytes(), "/mirror/encoder.onnx": getEncoderBytes()})
 	fetch, _, _ := newSpeechFetch(t, server, false, server.URL+"/first/encoder.onnx", server.URL+"/mirror/encoder.onnx")
 
 	path, err := fetch.Execute(t.Context(), speechPlugin, speechEncoder)
@@ -123,7 +140,7 @@ func TestADeclaredModelIsFetchedFromItsFirstSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := readFetched(t, path); !bytes.Equal(got, encoderBytes) {
+	if got := readModelFile(t, path); !bytes.Equal(got, getEncoderBytes()) {
 		t.Errorf("the file holds %q, want the declared model", got)
 	}
 	if got := server.getRequests(); !slices.Equal(got, []string{"/first/encoder.onnx"}) {
@@ -133,12 +150,12 @@ func TestADeclaredModelIsFetchedFromItsFirstSource(t *testing.T) {
 
 func TestAModelTheManifestOfThePluginDoesNotDeclareIsRefused(t *testing.T) {
 	graph := []byte("weights of an example search graph")
-	server := newModelServer(t, map[string][]byte{"/encoder.onnx": encoderBytes, "/graph.onnx": graph, "/lib.so": []byte("lib")})
+	server := newModelServer(t, map[string][]byte{"/encoder.onnx": getEncoderBytes(), "/graph.onnx": graph, "/lib.so": []byte("lib")})
 	files := newTestProvisioner(t, false)
 	files.cfg.Client = server.Client()
 	runtimeEntry := fmt.Sprintf(`{"id": "speech-runtime", "kind": "runtime", "sourceUrl": %q, "checksumSha256": %q}`, server.URL+"/lib.so", sumOf([]byte("lib")))
 	manifests := declaredManifests{
-		speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, encoderBytes, server.URL+"/encoder.onnx"), runtimeEntry),
+		speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, getEncoderBytes(), server.URL+"/encoder.onnx"), runtimeEntry),
 		searchPlugin: readDeclaredManifest(t, searchPlugin, declareModel("search-graph", "Search graph", graph, server.URL+"/graph.onnx")),
 	}
 	fetch := newDeclaredFetch(manifests, NewObservedRegistry(nil, files))
@@ -166,10 +183,8 @@ func TestAModelIsFetchedFromTheMirrorWhenTheFirstSourceFails(t *testing.T) {
 		"the first source serves other bytes": {"/first/encoder.onnx": []byte("tampered bytes of a speech encoder")},
 	} {
 		t.Run(name, func(t *testing.T) {
-			served := map[string][]byte{"/mirror/encoder.onnx": encoderBytes}
-			for path, body := range first {
-				served[path] = body
-			}
+			served := map[string][]byte{"/mirror/encoder.onnx": getEncoderBytes()}
+			maps.Copy(served, first)
 			server := newModelServer(t, served)
 			fetch, files, _ := newSpeechFetch(t, server, false, server.URL+"/first/encoder.onnx", server.URL+"/mirror/encoder.onnx")
 
@@ -178,23 +193,16 @@ func TestAModelIsFetchedFromTheMirrorWhenTheFirstSourceFails(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := readFetched(t, path); !bytes.Equal(got, encoderBytes) {
+			if got := readModelFile(t, path); !bytes.Equal(got, getEncoderBytes()) {
 				t.Errorf("the file holds %q, want the bytes of the mirror", got)
 			}
 			if got := server.getRequests(); !slices.Contains(got, "/mirror/encoder.onnx") {
 				t.Errorf("requests = %v, want the mirror among them", got)
 			}
-			if err := filepath.WalkDir(files.cfg.Dir, func(path string, entry os.DirEntry, err error) error {
-				if err != nil || entry.IsDir() {
-					return err
+			for _, stored := range listStoredFiles(t, files.cfg.Dir) {
+				if bytes.Contains(readModelFile(t, stored), []byte("tampered")) {
+					t.Errorf("the bytes of the failed source are kept in %s", stored)
 				}
-				kept, err := os.ReadFile(path)
-				if err == nil && bytes.Contains(kept, []byte("tampered")) {
-					t.Errorf("the bytes of the failed source are kept in %s", path)
-				}
-				return err
-			}); err != nil {
-				t.Fatal(err)
 			}
 		})
 	}
@@ -211,7 +219,7 @@ func TestConcurrentRequestsForOneModelMakeOneDownload(t *testing.T) {
 		case <-r.Context().Done():
 			return
 		}
-		if _, err := w.Write(encoderBytes); err != nil {
+		if _, err := w.Write(getEncoderBytes()); err != nil {
 			t.Error(err)
 		}
 	}))
@@ -219,7 +227,7 @@ func TestConcurrentRequestsForOneModelMakeOneDownload(t *testing.T) {
 	files := newTestProvisioner(t, false)
 	files.cfg.Client = server.Client()
 	registry := NewObservedRegistry(nil, files)
-	manifests := declaredManifests{speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, encoderBytes, server.URL+"/encoder.onnx"))}
+	manifests := declaredManifests{speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, getEncoderBytes(), server.URL+"/encoder.onnx"))}
 	fetch := newDeclaredFetch(manifests, registry)
 	type answer struct {
 		path string
@@ -256,12 +264,12 @@ func TestConcurrentRequestsForOneModelMakeOneDownload(t *testing.T) {
 }
 
 func TestTwoPluginsDeclaringOneFileStoreItOnce(t *testing.T) {
-	server := newModelServer(t, map[string][]byte{"/speech/graph.onnx": encoderBytes, "/search/graph.onnx": encoderBytes})
+	server := newModelServer(t, map[string][]byte{"/speech/graph.onnx": getEncoderBytes(), "/search/graph.onnx": getEncoderBytes()})
 	files := newTestProvisioner(t, false)
 	files.cfg.Client = server.Client()
 	manifests := declaredManifests{
-		speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel("speech-graph", "Speech graph", encoderBytes, server.URL+"/speech/graph.onnx")),
-		searchPlugin: readDeclaredManifest(t, searchPlugin, declareModel("graph", "Graph", encoderBytes, server.URL+"/search/graph.onnx")),
+		speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel("speech-graph", "Speech graph", getEncoderBytes(), server.URL+"/speech/graph.onnx")),
+		searchPlugin: readDeclaredManifest(t, searchPlugin, declareModel("graph", "Graph", getEncoderBytes(), server.URL+"/search/graph.onnx")),
 	}
 	fetch := newDeclaredFetch(manifests, NewObservedRegistry(nil, files))
 
@@ -283,10 +291,10 @@ func TestTwoPluginsDeclaringOneFileStoreItOnce(t *testing.T) {
 }
 
 func TestAModelFetchedByItsAddressIsNotFetchedAgainByItsID(t *testing.T) {
-	server := newModelServer(t, map[string][]byte{"/by-address.onnx": encoderBytes, "/encoder.onnx": encoderBytes})
+	server := newModelServer(t, map[string][]byte{"/by-address.onnx": getEncoderBytes(), "/encoder.onnx": getEncoderBytes()})
 	fetch, _, registry := newSpeechFetch(t, server, false, server.URL+"/encoder.onnx")
 	byAddress := plugindependency.NewFetch(func() pluginport.DependencyRegistry { return registry })
-	stored, err := byAddress.Execute(t.Context(), server.URL+"/by-address.onnx", sumOf(encoderBytes))
+	stored, err := byAddress.Execute(t.Context(), server.URL+"/by-address.onnx", sumOf(getEncoderBytes()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +313,7 @@ func TestAModelFetchedByItsAddressIsNotFetchedAgainByItsID(t *testing.T) {
 }
 
 func TestAnOfflineMachineNamesTheMissingModelAndDownloadsNothing(t *testing.T) {
-	server := newModelServer(t, map[string][]byte{"/encoder.onnx": encoderBytes})
+	server := newModelServer(t, map[string][]byte{"/encoder.onnx": getEncoderBytes()})
 	fetch, _, _ := newSpeechFetch(t, server, true, server.URL+"/encoder.onnx")
 
 	path, err := fetch.Execute(t.Context(), speechPlugin, speechEncoder)
@@ -322,7 +330,7 @@ func TestAnOfflineMachineNamesTheMissingModelAndDownloadsNothing(t *testing.T) {
 }
 
 func TestAnOfflineMachineUsesAModelAlreadyFetched(t *testing.T) {
-	server := newModelServer(t, map[string][]byte{"/encoder.onnx": encoderBytes})
+	server := newModelServer(t, map[string][]byte{"/encoder.onnx": getEncoderBytes()})
 	fetch, files, _ := newSpeechFetch(t, server, false, server.URL+"/encoder.onnx")
 	stored, err := fetch.Execute(t.Context(), speechPlugin, speechEncoder)
 	if err != nil {
@@ -362,7 +370,7 @@ func (l *titledStatusLog) getLast() (string, plugin.DependencyStatus) {
 	return l.titles[len(l.titles)-1], l.statuses[len(l.statuses)-1]
 }
 
-func TestTheDownloadOfAModelIsShownUnderItsTitleWithItsDeclaredSize(t *testing.T) {
+func TestADownloadStatusNamesTheModelTitleAndDeclaredSize(t *testing.T) {
 	sized, stop := make(chan struct{}), make(chan struct{})
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		select {
@@ -372,8 +380,8 @@ func TestTheDownloadOfAModelIsShownUnderItsTitleWithItsDeclaredSize(t *testing.T
 		case <-r.Context().Done():
 			return
 		}
-		half := len(encoderBytes) / 2
-		for _, part := range [][]byte{encoderBytes[:half], encoderBytes[half:]} {
+		half := len(getEncoderBytes()) / 2
+		for _, part := range [][]byte{getEncoderBytes()[:half], getEncoderBytes()[half:]} {
 			if _, err := w.Write(part); err != nil {
 				t.Error(err)
 				return
@@ -391,11 +399,11 @@ func TestTheDownloadOfAModelIsShownUnderItsTitleWithItsDeclaredSize(t *testing.T
 	var once sync.Once
 	registry := NewObservedRegistry(func(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		statuses.add(req, status)
-		if status.Message == "Downloading "+encoderTitle && status.BytesTotal == int64(len(encoderBytes)) {
+		if status.Message == "Downloading "+encoderTitle && status.BytesTotal == int64(len(getEncoderBytes())) {
 			once.Do(func() { close(sized) })
 		}
 	}, files)
-	manifests := declaredManifests{speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, encoderBytes, server.URL+"/encoder.onnx"))}
+	manifests := declaredManifests{speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, getEncoderBytes(), server.URL+"/encoder.onnx"))}
 	fetch := newDeclaredFetch(manifests, registry)
 	ctx, cancel := context.WithTimeout(t.Context(), declaredWait)
 	defer cancel()
@@ -403,9 +411,9 @@ func TestTheDownloadOfAModelIsShownUnderItsTitleWithItsDeclaredSize(t *testing.T
 	path, err := fetch.Execute(ctx, speechPlugin, speechEncoder)
 
 	if err != nil {
-		t.Fatalf("fetch = %v: no status named %q with the declared size %d before the response", err, "Downloading "+encoderTitle, len(encoderBytes))
+		t.Fatalf("fetch = %v: no status named %q with the declared size %d before the response", err, "Downloading "+encoderTitle, len(getEncoderBytes()))
 	}
-	if got := readFetched(t, path); !bytes.Equal(got, encoderBytes) {
+	if got := readModelFile(t, path); !bytes.Equal(got, getEncoderBytes()) {
 		t.Errorf("the file holds %q", got)
 	}
 	title, last := statuses.getLast()
@@ -424,7 +432,7 @@ func TestCancelingTheDownloadOfAModelEndsTheRequestAsCanceled(t *testing.T) {
 	files := newTestProvisioner(t, false)
 	files.cfg.Client = server.Client()
 	registry := NewObservedRegistry(nil, files)
-	manifests := declaredManifests{speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, encoderBytes, server.URL+"/encoder.onnx"))}
+	manifests := declaredManifests{speechPlugin: readDeclaredManifest(t, speechPlugin, declareModel(speechEncoder, encoderTitle, getEncoderBytes(), server.URL+"/encoder.onnx"))}
 	fetch := newDeclaredFetch(manifests, registry)
 	answer := make(chan error, 1)
 	go func() {
