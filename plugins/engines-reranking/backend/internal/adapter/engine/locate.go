@@ -26,13 +26,13 @@ type Fetch struct {
 
 func Locate(ctx context.Context, p profile.Profile, fetch Fetch) (onnx.ModelFiles, error) {
 	if len(p.Dependencies) > 0 {
-		return fetchDeclared(ctx, p, fetch.Dependency)
+		return fetchModelFiles(ctx, p, fetch.Dependency)
 	}
 	return onnx.PrepareModel(ctx, onnx.RepositoryModel{Endpoint: os.Getenv("HF_ENDPOINT"), ID: p.ID,
 		Revision: p.Revision, Graph: p.OnnxFile, Sums: p.SHA256, Files: nil, SelectExternal: func(name string) bool { return strings.HasPrefix(name, p.OnnxFile) }}, getCacheRoot(), fetch.File)
 }
 
-func fetchDeclared(ctx context.Context, p profile.Profile, fetch FetchDependency) (onnx.ModelFiles, error) {
+func fetchModelFiles(ctx context.Context, p profile.Profile, fetch FetchDependency) (onnx.ModelFiles, error) {
 	if _, ok := p.Dependencies[p.OnnxFile]; !ok {
 		return onnx.ModelFiles{}, fmt.Errorf("%s declares no file %s", p.ID, p.OnnxFile)
 	}

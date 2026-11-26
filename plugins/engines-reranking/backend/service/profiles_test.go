@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/domain/profile"
 )
 
-// Each file a shipped profile fetches is a model the manifest declares, and each model the manifest
-// declares is a file of a shipped profile.
 func TestEveryShippedProfileFetchesModelsTheManifestDeclares(t *testing.T) {
 	var manifest struct {
 		Dependencies []struct {

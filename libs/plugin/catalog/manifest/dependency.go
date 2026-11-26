@@ -104,10 +104,10 @@ func (req DependencyRequirement) GetSource(goos, goarch string) (DependencySourc
 }
 
 // GetIdentity returns the string that tells one download from another: the kind, id, version, source on this platform and plugin
-// directory. A model file stored by its checksum is told apart by the checksum alone. Requirements with the same identity are one
-// download.
+// directory. The checksum alone distinguishes a model file stored by its checksum. Requirements with the same identity are
+// one download.
 func (req DependencyRequirement) GetIdentity() string {
-	if req.isContentAddressed() {
+	if req.Kind == DependencyKindModel && req.ChecksumSHA256 != "" && req.ID == req.ChecksumSHA256 && req.Version == "" && len(req.Sources) == 0 {
 		return string(req.Kind) + "\x00" + req.ChecksumSHA256
 	}
 	source, _ := req.GetSource(runtime.GOOS, runtime.GOARCH)
@@ -190,11 +190,8 @@ func listDependencySourceIssues(req DependencyRequirement) []error {
 
 func listSizeIssues(req DependencyRequirement) []error {
 	hasSource := req.SourceURL != "" || len(req.SourceURLs) > 0 || len(req.Sources) > 0
-	switch {
-	case req.SizeBytes < 0:
-		return []error{fmt.Errorf("%w: %s has a negative sizeBytes", ErrInvalidDependency, req.ID)}
-	case req.Kind == DependencyKindModel && hasSource && req.SizeBytes == 0:
-		return []error{fmt.Errorf("%w: model %s has a source and no sizeBytes", ErrInvalidDependency, req.ID)}
+	if req.SizeBytes < 0 || (req.Kind == DependencyKindModel && hasSource && req.SizeBytes == 0) {
+		return []error{fmt.Errorf("%w: %s needs a sizeBytes above 0", ErrInvalidDependency, req.ID)}
 	}
 	return nil
 }
@@ -306,13 +303,12 @@ func getModelTitle(address string) string {
 
 // FindModelDependency returns the dependency of kind model that the manifest declares under id.
 func (m Manifest) FindModelDependency(id string) (DependencyRequirement, bool) {
-	i := slices.IndexFunc(m.Dependencies, func(req DependencyRequirement) bool {
-		return req.ID == id && req.Kind == DependencyKindModel
-	})
-	if id == "" || i < 0 {
-		return DependencyRequirement{}, false
+	for _, req := range m.Dependencies {
+		if id != "" && req.ID == id && req.Kind == DependencyKindModel {
+			return req, true
+		}
 	}
-	return m.Dependencies[i], true
+	return DependencyRequirement{}, false
 }
 
 // NewDeclaredModelFile returns the requirement that fetches a model a manifest declares. It is stored
@@ -322,17 +318,11 @@ func NewDeclaredModelFile(req DependencyRequirement) (DependencyRequirement, err
 	if req.Kind != DependencyKindModel || !dependencyChecksumPattern.MatchString(req.ChecksumSHA256) {
 		return DependencyRequirement{}, fmt.Errorf("%w: model %s has no checksumSha256", ErrInvalidDependency, req.ID)
 	}
-	metadata := maps.Clone(req.Metadata)
-	if metadata == nil {
-		metadata = map[string]string{}
-	}
+	metadata := map[string]string{}
+	maps.Copy(metadata, req.Metadata)
 	metadata[metadataTitle] = req.GetTitle()
 	return DependencyRequirement{
 		ID: req.ChecksumSHA256, Kind: DependencyKindModel, SourceURL: req.SourceURL, SourceURLs: slices.Clone(req.SourceURLs),
 		ChecksumSHA256: req.ChecksumSHA256, SizeBytes: req.SizeBytes, Metadata: metadata,
 	}, nil
-}
-
-func (req DependencyRequirement) isContentAddressed() bool {
-	return req.Kind == DependencyKindModel && req.ChecksumSHA256 != "" && req.ID == req.ChecksumSHA256 && req.Version == "" && len(req.Sources) == 0
 }

@@ -42,7 +42,7 @@ func Locate(ctx context.Context, cfg model.LocalModel, fetch Fetch) (onnx.ModelF
 	}
 	graph := path.Join(model.ModelFolder, file)
 	if len(cfg.Dependencies) > 0 {
-		return fetchDeclared(ctx, cfg.Name, graph, cfg.Dependencies, fetch.Dependency)
+		return fetchModelFiles(ctx, cfg.Name, graph, cfg.Dependencies, fetch.Dependency)
 	}
 	return onnx.PrepareModel(ctx, onnx.RepositoryModel{
 		Endpoint: os.Getenv("HF_ENDPOINT"), ID: cfg.Name, Revision: cfg.Revision,
@@ -50,7 +50,7 @@ func Locate(ctx context.Context, cfg model.LocalModel, fetch Fetch) (onnx.ModelF
 	}, getCacheRoot(), fetch.File)
 }
 
-func fetchDeclared(ctx context.Context, name, graph string, dependencies map[string]string, fetch FetchDependency) (onnx.ModelFiles, error) {
+func fetchModelFiles(ctx context.Context, name, graph string, dependencies map[string]string, fetch FetchDependency) (onnx.ModelFiles, error) {
 	if _, ok := dependencies[graph]; !ok {
 		return onnx.ModelFiles{}, fmt.Errorf("%s declares no file %s", name, graph)
 	}
