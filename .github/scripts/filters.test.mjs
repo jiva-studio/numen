@@ -45,7 +45,7 @@ const AREAS = [
   'workflows',
   'staging',
   'mutation_tool',
-  'sync_server',
+  'live',
 ]
 
 /** The areas the files make true. */
@@ -96,7 +96,7 @@ describe('the filters of the changed areas', () => {
       'plugins_all',
       'code',
       'go',
-      'sync_server',
+      'live',
     ])
     assert.deepEqual(getAreas('tsconfig.base.json'), [
       'ui',

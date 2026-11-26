@@ -1,4 +1,4 @@
-name: Sync Server
+name: Live
 
 # The tests that need the real sync server, started from its private images (tests/server): the Go
 # tests of plugins/tools-sync and the acceptance scenarios tagged @live. Called by ci.yml with the
@@ -9,7 +9,7 @@ name: Sync Server
 on:
   workflow_call:
     inputs:
-      sync_server:
+      live:
         type: boolean
         required: true
 
@@ -17,9 +17,9 @@ permissions:
   contents: read
 
 jobs:
-  sync-server:
-    name: Sync Server
-    if: inputs.sync_server
+  live:
+    name: Live Tests
+    if: inputs.live
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -56,7 +56,7 @@ jobs:
         uses: ./.github/actions/setup-go
         with:
           go-version-file: plugins/tools-sync/go.mod
-          cache-key: sync-server
+          cache-key: live
 
       - name: Log in to the registry
         if: steps.plan.outputs.run == 'true'
@@ -183,7 +183,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() && steps.plan.outputs.run == 'true' }}
         with:
-          name: sync-server-acceptance-videos
+          name: live-acceptance-videos
           path: ${{ runner.temp }}/failed-videos/
           if-no-files-found: ignore
           retention-days: 7

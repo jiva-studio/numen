@@ -176,9 +176,9 @@ mobile:
   - apps/mobile/go.sum
   - '!**/*.md'
 
-# The tests that need the real sync server (sync-server.yml): the Go tests of the sync plugin and
+# The tests that need the real sync server (live.yml): the Go tests of the sync plugin and
 # the acceptance scenarios tagged @live.
-sync_server:
+live:
   - *ci_router
   - *go_workspace
   - *identity_lib
@@ -188,7 +188,7 @@ sync_server:
   - tests/server/**
   - tests/acceptance/**
   - features/**
-  - .github/workflows/sync-server.yml
+  - .github/workflows/live.yml
   - '!**/*.md'
 
 # ---------------------------------------------------------------- Frontend
