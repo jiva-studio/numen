@@ -9,10 +9,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { execTool } from '../shared/tools.mjs'
-import { groupByVersion } from './changelog.mjs'
+import { countContributors, groupByVersion } from './changelog.mjs'
 import { createCheck } from './checks.mjs'
 import { collectRegistry } from './collect.mjs'
-import { listAddedPermissions, pairScreenshots, splitReadme } from './entry.mjs'
+import { getIcon, listAddedPermissions, pairScreenshots, splitReadme } from './entry.mjs'
 import { collectExternal, createGitHub, readArtifactPlatform } from './external.mjs'
 import { assertNoCollision, getContentHash, readSources } from './registry.mjs'
 
@@ -186,6 +186,73 @@ test('the quality of an internal plugin is read from the quality folder', async 
         },
       ],
     })
+  })
+})
+
+test('an internal plugin takes its contributors from the history of its folder', async () => {
+  await withRepository(async (root) => {
+    const [plugin] = (await collectOffline(root)).plugins
+
+    assert.deepEqual(plugin.contributors, [{ name: 'Test', commits: 4 }])
+  })
+})
+
+test('contributors are ordered by their commits, then by name', () => {
+  assert.deepEqual(countContributors(['Bea', 'Ann', 'Cid', 'Cid', 'Bea', 'Cid']), [
+    { name: 'Cid', commits: 3 },
+    { name: 'Bea', commits: 2 },
+    { name: 'Ann', commits: 1 },
+  ])
+})
+
+test('the icon is the first one the manifest declares on a tab kind, a command, a slot or a setting', () => {
+  assert.equal(
+    getIcon({
+      contributes: {
+        category: 'views',
+        slots: [{ icon: 'waypoints' }],
+        commands: [{ id: 'a' }, { id: 'b', icon: 'message-square' }],
+        tabKinds: [{ id: 'chat', icon: 'bot' }],
+      },
+    }),
+    'bot',
+  )
+  assert.equal(getIcon({ contributes: { slots: [{ icon: 'waypoints' }] } }), 'waypoints')
+  assert.equal(
+    getIcon({ settings: [{ key: 'model', icon: 'audio-lines' }], contributes: { category: 'engines' } }),
+    'audio-lines',
+  )
+})
+
+test('a plugin that declares no icon takes the icon of its category', async () => {
+  await withRepository(async (root) => {
+    const [plugin] = (await collectOffline(root)).plugins
+
+    assert.equal(plugin.icon, 'layout-panel-left')
+    assert.equal(getIcon({ contributes: { category: 'engines' } }), 'cpu')
+    assert.equal(getIcon({}), 'puzzle')
+  })
+})
+
+test('the registry lists the featured ids of the sources file', async () => {
+  await withRepository(async (root) => {
+    writeFileSync(
+      join(root, 'plugins', 'registry.json'),
+      JSON.stringify({ featured: ['org.example.notes'], external: [] }),
+    )
+
+    assert.deepEqual((await collectOffline(root)).featured, ['org.example.notes'])
+  })
+})
+
+test('a featured id that no plugin has is an error', async () => {
+  await withRepository(async (root) => {
+    writeFileSync(
+      join(root, 'plugins', 'registry.json'),
+      JSON.stringify({ featured: ['org.example.missing'], external: [] }),
+    )
+
+    await assert.rejects(collectOffline(root), /featured org\.example\.missing is not in the registry/)
   })
 })
 
@@ -398,6 +465,8 @@ test('an external plugin is read from its latest release', async () => {
     assert.equal(entry.isPaid, true)
     assert.equal(entry.license, 'MIT')
     assert.equal(entry.author, 'Someone')
+    assert.deepEqual(entry.contributors, [])
+    assert.equal(entry.icon, 'wrench')
     assert.deepEqual(entry.source, {
       kind: 'external',
       repo: REPO,

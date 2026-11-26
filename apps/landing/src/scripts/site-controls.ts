@@ -5,11 +5,6 @@ import { readStorageValue, writeStorageValue } from './storage'
 
 const I18N: Readonly<Record<string, Readonly<Record<string, string>>>> = { en: EN, ru: RU, sr: SR }
 
-/** The texts of a page language, English for a language the site does not have. */
-export function getDictionary(lang: string): Readonly<Record<string, string>> {
-  return I18N[lang] ?? EN
-}
-
 const ARROW_STEP: Readonly<Record<string, number>> = {
   ArrowRight: 1,
   ArrowDown: 1,

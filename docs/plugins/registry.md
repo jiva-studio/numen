@@ -7,10 +7,17 @@ The plugin catalog of numen.md (`/plugins`) is built from one JSON file, the reg
 Every folder of `plugins/` with a `manifest.json` is in the registry. Its entry takes:
 
 - the manifest, read against the schema of `manifest.proto`;
-- `README.md`: the text before `<!-- more -->` is the introduction the catalog card shows, and the whole README is the Overview of the plugin page;
+- `README.md`: the text before `<!-- more -->` is the introduction the catalog search and the page description use, and the whole README is the Overview of the plugin page;
 - `screenshots/<name>-light.webp` and `screenshots/<name>-dark.webp`, one pair per screenshot;
 - the changelog: the commits that touched the folder, grouped by the commit that changed the `version` of the manifest;
+- the contributors: the author names of the commits that touched the folder, with their commit counts;
 - the mutation score and the coverage of the nightly `mutation.yml` and `coverage.yml`, which publish them at `plugins/quality/mutation.json` and `plugins/quality/coverage.json`.
+
+Every entry, internal or external, has an `icon`: the lucide name of the first icon its manifest declares on a tab kind, a command, a slot or a setting, else the icon of its category (`agents` bot, `connections` plug, `engines` cpu, `readers` book-open, `themes` palette, `tools` wrench, `views` layout-panel-left).
+
+## Featured plugins
+
+`featured` in `plugins/registry.json` lists the ids the catalog shows first, in order: the first three as cards with a screenshot, the first seven as the icons above the title. An id that is not in the registry fails the collection.
 
 ## Plugins of other repositories
 
@@ -28,7 +35,7 @@ The release carries one artifact per platform, named with the system (`darwin` o
 
 ## Checks
 
-The registry runs these checks itself and shows them on the Scorecard of each plugin:
+The registry runs these checks itself and shows them on the Access & tests tab of each plugin page:
 
 | Check | Internal | External |
 | --- | --- | --- |

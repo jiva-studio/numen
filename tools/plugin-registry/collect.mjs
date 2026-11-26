@@ -30,9 +30,11 @@ import { collectExternal, createGitHub } from './external.mjs'
 import { collectInternal, readRepositoryLicense } from './internal.mjs'
 import { readQualityFiles } from './quality.mjs'
 import {
+  assertFeaturedKnown,
   assertNoCollision,
   createRegistry,
   formatRegistry,
+  readFeatured,
   readSources,
 } from './registry.mjs'
 
@@ -109,7 +111,10 @@ export const collectRegistry = async ({
     internals.map((one, index) => ({ id: one.id, folder: folders[index] })),
   )
   const externals = await collectExternals(externalSources, context, isOffline)
-  return createRegistry([...internals, ...externals], generatedAt)
+  const plugins = [...internals, ...externals]
+  const featured = readFeatured(sources)
+  assertFeaturedKnown(featured, plugins)
+  return createRegistry(plugins, generatedAt, featured)
 }
 
 const readOption = (args, name, fallback) =>

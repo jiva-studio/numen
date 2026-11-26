@@ -45,6 +45,34 @@ export const readSources = (file) => {
 }
 
 /**
+ * The ids the catalog features, in order, listed in `file`: `{ "featured": ["<id>", …] }`. A
+ * missing file or list features none.
+ *
+ * @param {string} file
+ * @returns {string[]}
+ */
+export const readFeatured = (file) => {
+  if (!existsSync(file)) return []
+  const rows = JSON.parse(readFileSync(file, 'utf8'))?.featured ?? []
+  if (!Array.isArray(rows) || !rows.every((id) => typeof id === 'string' && id !== '')) {
+    throw new Error(`${file}: "featured" is not a list of plugin ids`)
+  }
+  return rows
+}
+
+/**
+ * Throws when a featured id is not the id of a plugin of the registry.
+ *
+ * @param {string[]} featured
+ * @param {{ id: string }[]} plugins
+ */
+export const assertFeaturedKnown = (featured, plugins) => {
+  const ids = new Set(plugins.map((one) => one.id))
+  const unknown = featured.filter((id) => !ids.has(id))
+  if (unknown.length > 0) throw new Error(`featured ${unknown.join(', ')} is not in the registry`)
+}
+
+/**
  * Throws when an external source repeats an id, or takes the id or the folder name of an internal
  * plugin.
  *
@@ -82,17 +110,25 @@ export const getContentHash = (registry) =>
   createHash('sha256').update(JSON.stringify(stripVolatile(registry))).digest('hex')
 
 /**
- * The registry document of `plugins`, ordered by id.
+ * The registry document of `plugins`, ordered by id, and the ids the catalog features.
  *
  * @param {object[]} plugins - the entries
  * @param {string} generatedAt - ISO time
+ * @param {string[]} [featured] - plugin ids, in the order the catalog shows them
  */
-export const createRegistry = (plugins, generatedAt) => {
+export const createRegistry = (plugins, generatedAt, featured = []) => {
   const body = {
     schema: REGISTRY_SCHEMA,
+    featured,
     plugins: [...plugins].sort((a, b) => a.id.localeCompare(b.id)),
   }
-  return { schema: REGISTRY_SCHEMA, generatedAt, contentHash: getContentHash(body), plugins: body.plugins }
+  return {
+    schema: REGISTRY_SCHEMA,
+    generatedAt,
+    contentHash: getContentHash(body),
+    featured,
+    plugins: body.plugins,
+  }
 }
 
 /** The text a registry file holds. */

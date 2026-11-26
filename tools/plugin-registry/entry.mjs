@@ -14,6 +14,35 @@ export const OFFICIAL_PREFIX = 'md.numen.'
 
 const SCREENSHOT = /^(.+)-(light|dark)\.webp$/
 
+/** The lucide icon of a plugin whose manifest declares none, by category. */
+export const CATEGORY_ICONS = {
+  agents: 'bot',
+  connections: 'plug',
+  engines: 'cpu',
+  readers: 'book-open',
+  themes: 'palette',
+  tools: 'wrench',
+  views: 'layout-panel-left',
+}
+
+/** The lucide icon of a plugin of no known category that declares no icon. */
+export const DEFAULT_ICON = 'puzzle'
+
+/**
+ * The lucide icon a plugin is shown with: the first icon its manifest declares on a tab kind, a
+ * command, a slot or a setting, in that order, else the icon of its category.
+ *
+ * @param {Record<string, any>} json - the output of `toManifestJson`
+ * @returns {string}
+ */
+export const getIcon = (json) => {
+  const contributes = json.contributes ?? {}
+  const declared = [contributes.tabKinds, contributes.commands, contributes.slots, json.settings]
+    .flatMap((list) => list ?? [])
+    .find((one) => one.icon)?.icon
+  return declared ?? CATEGORY_ICONS[contributes.category] ?? DEFAULT_ICON
+}
+
 /**
  * A README split for the catalog: `intro` is the text before `<!-- more -->` and `text` is the
  * whole README, both without the first-level heading the README opens with and without the
@@ -89,6 +118,7 @@ export const describeManifest = (json) => {
     description: json.description ?? '',
     category: contributes.category ?? '',
     feature: contributes.feature ?? '',
+    icon: getIcon(json),
     targets: json.targets ?? [],
     isOfficial: json.id.startsWith(OFFICIAL_PREFIX),
     isPaid: licenses.length > 0,

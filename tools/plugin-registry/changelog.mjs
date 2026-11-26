@@ -73,14 +73,37 @@ export const groupByVersion = (commits, versions, limit = CHANGELOG_VERSIONS) =>
 }
 
 /**
- * The changelog and last change date of the plugin folder `folder` under `plugins/`.
+ * The authors of `names`, one name per commit, with their commit counts: most commits first, then
+ * by name.
+ *
+ * @param {string[]} names
+ * @returns {{ name: string, commits: number }[]}
+ */
+export const countContributors = (names) => {
+  const counts = new Map()
+  for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1)
+  return [...counts]
+    .map(([name, commits]) => ({ name, commits }))
+    .sort((a, b) => b.commits - a.commits || a.name.localeCompare(b.name))
+}
+
+/** The author names of the commits that touched `path`, with their commit counts. */
+export const readContributors = (root, path) =>
+  countContributors(runGit(root, ['log', '--format=%aN', '--', path]).split('\n').filter(Boolean))
+
+/**
+ * The changelog, last change date and contributors of the plugin folder `folder` under `plugins/`.
  *
  * @param {string} root - the repository root
  * @param {string} folder - the plugin folder name
- * @returns {{ changelog: { version: string, date: string, changes: string[] }[], updatedAt: string | null }}
+ * @returns {{ changelog: { version: string, date: string, changes: string[] }[], updatedAt: string | null, contributors: { name: string, commits: number }[] }}
  */
 export const readInternalHistory = (root, folder) => {
   const commits = readCommits(root, `plugins/${folder}`)
   const versions = readVersions(root, `plugins/${folder}/manifest.json`)
-  return { changelog: groupByVersion(commits, versions), updatedAt: commits[0]?.date ?? null }
+  return {
+    changelog: groupByVersion(commits, versions),
+    updatedAt: commits[0]?.date ?? null,
+    contributors: readContributors(root, `plugins/${folder}`),
+  }
 }

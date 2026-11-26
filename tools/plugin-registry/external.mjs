@@ -289,6 +289,7 @@ export const collectExternal = async (source, context) => {
       etag: latest.etag,
     },
     author: source.author,
+    contributors: [],
     license,
     platforms: [...new Set(artifacts.map((one) => one.platform))].sort(),
     readme: readme && { intro: readme.intro, text: readme.text },

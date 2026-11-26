@@ -69,7 +69,7 @@ export const collectInternal = async (folder, context) => {
     listScreenshotFiles(join(dir, 'screenshots')),
     (name) => `plugins/${folder}/screenshots/${name}`,
   )
-  const { changelog, updatedAt } = readInternalHistory(context.root, folder)
+  const { changelog, updatedAt, contributors } = readInternalHistory(context.root, folder)
   const previous = context.previousById.get(fields.id)
   const permissionsAdded = listAddedPermissions(fields, previous)
   const downloads = await describeDownloads(json.dependencies, context.knownSizes, context.getSize)
@@ -82,6 +82,7 @@ export const collectInternal = async (folder, context) => {
       url: `https://github.com/${INTERNAL_REPO}/tree/main/plugins/${folder}`,
     },
     author: INTERNAL_AUTHOR,
+    contributors,
     license: context.license,
     platforms: APP_PLATFORMS,
     readme: readme && { intro: readme.intro, text: readme.text },
