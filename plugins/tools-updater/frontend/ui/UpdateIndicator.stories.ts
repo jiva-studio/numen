@@ -51,6 +51,7 @@ export const Available: Story = {
 
 /** The chip in the title bar of the window while an update waits, its tooltip shown. */
 export const InTheWindow: Story = {
+  ...Available,
   tags: ['screenshot'],
   parameters: {
     frame: { place: 'title-status' },
@@ -61,5 +62,4 @@ export const InTheWindow: Story = {
     setup: () => ({ args }),
     template: '<UpdateIndicator v-bind="args" />',
   }),
-  play: Available.play,
 }

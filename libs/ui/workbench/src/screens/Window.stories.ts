@@ -778,6 +778,7 @@ export const Filing: Story = {
 
 /** The search over everything the window holds, with the bars of the window above and below it. */
 export const SearchingInTheWindow: Story = {
+  ...Searching,
   tags: ['screenshot'],
   parameters: {
     screenshot: [{ name: 'search', plugin: 'engines-embeddings' }],
@@ -796,11 +797,11 @@ export const SearchingInTheWindow: Story = {
       panel: 'search',
       hasBars: true,
     }),
-  play: Searching.play,
 }
 
 /** The commands over a scanned book, with the bars of the window above and below it. */
 export const RecognisingInTheWindow: Story = {
+  ...Recognising,
   tags: ['screenshot'],
   parameters: {
     screenshot: [
@@ -823,5 +824,4 @@ export const RecognisingInTheWindow: Story = {
       commands: FILE_COMMANDS,
       hasBars: true,
     }),
-  play: Recognising.play,
 }

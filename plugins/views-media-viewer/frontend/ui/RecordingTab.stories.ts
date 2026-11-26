@@ -130,6 +130,7 @@ const LECTURE = { title: 'Lecture 4', icon: 'audio' }
 
 /** The lecture playing in a tab of the window, beside the note it is about. */
 export const InTheWindow: Story = {
+  ...Playing,
   tags: ['screenshot'],
   parameters: {
     frame: {
@@ -142,7 +143,6 @@ export const InTheWindow: Story = {
     screenshot: [{ name: 'recording' }],
   },
   render: render(SPOKEN, true, true, 'h-full'),
-  play: Playing.play,
 }
 
 /** The transcript of the lecture, a time against each paragraph, in a tab of the window. */

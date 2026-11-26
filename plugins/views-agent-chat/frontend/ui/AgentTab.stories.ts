@@ -28,14 +28,17 @@ const createRecordedState =
     return useAgentConversation(conversation, deps)
   }
 
-const createTab = (createState: (deps: AgentTabDeps) => AgentTabState) =>
+const createTab = (
+  createState: (deps: AgentTabDeps) => AgentTabState,
+  size = { width: '100vw', height: '100vh' },
+  host: HostOptions = {},
+) =>
   defineComponent({
     name: 'AgentKindTab',
     setup() {
-      const { kind } = createAgentKind(createHost().host, createState, AgentTab)
+      const { kind } = createAgentKind(createHost(host).host, createState, AgentTab)
       const state = kind.open!('', 'agent:story')
-      return () =>
-        h('div', { style: { width: '100vw', height: '100vh' } }, [h(AgentTab, { state })])
+      return () => h('div', { style: size }, [h(AgentTab, { state })])
     },
   })
 
@@ -209,14 +212,7 @@ const VAULT: HostOptions = {
 }
 
 const createPaneTab = (createState: (deps: AgentTabDeps) => AgentTabState) =>
-  defineComponent({
-    name: 'AgentPaneTab',
-    setup() {
-      const { kind } = createAgentKind(createHost(VAULT).host, createState, AgentTab)
-      const state = kind.open!('', 'agent:story')
-      return () => h('div', { style: { width: '100%', height: '100%' } }, [h(AgentTab, { state })])
-    },
-  })
+  createTab(createState, { width: '100%', height: '100%' }, VAULT)
 
 const DEMON: readonly Turn[] = [
   { id: 'a', voice: 'prompt', text: "Why doesn't Maxwell's demon break the second law?" },

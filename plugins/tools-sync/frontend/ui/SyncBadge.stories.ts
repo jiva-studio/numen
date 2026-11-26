@@ -60,16 +60,15 @@ export const Hidden: Story = {
 
 /** The badge in the title bar of the window while the vault syncs. */
 export const InTheWindow: Story = {
+  ...Syncing,
   tags: ['screenshot'],
   parameters: {
     frame: { place: 'title-status' },
     screenshot: [{ name: 'sync' }],
   },
-  args: { phase: 'syncing' },
   render: (args) => ({
     components: { SyncBadge },
     setup: () => ({ args }),
     template: '<SyncBadge v-bind="args" />',
   }),
-  play: Syncing.play,
 }

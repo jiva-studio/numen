@@ -119,6 +119,7 @@ export const OpenAndClose: Story = {
 
 /** The item in the title bar of the window, with its popover open over the note. */
 export const InTheWindow: Story = {
+  ...Open,
   tags: ['screenshot'],
   parameters: {
     frame: { place: 'title-status' },
@@ -129,5 +130,4 @@ export const InTheWindow: Story = {
     setup: () => ({ args }),
     template: '<StatsIndicator v-bind="args" />',
   }),
-  play: Open.play,
 }
