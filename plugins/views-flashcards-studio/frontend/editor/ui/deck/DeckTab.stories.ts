@@ -107,6 +107,14 @@ const DECK_STATE: DeckTabState = {
 
 /** The cards of a deck, under the sections they stand in. */
 export const Deck: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'deck', app: 'docs' },
+      { name: 'window-deck', app: 'landing' },
+      { name: 'deck' },
+    ],
+  },
   render: () => ({
     components: { DeckTab },
     setup: () => ({ state: DECK_STATE }),

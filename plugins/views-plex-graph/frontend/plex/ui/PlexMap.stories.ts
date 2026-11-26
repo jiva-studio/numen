@@ -160,6 +160,14 @@ type Story = StoryObj<typeof meta>
 
 /** The map with the menu open on a node. */
 export const Mapping: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'plex', app: 'docs' },
+      { name: 'window-graph', app: 'landing', over: '[aria-label="The second law, child"]' },
+      { name: 'map', over: '[aria-label="The second law, child"]' },
+    ],
+  },
   render: () =>
     map({
       creatable: RELATION_NAMES,

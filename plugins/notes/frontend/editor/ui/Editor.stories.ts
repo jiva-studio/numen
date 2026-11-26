@@ -50,7 +50,15 @@ const renderEditor =
   })
 
 /** One of everything: headings, marks, lists, a rule, a table, code and maths. */
-export const Playground: Story = { render: renderEditor(MARKED_UP) }
+export const Playground: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'editor', width: 900, height: 600 },
+    ],
+  },
+  render: renderEditor(MARKED_UP),
+}
 
 /** The marks as they are written, with nothing drawn for them. */
 export const AsWritten: Story = { render: renderEditor(MARKED_UP, { isLive: false }) }
@@ -171,7 +179,15 @@ export const ClickLandsOnTheLine: Story = {
  * moves between cells and adds a row at the end, Escape leaves the table, and
  * the buttons on its edges add a row or a column.
  */
-export const Table: Story = { render: renderEditor(TABLE) }
+export const Table: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'table', app: 'docs' },
+    ],
+  },
+  render: renderEditor(TABLE),
+}
 
 const renderWithSource =
   (text: string): Render =>

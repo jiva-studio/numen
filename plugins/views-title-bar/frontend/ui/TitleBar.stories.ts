@@ -119,6 +119,12 @@ const getPage = (canvas: HTMLElement) => within(canvas.ownerDocument.body)
 
 /** The bar of a window with a vault open, three commands in two groups and one view. */
 export const Default: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'title-bar', width: 1000, height: 80, drawn: 1_000 },
+    ],
+  },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(title(canvasElement).textContent).toBe('numen — Orchard notes'))
     await expect(getShownIds(canvasElement)).toStrictEqual(['files', 'plex', 'note'])

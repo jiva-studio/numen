@@ -29,6 +29,12 @@ type Story = StoryObj
  * One time is set against each timed paragraph, however many rows the paragraph wraps over.
  */
 export const Timed: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'transcript', plugin: 'engines-transcription', width: 900, height: 600 },
+    ],
+  },
   render: () => ({
     components: { TranscriptText },
     setup: () => {

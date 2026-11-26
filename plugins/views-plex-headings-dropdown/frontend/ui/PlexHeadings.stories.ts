@@ -89,6 +89,13 @@ const getRows = () => [...document.querySelectorAll('.headings__row')]
 
 /** The pointer resting on the node brings the first six of its headings out under the box, over the window, and leaving puts them away. */
 export const Nesting: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'parts', app: 'docs', over: '.node' },
+      { name: 'headings', over: '.node' },
+    ],
+  },
   play: async ({ canvasElement }) => {
     const view = getView(canvasElement)
     await expect(getRows()).toHaveLength(0)

@@ -165,6 +165,12 @@ const drawSettings = () =>
 
 /** The settings of the window and of every plugin installed, each reached from its row. */
 export const Settings: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'settings', app: 'docs' },
+    ],
+  },
   render: () => drawSettings(),
 }
 

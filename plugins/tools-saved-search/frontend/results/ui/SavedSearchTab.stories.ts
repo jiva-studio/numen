@@ -32,6 +32,12 @@ type Story = StoryObj<Knobs>
 
 /** The dot of fresh results, the edit button, two passages with their places and a whole file as a file row. */
 export const ShowsTheResults: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'results', width: 900, height: 600 },
+    ],
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 

@@ -25,6 +25,12 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Syncing: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'sync', width: 240, height: 64, drawn: 500 },
+    ],
+  },
   args: {
     phase: 'syncing',
   },

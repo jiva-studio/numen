@@ -111,6 +111,12 @@ const getRowOf = (popover: HTMLElement, name: string) =>
  * the worst health item of an unhealthy plugin, and the time until an idle one stops.
  */
 export const Open: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'plugins', width: 640, height: 520, drawn: 3_000 },
+    ],
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)

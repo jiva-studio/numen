@@ -482,6 +482,18 @@ const getPane = (canvas: HTMLElement, id: string): HTMLElement => {
 }
 
 export const Writing: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'window', app: 'docs' },
+      { name: 'writing', app: 'docs' },
+      { name: 'theme-dracula', app: 'docs', preset: 'dracula' },
+      { name: 'theme-solarized', app: 'docs', preset: 'solarized' },
+      { name: 'window-editor', app: 'landing' },
+      { name: 'dracula', plugin: 'themes-presets', preset: 'dracula' },
+      { name: 'solarized', plugin: 'themes-presets', preset: 'solarized' },
+    ],
+  },
   render: () =>
     screen({
       workspace: () => ({
@@ -516,6 +528,14 @@ export const Writing: Story = {
 
 /** The palette, over everything the window holds. */
 export const Searching: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'searching', app: 'docs' },
+      { name: 'window-search', app: 'landing' },
+      { name: 'search', plugin: 'engines-embeddings' },
+    ],
+  },
   render: () =>
     screen({
       workspace: () => ({
@@ -544,6 +564,12 @@ export const Searching: Story = {
 
 /** The commands, in the three groups they are drawn in. */
 export const Commanding: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'commands', app: 'docs' },
+    ],
+  },
   render: () =>
     screen({
       workspace: () => ({
@@ -573,6 +599,13 @@ export const Commanding: Story = {
 
 /** The agent next to the note it is being queried about. */
 export const Asking: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'asking', app: 'docs' },
+      { name: 'window-agent', app: 'landing' },
+    ],
+  },
   render: () =>
     screen({
       workspace: () => ({
@@ -608,6 +641,15 @@ export const Asking: Story = {
  * with the plugin that recognises text.
  */
 export const Recognising: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'recognise', app: 'docs' },
+      { name: 'window-ocr', app: 'landing' },
+      { name: 'recognise', plugin: 'engines-ocr' },
+      { name: 'proofread', plugin: 'tools-proofreading' },
+    ],
+  },
   render: () =>
     screen({
       workspace: () => ({
@@ -641,6 +683,13 @@ export const Recognising: Story = {
 
 /** The folders of the vault, with rows chosen across two of them. */
 export const Filing: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'files', app: 'docs' },
+      { name: 'window-files', app: 'landing' },
+    ],
+  },
   render: () =>
     screen({
       workspace: () => ({

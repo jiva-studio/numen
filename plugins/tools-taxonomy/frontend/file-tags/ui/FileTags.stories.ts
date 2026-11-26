@@ -67,6 +67,12 @@ export const OneTag: Story = {
 
 /** A file with four tags draws four dots and no count. */
 export const FourTags: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'file-tags', width: 480, height: 160, drawn: 1_000 },
+    ],
+  },
   args: { count: 4 },
   play: async ({ canvasElement }) => {
     const dots = within(canvasElement).getByLabelText('Port, Sea, Quay, Dock')

@@ -196,6 +196,12 @@ const waitForSettledLayout = (canvasElement: HTMLElement) =>
 
 /** Turn the pages, set the text larger, and watch the offset in front follow. */
 export const Playground: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'book' },
+    ],
+  },
   decorators: [WIDE],
   render: activeReading(createChapter([...VERSES, ...PROSE])),
 }

@@ -37,6 +37,12 @@ type Story = StoryObj<typeof meta>
 
 /** Three names under a note; choosing one reports the path of its note. */
 export const ChoosesAName: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'names', width: 400, height: 240, drawn: 1_000 },
+    ],
+  },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(

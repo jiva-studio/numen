@@ -20,8 +20,6 @@ import {
   readBracketedText,
   readWords,
 } from '../../../tools/ci-commands/commands.mjs'
-import { hasPreset } from '../../../tools/ci-stories/presets.mjs'
-import { faults, proves, stories } from '../../../tools/ci-stories/stories.mjs'
 import { cell } from './cell.mjs'
 
 const EDITOR = new URL('../../desktop/editor/src/', import.meta.url)
@@ -599,33 +597,6 @@ const cli = async () => {
   )
 }
 
-/* --------------------------------------------------------------- pictures */
-
-/**
- * Every picture in the manual is a story drawn in a palette, and a story or a
- * palette renamed is a picture that cannot be taken again. Both are held
- * against the tree here, so the renaming is caught where it happens rather
- * than the next time somebody runs the camera.
- *
- * What a story is called and what is wrong with a shot are `@numen/stories`,
- * which the landing page holds its own pictures to as well.
- */
-const pictured = async () => {
-  const { SHOTS } = await import('./shots.mjs')
-
-  const unproved = proves()
-  if (unproved) die(unproved)
-
-  const missing = faults(SHOTS, await stories())
-  if (missing.length > 0) die(missing.join('; '))
-
-  for (const shot of SHOTS) {
-    if (shot.preset && !hasPreset(shot.preset)) {
-      die(`no palette called ${shot.preset} — the picture of it cannot be taken again`)
-    }
-  }
-}
-
 /* ------------------------------------------------- what the rules refuse */
 
 /**
@@ -699,7 +670,6 @@ const checking = process.argv.includes('--check')
 let drifted = false
 
 refuses()
-await pictured()
 
 for (const [name, write] of WRITES) {
   const page = await read(PAGES, name)

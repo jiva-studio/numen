@@ -38,6 +38,12 @@ type Story = StoryObj<typeof meta>
 
 /** An update waits: the chip names the new version and says an update is available. */
 export const Available: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'update', width: 400, height: 120, drawn: 1_000 },
+    ],
+  },
   play: async ({ canvasElement }) => {
     const chip = within(canvasElement).getByRole('button')
     await expect(chip.textContent?.trim()).toBe('v2026.11.12')

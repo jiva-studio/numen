@@ -57,6 +57,12 @@ export const Empty: Story = {
 
 /** A question and its answer, drawn one above the other. */
 export const Answered: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'agent', width: 760, height: 740 },
+    ],
+  },
   render: () => ({
     components: {
       Tab: createTab(

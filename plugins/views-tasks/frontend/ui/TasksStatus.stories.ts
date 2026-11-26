@@ -60,7 +60,15 @@ const assertFailed: NonNullable<Story['play']> = async ({ canvasElement }) => {
 export const Idle: Story = { play: assertIdle }
 
 /** Tasks run: the ring is filled by the progress and the chip counts the tasks done. */
-export const Active: Story = { args: { tasks: RUNNING }, play: assertActive }
+export const Active: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'status', width: 360, height: 48, drawn: 500 },
+    ],
+  },
+  args: { tasks: RUNNING }, play: assertActive,
+}
 
 /** A task failed: the chip keeps its text and says how many failed. */
 export const Failed: Story = { args: { tasks: FAILED }, play: assertFailed }

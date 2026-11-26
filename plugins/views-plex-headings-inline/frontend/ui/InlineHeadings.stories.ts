@@ -33,6 +33,12 @@ type Story = StoryObj<typeof meta>
 
 /** Three headings under a note, each after a hash; choosing one reports its line. */
 export const ChoosesAHeading: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'headings', width: 320, height: 200, drawn: 1_000 },
+    ],
+  },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(await canvas.findByRole('button', { name: '# The arrow of time' }))

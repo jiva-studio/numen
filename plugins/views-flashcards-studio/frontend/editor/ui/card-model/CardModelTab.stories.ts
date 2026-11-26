@@ -83,6 +83,13 @@ const CARD_MODEL_STATE: CardModelTabState = {
 
 /** The fields a card model names, and the templates that show them. */
 export const CardModel: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'card-model', app: 'docs' },
+      { name: 'window-card-model', app: 'landing' },
+    ],
+  },
   render: () => ({
     components: { CardModelTab },
     setup: () => ({ state: CARD_MODEL_STATE }),

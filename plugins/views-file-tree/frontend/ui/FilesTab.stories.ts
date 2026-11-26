@@ -5,12 +5,13 @@
  * row inside a folder relative to the folder, and the position of the row menu.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { createFileTree, ROOT } from '../model/useFileTree'
+import type { CommandItem, SlotCommand, SlotItem } from '@numen/plugin-sdk'
 import type { Entry } from '../types'
-import { renderDeps, ROW_MENU } from '../fixtures/host'
+import { NEW_MENU, OPEN, renderDeps, ROW_MENU, TRASH } from '../fixtures/host'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
@@ -34,8 +35,17 @@ const VAULT: Record<string, readonly Entry[]> = {
   physics: [file('physics/Kelvin.md')],
 }
 
-const createFilesTab = (open: readonly string[]): FilesTabState => {
-  const list = createFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
+/** What a vault and the plugins of a window give a files tab. */
+interface Room {
+  readonly vault: Record<string, readonly Entry[]>
+  readonly entries: readonly SlotItem[]
+  readonly items: Readonly<Record<string, readonly CommandItem[]>>
+}
+
+const PLAIN: Room = { vault: VAULT, entries: ROW_MENU, items: {} }
+
+const createFilesTab = (open: readonly string[], room: Room): FilesTabState => {
+  const list = createFileTree({ list: async (folderPath: string) => room.vault[folderPath] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
     window: {
       ...renderDeps,
@@ -44,8 +54,8 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
       showError: () => undefined,
     },
     menu: {
-      listItems: async () => [],
-      getMenuEntries: () => ROW_MENU,
+      listItems: async (command) => room.items[command] ?? [],
+      getMenuEntries: () => room.entries,
       runCommand: async () => '',
     },
     transfer: {
@@ -73,10 +83,10 @@ export default meta
 type Story = StoryObj
 
 const room =
-  (open: readonly string[] = []) =>
+  (open: readonly string[] = [], given: Room = PLAIN) =>
   () => ({
     components: { FilesTab },
-    setup: () => ({ state: createFilesTab(open) }),
+    setup: () => ({ state: createFilesTab(open, given) }),
     template: `<div class="numen h-screen bg-surface" style="inline-size: 20rem"><FilesTab :state="state" /></div>`,
   })
 
@@ -106,6 +116,12 @@ export const TheVault: Story = {
 
 /** A folder open, with its contents set in under it. */
 export const AFolderOpened: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'files', width: 400, height: 480, drawn: 2_000 },
+    ],
+  },
   render: room(['physics']),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(5))
@@ -136,5 +152,85 @@ export const TheMenuOnARow: Story = {
     await expect(transcriptText).toContain('Move to trash')
 
     await expect(document.body.querySelector('[role="menu"]')).toBeVisible()
+  },
+}
+
+const createCommand = (pluginId: string, id: string, title: string): SlotCommand => ({
+  kind: 'command',
+  key: `${pluginId}/command/${id}`,
+  pluginId,
+  command: `${pluginId}:${id}`,
+  title,
+  shortcut: '',
+  hasItems: true,
+})
+
+const FROM_TEMPLATE = createCommand('md.numen.tools.templates', 'note.createFromTemplate', 'New note from template')
+
+/** A vault with a folder of templates, and the New menu the Templates plugin adds to. */
+const TEMPLATES: Room = {
+  vault: {
+    [ROOT]: [folder('Garden'), folder('Templates'), file('Inbox.md')],
+    Garden: [file('Garden/Beds.md'), file('Garden/Greenhouse.md')],
+  },
+  entries: [{ ...NEW_MENU, entries: [...NEW_MENU.entries, FROM_TEMPLATE] }, { kind: 'separator', key: 'separator/1' }, TRASH],
+  items: {
+    [FROM_TEMPLATE.command]: [
+      { id: 'Templates/Daily.md', title: 'Daily' },
+      { id: 'Templates/Planting plan.md', title: 'Planting plan' },
+      { id: 'Templates/Seed order.md', title: 'Seed order' },
+    ],
+  },
+}
+
+const getMenuItem = (name: string) => within(document.body).findByRole('menuitem', { name })
+
+/** The templates of the vault offered under New on a folder. */
+export const TemplatesUnderNew: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [{ name: 'new-from-template', plugin: 'tools-templates', width: 720, height: 420, drawn: 5_000 }],
+  },
+  render: room([], TEMPLATES),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(rows(canvasElement)).toHaveLength(3))
+    const garden = rows(canvasElement)[0] as HTMLElement
+    await userEvent.pointer({ target: garden, keys: '[MouseRight]' })
+    await userEvent.click(await getMenuItem('New'))
+    await userEvent.click(await getMenuItem('New note from template'))
+    await expect(await getMenuItem('Planting plan')).toBeVisible()
+  },
+}
+
+const DOWNLOAD = createCommand('md.numen.tools.media.importer', 'link.downloadMedia', 'Download media')
+
+/** A vault with a link note, and the row menu the Media Importer plugin adds to. */
+const LINKS: Room = {
+  vault: {
+    [ROOT]: [folder('Talks'), file('Soil and compost.md', { type: 'link' }), file('Inbox.md')],
+  },
+  entries: [OPEN, { kind: 'separator', key: 'separator/1' }, DOWNLOAD, { kind: 'separator', key: 'separator/2' }, TRASH],
+  items: {
+    [DOWNLOAD.command]: [
+      { id: 'video', title: 'Video' },
+      { id: 'audio', title: 'Audio only' },
+    ],
+  },
+}
+
+/** The media of a link note offered to download from its row. */
+export const MediaOfALink: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [{ name: 'download-media', plugin: 'tools-media-importer', width: 720, height: 420, drawn: 5_000 }],
+  },
+  render: room([], LINKS),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(rows(canvasElement)).toHaveLength(3))
+    const link = rows(canvasElement)[1] as HTMLElement
+    await userEvent.click(link)
+    await userEvent.pointer({ target: link, keys: '[MouseRight]' })
+    await userEvent.click(await getMenuItem('Download media'))
+    await expect(await getMenuItem('Audio only')).toBeVisible()
   },
 }

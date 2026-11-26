@@ -59,6 +59,12 @@ type Story = StoryObj<typeof meta>
 
 /** The item over the vectors and the chunks that should carry one, and its popover with one row per kind that holds sources. */
 export const Open: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'index', width: 640, height: 520, drawn: 3_000 },
+    ],
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(await canvas.findByRole('button', { name: /12,480/ }))

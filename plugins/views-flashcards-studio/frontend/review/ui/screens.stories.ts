@@ -240,6 +240,13 @@ type Story = StoryObj
 
 /** What the vault has due today: the goals, the days answered, and the decks. */
 export const CardsDue: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'decks', app: 'docs', width: 760, height: 540 },
+      { name: 'window-cards-due', app: 'landing', width: 760, height: 940 },
+    ],
+  },
   render: () =>
     frame(
       h(Decks, {
@@ -256,6 +263,14 @@ export const CardsDue: Story = {
 
 /** One card, answered: the four ways of saying it, and where each leaves it. */
 export const Reviewing: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'session', app: 'docs', width: 760, height: 540 },
+      { name: 'window-review', app: 'landing', width: 760, height: 940 },
+      { name: 'review', width: 760, height: 540 },
+    ],
+  },
   render: () =>
     frame(
       h(Session, {

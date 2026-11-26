@@ -120,6 +120,13 @@ type Story = StoryObj<typeof meta>
 
 /** The book open at the page the search landed on. */
 export const Reading: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'reader', app: 'docs' },
+      { name: 'reader' },
+    ],
+  },
   render: () => ({
     components: { Reader },
     setup() {

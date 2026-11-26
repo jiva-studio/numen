@@ -89,6 +89,14 @@ const render = (cues: readonly Cue[], canCreateText: boolean, isPlaying: boolean
 
 /** A lecture playing, with the words heard in it under the player. */
 export const Playing: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'recording', app: 'docs' },
+      { name: 'window-audio', app: 'landing' },
+      { name: 'recording' },
+    ],
+  },
   render: render(SPOKEN, true, true),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -101,6 +109,13 @@ export const Playing: Story = {
 
 /** A recording nothing has written down, and the run that would. */
 export const NoTranscript: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'transcribe', app: 'docs', drawn: 5_000 },
+      { name: 'window-transcript', app: 'landing', drawn: 5_000 },
+    ],
+  },
   render: render([], true, false),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
