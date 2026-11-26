@@ -278,30 +278,30 @@ const AGENT_OPTIONS: Readonly<Record<string, readonly string[]>> = {
 const createChoosingState =
   (rows: typeof AGENT_ROWS) =>
   (deps: AgentTabDeps): AgentTabState => {
-  const { host } = createAgentConnections(
-    { frames: [] },
-    {
-      rows,
-      listOptions: (connectionId, field) =>
-        (AGENT_OPTIONS[`${connectionId}:${field}`] ?? []).map((title) => ({
-          value: title.toLowerCase().replace(/ /g, '-'),
-          title,
-          group: '',
-        })),
-    },
-  )
-  const list = createAgentList(host, WORDS)
-  list.reload().catch(() => undefined)
-  const choice = useAgentChoice(host, list)
-  const conversation: Conversation = {
-    turns: ref([...DEMON]),
-    isAnswerPending: ref(false),
-    ask: async () => undefined,
-    getSourcePath: () => null,
-    stop: () => undefined,
+    const { host } = createAgentConnections(
+      { frames: [] },
+      {
+        rows,
+        listOptions: (connectionId, field) =>
+          (AGENT_OPTIONS[`${connectionId}:${field}`] ?? []).map((title) => ({
+            value: title.toLowerCase().replace(/ /g, '-'),
+            title,
+            group: '',
+          })),
+      },
+    )
+    const list = createAgentList(host, WORDS)
+    list.reload().catch(() => undefined)
+    const choice = useAgentChoice(host, list)
+    const conversation: Conversation = {
+      turns: ref([...DEMON]),
+      isAnswerPending: ref(false),
+      ask: async () => undefined,
+      getSourcePath: () => null,
+      stop: () => undefined,
+    }
+    return useAgentConversation(conversation, deps, choice)
   }
-  return useAgentConversation(conversation, deps, choice)
-}
 
 /** The rows of the agents with Antigravity first, on a model of its own. */
 const ANTIGRAVITY_FIRST: typeof AGENT_ROWS = [
@@ -319,7 +319,9 @@ const openModels =
   async ({ canvasElement }) => {
     await userEvent.click(await within(canvasElement).findByRole('button', { name: picker }))
     const list = await within(document.body).findByRole('listbox', { name: 'Model' })
-    await waitFor(() => expect(within(list).getByRole('option', { name: 'Opus 5.5' })).toBeVisible())
+    await waitFor(() =>
+      expect(within(list).getByRole('option', { name: 'Opus 5.5' })).toBeVisible(),
+    )
   }
 
 const AGENT_FRAME = {
