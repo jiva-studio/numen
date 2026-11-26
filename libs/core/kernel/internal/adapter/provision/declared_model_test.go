@@ -162,7 +162,7 @@ func TestAModelTheManifestOfThePluginDoesNotDeclareIsRefused(t *testing.T) {
 
 func TestAModelIsFetchedFromTheMirrorWhenTheFirstSourceFails(t *testing.T) {
 	for name, first := range map[string]map[string][]byte{
-		"the first source answers 404":       {},
+		"the first source answers 404":        {},
 		"the first source serves other bytes": {"/first/encoder.onnx": []byte("tampered bytes of a speech encoder")},
 	} {
 		t.Run(name, func(t *testing.T) {

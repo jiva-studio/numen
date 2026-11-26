@@ -19,10 +19,10 @@ func readDependency(dependency string) error {
 func TestAManifestRejectsAModelWithoutItsSize(t *testing.T) {
 	sum := strings.Repeat("a", 64)
 	for name, dependency := range map[string]string{
-		"no size":        `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","checksumSha256":"` + sum + `"}`,
-		"zero size":      `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","checksumSha256":"` + sum + `","sizeBytes":0}`,
-		"negative size":  `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","checksumSha256":"` + sum + `","sizeBytes":-1}`,
-		"no checksum":    `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","sizeBytes":4096}`,
+		"no size":       `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","checksumSha256":"` + sum + `"}`,
+		"zero size":     `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","checksumSha256":"` + sum + `","sizeBytes":0}`,
+		"negative size": `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","checksumSha256":"` + sum + `","sizeBytes":-1}`,
+		"no checksum":   `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","sizeBytes":4096}`,
 		"mirrors, no size": `{"id":"encoder","kind":"model","sourceUrls":["https://models.example.org/encoder.onnx","https://mirror.example.org/encoder.onnx"],` +
 			`"checksumSha256":"` + sum + `"}`,
 	} {
@@ -35,11 +35,11 @@ func TestAManifestRejectsAModelWithoutItsSize(t *testing.T) {
 func TestAManifestAcceptsASizedModelAndADependencyOfAnotherKindWithoutASize(t *testing.T) {
 	sum := strings.Repeat("a", 64)
 	for name, dependency := range map[string]string{
-		"sized model":       `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","checksumSha256":"` + sum + `","sizeBytes":4096}`,
+		"sized model":        `{"id":"encoder","kind":"model","sourceUrl":"https://models.example.org/encoder.onnx","checksumSha256":"` + sum + `","sizeBytes":4096}`,
 		"model of no source": `{"id":"encoder","kind":"model"}`,
-		"runtime":           `{"id":"speech-runtime","kind":"runtime","sourceUrl":"https://example.org/lib.so","checksumSha256":"` + sum + `"}`,
-		"sized runtime":     `{"id":"speech-runtime","kind":"runtime","sourceUrl":"https://example.org/lib.so","checksumSha256":"` + sum + `","sizeBytes":100}`,
-		"binary":            `{"id":"speech-tool","kind":"binary"}`,
+		"runtime":            `{"id":"speech-runtime","kind":"runtime","sourceUrl":"https://example.org/lib.so","checksumSha256":"` + sum + `"}`,
+		"sized runtime":      `{"id":"speech-runtime","kind":"runtime","sourceUrl":"https://example.org/lib.so","checksumSha256":"` + sum + `","sizeBytes":100}`,
+		"binary":             `{"id":"speech-tool","kind":"binary"}`,
 	} {
 		if err := readDependency(dependency); err != nil {
 			t.Errorf("%s: %v", name, err)
