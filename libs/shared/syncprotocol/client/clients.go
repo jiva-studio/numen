@@ -74,10 +74,11 @@ func (c *CatalogClient) GetVaultUsage(ctx context.Context) ([]*syncv1.VaultUsage
 	return response.Msg.GetVaults(), nil
 }
 
-// DeleteVault removes the vault from the server. Deleted is false for a vault the server does not store for the
+// DeleteVault removes the vault from the server. signature is the signature of the device of the session over the message of a challenge from
+// SignInClient.GetVaultDeleteChallenge of the same vault. Deleted is false for a vault the server does not store for the
 // account, so a repeat succeeds. A reserve or a commit that races with it is ErrNoVault.
-func (c *CatalogClient) DeleteVault(ctx context.Context, vaultID []byte) (*syncv1.DeleteVaultResponse, error) {
-	response, err := c.rpc.DeleteVault(ctx, connect.NewRequest(&syncv1.DeleteVaultRequest{VaultId: vaultID}))
+func (c *CatalogClient) DeleteVault(ctx context.Context, vaultID, challengeID, signature []byte) (*syncv1.DeleteVaultResponse, error) {
+	response, err := c.rpc.DeleteVault(ctx, connect.NewRequest(&syncv1.DeleteVaultRequest{VaultId: vaultID, ChallengeId: challengeID, Signature: signature}))
 	if err != nil {
 		return nil, syncprotocol.ReadCallError(err)
 	}

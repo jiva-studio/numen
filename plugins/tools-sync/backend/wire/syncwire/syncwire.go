@@ -87,11 +87,11 @@ func NewSyncVaultReading(deps Deps, shares syncvault.SharesReader) *syncvault.Sy
 	return syncvault.NewSyncVault(deps.Deps, syncvault.Steps{
 		Register: registerAgain{connect: catalog.NewConnectVault(catalog.Deps{
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health, Random: deps.Random, Locker: deps.Locker,
+			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Challenges: deps.Challenges, Forget: deps.Forget, Health: deps.Health, Random: deps.Random, Locker: deps.Locker,
 		})},
 		Rename: catalog.NewRenameRemoteVault(catalog.Deps{
 			Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health, Random: deps.Random, Locker: deps.Locker,
+			Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Challenges: deps.Challenges, Forget: deps.Forget, Health: deps.Health, Random: deps.Random, Locker: deps.Locker,
 		}),
 		Sweep: downloads,
 		Pull: pull.NewPullChanges(pull.Deps{

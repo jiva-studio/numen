@@ -3,9 +3,11 @@ package fakeserver_test
 import (
 	"bytes"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 )
 
@@ -20,6 +22,22 @@ func (e *env) getUsage() map[string]uint64 {
 		sizes[string(one.GetVaultId())] = one.GetUsedBytes()
 	}
 	return sizes
+}
+
+func (e *env) deleteVault(vault []byte) (*syncv1.DeleteVaultResponse, error) {
+	e.tb.Helper()
+	return e.deleteVaultSigned(vault, vault)
+}
+
+func (e *env) deleteVaultSigned(vault, signed []byte) (*syncv1.DeleteVaultResponse, error) {
+	e.tb.Helper()
+	signIn := syncclient.NewSignInClient(e.address, http.DefaultClient, machineClock{}.Now)
+	challenge, err := signIn.GetVaultDeleteChallenge(e.tb.Context(), e.device.Public().Sign, signed)
+	if err != nil {
+		e.tb.Fatal(err)
+	}
+	signature := e.device.SignForPlugin(syncprotocol.SignInPluginID, challenge.Message)
+	return e.catalog.DeleteVault(e.tb.Context(), vault, challenge.ID, signature[:])
 }
 
 func TestGetVaultUsage_ListsEveryVaultWithItsReservedAndCommittedBytes(t *testing.T) {
@@ -73,7 +91,7 @@ func TestDeleteVault_FreesBytes(t *testing.T) {
 	e.commit(vault, e.newFile(vault, newID(16), nil, "a.md", []byte("12345")))
 	e.commit(kept, e.newFile(kept, newID(16), nil, "b.md", []byte("123")))
 
-	got, err := e.catalog.DeleteVault(t.Context(), vault)
+	got, err := e.deleteVault(vault)
 
 	if err != nil || !got.GetDeleted() || got.GetFreedBytes() != 5 {
 		t.Fatalf("DeleteVault() = %v, %v, want deleted and 5 bytes freed", got, err)
@@ -92,7 +110,7 @@ func TestDeleteVault_RefusesAReserveAndACommitAfterTheDelete(t *testing.T) {
 	vault := e.newVault()
 	upload := e.upload(vault, []byte("body"))
 	revision := e.newRevisionOf(vault, newID(16), nil, "a.md", upload, []byte("body"))
-	if _, err := e.catalog.DeleteVault(t.Context(), vault); err != nil {
+	if _, err := e.deleteVault(vault); err != nil {
 		t.Fatal(err)
 	}
 
@@ -111,10 +129,10 @@ func TestDeleteVault_ReportsNotDeletedForUnknownVault(t *testing.T) {
 	other := newSecondAccountOn(t, e.address)
 	e.commit(vault, e.newFile(vault, newID(16), nil, "a.md", []byte("12345")))
 
-	foreign, foreignErr := other.catalog.DeleteVault(t.Context(), vault)
-	first, firstErr := e.catalog.DeleteVault(t.Context(), vault)
-	again, againErr := e.catalog.DeleteVault(t.Context(), vault)
-	unknown, unknownErr := e.catalog.DeleteVault(t.Context(), newID(16))
+	foreign, foreignErr := other.deleteVault(vault)
+	first, firstErr := e.deleteVault(vault)
+	again, againErr := e.deleteVault(vault)
+	unknown, unknownErr := e.deleteVault(newID(16))
 
 	if foreignErr != nil || foreign.GetDeleted() || foreign.GetFreedBytes() != 0 {
 		t.Errorf("a foreign vault = %v, %v, want OK and not deleted", foreign, foreignErr)
@@ -139,11 +157,11 @@ func TestDeleteVault_IsAllowedInReadOnlyAndRefusedInDeleted(t *testing.T) {
 	vault, second := b.env.newVault(), b.env.newVault()
 
 	b.setPhase("phase=read_only")
-	if got, err := b.env.catalog.DeleteVault(t.Context(), vault); err != nil || !got.GetDeleted() {
+	if got, err := b.env.deleteVault(vault); err != nil || !got.GetDeleted() {
 		t.Errorf("read only: DeleteVault() = %v, %v, want deleted", got, err)
 	}
 	b.setPhase("phase=deleted")
-	if _, err := b.env.catalog.DeleteVault(t.Context(), second); !errors.Is(err, syncprotocol.ErrWriteNotAllowed) {
+	if _, err := b.env.deleteVault(second); !errors.Is(err, syncprotocol.ErrWriteNotAllowed) {
 		t.Errorf("deleted: DeleteVault() = %v, want ErrWriteNotAllowed", err)
 	}
 }
@@ -154,11 +172,30 @@ func TestDeleteVault_RemovesTheBodiesOfTheVault(t *testing.T) {
 	vault := e.newVault()
 	upload := e.upload(vault, []byte("body"))
 
-	if _, err := e.catalog.DeleteVault(t.Context(), vault); err != nil {
+	if _, err := e.deleteVault(vault); err != nil {
 		t.Fatal(err)
 	}
 
 	if stored := e.getAdmin("/admin/blobs"); bytes.Contains(stored, upload.GetBlobId()) {
 		t.Errorf("the blob %x is still stored after the vault was deleted", upload.GetBlobId())
+	}
+}
+
+func TestDeleteVault_RefusesASignatureMadeForAnotherVaultAndASpentChallenge(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	vault, other := e.newVault(), e.newVault()
+
+	if _, err := e.deleteVaultSigned(vault, other); err == nil {
+		t.Error("the vault was deleted with a signature made for another vault")
+	}
+	if _, err := e.catalog.DeleteVault(t.Context(), vault, newID(16), make([]byte, 64)); err == nil {
+		t.Error("the vault was deleted with a challenge the server never issued")
+	}
+	if got := e.getUsage(); len(got) != 2 {
+		t.Errorf("usage = %v, want both vaults kept", got)
+	}
+	if got, err := e.deleteVault(vault); err != nil || !got.GetDeleted() {
+		t.Errorf("DeleteVault() = %v, %v, want deleted once the proof is right", got, err)
 	}
 }

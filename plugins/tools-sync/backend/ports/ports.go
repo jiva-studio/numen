@@ -30,7 +30,7 @@ type Catalog interface {
 // CloudVaults is what the server stores of each synced vault, and the removal of one.
 type CloudVaults interface {
 	GetVaultUsage(ctx context.Context) ([]*syncv1.VaultUsage, error)
-	DeleteVault(ctx context.Context, vaultID []byte) (*syncv1.DeleteVaultResponse, error)
+	DeleteVault(ctx context.Context, vaultID, challengeID, signature []byte) (*syncv1.DeleteVaultResponse, error)
 }
 
 // Chain is the chain of devices of the account the server stores. SendAccountChain signs in again with the chain of this
@@ -386,9 +386,10 @@ type ShareStates interface {
 	WriteShareStates(ctx context.Context, id domain.VaultID, states []share.Progress) error
 }
 
-// DeleteChallenges is where this device gets the challenge it signs to delete its account.
+// DeleteChallenges is where this device gets the challenge it signs to delete its account or one of its vaults.
 type DeleteChallenges interface {
 	GetAccountDeleteChallenge(ctx context.Context, deviceSignKey []byte) (session.Challenge, error)
+	GetVaultDeleteChallenge(ctx context.Context, deviceSignKey, vaultID []byte) (session.Challenge, error)
 }
 
 // AccountData is what the server holds of the account, and the deletion of it.

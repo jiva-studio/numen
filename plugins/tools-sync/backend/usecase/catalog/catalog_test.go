@@ -473,3 +473,83 @@ func TestDeleteCloudVault_WaitsForTheHolderOfTheVaultBeforeForgettingIt(t *testi
 		t.Fatal(err)
 	}
 }
+
+type spyVaultDelete struct {
+	ports.CloudVaults
+	ports.DeleteChallenges
+
+	asked        [][]byte
+	sent         [][]byte
+	refusal      error
+	challengeErr error
+}
+
+func (s *spyVaultDelete) GetVaultDeleteChallenge(_ context.Context, deviceSignKey, vaultID []byte) (session.Challenge, error) {
+	s.asked = append(s.asked, deviceSignKey, vaultID)
+	if s.challengeErr != nil {
+		return session.Challenge{}, s.challengeErr
+	}
+	return session.Challenge{ID: bytes.Repeat([]byte{7}, 16), Message: []byte("the bytes of the challenge")}, nil
+}
+
+func (s *spyVaultDelete) DeleteVault(_ context.Context, vaultID, challengeID, signature []byte) (*syncv1.DeleteVaultResponse, error) {
+	s.sent = [][]byte{vaultID, challengeID, signature}
+	return &syncv1.DeleteVaultResponse{Deleted: s.refusal == nil}, s.refusal
+}
+
+func newSpiedDelete(t *testing.T, spy *spyVaultDelete) (*synctest.Computer, error) {
+	t.Helper()
+	w := newWorld(t)
+	w.first.Connect(t, "Test")
+	remote := w.first.Link(t, "Test").RemoteVaultID
+	deps := w.first.CatalogDeps()
+	deps.Cloud, deps.Challenges = spy, spy
+	err := catalog.NewDeleteCloudVault(deps, noShares{}).Execute(t.Context(), remote)
+	return w.first, err
+}
+
+func TestDeleteCloudVault_SendsTheChallengeIDAndTheDeviceSignatureOverTheChallengeMessage(t *testing.T) {
+	spy := &spyVaultDelete{}
+
+	computer, err := newSpiedDelete(t, spy)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	public, err := computer.Account.GetPublicIdentity(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(spy.asked) != 2 || !bytes.Equal(spy.asked[0], public.DeviceSignKey) || len(spy.asked[1]) != 16 {
+		t.Fatalf("challenge asked for %x, want the device key and the 16 bytes of the vault", spy.asked)
+	}
+	if len(spy.sent) != 3 || !bytes.Equal(spy.sent[0], spy.asked[1]) || !bytes.Equal(spy.sent[1], bytes.Repeat([]byte{7}, 16)) || len(spy.sent[2]) != 64 {
+		t.Fatalf("sent %x, want the vault, the challenge id and a 64 byte signature", spy.sent)
+	}
+	if !identity.VerifyForPlugin(public.DeviceSignKey, syncprotocol.SignInPluginID, []byte("the bytes of the challenge"), [64]byte(spy.sent[2])) {
+		t.Error("the signature is not the one of the device over the message of the challenge")
+	}
+}
+
+func TestDeleteCloudVault_SendsNothingWithoutAChallenge(t *testing.T) {
+	spy := &spyVaultDelete{challengeErr: errors.New("the server is away")}
+
+	_, err := newSpiedDelete(t, spy)
+
+	if err == nil || err.Error() != "the server is away" {
+		t.Errorf("error = %v, want the error of the challenge", err)
+	}
+	if spy.sent != nil {
+		t.Errorf("sent %x without a challenge", spy.sent)
+	}
+}
+
+func TestDeleteCloudVault_FailsWithTheErrorTheServerRefusedWith(t *testing.T) {
+	spy := &spyVaultDelete{refusal: errors.New("unauthenticated: not signed in")}
+
+	_, err := newSpiedDelete(t, spy)
+
+	if err == nil || err.Error() != "unauthenticated: not signed in" {
+		t.Errorf("error = %v, want the refusal as the server sent it", err)
+	}
+}

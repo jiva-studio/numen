@@ -256,7 +256,7 @@ func (c *Computer) NewHealth() *health.Client { return health.NewClient(c.health
 func (c *Computer) CatalogDeps() catalog.Deps {
 	return catalog.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Journals: c.State,
-		Cloud: c.Cloud, Forget: c.State, Health: c.NewHealth(), Random: rand.Reader, Locker: c.State,
+		Cloud: c.Cloud, Challenges: c.Sessions, Forget: c.State, Health: c.NewHealth(), Random: rand.Reader, Locker: c.State,
 	}
 }
 
@@ -309,7 +309,7 @@ func (c *Computer) SyncDeps() syncvault.Deps {
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
 		Host: c.Host, Notes: c.Notes, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Shop: c.Cloud,
 		Pauses: c.State, Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State},
-		Shares: c.Cloud, ShareStates: c.State, Box: c.Account, Vaults: c.Vaults, Folders: c.Folders, Forget: c.State, Cloud: c.Cloud, Locker: c.State,
+		Shares: c.Cloud, ShareStates: c.State, Box: c.Account, Vaults: c.Vaults, Folders: c.Folders, Forget: c.State, Cloud: c.Cloud, Challenges: c.Sessions, Locker: c.State,
 	}
 }
 

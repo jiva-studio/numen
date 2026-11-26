@@ -99,3 +99,13 @@ func (s *Server) GetAccountDeleteChallenge(ctx context.Context, deviceSignKey []
 	}
 	return session.Challenge{ID: challenge.ID, Message: challenge.Message}, nil
 }
+
+// GetVaultDeleteChallenge runs the checks of GetChallenge. A signature over its message deletes the vault and nothing
+// else.
+func (s *Server) GetVaultDeleteChallenge(ctx context.Context, deviceSignKey, vaultID []byte) (session.Challenge, error) {
+	challenge, err := s.client.GetVaultDeleteChallenge(ctx, deviceSignKey, vaultID)
+	if err != nil {
+		return session.Challenge{}, readError(err)
+	}
+	return session.Challenge{ID: challenge.ID, Message: challenge.Message}, nil
+}

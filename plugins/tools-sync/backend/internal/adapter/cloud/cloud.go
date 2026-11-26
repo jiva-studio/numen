@@ -92,9 +92,12 @@ func (c *Cloud) GetVaultUsage(ctx context.Context) ([]*syncv1.VaultUsage, error)
 	return call(ctx, c, func() ([]*syncv1.VaultUsage, error) { return c.catalog.GetVaultUsage(ctx) })
 }
 
-// DeleteVault removes a synced vault from the server.
-func (c *Cloud) DeleteVault(ctx context.Context, vaultID []byte) (*syncv1.DeleteVaultResponse, error) {
-	return call(ctx, c, func() (*syncv1.DeleteVaultResponse, error) { return c.catalog.DeleteVault(ctx, vaultID) })
+// DeleteVault removes a synced vault from the server. signature is the one of the device over the message of a challenge
+// from GetVaultDeleteChallenge for the same vault.
+func (c *Cloud) DeleteVault(ctx context.Context, vaultID, challengeID, signature []byte) (*syncv1.DeleteVaultResponse, error) {
+	return call(ctx, c, func() (*syncv1.DeleteVaultResponse, error) {
+		return c.catalog.DeleteVault(ctx, vaultID, challengeID, signature)
+	})
 }
 
 func (c *Cloud) CommitRevisions(ctx context.Context, vaultID []byte, revisions []*syncv1.Revision) (*syncv1.CommitRevisionsResponse, error) {

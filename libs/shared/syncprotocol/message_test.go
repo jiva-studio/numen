@@ -103,3 +103,45 @@ func TestGetAccountDeleteMessage_UsesItsOwnLabelSoASignInSignatureNeverDeletes(t
 		t.Error("the delete message differs from the sign-in message after the label")
 	}
 }
+
+func TestGetVaultDeleteMessage_JoinsTheLabelChallengeKeyVaultAndVersionInTheFrozenOrder(t *testing.T) {
+	t.Parallel()
+	challenge := newChallenge()
+	key := bytes.Repeat([]byte{3}, 32)
+	vault := bytes.Repeat([]byte{5}, 16)
+
+	got := syncprotocol.GetVaultDeleteMessage(challenge, key, vault, 1)
+
+	var want []byte
+	want = append(want, "numen-sync/vault-delete/v1"...)
+	want = append(want, 0)
+	want = binary.AppendUvarint(want, uint64(len(challenge.GetAudience())))
+	want = append(want, challenge.GetAudience()...)
+	want = append(want, challenge.GetNonce()...)
+	want = binary.BigEndian.AppendUint64(want, uint64(challenge.GetExpiresAt()))
+	want = append(want, key...)
+	want = append(want, vault...)
+	want = binary.BigEndian.AppendUint32(want, 1)
+	if !bytes.Equal(got, want) {
+		t.Errorf("message = %x\nwant      %x", got, want)
+	}
+}
+
+func TestGetVaultDeleteMessage_DiffersForAnotherVaultAnotherVersionAndTheAccountMessage(t *testing.T) {
+	t.Parallel()
+	challenge := newChallenge()
+	key := bytes.Repeat([]byte{3}, 32)
+	vault := bytes.Repeat([]byte{5}, 16)
+	base := syncprotocol.GetVaultDeleteMessage(challenge, key, vault, 1)
+
+	for name, message := range map[string][]byte{
+		"vault":           syncprotocol.GetVaultDeleteMessage(challenge, key, bytes.Repeat([]byte{6}, 16), 1),
+		"version":         syncprotocol.GetVaultDeleteMessage(challenge, key, vault, 2),
+		"account deleter": syncprotocol.GetAccountDeleteMessage(challenge, key, 1),
+		"sign-in":         syncprotocol.GetSignInMessage(challenge, key, 1),
+	} {
+		if bytes.Equal(message, base) {
+			t.Errorf("the %s message equals the vault delete message", name)
+		}
+	}
+}

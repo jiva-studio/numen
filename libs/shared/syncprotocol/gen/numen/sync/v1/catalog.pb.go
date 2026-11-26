@@ -460,7 +460,11 @@ func (x *GetVaultUsageResponse) GetVaults() []*VaultUsage {
 type DeleteVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// vault_id is 16 bytes.
-	VaultId       []byte `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	VaultId []byte `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	// challenge_id is 16 bytes: the id of a challenge asked with the device key of the session as device_sign_key.
+	ChallengeId []byte `protobuf:"bytes,2,opt,name=challenge_id,json=challengeId,proto3" json:"challenge_id,omitempty"`
+	// signature is 64 bytes over syncprotocol.GetVaultDeleteMessage of the challenge and vault_id, by the device key of the session.
+	Signature     []byte `protobuf:"bytes,3,opt,name=signature,proto3" json:"signature,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -498,6 +502,20 @@ func (*DeleteVaultRequest) Descriptor() ([]byte, []int) {
 func (x *DeleteVaultRequest) GetVaultId() []byte {
 	if x != nil {
 		return x.VaultId
+	}
+	return nil
+}
+
+func (x *DeleteVaultRequest) GetChallengeId() []byte {
+	if x != nil {
+		return x.ChallengeId
+	}
+	return nil
+}
+
+func (x *DeleteVaultRequest) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
 	}
 	return nil
 }
@@ -587,9 +605,11 @@ const file_numen_sync_v1_catalog_proto_rawDesc = "" +
 	"used_bytes\x18\x02 \x01(\x04R\tusedBytes\"\x16\n" +
 	"\x14GetVaultUsageRequest\"J\n" +
 	"\x15GetVaultUsageResponse\x121\n" +
-	"\x06vaults\x18\x01 \x03(\v2\x19.numen.sync.v1.VaultUsageR\x06vaults\"/\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x19.numen.sync.v1.VaultUsageR\x06vaults\"p\n" +
 	"\x12DeleteVaultRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\fR\avaultId\"P\n" +
+	"\bvault_id\x18\x01 \x01(\fR\avaultId\x12!\n" +
+	"\fchallenge_id\x18\x02 \x01(\fR\vchallengeId\x12\x1c\n" +
+	"\tsignature\x18\x03 \x01(\fR\tsignature\"P\n" +
 	"\x13DeleteVaultResponse\x12\x18\n" +
 	"\adeleted\x18\x01 \x01(\bR\adeleted\x12\x1f\n" +
 	"\vfreed_bytes\x18\x02 \x01(\x04R\n" +

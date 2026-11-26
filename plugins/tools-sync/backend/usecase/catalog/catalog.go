@@ -34,18 +34,19 @@ var (
 
 // Deps are what the use cases of the catalog need.
 type Deps struct {
-	Catalog  ports.Catalog
-	Chain    ports.Chain
-	Crypto   ports.Crypto
-	Identity ports.Identity
-	Host     ports.Host
-	State    ports.Links
-	Journals ports.Journals
-	Cloud    ports.CloudVaults
-	Forget   ports.Forgetter
-	Health   ports.Health
-	Random   io.Reader
-	Locker   ports.VaultLocker
+	Catalog    ports.Catalog
+	Chain      ports.Chain
+	Crypto     ports.Crypto
+	Identity   ports.Identity
+	Host       ports.Host
+	State      ports.Links
+	Journals   ports.Journals
+	Cloud      ports.CloudVaults
+	Challenges ports.DeleteChallenges
+	Forget     ports.Forgetter
+	Health     ports.Health
+	Random     io.Reader
+	Locker     ports.VaultLocker
 }
 
 type remote struct {

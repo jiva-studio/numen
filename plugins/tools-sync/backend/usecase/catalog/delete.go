@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
@@ -25,8 +26,9 @@ func NewDeleteCloudVault(deps Deps, shares ShareCloser) *DeleteCloudVault {
 	return &DeleteCloudVault{reader: reader{deps: deps}, shares: shares}
 }
 
-// Execute closes the shares of the vault on this device, appends the entry that tells the other devices the vault is
-// removed, deletes the vault on the server and forgets the links of this device to it. A vault the catalog does not
+// Execute closes the shares of the vault on this device, signs the delete challenge of the server with the key of this
+// device, appends the entry that tells the other devices the vault is removed, deletes the vault on the server and
+// forgets the links of this device to it. A vault the catalog does not
 // know, or has removed, is deleted on the server all the same. The files of the local vaults stay.
 func (u *DeleteCloudVault) Execute(ctx context.Context, remoteID string) error {
 	return u.ExecuteHeld(ctx, remoteID, "")
@@ -52,10 +54,14 @@ func (u *DeleteCloudVault) ExecuteHeld(ctx context.Context, remoteID string, hel
 			return err
 		}
 	}
+	challenge, signature, err := u.signDelete(ctx, id)
+	if err != nil {
+		return err
+	}
 	if err := u.markRemoved(ctx, id); err != nil {
 		return err
 	}
-	if _, err := u.reader.deps.Cloud.DeleteVault(ctx, id); err != nil {
+	if _, err := u.reader.deps.Cloud.DeleteVault(ctx, id, challenge.ID, signature); err != nil {
 		return err
 	}
 	for _, vault := range linked {
@@ -64,6 +70,19 @@ func (u *DeleteCloudVault) ExecuteHeld(ctx context.Context, remoteID string, hel
 		}
 	}
 	return nil
+}
+
+func (u *DeleteCloudVault) signDelete(ctx context.Context, vaultID []byte) (session.Challenge, []byte, error) {
+	public, err := u.reader.deps.Identity.GetPublicIdentity(ctx)
+	if err != nil {
+		return session.Challenge{}, nil, err
+	}
+	challenge, err := u.reader.deps.Challenges.GetVaultDeleteChallenge(ctx, public.DeviceSignKey, vaultID)
+	if err != nil {
+		return session.Challenge{}, nil, err
+	}
+	signature, err := u.reader.deps.Identity.SignAsDevice(ctx, challenge.Message)
+	return challenge, signature, err
 }
 
 func (u *DeleteCloudVault) listLinkedVaults(ctx context.Context, remoteID string) ([]domain.VaultID, error) {

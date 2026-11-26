@@ -74,7 +74,8 @@ type CatalogServiceClient interface {
 	// not stored, or that belongs to another account, answers OK with deleted false, so a retry after a dropped
 	// answer succeeds and no caller learns whether a foreign vault exists. A reserve or a commit that races with it
 	// is refused with NOT_FOUND, which the client reads as ErrNoVault. The deletion is one transaction: the vault is
-	// whole or gone. It needs the session bearer.
+	// whole or gone. It needs the session bearer and, as DeleteAccount does,
+	// a challenge asked with the device key of the session as device_sign_key, signed under syncprotocol.GetVaultDeleteMessage.
 	DeleteVault(context.Context, *connect.Request[v1.DeleteVaultRequest]) (*connect.Response[v1.DeleteVaultResponse], error)
 }
 
@@ -171,7 +172,8 @@ type CatalogServiceHandler interface {
 	// not stored, or that belongs to another account, answers OK with deleted false, so a retry after a dropped
 	// answer succeeds and no caller learns whether a foreign vault exists. A reserve or a commit that races with it
 	// is refused with NOT_FOUND, which the client reads as ErrNoVault. The deletion is one transaction: the vault is
-	// whole or gone. It needs the session bearer.
+	// whole or gone. It needs the session bearer and, as DeleteAccount does,
+	// a challenge asked with the device key of the session as device_sign_key, signed under syncprotocol.GetVaultDeleteMessage.
 	DeleteVault(context.Context, *connect.Request[v1.DeleteVaultRequest]) (*connect.Response[v1.DeleteVaultResponse], error)
 }
 

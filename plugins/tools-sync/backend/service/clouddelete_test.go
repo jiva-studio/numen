@@ -19,7 +19,7 @@ type failingCloud struct {
 	err error
 }
 
-func (f failingCloud) DeleteVault(context.Context, []byte) (*syncv1.DeleteVaultResponse, error) {
+func (f failingCloud) DeleteVault(context.Context, []byte, []byte, []byte) (*syncv1.DeleteVaultResponse, error) {
 	return nil, f.err
 }
 

@@ -12,6 +12,7 @@ const (
 	signInLabel         = "numen-sync/sign-in/v1"
 	chainReadLabel      = "numen-sync/chain-read/v1"
 	accountDeleteLabel  = "numen-sync/account-delete/v1"
+	vaultDeleteLabel    = "numen-sync/vault-delete/v1"
 	challengeIDSize     = 16
 	challengeNonceSize  = 32
 	maxChallengeSkewSec = 120
@@ -35,7 +36,17 @@ func GetAccountDeleteMessage(challenge *syncv1.GetChallengeResponse, deviceSignK
 	return getChallengeMessage(accountDeleteLabel, challenge, deviceSignKey, version)
 }
 
+// GetVaultDeleteMessage returns the bytes a device signs to delete one vault: the layout of GetSignInMessage under the
+// label numen-sync/vault-delete/v1, with the 16 bytes of the vault id between the device key and the version.
+func GetVaultDeleteMessage(challenge *syncv1.GetChallengeResponse, deviceSignKey, vaultID []byte, version uint32) []byte {
+	return getScopedChallengeMessage(vaultDeleteLabel, challenge, deviceSignKey, vaultID, version)
+}
+
 func getChallengeMessage(label string, challenge *syncv1.GetChallengeResponse, deviceSignKey []byte, version uint32) []byte {
+	return getScopedChallengeMessage(label, challenge, deviceSignKey, nil, version)
+}
+
+func getScopedChallengeMessage(label string, challenge *syncv1.GetChallengeResponse, deviceSignKey, scope []byte, version uint32) []byte {
 	audience := challenge.GetAudience()
 	message := make([]byte, 0, len(label)+1+binary.MaxVarintLen64+len(audience)+len(challenge.GetNonce())+8+len(deviceSignKey)+4)
 	message = append(message, label...)
@@ -45,6 +56,7 @@ func getChallengeMessage(label string, challenge *syncv1.GetChallengeResponse, d
 	message = append(message, challenge.GetNonce()...)
 	message = binary.BigEndian.AppendUint64(message, uint64(challenge.GetExpiresAt()))
 	message = append(message, deviceSignKey...)
+	message = append(message, scope...)
 	return binary.BigEndian.AppendUint32(message, version)
 }
 

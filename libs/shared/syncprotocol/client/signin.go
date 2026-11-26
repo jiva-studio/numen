@@ -72,6 +72,13 @@ func (c *SignInClient) GetAccountDeleteChallenge(ctx context.Context, deviceSign
 	return c.getChallenge(ctx, deviceSignKey, syncprotocol.GetAccountDeleteMessage)
 }
 
+// GetVaultDeleteChallenge runs the checks of GetChallenge. A signature over its message deletes the vault and nothing else.
+func (c *SignInClient) GetVaultDeleteChallenge(ctx context.Context, deviceSignKey, vaultID []byte) (Challenge, error) {
+	return c.getChallenge(ctx, deviceSignKey, func(challenge *syncv1.GetChallengeResponse, key []byte, version uint32) []byte {
+		return syncprotocol.GetVaultDeleteMessage(challenge, key, vaultID, version)
+	})
+}
+
 func (c *SignInClient) getChallenge(ctx context.Context, deviceSignKey []byte, getMessage func(*syncv1.GetChallengeResponse, []byte, uint32) []byte) (Challenge, error) {
 	response, err := c.rpc.GetChallenge(ctx, connect.NewRequest(&syncv1.GetChallengeRequest{DeviceSignKey: deviceSignKey}))
 	if err != nil {

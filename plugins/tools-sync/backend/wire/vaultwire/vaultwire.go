@@ -63,7 +63,7 @@ type Removals struct {
 func New(deps syncvault.Deps, heads ports.Heads) *Vaults {
 	catalogDeps := catalog.Deps{
 		Catalog: deps.Catalog, Chain: deps.Chain, Crypto: deps.Crypto, Identity: deps.Identity, Host: deps.Host, State: deps.State,
-		Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Forget: deps.Forget, Health: deps.Health,
+		Journals: deps.Restore.Mirror, Cloud: deps.Cloud, Challenges: deps.Challenges, Forget: deps.Forget, Health: deps.Health,
 		Random: deps.Random, Locker: deps.Locker,
 	}
 	deleting := catalog.NewDeleteCloudVault(catalogDeps, share.NewCloseShares(sharewire.NewShareDeps(deps)))
