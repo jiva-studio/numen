@@ -2,17 +2,22 @@ name: Site
 
 # A run answers for the page and for nothing else, so what starts it is a change
 # to the page, on a branch and on main alike. The two lists are written out
-# twice: a workflow file takes no anchor.
+# twice: a workflow file takes no anchor. The plugin registry workflow starts it
+# by hand when the published registry changes: the code is the code main was
+# checked with, so that run only builds and deploys.
 on:
   pull_request:
     paths:
       - "apps/landing/**"
+      - "tools/plugin-registry/**"
       - ".github/workflows/site.yml"
   push:
     branches: [main]
     paths:
       - "apps/landing/**"
+      - "tools/plugin-registry/**"
       - ".github/workflows/site.yml"
+  workflow_dispatch:
 
 # One run at a time per branch, and the newest is the one that matters. Two
 # deploys share one storage zone, and the second takes down what the first has
@@ -37,8 +42,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # A pull request builds its catalog from its own tree, whose changelogs read
+      # the history of the plugin folders.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
           persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -50,16 +58,45 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
 
+      # Main and a dispatched run read the published registry (the typecheck
+      # loads it too); a pull request collects one from its tree, without the
+      # network.
+      - name: Collect the plugin registry of the pull request
+        if: github.event_name == 'pull_request'
+        run: |
+          node tools/plugin-registry/collect.mjs --out "$RUNNER_TEMP/registry" --offline
+          echo "NUMEN_PLUGIN_REGISTRY_FILE=$RUNNER_TEMP/registry/latest.json" >> "$GITHUB_ENV"
+
       - name: Typecheck landing page
+        if: github.event_name != 'workflow_dispatch'
         run: npm run typecheck --prefix apps/landing
 
       - name: Lint landing page
+        if: github.event_name != 'workflow_dispatch'
         run: npm run lint --prefix apps/landing
+
+      - name: Test the plugin registry
+        if: github.event_name != 'workflow_dispatch'
+        run: node --test tools/plugin-registry/*.test.mjs apps/landing/tools/plugin-registry.test.mjs
+
+      # Astro keeps the images it has resized here, keyed by their content.
+      - name: Restore the image cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: apps/landing/node_modules/.astro
+          key: landing-astro-${{ github.run_id }}
+          restore-keys: landing-astro-
 
       - name: Build landing page
         env:
           PUBLIC_NUMEN_DOWNLOADS_BASE: ${{ vars.PUBLIC_NUMEN_DOWNLOADS_BASE }}
         run: npm run build --prefix apps/landing
+
+      - name: Save the image cache
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: apps/landing/node_modules/.astro
+          key: landing-astro-${{ github.run_id }}
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -73,7 +110,7 @@ jobs:
   deploy:
     name: Deploy
     environment: production
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -91,7 +128,6 @@ jobs:
         with:
           endpoint: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           storage-zone: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
-          pull-zone-id: ${{ vars.BUNNY_SITE_PULL_ZONE_ID }}
           served-from: ${{ vars.BUNNY_SITE_SERVED_FROM }}
           storage-key: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
           api-key: ${{ secrets.BUNNY_API_KEY }}

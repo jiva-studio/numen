@@ -105,7 +105,6 @@ jobs:
         with:
           endpoint: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           storage-zone: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
-          pull-zone-id: ${{ vars.BUNNY_DOCS_PULL_ZONE_ID }}
           served-from: ${{ vars.BUNNY_DOCS_SERVED_FROM }}
           storage-key: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
           api-key: ${{ secrets.BUNNY_API_KEY }}
