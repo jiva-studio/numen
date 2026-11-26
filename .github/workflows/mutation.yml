@@ -271,3 +271,36 @@ jobs:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
           GH_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
         run: node tools/ci-mutation/badge.mjs
+
+  # The score of each plugin target whose shards all reported is merged into
+  # plugins/quality/mutation.json of the downloads zone, which the plugin
+  # registry reads; a target that did not finish keeps its stored score.
+  quality:
+    name: Plugin quality
+    needs: [shards, mutate]
+    if: always() && needs.shards.result == 'success'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: mutation-*
+          path: .mutation/reports
+          merge-multiple: true
+
+      - name: Write the plugin mutation scores
+        run: node tools/ci-mutation/quality.mjs --out .mutation/quality/mutation.json
+
+      - name: Publish the plugin mutation scores
+        env:
+          BUNNY_STORAGE_ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          BUNNY_SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: node tools/plugin-registry/storage.mjs merge-quality mutation .mutation/quality/mutation.json
