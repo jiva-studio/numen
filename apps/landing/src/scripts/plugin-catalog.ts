@@ -21,6 +21,8 @@ function showMatchingEntries(filter: CatalogFilter): void {
   }
   const empty = document.querySelector<HTMLElement>('[data-plugin-empty]')
   if (empty) empty.hidden = shown > 0
+  const featured = document.querySelector<HTMLElement>('[data-plugin-featured]')
+  if (featured) featured.hidden = filter.query.trim() !== ''
 }
 
 /** Wires the search field and the category links of the catalog to the rows of all plugins. */
