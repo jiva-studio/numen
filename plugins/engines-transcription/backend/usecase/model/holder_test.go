@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
@@ -25,14 +24,14 @@ func (m quietModel) Close() error {
 
 func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 	for _, tc := range []struct {
-		values map[string]string
-		model  string
-		repo   string
+		values  map[string]string
+		model   string
+		encoder string
 	}{
-		{map[string]string{}, "parakeet-tdt-0.6b-v3-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"},
-		{map[string]string{"model": "parakeet-tdt-0.6b-v3-int8"}, "parakeet-tdt-0.6b-v3-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"},
-		{map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"}, "parakeet-tdt-0.6b-v2-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8"},
-		{map[string]string{"model": "whisper-large"}, "parakeet-tdt-0.6b-v3-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"},
+		{map[string]string{}, "parakeet-tdt-0.6b-v3-int8", "parakeet-v3-encoder"},
+		{map[string]string{"model": "parakeet-tdt-0.6b-v3-int8"}, "parakeet-tdt-0.6b-v3-int8", "parakeet-v3-encoder"},
+		{map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"}, "parakeet-tdt-0.6b-v2-int8", "parakeet-v2-encoder"},
+		{map[string]string{"model": "whisper-large"}, "parakeet-tdt-0.6b-v3-int8", "parakeet-v3-encoder"},
 	} {
 		var got settings.Config
 		var opens, closed int
@@ -50,9 +49,9 @@ func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 		if err != nil || second != first || opens != 1 {
 			t.Fatalf("second GetRecognizer() = %v, %v (opens=%d)", second, err, opens)
 		}
-		if got.Model.Name != tc.model || !strings.Contains(got.Model.Repo, tc.repo) {
-			t.Errorf("settings %v: got %s from %s, want %s from %s",
-				tc.values, got.Model.Name, got.Model.Repo, tc.model, tc.repo)
+		if got.Model.Name != tc.model || got.Model.Dependencies.Encoder != tc.encoder {
+			t.Errorf("settings %v: got %s with %s, want %s with %s",
+				tc.values, got.Model.Name, got.Model.Dependencies.Encoder, tc.model, tc.encoder)
 		}
 		if err := model.Close(); err != nil || closed != 1 {
 			t.Errorf("Close() = %v with %d closed, want the open model closed once", err, closed)

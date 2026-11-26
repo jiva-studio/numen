@@ -109,12 +109,9 @@ func TestNewConfigIsPinnedForTheCuratedModels(t *testing.T) {
 
 func requirePins(t *testing.T, id string, local LocalModel) {
 	t.Helper()
-	if len(local.Revision) != 40 {
-		t.Errorf("%s: revision %q is not a commit", id, local.Revision)
-	}
 	for _, name := range []string{ModelFolder + "/" + local.File, TokenizerFile} {
-		if len(local.Sums[name]) != 64 {
-			t.Errorf("%s: %s has no sha256 pinned: %q", id, name, local.Sums[name])
+		if local.Dependencies[name] == "" {
+			t.Errorf("%s: %s names no dependency of the manifest", id, name)
 		}
 	}
 }
@@ -122,10 +119,10 @@ func requirePins(t *testing.T, id string, local LocalModel) {
 func TestWithRepositoryDropsThePins(t *testing.T) {
 	_, local := newTestConfig(t, "Xenova/bge-m3")
 	other := local.WithRepository("owner/repo")
-	if other.Name != "owner/repo" || other.Revision != "" || other.Sums != nil {
+	if other.Name != "owner/repo" || other.Revision != "" || other.Sums != nil || other.Dependencies != nil {
 		t.Errorf("WithRepository() = %+v", other)
 	}
-	if local.Name != "Xenova/bge-m3" || local.Revision == "" || local.Sums == nil {
+	if local.Name != "Xenova/bge-m3" || local.Dependencies == nil {
 		t.Errorf("WithRepository changed the receiver: %+v", local)
 	}
 }

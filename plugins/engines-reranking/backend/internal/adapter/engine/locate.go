@@ -2,32 +2,56 @@ package engine
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/shared/onnx"
-	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/domain/profile"
+	"fmt"
 	"maps"
 	"os"
 	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/shared/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/domain/profile"
 )
 
-func Locate(ctx context.Context, p profile.Profile, fetch onnx.FetchFile) (onnx.ModelFiles, error) {
-	files, err := getShippedFiles(p.ID, p.Revision, p.OnnxFile)
+const tokenizerFile = "tokenizer.json"
+
+// FetchDependency resolves a model file that the manifest declares under an id through the host.
+type FetchDependency func(ctx context.Context, id string) (string, error)
+
+// Fetch is how the files of a model are obtained from the host: a shipped model by the ids its
+// manifest declares, any other repository by address.
+type Fetch struct {
+	Dependency FetchDependency
+	File       onnx.FetchFile
+}
+
+func Locate(ctx context.Context, p profile.Profile, fetch Fetch) (onnx.ModelFiles, error) {
+	if len(p.Dependencies) > 0 {
+		return fetchDeclared(ctx, p, fetch.Dependency)
+	}
+	return onnx.PrepareModel(ctx, onnx.RepositoryModel{Endpoint: os.Getenv("HF_ENDPOINT"), ID: p.ID,
+		Revision: p.Revision, Graph: p.OnnxFile, Sums: p.SHA256, Files: nil, SelectExternal: func(name string) bool { return strings.HasPrefix(name, p.OnnxFile) }}, getCacheRoot(), fetch.File)
+}
+
+func fetchDeclared(ctx context.Context, p profile.Profile, fetch FetchDependency) (onnx.ModelFiles, error) {
+	if _, ok := p.Dependencies[p.OnnxFile]; !ok {
+		return onnx.ModelFiles{}, fmt.Errorf("%s declares no file %s", p.ID, p.OnnxFile)
+	}
+	locals := make(map[string]string, len(p.Dependencies))
+	for _, file := range slices.Sorted(maps.Keys(p.Dependencies)) {
+		local, err := fetch(ctx, p.Dependencies[file])
+		if err != nil {
+			return onnx.ModelFiles{}, fmt.Errorf("fetch %s of %s: %w", file, p.ID, err)
+		}
+		locals[file] = local
+	}
+	tokenizer, ok := locals[tokenizerFile]
+	if !ok {
+		return onnx.ModelFiles{}, fmt.Errorf("%s declares no %s", p.ID, tokenizerFile)
+	}
+	delete(locals, tokenizerFile)
+	placed, err := onnx.PlaceModelFiles(getCacheRoot(), p.OnnxFile, locals)
 	if err != nil {
 		return onnx.ModelFiles{}, err
 	}
-	return onnx.PrepareModel(ctx, onnx.RepositoryModel{Endpoint: os.Getenv("HF_ENDPOINT"), ID: p.ID,
-		Revision: p.Revision, Graph: p.OnnxFile, Sums: p.SHA256, Files: files, SelectExternal: func(name string) bool { return strings.HasPrefix(name, p.OnnxFile) }}, getCacheRoot(), fetch)
-}
-
-func getShippedFiles(id, revision, graph string) ([]string, error) {
-	table, err := profile.GetShippedProfiles()
-	if err != nil {
-		return nil, err
-	}
-	for _, p := range table.GetCurated() {
-		if p.ID == id && p.Revision == revision && p.OnnxFile == graph {
-			return slices.Sorted(maps.Keys(p.SHA256)), nil
-		}
-	}
-	return nil, nil
+	return onnx.ModelFiles{Model: placed, Tokenizer: tokenizer}, nil
 }

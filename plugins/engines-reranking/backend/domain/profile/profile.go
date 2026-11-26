@@ -23,7 +23,9 @@ const fewestTokens = 8
 var ErrNoProfile = errors.New("no profile for the model")
 
 // Profile holds what a person, not the model file, decides about a cross-encoder: the longest pair it
-// reads and where its files are. The score of a pair is the sigmoid of its single logit.
+// reads and where its files are. The score of a pair is the sigmoid of its single logit. A shipped
+// profile names in Dependencies the id under which the manifest declares each file of the repository;
+// a profile of the owner pins its files by Revision and SHA256.
 type Profile struct {
 	ID        string            `json:"id"`
 	Aliases   []string          `json:"aliases,omitempty"`
@@ -34,6 +36,8 @@ type Profile struct {
 	OnnxFile  string            `json:"onnxFile"`
 	Revision  string            `json:"revision,omitempty"`
 	SHA256    map[string]string `json:"sha256,omitempty"`
+
+	Dependencies map[string]string `json:"dependencies,omitempty"`
 }
 
 // Validate returns an error when the profile cannot run a model.

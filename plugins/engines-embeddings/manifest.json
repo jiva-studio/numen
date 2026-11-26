@@ -91,6 +91,83 @@
       "metadata": {
         "envVar": "NUMEN_ONNX_RUNTIME_LIB"
       }
+    },
+    {
+      "id": "e5-small-graph",
+      "kind": "model",
+      "version": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+      "sourceUrls": [
+        "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/onnx/model_quantized.onnx"
+      ],
+      "checksumSha256": "f80102d3f2a1229f387d3c81909990d8945513e347b0eab049f7de3c6f98c193",
+      "sizeBytes": 118308185,
+      "metadata": { "title": "E5 small model" }
+    },
+    {
+      "id": "e5-small-tokenizer",
+      "kind": "model",
+      "version": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+      "sourceUrls": [
+        "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/tokenizer.json"
+      ],
+      "checksumSha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+      "sizeBytes": 17082730,
+      "metadata": { "title": "E5 small tokenizer" }
+    },
+    {
+      "id": "harrier-270m-graph",
+      "kind": "model",
+      "version": "d59c919d0159aea2c19ed7d04288fcdd048d0f9c",
+      "sourceUrls": [
+        "https://huggingface.co/onnx-community/harrier-oss-v1-270m-ONNX/resolve/d59c919d0159aea2c19ed7d04288fcdd048d0f9c/onnx/model_quantized.onnx"
+      ],
+      "checksumSha256": "44fe93efec64ac3446703403634fd8410c7dabf3814bf00dc0825f1e2dde75c0",
+      "sizeBytes": 243493,
+      "metadata": { "title": "Harrier 270M model" }
+    },
+    {
+      "id": "harrier-270m-graph-data",
+      "kind": "model",
+      "version": "d59c919d0159aea2c19ed7d04288fcdd048d0f9c",
+      "sourceUrls": [
+        "https://huggingface.co/onnx-community/harrier-oss-v1-270m-ONNX/resolve/d59c919d0159aea2c19ed7d04288fcdd048d0f9c/onnx/model_quantized.onnx_data"
+      ],
+      "checksumSha256": "a81e3db98eaedd77deafe07d7c3c03b254b7e012790a7a1774295aff03d4fbdf",
+      "sizeBytes": 343702016,
+      "metadata": { "title": "Harrier 270M model weights" }
+    },
+    {
+      "id": "harrier-270m-tokenizer",
+      "kind": "model",
+      "version": "d59c919d0159aea2c19ed7d04288fcdd048d0f9c",
+      "sourceUrls": [
+        "https://huggingface.co/onnx-community/harrier-oss-v1-270m-ONNX/resolve/d59c919d0159aea2c19ed7d04288fcdd048d0f9c/tokenizer.json"
+      ],
+      "checksumSha256": "ec95be298bea26f90370854faa650744c9fb0a04ca5e5ff95dd3913393ac5e45",
+      "sizeBytes": 20323311,
+      "metadata": { "title": "Harrier 270M tokenizer" }
+    },
+    {
+      "id": "bge-m3-graph",
+      "kind": "model",
+      "version": "4de13258303883538bd53b696b452bf8099f0858",
+      "sourceUrls": [
+        "https://huggingface.co/Xenova/bge-m3/resolve/4de13258303883538bd53b696b452bf8099f0858/onnx/model_int8.onnx"
+      ],
+      "checksumSha256": "a206e10e995aa2a833924bcd725ba5dd6c3425cd34bac3cf2b5677cd2a1c51d6",
+      "sizeBytes": 568456694,
+      "metadata": { "title": "BGE-M3 model" }
+    },
+    {
+      "id": "bge-m3-tokenizer",
+      "kind": "model",
+      "version": "4de13258303883538bd53b696b452bf8099f0858",
+      "sourceUrls": [
+        "https://huggingface.co/Xenova/bge-m3/resolve/4de13258303883538bd53b696b452bf8099f0858/tokenizer.json"
+      ],
+      "checksumSha256": "6710678b12670bc442b99edc952c4d996ae309a7020c1fa0096dd245c2faf790",
+      "sizeBytes": 17082821,
+      "metadata": { "title": "BGE-M3 tokenizer" }
     }
   ],
   "backend": {
@@ -126,16 +203,23 @@
       "options": [
         {
           "value": "Xenova/multilingual-e5-small",
+          "dependencies": ["e5-small-graph", "e5-small-tokenizer"],
           "title": "E5 small (default, CPU, 118 MB)",
           "detail": "384 dims · Hugging Face"
         },
         {
           "value": "onnx-community/harrier-oss-v1-270m-ONNX",
+          "dependencies": [
+            "harrier-270m-graph",
+            "harrier-270m-graph-data",
+            "harrier-270m-tokenizer"
+          ],
           "title": "Harrier 270M (better, 344 MB)",
           "detail": "640 dims · Hugging Face"
         },
         {
           "value": "Xenova/bge-m3",
+          "dependencies": ["bge-m3-graph", "bge-m3-tokenizer"],
           "title": "BGE-M3 (large, 569 MB)",
           "detail": "1024 dims · Hugging Face"
         }

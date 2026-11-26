@@ -34,7 +34,9 @@ var embeddedProfiles []byte
 var ErrNoProfile = errors.New("no profile for the model")
 
 // Profile holds everything about an embedding model that a person, not the model file, decides:
-// how its output becomes a vector, what is put in front of a text, and where the files are.
+// how its output becomes a vector, what is put in front of a text, and where the files are. A shipped
+// profile names in Dependencies the id under which the manifest declares each file of the repository;
+// a profile of the owner pins its files by Revision and SHA256.
 // The shipped table is profiles.json beside this file, and a file in the profiles folder of the
 // plugin data directory adds a profile or changes one by its id.
 type Profile struct {
@@ -52,6 +54,7 @@ type Profile struct {
 	OnnxFile       string            `json:"onnxFile,omitempty"`
 	Revision       string            `json:"revision,omitempty"`
 	SHA256         map[string]string `json:"sha256,omitempty"`
+	Dependencies   map[string]string `json:"dependencies,omitempty"`
 	ExtraInputs    []string          `json:"extraInputs,omitempty"`
 	FloorHint      float64           `json:"floorHint,omitempty"`
 	Tokenizer      string            `json:"tokenizer"`
@@ -324,7 +327,13 @@ func (t *Profiles) parseLayer(entry json.RawMessage) (Profile, error) {
 }
 
 func dropStalePins(p *Profile, base Profile, entry json.RawMessage) {
-	if p.OnnxFile == base.OnnxFile || bytes.Contains(entry, []byte(`"sha256"`)) {
+	if p.OnnxFile == base.OnnxFile {
+		return
+	}
+	if !bytes.Contains(entry, []byte(`"dependencies"`)) {
+		p.Dependencies = nil
+	}
+	if bytes.Contains(entry, []byte(`"sha256"`)) {
 		return
 	}
 	p.SHA256 = nil
@@ -341,6 +350,7 @@ func cloneProfile(p Profile) Profile {
 		maps.Copy(sums, p.SHA256)
 		p.SHA256 = sums
 	}
+	p.Dependencies = maps.Clone(p.Dependencies)
 	return p
 }
 
