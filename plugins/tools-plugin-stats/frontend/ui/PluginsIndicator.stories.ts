@@ -182,7 +182,7 @@ const NAMES = ['Embeddings', 'Claude Code', 'Index stats', 'Transcription', 'Not
 const INSTALLED: readonly PluginProcess[] = PLUGINS.map((one, index) => ({
   ...one,
   pluginName: NAMES[index]!,
-  healthText: one.healthText && 'The transcriber does not answer since the model was updated',
+  healthText: one.healthText && 'The model does not load',
 }))
 
 /** The item in the title bar of the window, with the running plugins listed under it. */

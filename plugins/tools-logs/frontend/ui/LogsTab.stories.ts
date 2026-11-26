@@ -67,10 +67,6 @@ const getRows = (canvasElement: HTMLElement) =>
 
 /** The entries newest first, the failed request opened to its properties. */
 export const Streaming: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'logs', width: 900, height: 320 }],
-  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => expect(getRows(canvasElement)).toHaveLength(ENTRIES.length))
@@ -94,5 +90,51 @@ export const FiltersByLevel: Story = {
     await userEvent.click(shown.getByRole('button', { name: 'Warning' }))
     await waitFor(() => expect(getRows(canvasElement)).toHaveLength(1))
     await expect(getRows(canvasElement)[0]).toHaveTextContent('Sowing calendar missing')
+  },
+}
+
+const VAULT_ENTRIES: readonly LogEntry[] = [
+  entry(0, 'info', 'core', 'Vault opened', { vault: 'Physics', notes: '84' }),
+  entry(1, 'debug', 'index', 'Index query', {
+    sql: 'SELECT path, title FROM notes WHERE folder = ? ORDER BY title LIMIT 50',
+  }),
+  entry(2, 'info', 'md.numen.engines.embeddings', 'Embedded the changed notes', { chunks: '38' }),
+  entry(4, 'warning', 'md.numen.readers.pdf', 'Page without a text layer', {
+    file: '"Reading/Boltzmann 1877.pdf"',
+    page: '373',
+  }),
+  entry(7, 'error', 'md.numen.engines.transcription', 'Transcriber did not answer', {
+    attempt: '3',
+    reply: '{"status":503,"retryAfter":30}',
+  }),
+  entry(9, 'info', 'core', 'Note saved', { path: 'Physics/Entropy.md' }),
+]
+
+/** The Logs tab in the window, the failed request opened to its properties. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Logs', icon: 'logs' },
+      note: 'before',
+      share: 0.62,
+    },
+    screenshot: [{ name: 'logs' }],
+  },
+  render: () => ({
+    components: { LogsTab },
+    setup: () => {
+      const controller = createLogsView(createLogHost(VAULT_ENTRIES))
+      controller.start()
+      return { state: controller.view }
+    },
+    template: '<div class="numen h-full"><LogsTab :state="state" /></div>',
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(getRows(canvasElement)).toHaveLength(VAULT_ENTRIES.length))
+    await userEvent.click(canvas.getByRole('button', { name: /Transcriber did not answer/ }))
+    await expect(canvas.getByText('retryAfter', { exact: false })).toBeVisible()
   },
 }

@@ -61,10 +61,6 @@ type Story = StoryObj<typeof meta>
 
 /** The threshold calibrated on the vault, and a query checked against it. */
 export const ChecksAQuery: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'relevance', width: 680, height: 340, drawn: 5_000 }],
-  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText(WORDS.sourceCalibrated)).toBeVisible()
@@ -80,5 +76,31 @@ export const SetByHand: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(await canvas.findByRole('radio', { name: WORDS.modeManual }))
     await expect(await canvas.findByText(WORDS.sliderHint)).toBeVisible()
+  },
+}
+
+/** The section in the settings tab of the window, a query checked against the threshold. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'tab', tab: { title: 'Settings', icon: 'settings' } },
+    screenshot: [{ name: 'relevance' }],
+  },
+  args: { client: createClient({ ...STATE, model: 'bge-m3' }) },
+  render: (args) => ({
+    components: { FloorPanel },
+    setup: () => ({ args }),
+    template: `
+      <div class="numen bg-surface" style="padding:1.5rem 2rem">
+        <div style="max-inline-size:36rem"><FloorPanel v-bind="args" /></div>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText(WORDS.sourceCalibrated)).toBeVisible()
+    await userEvent.type(canvas.getByRole('textbox', { name: WORDS.probeLabel }), 'erasing a bit')
+    await userEvent.click(canvas.getByRole('button', { name: WORDS.probeButton }))
+    await expect(await canvas.findByRole('status')).toHaveTextContent('Best match 0.46')
   },
 }

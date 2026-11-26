@@ -80,10 +80,6 @@ type Story = StoryObj<typeof meta>
 
 /** The items of a command opened above the bar; picking one runs the command with it. */
 export const PicksAnItem: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'status-bar', width: 900, height: 240, drawn: 2_000 }],
-  },
   play: async ({ args, canvasElement }) => {
     const bar = within(canvasElement).getByRole('region', { name: 'Status bar' })
     await expect(within(bar).getByText('412 words')).toBeVisible()
@@ -94,5 +90,26 @@ export const PicksAnItem: Story = {
     await expect(args.onRun).toHaveBeenCalledWith(`${PLUGIN}:language`, 'de')
     await userEvent.click(within(bar).getByRole('button', { name: 'Spelling language' }))
     await within(document.body).findByRole('menuitem', { name: 'English (UK)' })
+  },
+}
+
+/** The bar at the foot of the window, the items of a command opened above it. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'status-bar' },
+    screenshot: [{ name: 'status-bar' }],
+  },
+  render: (args) => ({
+    components: { StatusBar },
+    setup: () => ({ args }),
+    template: '<StatusBar v-bind="args" />',
+  }),
+  play: async ({ canvasElement }) => {
+    const bar = within(canvasElement).getByRole('region', { name: 'Status bar' })
+    await userEvent.click(within(bar).getByRole('button', { name: 'Spelling language' }))
+    await expect(
+      await within(document.body).findByRole('menuitem', { name: 'English (UK)' }),
+    ).toBeVisible()
   },
 }

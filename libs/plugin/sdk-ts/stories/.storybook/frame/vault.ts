@@ -25,14 +25,14 @@ export const ROWS: readonly Row[] = [
     'The second law.md',
   ]),
   folder('Computation', ["Landauer's principle.md", 'Shannon entropy.md']),
-  folder('Reading', ['Boltzmann 1877.pdf', 'Feynman, Lectures on Physics.epub', 'Shannon 1948.pdf']),
+  folder('Reading', ['Boltzmann 1877.pdf', 'On Heat and Order.epub', 'Shannon 1948.pdf']),
   folder('Lectures', ['Lecture 4.mp3', 'Lecture 5.mp3']),
   folder('Decks', ['Sanskrit roots.md']),
   file('Inbox.md'),
   file('Reading list.md'),
 ]
 
-export const OPEN = ['Physics', 'Computation', 'Reading', 'Lectures']
+export const OPEN = ['Physics', 'Computation', 'Reading', 'Lectures', 'Decks']
 
 /** The note a window shows when the story is drawn somewhere other than a tab. */
 export const NOTE = {

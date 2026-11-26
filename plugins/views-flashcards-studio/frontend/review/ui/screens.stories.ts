@@ -218,7 +218,7 @@ const frame = (screen: VNode) => ({
         style: {
           display: 'flex',
           flexDirection: 'column',
-          blockSize: '100vh',
+          blockSize: '100%',
           padding: 'var(--numen-inset-wide)',
           gap: 'var(--numen-inset)',
           fontFamily: 'var(--numen-font-sans)',
@@ -268,7 +268,6 @@ export const Reviewing: Story = {
     screenshot: [
       { name: 'session', app: 'docs', width: 760, height: 540 },
       { name: 'window-review', app: 'landing', width: 760, height: 940 },
-      { name: 'review', width: 760, height: 540 },
     ],
   },
   render: () =>
@@ -281,4 +280,19 @@ export const Reviewing: Story = {
         at: 'here',
       }),
     ),
+}
+
+/** The card answered in the flash cards window, the four ways of saying it under it. */
+export const ReviewingInTheWindow: Story = {
+  ...Reviewing,
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Review', icon: 'deck' },
+      files: false,
+      title: 'Flash Cards',
+    },
+    screenshot: [{ name: 'review' }],
+  },
 }

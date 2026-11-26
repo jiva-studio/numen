@@ -12,7 +12,17 @@
 import { isBefore } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
-import { Book, BookOpen, Bot, FileText, Folder, FolderOpen, FolderTree } from '@lucide/vue'
+import {
+  Book,
+  BookOpen,
+  Bot,
+  FilePlus,
+  FileText,
+  Folder,
+  FolderOpen,
+  FolderTree,
+  Waypoints,
+} from '@lucide/vue'
 import { ref } from 'vue'
 import { Tree, getKeyChord } from '@numen/ui'
 import type { Keystroke, Row, TextRange } from '@numen/ui'
@@ -389,10 +399,41 @@ interface Screen {
   readonly panel?: 'search' | 'commands' | null
   readonly commands?: readonly PaletteGroup[]
   readonly selected?: readonly string[]
+  /** Whether the title bar and the status bar the plugins draw are stood in for above and below the panes. */
+  readonly hasBars?: boolean
 }
 
-const screen = ({ workspace, panel = null, commands = COMMANDS, selected = [] }: Screen) => ({
-  components: { WorkspaceLayout, Palette, Tree },
+/** The bars of the window drawn as stand-ins, with the lengths the bar plugins give them. */
+const BARS = {
+  root: 'height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto',
+  title:
+    'display: grid; grid-template-columns: auto auto 1fr 7rem; align-items: center; ' +
+    'block-size: calc(2 * var(--numen-chrome-unit)); background: var(--numen-titlebar); ' +
+    'border-block-end: 1px solid var(--numen-rule); color: var(--numen-ink); ' +
+    'font-size: var(--numen-chrome-text-2)',
+  circles:
+    'display: flex; gap: calc(0.5 * var(--numen-chrome-unit)); ' +
+    'padding-inline: calc(0.75 * var(--numen-chrome-unit))',
+  circle: 'inline-size: 12px; block-size: 12px; border-radius: 50%',
+  commands:
+    'display: flex; gap: var(--numen-chrome-unit); padding-inline: calc(0.5 * var(--numen-chrome-unit))',
+  status:
+    'display: flex; align-items: center; gap: var(--numen-chrome-unit); ' +
+    'block-size: calc(1.375 * var(--numen-chrome-unit)); ' +
+    'padding-inline: calc(0.5 * var(--numen-chrome-unit)); background: var(--numen-surface); ' +
+    'border-block-start: 1px solid var(--numen-rule); color: var(--numen-hushed); ' +
+    'font-size: var(--numen-chrome-text-1)',
+  colors: ['var(--numen-alarm)', 'var(--numen-caution-fg)', 'var(--numen-positive)'],
+}
+
+const screen = ({
+  workspace,
+  panel = null,
+  commands = COMMANDS,
+  selected = [],
+  hasBars = false,
+}: Screen) => ({
+  components: { WorkspaceLayout, Palette, Tree, FolderTree, Waypoints, FilePlus },
   setup() {
     const target = ref<State>(workspace())
     const text = ref(MARKDOWN)
@@ -418,10 +459,18 @@ const screen = ({ workspace, panel = null, commands = COMMANDS, selected = [] }:
       OTHER_NOTE,
       AGENT,
       FILES,
+      hasBars,
+      BARS,
     }
   },
   template: `
-    <div style="height: 100vh">
+    <div :style="hasBars ? BARS.root : 'height: 100vh'">
+      <header v-if="hasBars" :style="BARS.title">
+        <span :style="BARS.circles"><i v-for="color in BARS.colors" :key="color" :style="[BARS.circle, { background: color }]" /></span>
+        <span :style="BARS.commands"><FolderTree :size="15" /><Waypoints :size="15" /><FilePlus :size="15" /></span>
+        <span style="text-align: center">numen — Physics</span>
+        <span />
+      </header>
       <WorkspaceLayout v-model="layout" :tabs="TABS">
         <!-- Lucide draws on a 24 grid, and the stroke is given in those units. -->
         <template #icon="{ id }">
@@ -455,6 +504,7 @@ const screen = ({ workspace, panel = null, commands = COMMANDS, selected = [] }:
           </Tree>
         </template>
       </WorkspaceLayout>
+      <footer v-if="hasBars" :style="BARS.status"><span>Ln 14, Col 6</span><span>412 words</span></footer>
       <Palette
         v-if="panel"
         v-model="typed"
@@ -490,8 +540,6 @@ export const Writing: Story = {
       { name: 'theme-dracula', app: 'docs', preset: 'dracula' },
       { name: 'theme-solarized', app: 'docs', preset: 'solarized' },
       { name: 'window-editor', app: 'landing' },
-      { name: 'dracula', plugin: 'themes-presets', preset: 'dracula' },
-      { name: 'solarized', plugin: 'themes-presets', preset: 'solarized' },
     ],
   },
   render: () =>
@@ -533,7 +581,6 @@ export const Searching: Story = {
     screenshot: [
       { name: 'searching', app: 'docs' },
       { name: 'window-search', app: 'landing' },
-      { name: 'search', plugin: 'engines-embeddings' },
     ],
   },
   render: () =>
@@ -644,8 +691,6 @@ export const Recognising: Story = {
     screenshot: [
       { name: 'recognise', app: 'docs' },
       { name: 'window-ocr', app: 'landing' },
-      { name: 'recognise', plugin: 'engines-ocr' },
-      { name: 'proofread', plugin: 'tools-proofreading' },
     ],
   },
   render: () =>
@@ -729,4 +774,54 @@ export const Filing: Story = {
       await expect(rows.indexOf(folder)).toBeLessThan(rows.indexOf(selected[at]!))
     }
   },
+}
+
+/** The search over everything the window holds, with the bars of the window above and below it. */
+export const SearchingInTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [{ name: 'search', plugin: 'engines-embeddings' }],
+  },
+  render: () =>
+    screen({
+      workspace: () => ({
+        root: branch(
+          'root',
+          [createPane('main', [FILES]), createPane('middle', [NOTE, BOOK], NOTE)],
+          [0.3, 0.7],
+        ),
+        axis: 'horizontal',
+        focus: 'middle',
+      }),
+      panel: 'search',
+      hasBars: true,
+    }),
+  play: Searching.play,
+}
+
+/** The commands over a scanned book, with the bars of the window above and below it. */
+export const RecognisingInTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'recognise', plugin: 'engines-ocr' },
+      { name: 'proofread', plugin: 'tools-proofreading' },
+    ],
+  },
+  render: () =>
+    screen({
+      workspace: () => ({
+        root: branch(
+          'root',
+          [createPane('aside', [FILES]), createPane('main', [BOOK, NOTE], BOOK)],
+          [0.26, 0.74],
+        ),
+        axis: 'horizontal',
+        focus: 'main',
+      }),
+      panel: 'commands',
+      commands: FILE_COMMANDS,
+      hasBars: true,
+    }),
+  play: Recognising.play,
 }

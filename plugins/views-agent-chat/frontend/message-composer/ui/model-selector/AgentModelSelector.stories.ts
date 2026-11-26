@@ -52,13 +52,6 @@ const open: NonNullable<Story['play']> = async ({ canvasElement }) => {
 
 /** The models under the names of their agents, the one in force marked. */
 export const Opened: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [
-      { name: 'models', plugin: 'agents-claude', width: 640, height: 560, drawn: 5_000 },
-      { name: 'models', plugin: 'agents-antigravity', width: 640, height: 560, drawn: 5_000 },
-    ],
-  },
   play: async (context) => {
     await open(context)
     const list = await within(document.body).findByRole('listbox', { name: 'Model' })

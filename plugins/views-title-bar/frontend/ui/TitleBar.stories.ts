@@ -119,10 +119,6 @@ const getPage = (canvas: HTMLElement) => within(canvas.ownerDocument.body)
 
 /** The bar of a window with a vault open, three commands in two groups and one view. */
 export const Default: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'title-bar', width: 960, height: 26, drawn: 1_000 }],
-  },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(title(canvasElement).textContent).toBe('numen — Orchard notes'))
     await expect(getShownIds(canvasElement)).toStrictEqual(['files', 'plex', 'note'])
@@ -399,5 +395,39 @@ export const NothingFound: Story = {
     await userEvent.keyboard('zzz')
     await expect(await page.findByRole('status')).toBeTruthy()
     await expect(page.queryAllByRole('option')).toHaveLength(0)
+  },
+}
+
+const PHYSICS: VaultSummary = { id: 'physics', name: 'Physics' }
+
+/** The bar of the window over the vault of physics notes, its list of vaults open. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-bar' },
+    screenshot: [{ name: 'title-bar' }],
+  },
+  args: {
+    vaults: {
+      vaults: [
+        PHYSICS,
+        { id: 'sanskrit', name: 'Sanskrit' },
+        { id: 'reading', name: 'Reading notes' },
+      ],
+      current: PHYSICS,
+    },
+    platform: 'linux',
+    buttons: 'mac',
+    commands: ALL,
+    status: [TASKS, STATS, UPDATE],
+  },
+  render: (args) => ({
+    components: { TitleBar },
+    setup: () => ({ args }),
+    template: '<TitleBar v-bind="{ ...args, width: undefined }" />',
+  }),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(title(canvasElement))
+    await expect(await getPage(canvasElement).findAllByRole('option')).toHaveLength(3)
   },
 }

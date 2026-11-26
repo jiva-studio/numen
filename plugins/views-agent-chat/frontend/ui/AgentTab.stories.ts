@@ -10,6 +10,7 @@ import type { AgentTabDeps, Turn } from '../types'
 import AgentTab from './AgentTab.vue'
 import { createAgentKind } from '../model/kind'
 import { byWholeText, createAgentConnections, createHost, say } from '../fixtures'
+import type { HostOptions } from '../fixtures'
 import { useAgentConversation, type AgentTabState } from '../model/useAgentConversation'
 import { createAgentList, useAgentChoice } from '../model/agents'
 import { WORDS } from '../words'
@@ -57,10 +58,6 @@ export const Empty: Story = {
 
 /** A question and its answer, drawn one above the other. */
 export const Answered: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'agent', width: 760, height: 360 }],
-  },
   render: () => ({
     components: {
       Tab: createTab(
@@ -198,5 +195,146 @@ export const Agents: Story = {
       expect(canvas.getByRole('button', { name: 'Meadow agent · Clover' })).toBeVisible(),
     )
     await expect(canvas.queryByRole('button', { name: 'Reasoning' })).toBeNull()
+  },
+}
+
+/** The notes of the vault the answers in the window link to. */
+const VAULT: HostOptions = {
+  focus: { path: 'Physics/Entropy.md', title: 'Entropy' },
+  notes: {
+    'name://Entropy': 'Physics/Entropy.md',
+    "name://Landauer's principle": "Computation/Landauer's principle.md",
+    'name://Boltzmann 1877': 'Reading/Boltzmann 1877.pdf',
+  },
+}
+
+const createPaneTab = (createState: (deps: AgentTabDeps) => AgentTabState) =>
+  defineComponent({
+    name: 'AgentPaneTab',
+    setup() {
+      const { kind } = createAgentKind(createHost(VAULT).host, createState, AgentTab)
+      const state = kind.open!('', 'agent:story')
+      return () => h('div', { style: { width: '100%', height: '100%' } }, [h(AgentTab, { state })])
+    },
+  })
+
+const DEMON: readonly Turn[] = [
+  { id: 'a', voice: 'prompt', text: "Why doesn't Maxwell's demon break the second law?" },
+  {
+    id: 'b',
+    voice: 'response',
+    text:
+      'Because the demon has to remember which molecule is which, and the memory is finite. ' +
+      "[[Landauer's principle]] puts the price on clearing it: at least kT ln 2 of heat for " +
+      'every bit erased, which is exactly what the sorting saved.\n\n' +
+      'Your note [[Entropy]] makes the same point under *Where the two meet*, and ' +
+      '[[Boltzmann 1877]] counts the arrangements on p. 373.',
+  },
+]
+
+/** The agent in a pane of the window beside the note it was asked about, its answer linking to the vault. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Agent', icon: 'agent' },
+      note: 'before',
+      share: 0.45,
+      selected: 'Physics/Entropy.md',
+    },
+    screenshot: [{ name: 'agent' }],
+  },
+  render: () => ({
+    components: { Tab: createPaneTab(createRecordedState(DEMON)) },
+    template: '<Tab />',
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText(byWholeText(DEMON[0]!.text))).toBeVisible())
+  },
+}
+
+const AGENT_ROWS = [
+  {
+    connectionId: 'c-claude',
+    connectionName: 'Claude Code',
+    options: { model: 'sonnet-5.5' },
+    fields: [
+      { key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: false },
+      { key: 'reasoning', title: 'Reasoning', optionsFrom: 'llm.reasoning', isRequired: false },
+    ],
+  },
+  {
+    connectionId: 'c-antigravity',
+    connectionName: 'Antigravity',
+    options: {},
+    fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: false }],
+  },
+]
+
+const AGENT_OPTIONS: Readonly<Record<string, readonly string[]>> = {
+  'c-claude:model': ['Opus 5.5', 'Sonnet 5.5', 'Haiku 5.5'],
+  'c-claude:reasoning': ['Low', 'Medium', 'High'],
+  'c-antigravity:model': ['Gemini 4 Argon', 'Gemini 3.8 Flash'],
+}
+
+const createChoosingState = (deps: AgentTabDeps): AgentTabState => {
+  const { host } = createAgentConnections(
+    { frames: [] },
+    {
+      rows: AGENT_ROWS,
+      listOptions: (connectionId, field) =>
+        (AGENT_OPTIONS[`${connectionId}:${field}`] ?? []).map((title) => ({
+          value: title.toLowerCase().replace(/ /g, '-'),
+          title,
+          group: '',
+        })),
+    },
+  )
+  const list = createAgentList(host, WORDS)
+  list.reload().catch(() => undefined)
+  const choice = useAgentChoice(host, list)
+  const conversation: Conversation = {
+    turns: ref([...DEMON]),
+    isAnswerPending: ref(false),
+    ask: async () => undefined,
+    getSourcePath: () => null,
+    stop: () => undefined,
+  }
+  return useAgentConversation(conversation, deps, choice)
+}
+
+/** The models of the agents set up, opened from the composer of the agent in the window. */
+export const ChoosingAModel: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Agent', icon: 'agent' },
+      note: 'before',
+      share: 0.45,
+    },
+    screenshot: [
+      { name: 'models', plugin: 'agents-claude' },
+      { name: 'models', plugin: 'agents-antigravity' },
+    ],
+  },
+  render: () => ({
+    components: { Tab: createPaneTab(createChoosingState) },
+    template: '<Tab />',
+  }),
+  play: async ({ canvasElement }) => {
+    const picker = await within(canvasElement).findByRole('button', {
+      name: 'Claude Code · Sonnet 5.5',
+    })
+    await userEvent.click(picker)
+    await waitFor(() =>
+      expect(
+        within(within(document.body).getByRole('listbox', { name: 'Model' })).getAllByRole(
+          'option',
+        ),
+      ).toHaveLength(5),
+    )
   },
 }

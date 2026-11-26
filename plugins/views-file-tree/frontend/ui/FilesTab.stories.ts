@@ -116,10 +116,6 @@ export const TheVault: Story = {
 
 /** A folder open, with its contents set in under it. */
 export const AFolderOpened: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'files', width: 320, height: 130, drawn: 1_000 }],
-  },
   render: room(['physics']),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(5))
@@ -203,18 +199,6 @@ const openMenuOn = async (row: HTMLElement) => {
 
 /** The templates of the vault offered under New on a folder. */
 export const TemplatesUnderNew: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [
-      {
-        name: 'new-from-template',
-        plugin: 'tools-templates',
-        width: 720,
-        height: 230,
-        drawn: 5_000,
-      },
-    ],
-  },
   render: room([], TEMPLATES),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(3))
@@ -254,22 +238,126 @@ const LINKS: Room = {
 
 /** The media of a link note offered to download from its row. */
 export const MediaOfALink: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [
-      {
-        name: 'download-media',
-        plugin: 'tools-media-importer',
-        width: 720,
-        height: 200,
-        drawn: 5_000,
-      },
-    ],
-  },
   render: room([], LINKS),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(3))
     const link = rows(canvasElement)[1] as HTMLElement
+    await userEvent.click(link)
+    await openMenuOn(link)
+    await userEvent.click(await getMenuItem('Download media'))
+    await expect(await getMenuItem('Audio only')).toBeVisible()
+  },
+}
+
+const pane =
+  (open: readonly string[], given: Room) =>
+  () => ({
+    components: { FilesTab },
+    setup: () => ({ state: createFilesTab(open, given) }),
+    template: '<div class="numen h-full bg-surface"><FilesTab :state="state" /></div>',
+  })
+
+const PHYSICS_ROOT: readonly Entry[] = [
+  folder('Physics'),
+  folder('Computation'),
+  folder('Reading'),
+  folder('Lectures'),
+  folder('Templates'),
+  file('Inbox.md'),
+  file('Reading list.md'),
+]
+
+/** A vault of physics notes, the papers they cite and the lectures they come from. */
+const PHYSICS: Record<string, readonly Entry[]> = {
+  [ROOT]: PHYSICS_ROOT,
+  Physics: [
+    file('Physics/Entropy.md'),
+    file('Physics/Entropy of mixing.md'),
+    file('Physics/Free energy.md'),
+    file("Physics/Maxwell's demon.md"),
+    file('Physics/The second law.md'),
+  ],
+  Computation: [file("Computation/Landauer's principle.md"), file('Computation/Shannon entropy.md')],
+  Reading: [
+    file('Reading/Boltzmann 1877.pdf', { isNote: false }),
+    file('Reading/On Heat and Order.epub', { isNote: false }),
+    file('Reading/Shannon 1948.pdf', { isNote: false }),
+  ],
+  Lectures: [
+    file('Lectures/Lecture 4.mp3', { isNote: false }),
+    file('Lectures/Lecture 5.mp3', { isNote: false }),
+  ],
+}
+
+/** The tree of the vault in the window, three folders open and a note chosen. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'files' },
+    screenshot: [{ name: 'files' }],
+  },
+  render: pane(['Physics', 'Computation', 'Reading'], { ...PLAIN, vault: PHYSICS }),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(rows(canvasElement)).toHaveLength(17))
+    await userEvent.click(within(canvasElement).getByRole('treeitem', { name: /^Entropy\.md/ }))
+  },
+}
+
+/** The vault with a folder of templates, and the New menu the Templates plugin adds to. */
+const PHYSICS_TEMPLATES: Room = {
+  ...TEMPLATES,
+  vault: PHYSICS,
+  items: {
+    [FROM_TEMPLATE.command]: [
+      { id: 'Templates/Derivation.md', title: 'Derivation' },
+      { id: 'Templates/Lecture notes.md', title: 'Lecture notes' },
+      { id: 'Templates/Paper summary.md', title: 'Paper summary' },
+    ],
+  },
+}
+
+/** The templates of the vault offered under New on a folder of the tree in the window. */
+export const TemplatesInTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'files' },
+    screenshot: [{ name: 'new-from-template', plugin: 'tools-templates' }],
+  },
+  render: pane(['Physics'], PHYSICS_TEMPLATES),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(rows(canvasElement)).toHaveLength(12))
+    await openMenuOn(rows(canvasElement)[0] as HTMLElement)
+    await userEvent.click(await getMenuItem('New'))
+    await userEvent.click(await getMenuItem('New note from template'))
+    await expect(await getMenuItem('Paper summary')).toBeVisible()
+  },
+}
+
+/** A vault with a link note to a recorded talk, and the row menu the Media Importer plugin adds to. */
+const PHYSICS_LINKS: Room = {
+  ...LINKS,
+  vault: {
+    ...PHYSICS,
+    [ROOT]: [
+      ...PHYSICS_ROOT.slice(0, 4),
+      file('Information is physical.md', { type: 'link' }),
+      ...PHYSICS_ROOT.slice(5),
+    ],
+  },
+}
+
+/** The media of a link note offered to download from its row in the tree of the window. */
+export const MediaInTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'files' },
+    screenshot: [{ name: 'download-media', plugin: 'tools-media-importer' }],
+  },
+  render: pane(['Physics', 'Lectures'], PHYSICS_LINKS),
+  play: async ({ canvasElement }) => {
+    const link = await waitFor(() =>
+      within(canvasElement).getByRole('treeitem', { name: /^Information is physical/ }),
+    )
     await userEvent.click(link)
     await openMenuOn(link)
     await userEvent.click(await getMenuItem('Download media'))

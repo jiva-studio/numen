@@ -77,14 +77,19 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-const render = (cues: readonly Cue[], canCreateText: boolean, isPlaying: boolean) => () => ({
+const render = (
+  cues: readonly Cue[],
+  canCreateText: boolean,
+  isPlaying: boolean,
+  height = 'h-screen',
+) => () => ({
   components: { RecordingTab },
   setup: () => ({
     path: PATH,
     recordings: createRecordings(cues, canCreateText),
     how: { audioPlayer: createPlayer(isPlaying), plays: () => true },
   }),
-  template: `<div class="numen h-screen bg-surface"><RecordingTab :path="path" :recordings="recordings" :how="how" /></div>`,
+  template: `<div class="numen ${height} bg-surface"><RecordingTab :path="path" :recordings="recordings" :how="how" /></div>`,
 })
 
 /** A lecture playing, with the words heard in it under the player. */
@@ -94,7 +99,6 @@ export const Playing: Story = {
     screenshot: [
       { name: 'recording', app: 'docs' },
       { name: 'window-audio', app: 'landing' },
-      { name: 'recording' },
     ],
   },
   render: render(SPOKEN, true, true),
@@ -122,5 +126,42 @@ export const NoTranscript: Story = {
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: WORDS.transcribe })).toBeVisible(),
     )
+  },
+}
+
+const LECTURE = { title: 'Lecture 4', icon: 'audio' }
+
+/** The lecture playing in a tab of the window, beside the note it is about. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: LECTURE,
+      note: 'after',
+      share: 0.56,
+      selected: 'Lectures/Lecture 4.mp3',
+    },
+    screenshot: [{ name: 'recording' }],
+  },
+  render: render(SPOKEN, true, true, 'h-full'),
+  play: Playing.play,
+}
+
+/** The transcript of the lecture, a time against each paragraph, in a tab of the window. */
+export const TranscriptInTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: LECTURE,
+      behind: [{ title: 'Lecture 5', icon: 'audio' }],
+      selected: 'Lectures/Lecture 4.mp3',
+    },
+    screenshot: [{ name: 'transcript', plugin: 'engines-transcription' }],
+  },
+  render: render(SPOKEN, true, false, 'h-full'),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(canvasElement.querySelector('.cm-time')).not.toBeNull())
   },
 }

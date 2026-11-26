@@ -51,10 +51,6 @@ const renderEditor =
 
 /** One of everything: headings, marks, lists, a rule, a table, code and maths. */
 export const Playground: Story = {
-  tags: ['screenshot'],
-  parameters: {
-    screenshot: [{ name: 'editor', width: 900, height: 600 }],
-  },
   render: renderEditor(MARKED_UP),
 }
 
@@ -913,4 +909,58 @@ export const NumbersStayOnLinesAtALargeSize: Story = {
 export const NumbersStayOnLinesAtASmallSize: Story = {
   render: renderWithTokens('10px', '1.2'),
   play: ({ canvasElement }) => playNumbersOnTheirLines(canvasElement, 10, 1.2),
+}
+
+/** A note of the vault on entropy, as it is written. */
+const ENTROPY = `# Entropy
+
+How many arrangements a state could have been made of, counted the same way in a gas
+and in a **message**. Boltzmann counted the microstates a temperature leaves open;
+Shannon counted the messages a channel could have sent.
+
+$$S = k_B \\ln W$$
+
+## Where the two meet
+
+A demon that sorts fast molecules from slow ones appears to lower the entropy of the
+gas *for nothing*. It does not: the knowing is paid for when the memory holding it is
+cleared, at kT ln 2 a bit.
+
+| Who | Counted | Year |
+|:----|:--------|-----:|
+| Boltzmann | arrangements of a gas | 1877 |
+| Shannon | messages of a channel | 1948 |
+| Landauer | the cost of erasing a bit | 1961 |
+
+- [x] Read Boltzmann 1877, § 6
+- [ ] Check the units in the formula
+- [ ] Ask about the Gibbs paradox
+
+> The measure is not about heat. It is about how much a description leaves open.
+`
+
+/** The note open in a tab of the window, its marks drawn as they read. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Entropy', icon: 'note' },
+      behind: [
+        { title: "Maxwell's demon", icon: 'note' },
+        { title: 'Boltzmann 1877', icon: 'book' },
+      ],
+      selected: 'Physics/Entropy.md',
+    },
+    screenshot: [
+      { name: 'editor' },
+      { name: 'dracula', plugin: 'themes-presets', preset: 'dracula' },
+      { name: 'solarized', plugin: 'themes-presets', preset: 'solarized' },
+    ],
+  },
+  render: () => ({
+    components: { Editor },
+    setup: () => ({ text: ENTROPY }),
+    template: '<Editor :model-value="text" class="h-full bg-surface" />',
+  }),
 }
