@@ -16,29 +16,19 @@ The window the page opens when "Try interactive demo" is pressed is `src/compone
 
 ## The picture of the window
 
-The screenshots in `src/assets/` are taken from the stories that draw each
-screen — the window in `libs/ui/components`, and a plugin's tab in the plugins'
-Storybook — so the page shows the components the application is built from,
-in the state they settle in. `tools/shots.mjs` names them.
+The screenshots in `src/assets/` are declared in the stories that draw each
+screen, with `app: 'landing'`, so the page shows the components the
+application is built from, in the state they settle in.
 
 ```
 npm run shoot
 ```
 
-That starts the Storybooks the shots are declared in, takes each in light and
-in dark at two and a half times the pixels, writes them into `src/assets/` as
-WebP, and stops the Storybooks again. `STORYBOOK_PORT`,
-`STORYBOOK_SHELL_PORT` and `STORYBOOK_PLUGINS_PORT` name ones already running
-instead. The shell's and the plugins' Storybooks reach `@numen/ui` through its
-build, so `npm run build` in `libs/ui/components` comes first.
-
-The browser it drives is whichever Chrome is already on the machine, else
-Playwright's own — the same rule the story tests follow. `CHROME_PATH` names
-one directly:
-
-```
-CHROME_PATH=/path/to/chrome npm run shoot
-```
+That runs `tools/shoot/` for this page: it starts the Storybooks the shots
+are declared in, takes each in light and in dark, writes them into
+`src/assets/` as WebP, and stops the Storybooks again. Its README says how a
+story declares a screenshot, which Storybooks must be built first, and how
+`CHROME_PATH` and the `STORYBOOK_*_PORT` variables are used.
 
 Change what is in the picture by changing the story, not by editing the file.
 
