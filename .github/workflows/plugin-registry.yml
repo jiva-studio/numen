@@ -2,7 +2,7 @@ name: Plugin registry
 
 # The registry the plugin catalog of the site is built from (docs/plugins/registry.md). Every
 # night it is collected from the plugins of the repository, the external sources of
-# plugins/registry.json and the quality files of the mutation and coverage workflows. When its
+# tools/plugin-registry/registry.json and the quality files of the mutation and coverage workflows. When its
 # content differs from the published one, it is uploaded to plugins/registry/ of the downloads
 # zone and the site is rebuilt; otherwise nothing is written.
 on:

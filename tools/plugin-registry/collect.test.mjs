@@ -72,7 +72,7 @@ const createRepository = () => {
   commit('feat(notes): open links', '2026-11-03T10:00:00Z')
   write('plugins/notes/main.ts', 'export const a = 2\n')
   commit('fix(notes): keep the cursor', '2026-11-04T10:00:00Z')
-  write('plugins/registry.json', JSON.stringify({ external: [] }))
+  write('tools/plugin-registry/registry.json', JSON.stringify({ external: [] }))
   return root
 }
 
@@ -91,7 +91,7 @@ const collectOffline = (root, extra = {}) =>
     outDir: join(root, 'out'),
     previous: null,
     quality: null,
-    sources: join(root, 'plugins', 'registry.json'),
+    sources: join(root, 'tools', 'plugin-registry', 'registry.json'),
     isOffline: true,
     generatedAt: '2026-11-26T00:00:00.000Z',
     ...extra,
@@ -526,7 +526,7 @@ test('the icon is the first one the manifest declares on a tab kind, a command, 
 test('the icons map of the sources file names the icon before the manifest does', async () => {
   await withRepository(async (root) => {
     writeFileSync(
-      join(root, 'plugins', 'registry.json'),
+      join(root, 'tools', 'plugin-registry', 'registry.json'),
       JSON.stringify({ icons: { 'org.example.notes': 'scan-text' }, external: [] }),
     )
 
@@ -536,7 +536,7 @@ test('the icons map of the sources file names the icon before the manifest does'
 
 test('an icon lucide does not have is an error', async () => {
   await withRepository(async (root) => {
-    const file = join(root, 'plugins', 'registry.json')
+    const file = join(root, 'tools', 'plugin-registry', 'registry.json')
     writeFileSync(file, JSON.stringify({ icons: { 'org.example.notes': 'heading' }, external: [] }))
 
     await assert.rejects(collectOffline(root), /org\.example\.notes names "heading", which is not a lucide icon/)
@@ -550,7 +550,7 @@ test('an icon lucide does not have is an error', async () => {
 test('an icon for an id that no plugin has is an error', async () => {
   await withRepository(async (root) => {
     writeFileSync(
-      join(root, 'plugins', 'registry.json'),
+      join(root, 'tools', 'plugin-registry', 'registry.json'),
       JSON.stringify({ icons: { 'org.example.missing': 'cloud' }, external: [] }),
     )
 
@@ -571,7 +571,7 @@ test('a plugin that declares no icon takes the icon of its category', async () =
 test('the registry lists the featured ids of the sources file', async () => {
   await withRepository(async (root) => {
     writeFileSync(
-      join(root, 'plugins', 'registry.json'),
+      join(root, 'tools', 'plugin-registry', 'registry.json'),
       JSON.stringify({ featured: ['org.example.notes'], external: [] }),
     )
 
@@ -582,7 +582,7 @@ test('the registry lists the featured ids of the sources file', async () => {
 test('a featured id that no plugin has is an error', async () => {
   await withRepository(async (root) => {
     writeFileSync(
-      join(root, 'plugins', 'registry.json'),
+      join(root, 'tools', 'plugin-registry', 'registry.json'),
       JSON.stringify({ featured: ['org.example.missing'], external: [] }),
     )
 
@@ -611,7 +611,7 @@ test('an external source with the id of an internal plugin is an error', () => {
 
 test('an external source under the official prefix from another owner is an error', async () => {
   await withRepository(async (root) => {
-    const file = join(root, 'plugins', 'registry.json')
+    const file = join(root, 'tools', 'plugin-registry', 'registry.json')
     writeFileSync(
       file,
       JSON.stringify({ external: [{ id: 'md.numen.fake', repo: 'someone/fake', author: 'Someone' }] }),

@@ -66,7 +66,7 @@ type PluginArtifact = {
 
 export type PluginCheckStatus = 'pass' | 'warn' | 'fail' | 'info' | 'skipped'
 
-export type PluginCheck = { id: string; status: PluginCheckStatus; detail: string }
+type PluginCheck = { id: string; status: PluginCheckStatus; detail: string }
 
 export type PluginQualityEntry = {
   target: string | null
@@ -84,7 +84,7 @@ type PluginQuality = {
   tests: PluginTests
 }
 
-export type PluginDependency = {
+type PluginDependency = {
   ecosystem: 'go' | 'npm'
   name: string
   version: string
@@ -96,7 +96,7 @@ type PluginDependencies = {
   indirect: { go: number; npm: number }
 }
 
-export type PluginVulnerability = {
+type PluginVulnerability = {
   id: string
   url: string
   summary: string

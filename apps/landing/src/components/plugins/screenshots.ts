@@ -7,7 +7,7 @@ import type { ImageMetadata } from 'astro'
 import { type CatalogPlugin, getPublishedUrl } from './catalog'
 
 /** One appearance of a screenshot; an external one has no known size. */
-export type ShotImage = { src: string; width?: number; height?: number }
+type ShotImage = { src: string; width?: number; height?: number }
 
 /** A screenshot in light and in dark; either may be missing. */
 export type Shot = { name: string; light: ShotImage | null; dark: ShotImage | null }

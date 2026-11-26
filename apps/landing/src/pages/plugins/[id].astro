@@ -14,7 +14,7 @@ import PluginSections from '../../components/plugins/PluginSections.astro'
 import PluginChangelog from '../../components/plugins/PluginChangelog.astro'
 import PluginHeader from '../../components/plugins/PluginHeader.astro'
 import PluginSidebar from '../../components/plugins/PluginSidebar.astro'
-import { type CatalogPlugin, listRelated } from '../../components/plugins/catalog'
+import { type CatalogPlugin, listRelatedPlugins } from '../../components/plugins/catalog'
 import { listContributionSections, listQualitySections } from '../../components/plugins/sections'
 import '../../styles/plugins.css'
 
@@ -31,7 +31,7 @@ const { entry } = Astro.props
 const plugin = entry.data as CatalogPlugin
 const { Content } = entry.rendered ? await render(entry) : { Content: null }
 const plugins = (await getCollection('plugins')).map((one) => one.data as CatalogPlugin)
-const related = listRelated(plugin, plugins)
+const related = listRelatedPlugins(plugin, plugins)
 
 const title = `${plugin.name} — numen plugins`
 const description = plugin.readme?.intro || plugin.description

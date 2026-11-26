@@ -11,7 +11,7 @@ import test from 'node:test'
 import { execTool } from '../shared/tools.mjs'
 import {
   checkHasTests,
-  checkManual,
+  checkManualPages,
   checkMutationScore,
   checkNetwork,
   checkStories,
@@ -431,9 +431,9 @@ test('a manual page names the plugin outside the generated blocks', () => {
 test('a manual page is addressed by its path, an index by its folder', () => {
   assert.equal(getManualUrl('index.mdx'), 'https://docs.numen.md/')
   assert.equal(getManualUrl('plex.mdx'), 'https://docs.numen.md/plex/')
-  assert.equal(checkManual([]).status, 'warn')
-  assert.equal(checkManual(null).status, 'skipped')
-  assert.deepEqual(checkManual(['https://docs.numen.md/plex/']), {
+  assert.equal(checkManualPages([]).status, 'warn')
+  assert.equal(checkManualPages(null).status, 'skipped')
+  assert.deepEqual(checkManualPages(['https://docs.numen.md/plex/']), {
     id: 'manual',
     status: 'pass',
     detail: 'https://docs.numen.md/plex/',
@@ -472,7 +472,7 @@ const writeRepository = (root) => {
     mkdirSync(join(root, path, '..'), { recursive: true })
     writeFileSync(join(root, path), text)
   }
-  write('plugins/registry.json', JSON.stringify({ external: [] }))
+  write('tools/plugin-registry/registry.json', JSON.stringify({ external: [] }))
   write(
     'plugins/pdf/manifest.json',
     JSON.stringify({
@@ -520,7 +520,7 @@ test('an internal plugin lists its dependencies, vulnerabilities and source chec
       outDir: join(root, 'out'),
       previous: null,
       quality: null,
-      sources: join(root, 'plugins', 'registry.json'),
+      sources: join(root, 'tools', 'plugin-registry', 'registry.json'),
       isOffline: false,
       readers: createReaders({ isOffline: false, scanned }),
       generatedAt: '2026-11-26T00:00:00.000Z',
@@ -572,7 +572,7 @@ test('offline, the vulnerability check of an internal plugin is skipped without 
       outDir: join(root, 'out'),
       previous: null,
       quality: null,
-      sources: join(root, 'plugins', 'registry.json'),
+      sources: join(root, 'tools', 'plugin-registry', 'registry.json'),
       isOffline: true,
       readers: createReaders({ isOffline: true, scanned }),
       generatedAt: '2026-11-26T00:00:00.000Z',

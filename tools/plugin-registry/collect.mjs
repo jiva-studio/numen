@@ -2,7 +2,7 @@
 /**
  * Plugin registry collector.
  *
- * Reads every plugin of `plugins/` and every external source of `plugins/registry.json`, and
+ * Reads every plugin of `plugins/` and every external source of `tools/plugin-registry/registry.json`, and
  * writes the registry the site's plugin catalog is built from:
  *
  *   <out>/latest.json                  the registry
@@ -43,7 +43,7 @@ import {
   assertNoCollision,
   createRegistry,
   formatRegistry,
-  readFeatured,
+  readFeaturedIds,
   readIcons,
   readSources,
 } from './registry.mjs'
@@ -145,7 +145,7 @@ export const collectRegistry = async ({
     ...one,
     icon: icons[one.id] ?? one.icon,
   }))
-  const featured = readFeatured(sources)
+  const featured = readFeaturedIds(sources)
   assertFeaturedKnown(featured, plugins)
   assertIconsKnown(icons, plugins)
   return createRegistry(plugins, generatedAt, featured)
@@ -164,7 +164,7 @@ const main = async () => {
     outDir,
     previous,
     quality: readOption(args, '--quality', null),
-    sources: readOption(args, '--sources', join(ROOT, 'plugins', 'registry.json')),
+    sources: readOption(args, '--sources', join(ROOT, 'tools', 'plugin-registry', 'registry.json')),
     isOffline: args.includes('--offline'),
   })
   const isChanged = registry.contentHash !== previous?.contentHash

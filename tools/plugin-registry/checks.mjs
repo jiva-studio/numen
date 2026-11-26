@@ -100,7 +100,7 @@ export const checkStories = (found) => {
 }
 
 /** A page of the manual names the plugin. */
-export const checkManual = (pages) => {
+export const checkManualPages = (pages) => {
   if (pages === null) return createCheck('manual', 'skipped', 'No manual.')
   return pages.length > 0
     ? createCheck('manual', 'pass', pages.join('\n'))

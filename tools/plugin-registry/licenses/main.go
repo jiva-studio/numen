@@ -1,7 +1,8 @@
 // Command licenses prints, as one JSON object, the SPDX ids of the license files in each module
 // folder named on the command line: {"<folder>": ["MIT"], "<other>": []}. A file is a license file
-// when its name starts with LICENSE, LICENCE, COPYING or UNLICENSE; its ids are the licenses
-// github.com/google/licensecheck finds when they cover at least minCoverage percent of its text.
+// when its name matches licenseFile (LICENSE in either spelling, COPYING or UNLICENSE); its ids are
+// the licenses github.com/google/licensecheck finds when they cover at least minCoverage percent of
+// its text.
 package main
 
 import (

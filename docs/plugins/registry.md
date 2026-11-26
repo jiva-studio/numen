@@ -1,6 +1,6 @@
 # The plugin registry
 
-The plugin catalog of numen.md (`/plugins`) is built from one JSON file, the registry, which `.github/workflows/plugin-registry.yml` collects every night and publishes at `https://dl.numen.md/plugins/registry/latest.json`, with a copy kept under the date (`plugins/registry/<YYYY-MM-DD>.json`). It lists the plugins of this repository and the plugins published from their own GitHub repositories, each with its manifest fields, its README, its screenshots, its changelog, its third-party dependencies and their known vulnerabilities, the checks the registry runs and its test numbers.
+The plugin catalog of numen.md (`/plugins`) is built from one JSON file, the registry, which `.github/workflows/plugin-registry.yml` collects every night and publishes at `https://dl.numen.md/plugins/registry/latest.json`, with a copy kept under the date (`https://dl.numen.md/plugins/registry/<YYYY-MM-DD>.json`). It lists the plugins of this repository and the plugins published from their own GitHub repositories, each with its manifest fields, its README, its screenshots, its changelog, its third-party dependencies and their known vulnerabilities, the checks the registry runs and its test numbers.
 
 ## Plugins of this repository
 
@@ -12,7 +12,7 @@ Every folder of `plugins/` with a `manifest.json` is in the registry. Its entry 
 - `screenshots/<name>-light.webp` and `screenshots/<name>-dark.webp`, one pair per screenshot;
 - the changelog: the commits that touched the folder, grouped by the commit that changed the `version` of the manifest;
 - the contributors: the people who wrote the commits that touched the folder, one per email address as `.mailmap` maps it, named as in their newest commit, with their commit counts, bots left out; online with a GitHub token, each also gets the login and avatar of their GitHub account from the commits API;
-- the mutation score and the coverage of the nightly `mutation.yml` and `coverage.yml`, which publish them at `plugins/quality/mutation.json` and `plugins/quality/coverage.json`;
+- the mutation score and the coverage of the nightly `mutation.yml` and `coverage.yml`, which publish them at `https://dl.numen.md/plugins/quality/mutation.json` and `https://dl.numen.md/plugins/quality/coverage.json`;
 - the tests of the folder, counted from the source without running them: Go functions `Test…` and `Fuzz…` in `*_test.go`, TypeScript cases `it(` and `test(` in `*.test.ts` (an `.each` table counts once), and the stories exported from `*.stories.ts`, which run as browser tests; `node_modules`, `dist` and `testdata` are left out;
 - the dependencies and their vulnerabilities, below.
 
@@ -27,19 +27,19 @@ The modules and packages of this repository, `github.com/jiva-studio/numen/...` 
 
 The vulnerabilities are those osv-scanner (`osv-scanner scan source --lockfile <file> --format json`) reports for the `go.mod` of the plugin, all its modules included, and those it reports in the root `package-lock.json` for the npm packages the plugin installs, one per group of aliases, each linked to its page on osv.dev. The Go standard library and the toolchain, which the go line of `go.mod` names, belong to the Go release and are left out.
 
-Every entry, internal or external, has an `icon`: the lucide name `icons` in `plugins/registry.json` gives for its id (`{ "icons": { "<id>": "<lucide name>" } }`), else the first icon its manifest declares on a tab kind, a command, a slot or a setting, else the icon of its category (`agents` bot, `connections` plug, `engines` cpu, `readers` book-open, `themes` palette, `tools` wrench, `views` layout-panel-left). A name that has no icon file in `@lucide/vue`, or an id of `icons` that is not in the registry, fails the collection; an external plugin whose manifest names an unknown icon keeps its previous entry, or is left out when it has none.
+Every entry, internal or external, has an `icon`: the lucide name `icons` in `tools/plugin-registry/registry.json` gives for its id (`{ "icons": { "<id>": "<lucide name>" } }`), else the first icon its manifest declares on a tab kind, a command, a slot or a setting, else the icon of its category (`agents` bot, `connections` plug, `engines` cpu, `readers` book-open, `themes` palette, `tools` wrench, `views` layout-panel-left). A name that has no icon file in `@lucide/vue`, or an id of `icons` that is not in the registry, fails the collection; an external plugin whose manifest names an unknown icon keeps its previous entry, or is left out when it has none.
 
 ## Featured plugins
 
-`featured` in `plugins/registry.json` lists the ids the catalog shows first, in order: the first three as cards with a screenshot, the first seven as the icons above the title. An id that is not in the registry fails the collection.
+`featured` in `tools/plugin-registry/registry.json` lists the ids the catalog shows first, in order: the first three as cards with a screenshot, the first seven as the icons above the title. An id that is not in the registry fails the collection.
 
 ## Plugins of other repositories
 
-`plugins/registry.json` lists the external plugins, each `{ "id", "repo", "author" }`: the plugin id, the GitHub repository as `owner/name` and the author's name. An id or a repository name equal to an id or a folder of `plugins/` is rejected, and only repositories of `jiva-studio` may use ids under `md.numen.`.
+`tools/plugin-registry/registry.json` lists the external plugins, each `{ "id", "repo", "author" }`: the plugin id, the GitHub repository as `owner/name` and the author's name. An id or a repository name equal to an id or a folder of `plugins/` is rejected, and only repositories of `jiva-studio` may use ids under `md.numen.`.
 
 A repository of a plugin holds, at the tag of its latest GitHub release:
 
-- `manifest.json`, whose `id` is the id listed in `plugins/registry.json`;
+- `manifest.json`, whose `id` is the id listed in `tools/plugin-registry/registry.json`;
 - `README.md`, with an introduction before `<!-- more -->`;
 - `screenshots/<name>-light.webp` and `screenshots/<name>-dark.webp`;
 - optionally `quality.json`, `{ "coverage": 82.5, "mutationScore": 71.0, "measuredAt": "<ISO time>", "tests": { "go": 40, "typescript": 120, "stories": 12 } }`, percentages and test counts the site shows as reported by the author;

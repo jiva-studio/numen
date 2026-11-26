@@ -748,7 +748,7 @@ img.plugin-avatar {
   border: 1px solid var(--border-strong);
   border-radius: 0.625rem;
   background: var(--card-bg);
-  box-shadow: 0 1.5rem 4rem -1.5rem rgb(0 0 0 / 35%);
+  box-shadow: var(--lightbox-shadow);
 }
 
 .plugin-lightbox__strip {

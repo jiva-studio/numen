@@ -16,7 +16,7 @@ import type { PluginCheckStatus } from './registry.ts'
 export type RowText = { text: string; key: string | null; isCode: boolean }
 
 /** One row: its name, its value as lines of text, and the status of a check. */
-export type PluginRow = {
+type PluginRow = {
   name: RowText[]
   value: RowText[][]
   status: PluginCheckStatus | null
@@ -33,11 +33,11 @@ export type PluginSection = {
   note: RowText | null
 }
 
-const plain = (text: string): RowText => ({ text, key: null, isCode: false })
+const createPlainText = (text: string): RowText => ({ text, key: null, isCode: false })
 
-const code = (text: string): RowText => ({ text, key: null, isCode: true })
+const createCodeText = (text: string): RowText => ({ text, key: null, isCode: true })
 
-const translated = (key: string, fallback: string): RowText => ({
+const createTranslatedText = (key: string, fallback: string): RowText => ({
   text: EN[key] ?? fallback,
   key,
   isCode: false,
@@ -46,10 +46,10 @@ const translated = (key: string, fallback: string): RowText => ({
 /** The place in the window a slot is, in words; a slot the site has no words for is its id. */
 export function getSlotPlace(slot: string): RowText {
   const key = `plugin_slot_${slot.replace(/\./g, '_')}`
-  return EN[key] === undefined ? code(slot) : translated(key, slot)
+  return EN[key] === undefined ? createCodeText(slot) : createTranslatedText(key, slot)
 }
 
-const row = (name: RowText[], value: RowText[][] = []): PluginRow => ({
+const createRow = (name: RowText[], value: RowText[][] = []): PluginRow => ({
   name,
   value: value
     .map((line) => line.filter((one) => one.text !== ''))
@@ -59,13 +59,13 @@ const row = (name: RowText[], value: RowText[][] = []): PluginRow => ({
   href: null,
 })
 
-const section = (id: string, rows: PluginRow[], note: RowText | null = null): PluginSection => {
+const createSection = (id: string, rows: PluginRow[], note: RowText | null = null): PluginSection => {
   const key = `plugin_${id}`
   return { id, key, title: EN[key] ?? id, rows, note }
 }
 
 /** The sections that have rows. */
-export function listShownSections(sections: readonly PluginSection[]): PluginSection[] {
+function listShownSections(sections: readonly PluginSection[]): PluginSection[] {
   return sections.filter((one) => one.rows.length > 0)
 }
 
@@ -73,69 +73,69 @@ export function listShownSections(sections: readonly PluginSection[]): PluginSec
 export function listContributionSections(plugin: CatalogPlugin): PluginSection[] {
   const added = new Set(plugin.permissionsAdded)
   return listShownSections([
-    section(
+    createSection(
       'permissions',
       plugin.permissions.map((one) => ({
-        ...row([plain(one.description)], [[code(one.id)]]),
+        ...createRow([createPlainText(one.description)], [[createCodeText(one.id)]]),
         isNew: added.has(one.id),
       })),
     ),
-    section(
+    createSection(
       'settings',
-      plugin.settings.map((one) => row([plain(one.title)], [[plain(one.description)]])),
+      plugin.settings.map((one) => createRow([createPlainText(one.title)], [[createPlainText(one.description)]])),
     ),
-    section(
+    createSection(
       'commands',
-      plugin.commands.map((one) => row([plain(one.title)], [[code(one.id)]])),
+      plugin.commands.map((one) => createRow([createPlainText(one.title)], [[createCodeText(one.id)]])),
     ),
-    section(
+    createSection(
       'tabs',
-      plugin.tabKinds.map((one) => row([plain(one.title)], [[code(one.kind)]])),
+      plugin.tabKinds.map((one) => createRow([createPlainText(one.title)], [[createCodeText(one.kind)]])),
     ),
-    section(
+    createSection(
       'file_types',
-      plugin.fileTypes.map((one) => row([plain(one.contentType)], [[plain(one.title)]])),
+      plugin.fileTypes.map((one) => createRow([createPlainText(one.contentType)], [[createPlainText(one.title)]])),
     ),
-    section(
+    createSection(
       'text_kinds',
-      plugin.textKinds.map((one) => row([plain(one.title)], [[code(one.kind)]])),
+      plugin.textKinds.map((one) => createRow([createPlainText(one.title)], [[createCodeText(one.kind)]])),
     ),
-    section(
+    createSection(
       'themes',
-      plugin.themes.map((one) => row([plain(one.name)], [[code(one.id)]])),
+      plugin.themes.map((one) => createRow([createPlainText(one.name)], [[createCodeText(one.id)]])),
     ),
-    section(
+    createSection(
       'slots',
       plugin.slots.map((one) =>
-        row([one.title === '' ? code(one.target) : plain(one.title)], [[getSlotPlace(one.slot)]]),
+        createRow([one.title === '' ? createCodeText(one.target) : createPlainText(one.title)], [[getSlotPlace(one.slot)]]),
       ),
     ),
-    section(
+    createSection(
       'connections',
-      plugin.connectionTypes.map((one) => row([plain(one.title)], [[plain(one.description)]])),
+      plugin.connectionTypes.map((one) => createRow([createPlainText(one.title)], [[createPlainText(one.description)]])),
     ),
-    section(
+    createSection(
       'search_functions',
-      plugin.searchFunctions.map((one) => row([code(one.name)], [[plain(one.description)]])),
+      plugin.searchFunctions.map((one) => createRow([createCodeText(one.name)], [[createPlainText(one.description)]])),
     ),
-    section(
+    createSection(
       'downloads',
       plugin.downloads.map((one) =>
-        row(
-          [plain(`${one.id} ${one.version}`)],
+        createRow(
+          [createPlainText(`${one.id} ${one.version}`)],
           one.platforms.map((file) => [
-            plain(getPlatformName(file.platform)),
+            createPlainText(getPlatformName(file.platform)),
             file.size === null
-              ? translated('plugin_size_unknown', 'size unknown')
-              : plain(formatSize(file.size)),
+              ? createTranslatedText('plugin_size_unknown', 'size unknown')
+              : createPlainText(formatSize(file.size)),
           ]),
         ),
       ),
     ),
-    section(
+    createSection(
       'artifacts',
       plugin.artifacts.map((one) => ({
-        ...row([plain(one.name)], [[plain(formatSize(one.size)), code(one.sha256 ?? '')]]),
+        ...createRow([createPlainText(one.name)], [[createPlainText(formatSize(one.size)), createCodeText(one.sha256 ?? '')]]),
         href: one.url,
       })),
     ),
@@ -152,18 +152,18 @@ const listTestRows = (plugin: CatalogPlugin): PluginRow[] => {
   const quality = plugin.quality
   if (!quality) return []
   const counts = TEST_COUNTS.filter((one) => quality.tests[one.kind] > 0).map((one) =>
-    row([translated(one.key, one.name)], [[plain(String(quality.tests[one.kind]))]]),
+    createRow([createTranslatedText(one.key, one.name)], [[createPlainText(String(quality.tests[one.kind]))]]),
   )
   const measured = quality.entries.flatMap((entry) => {
     const kind = getQualityKind(entry)
-    const suffix = kind === '' ? [] : [plain(kind)]
+    const suffix = kind === '' ? [] : [createPlainText(kind)]
     return [
       { key: 'plugin_mutation', name: 'Mutation score', value: entry.mutationScore },
       { key: 'plugin_coverage', name: 'Coverage', value: entry.coverage },
     ]
       .filter((one) => one.value !== null)
       .map((one) =>
-        row([translated(one.key, one.name), ...suffix], [[plain(formatPercent(one.value))]]),
+        createRow([createTranslatedText(one.key, one.name), ...suffix], [[createPlainText(formatPercent(one.value))]]),
       )
   })
   return [...counts, ...measured]
@@ -180,22 +180,22 @@ const listDependencyRows = (plugin: CatalogPlugin): PluginRow[] => {
   const dependencies = plugin.dependencies
   if (!dependencies) return []
   const packages = dependencies.packages.map((one) =>
-    row(
-      [code(one.name)],
+    createRow(
+      [createCodeText(one.name)],
       [
         [
-          plain(ECOSYSTEM_NAMES[one.ecosystem] ?? one.ecosystem),
-          code(one.version),
+          createPlainText(ECOSYSTEM_NAMES[one.ecosystem] ?? one.ecosystem),
+          createCodeText(one.version),
           one.license === null
-            ? translated('plugin_license_unknown', 'license unknown')
-            : plain(one.license),
+            ? createTranslatedText('plugin_license_unknown', 'license unknown')
+            : createPlainText(one.license),
         ],
       ],
     ),
   )
   const indirect = INDIRECT_COUNTS.filter((one) => dependencies.indirect[one.ecosystem] > 0).map(
     (one) =>
-      row([translated(one.key, one.name)], [[plain(String(dependencies.indirect[one.ecosystem]))]]),
+      createRow([createTranslatedText(one.key, one.name)], [[createPlainText(String(dependencies.indirect[one.ecosystem]))]]),
   )
   return [...packages, ...indirect]
 }
@@ -204,28 +204,28 @@ const listDependencyRows = (plugin: CatalogPlugin): PluginRow[] => {
 export function listQualitySections(plugin: CatalogPlugin): PluginSection[] {
   const isReportedByAuthor = plugin.quality?.reportedBy === 'author'
   return listShownSections([
-    section(
+    createSection(
       'checks',
       plugin.checks.map((one) => ({
-        ...row(
-          [translated(`plugin_check_${one.id}`, one.id)],
-          one.detail.split('\n').map((line) => [plain(line)]),
+        ...createRow(
+          [createTranslatedText(`plugin_check_${one.id}`, one.id)],
+          one.detail.split('\n').map((line) => [createPlainText(line)]),
         ),
         status: one.status,
       })),
     ),
-    section(
+    createSection(
       'vulnerabilities',
       (plugin.vulnerabilities ?? []).map((one) => ({
-        ...row([plain(one.id)], [[code(`${one.name} ${one.version}`)], [plain(one.summary)]]),
+        ...createRow([createPlainText(one.id)], [[createCodeText(`${one.name} ${one.version}`)], [createPlainText(one.summary)]]),
         href: one.url,
       })),
     ),
-    section('dependencies', listDependencyRows(plugin)),
-    section(
+    createSection('dependencies', listDependencyRows(plugin)),
+    createSection(
       'tests',
       listTestRows(plugin),
-      isReportedByAuthor ? translated('plugin_quality_author', 'Reported by the author.') : null,
+      isReportedByAuthor ? createTranslatedText('plugin_quality_author', 'Reported by the author.') : null,
     ),
   ])
 }

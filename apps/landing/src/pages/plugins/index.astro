@@ -16,14 +16,14 @@ import {
   HERO_ICONS,
   getCategoryName,
   listCategories,
-  listFeatured,
+  listFeaturedPlugins,
 } from '../../components/plugins/catalog'
 import '../../styles/plugins.css'
 
 const plugins = (await getCollection('plugins'))
   .map((entry) => entry.data as CatalogPlugin)
   .sort((a, b) => a.name.localeCompare(b.name))
-const featured = listFeatured(plugins)
+const featured = listFeaturedPlugins(plugins)
 const categories = listCategories(plugins).map((id) => ({ id, text: getCategoryName(id) }))
 
 const title = 'Plugins — numen'

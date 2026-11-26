@@ -44,7 +44,7 @@ export const isLucideIcon = (name) => {
 }
 
 /**
- * The lucide icon a plugin is shown with: the icon `plugins/registry.json` names for its id, else
+ * The lucide icon a plugin is shown with: the icon `tools/plugin-registry/registry.json` names for its id, else
  * the first icon its manifest declares on a tab kind, a command, a slot or a setting, in that
  * order, else the icon of its category.
  *
@@ -183,7 +183,7 @@ export const toManifestJson = (manifest) => toJson(ManifestSchema, manifest)
  * The catalog fields of a manifest in the schema's JSON form. An icon lucide does not have throws.
  *
  * @param {Record<string, any>} json - the output of `toManifestJson`
- * @param {Record<string, string>} [icons] - lucide names by plugin id, from `plugins/registry.json`
+ * @param {Record<string, string>} [icons] - lucide names by plugin id, from `tools/plugin-registry/registry.json`
  * @returns {object} the fields of the entry the manifest gives
  */
 export const describeManifest = (json, icons = {}) => {

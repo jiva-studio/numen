@@ -19,7 +19,7 @@ export type CatalogPlugin = Omit<RegistryPlugin, 'changelog'> & {
 }
 
 /** The applications a plugin target names. */
-export const APP_NAMES: Readonly<Record<string, string>> = {
+const APP_NAMES: Readonly<Record<string, string>> = {
   'desktop.editor': 'Numen',
   'desktop.flashcards': 'Numen Flashcards',
 }
@@ -125,7 +125,7 @@ export const FEATURED_CARDS = 3
 export const HERO_ICONS = 7
 
 /** The featured plugins, in the order of the registry's featured list. */
-export function listFeatured(plugins: readonly CatalogPlugin[]): CatalogPlugin[] {
+export function listFeaturedPlugins(plugins: readonly CatalogPlugin[]): CatalogPlugin[] {
   return plugins
     .filter((one) => one.featuredRank !== null)
     .sort((a, b) => (a.featuredRank ?? 0) - (b.featuredRank ?? 0))
@@ -135,7 +135,7 @@ export function listFeatured(plugins: readonly CatalogPlugin[]): CatalogPlugin[]
  * Up to `count` plugins to show beside `plugin`: those of its category by name, then the featured
  * plugins of other categories.
  */
-export function listRelated(
+export function listRelatedPlugins(
   plugin: CatalogPlugin,
   plugins: readonly CatalogPlugin[],
   count = 3,
@@ -144,7 +144,7 @@ export function listRelated(
   const sameCategory = others
     .filter((one) => one.category === plugin.category)
     .sort((a, b) => a.name.localeCompare(b.name))
-  const featured = listFeatured(others).filter((one) => one.category !== plugin.category)
+  const featured = listFeaturedPlugins(others).filter((one) => one.category !== plugin.category)
   return [...sameCategory, ...featured].slice(0, count)
 }
 

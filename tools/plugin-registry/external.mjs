@@ -231,7 +231,7 @@ const readJsonFile = (bytes) => {
  * Screenshots are written under `outDir/<id>/screenshots/`, which is published at
  * `plugins/registry/`.
  *
- * @param {{ id: string, repo: string, author: string }} source - a row of `plugins/registry.json`
+ * @param {{ id: string, repo: string, author: string }} source - a row of `tools/plugin-registry/registry.json`
  * @param {object} context
  * @param {ReturnType<typeof createGitHub>} context.github
  * @param {Map<string, object>} context.previousById - the entries of the previous registry

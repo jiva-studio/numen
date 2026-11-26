@@ -51,7 +51,7 @@ export const readSources = (file) => {
  * @param {string} file
  * @returns {string[]}
  */
-export const readFeatured = (file) => {
+export const readFeaturedIds = (file) => {
   if (!existsSync(file)) return []
   const rows = JSON.parse(readFileSync(file, 'utf8'))?.featured ?? []
   if (!Array.isArray(rows) || !rows.every((id) => typeof id === 'string' && id !== '')) {
