@@ -661,7 +661,7 @@ const ON_HEAT: readonly Run[] = [
 ]
 
 /** The book in a tab of the window, set in two columns. */
-export const InTheWindow: Story = {
+export const BookInTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
     frame: {
