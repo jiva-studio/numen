@@ -258,6 +258,14 @@
   border-bottom: 1px solid var(--border);
 }
 
+.plugin-catalog:has(> [data-plugin-featured][hidden]) {
+  padding-top: 2.5rem;
+}
+
+[data-plugin-featured][hidden] + .plugin-all .plugin-all__head {
+  margin-top: 0;
+}
+
 .plugin-categories {
   display: flex;
   flex-wrap: wrap;
@@ -1079,32 +1087,80 @@ img.plugin-avatar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .plugin-body {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 3rem;
   }
 }
 
 @media (max-width: 45rem) {
+  .plugin-hero {
+    padding-top: 3rem;
+  }
+  .plugin-hero__icons {
+    gap: 0.5rem;
+  }
+  .plugin-hero__tile {
+    --tile: 4rem;
+  }
   .plugin-hero__tile:is(:nth-child(1), :nth-child(7)) {
     display: none;
   }
+  .plugin-hero__tile:is(:nth-child(2), :nth-child(6)) {
+    --tile: 3.25rem;
+    --lift: 0.25rem;
+  }
+  .plugin-hero__tile:nth-child(4) {
+    --tile: 4.75rem;
+    --lift: -0.25rem;
+  }
   .plugin-hero h1 {
+    margin-top: 2rem;
     font-size: 3rem;
+  }
+  .plugin-hero__lede {
+    font-size: 1.0625rem;
+  }
+  .plugin-catalog {
+    padding-top: 3rem;
+  }
+  .plugin-all__head {
+    margin-top: 3rem;
   }
   .plugin-list,
   .plugin-shots {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .plugin-page {
+    padding-top: 2.5rem;
   }
   .plugin-head {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 1.25rem 1rem;
+  }
+  .plugin-head .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .plugin-head h1 {
+    font-size: 1.625rem;
+  }
+  .plugin-head__lede {
+    font-size: 1rem;
+  }
+  .plugin-head__meta {
+    gap: 0.625rem;
+    font-size: 0.875rem;
   }
   .plugin-tile--large {
-    width: 5rem;
-    height: 5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    box-shadow: none;
   }
   .plugin-tile--large .plugin-icon {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 1.625rem;
+    height: 1.625rem;
   }
   .plugin-tabs {
     overflow-x: auto;

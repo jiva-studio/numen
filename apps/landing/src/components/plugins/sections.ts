@@ -43,6 +43,12 @@ const translated = (key: string, fallback: string): RowText => ({
   isCode: false,
 })
 
+/** The place in the window a slot is, in words; a slot the site has no words for is its id. */
+export function getSlotPlace(slot: string): RowText {
+  const key = `plugin_slot_${slot.replace(/\./g, '_')}`
+  return EN[key] === undefined ? code(slot) : translated(key, slot)
+}
+
 const row = (name: RowText[], value: RowText[][] = []): PluginRow => ({
   name,
   value: value
@@ -101,7 +107,7 @@ export function listContributionSections(plugin: CatalogPlugin): PluginSection[]
     section(
       'slots',
       plugin.slots.map((one) =>
-        row([one.title === '' ? code(one.target) : plain(one.title)], [[code(one.slot)]]),
+        row([one.title === '' ? code(one.target) : plain(one.title)], [[getSlotPlace(one.slot)]]),
       ),
     ),
     section(

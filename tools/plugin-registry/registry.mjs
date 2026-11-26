@@ -4,7 +4,7 @@
  */
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
-import { OFFICIAL_PREFIX } from './entry.mjs'
+import { OFFICIAL_PREFIX, isLucideIcon } from './entry.mjs'
 
 /** The version of the registry document's shape. */
 export const REGISTRY_SCHEMA = 1
@@ -58,6 +58,38 @@ export const readFeatured = (file) => {
     throw new Error(`${file}: "featured" is not a list of plugin ids`)
   }
   return rows
+}
+
+/**
+ * The lucide icons the catalog shows plugins with instead of the icon their manifest gives, listed
+ * in `file`: `{ "icons": { "<id>": "<lucide name>" } }`. A missing file or map names none, and a
+ * name lucide does not have throws.
+ *
+ * @param {string} file
+ * @returns {Record<string, string>}
+ */
+export const readIcons = (file) => {
+  if (!existsSync(file)) return {}
+  const icons = JSON.parse(readFileSync(file, 'utf8'))?.icons ?? {}
+  if (icons === null || typeof icons !== 'object' || Array.isArray(icons)) {
+    throw new Error(`${file}: "icons" is not a map of plugin ids to lucide names`)
+  }
+  for (const [id, name] of Object.entries(icons)) {
+    if (!isLucideIcon(name)) throw new Error(`${file}: ${id} names "${name}", which is not a lucide icon`)
+  }
+  return icons
+}
+
+/**
+ * Throws when an id of the icons map is not the id of a plugin of the registry.
+ *
+ * @param {Record<string, string>} icons
+ * @param {{ id: string }[]} plugins
+ */
+export const assertIconsKnown = (icons, plugins) => {
+  const ids = new Set(plugins.map((one) => one.id))
+  const unknown = Object.keys(icons).filter((id) => !ids.has(id))
+  if (unknown.length > 0) throw new Error(`icons of ${unknown.join(', ')}, which is not in the registry`)
 }
 
 /**

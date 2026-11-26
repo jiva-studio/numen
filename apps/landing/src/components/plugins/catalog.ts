@@ -74,7 +74,7 @@ export function formatSize(bytes: number | null): string {
     value /= 1000
     unit += 1
   }
-  return `${unit === 0 ? value : value.toFixed(value < 10 ? 1 : 0)} ${units[unit] ?? ''}`
+  return `${unit === 0 ? value : value.toFixed(value < 9.95 ? 1 : 0)} ${units[unit] ?? ''}`
 }
 
 /** An ISO time as a date in English, in UTC. */

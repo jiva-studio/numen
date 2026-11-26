@@ -38,7 +38,7 @@ jobs:
 
       - uses: ./.github/actions/install-lock-packages
         with:
-          packages: "@bufbuild/protobuf"
+          packages: "@bufbuild/protobuf @lucide/vue"
 
       - name: Read the published registry and the quality files
         env:
