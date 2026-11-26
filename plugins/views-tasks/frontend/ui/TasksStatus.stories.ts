@@ -63,11 +63,10 @@ export const Idle: Story = { play: assertIdle }
 export const Active: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'status', width: 360, height: 48, drawn: 500 },
-    ],
+    screenshot: [{ name: 'status', width: 360, height: 48, drawn: 500 }],
   },
-  args: { tasks: RUNNING }, play: assertActive,
+  args: { tasks: RUNNING },
+  play: assertActive,
 }
 
 /** A task failed: the chip keeps its text and says how many failed. */

@@ -89,10 +89,9 @@ const takeShot = async (browser, base, shot, theme, at) => {
     colorScheme: theme,
   })
   try {
-    await page.goto(
-      `${base}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
-      { waitUntil: 'networkidle' },
-    )
+    await page.goto(`${base}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`, {
+      waitUntil: 'networkidle',
+    })
     // A story reached through a module graph the server has not built yet takes longer than any
     // pause, and a story that fails draws Storybook's error page.
     try {
@@ -110,7 +109,9 @@ const takeShot = async (browser, base, shot, theme, at) => {
     }
     if (shot.over) await page.hover(shot.over)
     await page.waitForTimeout(SETTLING)
-    const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
+    const taken = await sharp(await page.screenshot())
+      .webp({ quality: QUALITY })
+      .toBuffer()
     if (taken.length < (shot.drawn ?? DRAWN)) {
       throw new Error(`${at} is ${taken.length} bytes: ${shot.story} had not drawn`)
     }

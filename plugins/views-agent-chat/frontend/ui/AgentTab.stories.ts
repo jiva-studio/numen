@@ -59,9 +59,7 @@ export const Empty: Story = {
 export const Answered: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'agent', width: 760, height: 740 },
-    ],
+    screenshot: [{ name: 'agent', width: 760, height: 740 }],
   },
   render: () => ({
     components: {

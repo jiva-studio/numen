@@ -195,9 +195,10 @@ export const readShotsOf = (file, text) => {
   for (const { name, object } of stories) {
     const isTagged = metaTagged || getTags(object).includes(TAG)
     const parameters = object && getProperty(object, 'parameters')
-    const declared = parameters && ts.isObjectLiteralExpression(unwrap(parameters))
-      ? getProperty(unwrap(parameters), TAG)
-      : undefined
+    const declared =
+      parameters && ts.isObjectLiteralExpression(unwrap(parameters))
+        ? getProperty(unwrap(parameters), TAG)
+        : undefined
     if (!isTagged && !declared) continue
     const story = title ? getStoryId(title, name) : `${file}#${name}`
     if (!title) {

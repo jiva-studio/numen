@@ -198,9 +198,7 @@ const waitForSettledLayout = (canvasElement: HTMLElement) =>
 export const Playground: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'book' },
-    ],
+    screenshot: [{ name: 'book' }],
   },
   decorators: [WIDE],
   render: activeReading(createChapter([...VERSES, ...PROSE])),

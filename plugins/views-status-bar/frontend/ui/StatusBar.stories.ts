@@ -22,7 +22,11 @@ const createView = (view: string, text: string): SlotView => ({
   }),
 })
 
-const createCommand = (id: string, title: string, overrides: Partial<SlotCommand> = {}): SlotCommand => ({
+const createCommand = (
+  id: string,
+  title: string,
+  overrides: Partial<SlotCommand> = {},
+): SlotCommand => ({
   kind: 'command',
   key: `${PLUGIN}/command/${id}`,
   pluginId: PLUGIN,

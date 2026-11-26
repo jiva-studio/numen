@@ -40,9 +40,7 @@ type Story = StoryObj<typeof meta>
 export const Available: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'update', width: 400, height: 120, drawn: 1_000 },
-    ],
+    screenshot: [{ name: 'update', width: 400, height: 120, drawn: 1_000 }],
   },
   play: async ({ canvasElement }) => {
     const chip = within(canvasElement).getByRole('button')

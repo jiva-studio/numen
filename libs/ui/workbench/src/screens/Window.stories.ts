@@ -566,9 +566,7 @@ export const Searching: Story = {
 export const Commanding: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'commands', app: 'docs' },
-    ],
+    screenshot: [{ name: 'commands', app: 'docs' }],
   },
   render: () =>
     screen({

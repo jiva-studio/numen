@@ -122,10 +122,7 @@ type Story = StoryObj<typeof meta>
 export const Reading: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'reader', app: 'docs' },
-      { name: 'reader' },
-    ],
+    screenshot: [{ name: 'reader', app: 'docs' }, { name: 'reader' }],
   },
   render: () => ({
     components: { Reader },

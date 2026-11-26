@@ -167,9 +167,7 @@ const drawSettings = () =>
 export const Settings: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'settings', app: 'docs' },
-    ],
+    screenshot: [{ name: 'settings', app: 'docs' }],
   },
   render: () => drawSettings(),
 }

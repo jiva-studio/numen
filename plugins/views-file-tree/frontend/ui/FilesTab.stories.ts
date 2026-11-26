@@ -118,9 +118,7 @@ export const TheVault: Story = {
 export const AFolderOpened: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'files', width: 400, height: 480, drawn: 2_000 },
-    ],
+    screenshot: [{ name: 'files', width: 400, height: 480, drawn: 2_000 }],
   },
   render: room(['physics']),
   play: async ({ canvasElement }) => {
@@ -165,7 +163,11 @@ const createCommand = (pluginId: string, id: string, title: string): SlotCommand
   hasItems: true,
 })
 
-const FROM_TEMPLATE = createCommand('md.numen.tools.templates', 'note.createFromTemplate', 'New note from template')
+const FROM_TEMPLATE = createCommand(
+  'md.numen.tools.templates',
+  'note.createFromTemplate',
+  'New note from template',
+)
 
 /** A vault with a folder of templates, and the New menu the Templates plugin adds to. */
 const TEMPLATES: Room = {
@@ -173,7 +175,11 @@ const TEMPLATES: Room = {
     [ROOT]: [folder('Garden'), folder('Templates'), file('Inbox.md')],
     Garden: [file('Garden/Beds.md'), file('Garden/Greenhouse.md')],
   },
-  entries: [{ ...NEW_MENU, entries: [...NEW_MENU.entries, FROM_TEMPLATE] }, { kind: 'separator', key: 'separator/1' }, TRASH],
+  entries: [
+    { ...NEW_MENU, entries: [...NEW_MENU.entries, FROM_TEMPLATE] },
+    { kind: 'separator', key: 'separator/1' },
+    TRASH,
+  ],
   items: {
     [FROM_TEMPLATE.command]: [
       { id: 'Templates/Daily.md', title: 'Daily' },
@@ -189,7 +195,15 @@ const getMenuItem = (name: string) => within(document.body).findByRole('menuitem
 export const TemplatesUnderNew: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'new-from-template', plugin: 'tools-templates', width: 720, height: 420, drawn: 5_000 }],
+    screenshot: [
+      {
+        name: 'new-from-template',
+        plugin: 'tools-templates',
+        width: 720,
+        height: 420,
+        drawn: 5_000,
+      },
+    ],
   },
   render: room([], TEMPLATES),
   play: async ({ canvasElement }) => {
@@ -202,14 +216,24 @@ export const TemplatesUnderNew: Story = {
   },
 }
 
-const DOWNLOAD = createCommand('md.numen.tools.media.importer', 'link.downloadMedia', 'Download media')
+const DOWNLOAD = createCommand(
+  'md.numen.tools.media.importer',
+  'link.downloadMedia',
+  'Download media',
+)
 
 /** A vault with a link note, and the row menu the Media Importer plugin adds to. */
 const LINKS: Room = {
   vault: {
     [ROOT]: [folder('Talks'), file('Soil and compost.md', { type: 'link' }), file('Inbox.md')],
   },
-  entries: [OPEN, { kind: 'separator', key: 'separator/1' }, DOWNLOAD, { kind: 'separator', key: 'separator/2' }, TRASH],
+  entries: [
+    OPEN,
+    { kind: 'separator', key: 'separator/1' },
+    DOWNLOAD,
+    { kind: 'separator', key: 'separator/2' },
+    TRASH,
+  ],
   items: {
     [DOWNLOAD.command]: [
       { id: 'video', title: 'Video' },
@@ -222,7 +246,15 @@ const LINKS: Room = {
 export const MediaOfALink: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [{ name: 'download-media', plugin: 'tools-media-importer', width: 720, height: 420, drawn: 5_000 }],
+    screenshot: [
+      {
+        name: 'download-media',
+        plugin: 'tools-media-importer',
+        width: 720,
+        height: 420,
+        drawn: 5_000,
+      },
+    ],
   },
   render: room([], LINKS),
   play: async ({ canvasElement }) => {

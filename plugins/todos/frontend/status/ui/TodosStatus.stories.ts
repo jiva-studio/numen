@@ -14,14 +14,24 @@ const TASKS = {
   overdue: {
     tasks: [
       createTask({ path: 'Garden/Beds.md', line: 7, text: 'Turn the compost', due: '2026-04-10' }),
-      createTask({ path: 'Daily/2026-04-12.md', line: 3, text: 'Order seed potatoes', due: '2026-04-12' }),
+      createTask({
+        path: 'Daily/2026-04-12.md',
+        line: 3,
+        text: 'Order seed potatoes',
+        due: '2026-04-12',
+      }),
     ],
     total: 2,
     revision: 1,
   },
   today: {
     tasks: [
-      createTask({ path: 'Garden/Greenhouse.md', line: 2, text: 'Pot on the tomatoes', due: TODAY }),
+      createTask({
+        path: 'Garden/Greenhouse.md',
+        line: 2,
+        text: 'Pot on the tomatoes',
+        due: TODAY,
+      }),
       createTask({ path: 'Garden/Beds.md', line: 11, text: 'Net the brassicas', due: TODAY }),
       createTask({ path: 'Daily/2026-04-14.md', line: 4, text: 'Water the seedlings', due: TODAY }),
     ],
@@ -80,13 +90,14 @@ export const Opened: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Tasks due: 8' }))
     const lists = await within(document.body).findByRole('dialog', { name: 'Tasks due' })
     await waitFor(() =>
-      expect(within(lists).getByRole('checkbox', { name: taskDoneLabel('Pot on the tomatoes') })).toBeVisible(),
+      expect(
+        within(lists).getByRole('checkbox', { name: taskDoneLabel('Pot on the tomatoes') }),
+      ).toBeVisible(),
     )
-    await expect(within(lists).getAllByRole('heading').map((one) => one.textContent?.replace(/\s+/g, " ").trim())).toEqual([
-      'Overdue 2',
-      'Today 3',
-      'Next 7 days 2',
-      'No date 1',
-    ])
+    await expect(
+      within(lists)
+        .getAllByRole('heading')
+        .map((one) => one.textContent?.replace(/\s+/g, ' ').trim()),
+    ).toEqual(['Overdue 2', 'Today 3', 'Next 7 days 2', 'No date 1'])
   },
 }

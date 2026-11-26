@@ -39,9 +39,7 @@ type Story = StoryObj<typeof meta>
 export const ChoosesAName: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'names', width: 400, height: 240, drawn: 1_000 },
-    ],
+    screenshot: [{ name: 'names', width: 400, height: 240, drawn: 1_000 }],
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)

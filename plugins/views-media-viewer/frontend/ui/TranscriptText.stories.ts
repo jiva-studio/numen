@@ -31,9 +31,7 @@ type Story = StoryObj
 export const Timed: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'transcript', plugin: 'engines-transcription', width: 900, height: 600 },
-    ],
+    screenshot: [{ name: 'transcript', plugin: 'engines-transcription', width: 900, height: 600 }],
   },
   render: () => ({
     components: { TranscriptText },

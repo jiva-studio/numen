@@ -69,9 +69,7 @@ export const OneTag: Story = {
 export const FourTags: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'file-tags', width: 480, height: 160, drawn: 1_000 },
-    ],
+    screenshot: [{ name: 'file-tags', width: 480, height: 160, drawn: 1_000 }],
   },
   args: { count: 4 },
   play: async ({ canvasElement }) => {

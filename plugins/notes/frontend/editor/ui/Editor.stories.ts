@@ -53,9 +53,7 @@ const renderEditor =
 export const Playground: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'editor', width: 900, height: 600 },
-    ],
+    screenshot: [{ name: 'editor', width: 900, height: 600 }],
   },
   render: renderEditor(MARKED_UP),
 }
@@ -182,9 +180,7 @@ export const ClickLandsOnTheLine: Story = {
 export const Table: Story = {
   tags: ['screenshot'],
   parameters: {
-    screenshot: [
-      { name: 'table', app: 'docs' },
-    ],
+    screenshot: [{ name: 'table', app: 'docs' }],
   },
   render: renderEditor(TABLE),
 }

@@ -21,7 +21,9 @@ const WINDOW = 'libs/ui/workbench/src/screens/Shed.stories.ts'
 test('a tagged story in a plugin writes into the screenshots folder of that plugin', () => {
   const { shots, faults } = readShotsOf(
     PLUGIN,
-    source(`{ tags: ['screenshot'], parameters: { screenshot: [{ name: 'tools', width: 480, height: 1_200 }] } }`),
+    source(
+      `{ tags: ['screenshot'], parameters: { screenshot: [{ name: 'tools', width: 480, height: 1_200 }] } }`,
+    ),
   )
   assert.deepEqual(faults, [])
   assert.deepEqual(shots, [
@@ -85,13 +87,33 @@ for (const [what, story, said] of [
 }
 
 for (const [what, file, shot, part] of [
-  ['a shot outside plugins/ naming no target', WINDOW, `{ name: 'tools' }`, 'names neither a plugin nor an app'],
+  [
+    'a shot outside plugins/ naming no target',
+    WINDOW,
+    `{ name: 'tools' }`,
+    'names neither a plugin nor an app',
+  ],
   ['an unknown app', PLUGIN, `{ name: 'tools', app: 'blog' }`, 'names the app blog'],
-  ['a plugin that does not exist', PLUGIN, `{ name: 'tools', plugin: 'views-shed' }`, 'names the plugin views-shed'],
-  ['a palette that does not exist', PLUGIN, `{ name: 'tools', preset: 'mauve' }`, 'names the palette mauve'],
+  [
+    'a plugin that does not exist',
+    PLUGIN,
+    `{ name: 'tools', plugin: 'views-shed' }`,
+    'names the plugin views-shed',
+  ],
+  [
+    'a palette that does not exist',
+    PLUGIN,
+    `{ name: 'tools', preset: 'mauve' }`,
+    'names the palette mauve',
+  ],
   ['a name with capitals', PLUGIN, `{ name: 'Tools' }`, 'needs a name'],
   ['an unknown key', PLUGIN, `{ name: 'tools', zoom: 2 }`, 'unknown key zoom'],
-  ['a size that is not whole', PLUGIN, `{ name: 'tools', width: 10.5 }`, 'width that is not a positive whole number'],
+  [
+    'a size that is not whole',
+    PLUGIN,
+    `{ name: 'tools', width: 10.5 }`,
+    'width that is not a positive whole number',
+  ],
 ]) {
   test(`the reader refuses ${what}`, () => {
     const { shots, faults } = readShotsOf(
