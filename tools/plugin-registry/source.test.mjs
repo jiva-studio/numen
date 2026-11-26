@@ -277,6 +277,81 @@ test('a plugin that serves HTTP but makes no request has no network use', () => 
   })
 })
 
+test('a frontend fetch of a relative path, a host asset or a loopback address is no network request', () => {
+  withTree(
+    {
+      'frontend/api/readTextAsset.ts':
+        "import { getAssetUrl } from '@numen/plugin-sdk'\nexport const read = (path: string) => fetch(getAssetUrl(path))\n",
+      'frontend/api/notes.ts': "export const list = () => fetch('/notes/list')\nexport const one = (id: string) => fetch(`./notes/${id}`)\n",
+      'frontend/api/local.ts':
+        "export const ask = () => fetch('http://127.0.0.1:11434/api')\nexport const events = () => new EventSource(`http://localhost:8080/events`)\n",
+      'frontend/api/stream.ts': 'export const open = (url: string) => new WebSocket(url)\n',
+    },
+    (dir) => {
+      const use = readNetworkUse(dir, { permissions: [] })
+
+      assert.equal(use.isNetworked, false)
+      assert.deepEqual(use.calls, [])
+    },
+  )
+})
+
+test('a frontend fetch of an absolute URL of another host is a network request to that host', () => {
+  withTree(
+    {
+      'frontend/api/weather.ts': 'export const read = (city: string) => fetch(`https://api.weather.org/v1/${city}`)\n',
+      'frontend/api/socket.ts': "const base = 'wss://live.weather.org'\nexport const open = () => new WebSocket(base)\n",
+    },
+    (dir) => {
+      const use = readNetworkUse(dir, { permissions: [] })
+
+      assert.equal(use.isNetworked, true)
+      assert.deepEqual(use.calls, [
+        { language: 'typescript', name: 'WebSocket', files: ['frontend/api/socket.ts'] },
+        { language: 'typescript', name: 'fetch', files: ['frontend/api/weather.ts'] },
+      ])
+      assert.deepEqual(use.hosts, ['api.weather.org'])
+    },
+  )
+})
+
+test('link:open alone is no network request and is shown as a line of its own', () => {
+  withTree({ 'frontend/ui/open.ts': "export const open = (url: string) => window.open(url, '_blank')\n" }, (dir) => {
+    const use = readNetworkUse(dir, { permissions: ['link:open'] })
+
+    assert.equal(use.isNetworked, false)
+    assert.deepEqual(checkNetwork(use).detail.split('\n'), [
+      'None found in the code or the manifest.',
+      'Opens links in your browser.',
+    ])
+  })
+})
+
+test('a Go client of loopback addresses only is no network request, one of a given address is', () => {
+  withTree(
+    {
+      'backend/adapter/local/local.go':
+        'package local\n\nimport "net/http"\n\nconst base = "http://127.0.0.1:11434"\n\nfunc read() { _, _ = http.Get(base + "/api") }\n',
+      'backend/adapter/local/dial.go':
+        'package local\n\nimport "net"\n\nfunc dial() { _, _ = net.Dial("tcp", "localhost:9000") }\n',
+    },
+    (dir) => {
+      assert.equal(readNetworkUse(dir, { permissions: [] }).isNetworked, false)
+    },
+  )
+  withTree(
+    {
+      'backend/adapter/remote/remote.go':
+        'package remote\n\nimport "net/http"\n\nfunc read(address string) { _, _ = http.Get(address) }\n',
+    },
+    (dir) => {
+      assert.deepEqual(readNetworkUse(dir, { permissions: [] }).calls, [
+        { language: 'go', name: 'http.Get', files: ['backend/adapter/remote/remote.go'] },
+      ])
+    },
+  )
+})
+
 test('the network check states the answer and then each kind of evidence on a line', () => {
   const detail = checkNetwork({
     isNetworked: true,
@@ -292,7 +367,7 @@ test('the network check states the answer and then each kind of evidence on a li
     'Go: http.Client in backend/a.go.',
     'Hosts in the code: dl.numen.md.',
     'Downloads from: huggingface.co.',
-    'Opens links in the browser (link:open).',
+    'Opens links in your browser.',
   ])
 })
 
@@ -369,9 +444,9 @@ test('the tests check warns when no test was found', () => {
   assert.deepEqual(checkHasTests({ go: 0, typescript: 0, stories: 0 }), {
     id: 'tests',
     status: 'warn',
-    detail: 'No tests were found.',
+    detail: 'No tests',
   })
-  assert.equal(checkHasTests({ go: 2, typescript: 1, stories: 0 }).detail, '3 tests.')
+  assert.equal(checkHasTests({ go: 2, typescript: 1, stories: 0 }).detail, 'Passed')
   assert.equal(checkHasTests(undefined).status, 'warn')
 })
 
@@ -381,14 +456,14 @@ test('the mutation check passes at 80 percent, warns below and is skipped when n
   assert.deepEqual(checkMutationScore([entry(80, 'go'), entry(91.25, 'ts')]), {
     id: 'mutation',
     status: 'pass',
-    detail: '80.0% (go), 91.3% (ts)',
+    detail: 'Passed',
   })
   assert.deepEqual(checkMutationScore([entry(79.9)]), {
     id: 'mutation',
     status: 'warn',
-    detail: 'Below 80%: 79.9%.',
+    detail: 'Below 80%',
   })
-  assert.equal(checkMutationScore([entry(null)]).status, 'skipped')
+  assert.deepEqual(checkMutationScore([entry(null)]), { id: 'mutation', status: 'skipped', detail: 'Not measured' })
   assert.equal(checkMutationScore(undefined).status, 'skipped')
 })
 

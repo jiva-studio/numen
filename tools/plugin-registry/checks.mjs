@@ -71,19 +71,17 @@ export const MUTATION_THRESHOLD = 80
 export const checkHasTests = (tests) => {
   const total = (tests?.go ?? 0) + (tests?.typescript ?? 0) + (tests?.stories ?? 0)
   return total > 0
-    ? createCheck('tests', 'pass', `${total} tests.`)
-    : createCheck('tests', 'warn', 'No tests were found.')
+    ? createCheck('tests', 'pass', 'Passed')
+    : createCheck('tests', 'warn', 'No tests')
 }
 
 /** Each measured mutation score is at least MUTATION_THRESHOLD percent; skipped when none is measured. */
 export const checkMutationScore = (entries) => {
   const measured = (entries ?? []).filter((one) => one.mutationScore !== null)
-  if (measured.length === 0) return createCheck('mutation', 'skipped', 'Not measured.')
-  const describe = (one) => `${one.mutationScore.toFixed(1)}%${one.kind ? ` (${one.kind})` : ''}`
-  const low = measured.filter((one) => one.mutationScore < MUTATION_THRESHOLD)
-  return low.length === 0
-    ? createCheck('mutation', 'pass', measured.map(describe).join(', '))
-    : createCheck('mutation', 'warn', `Below ${MUTATION_THRESHOLD}%: ${low.map(describe).join(', ')}.`)
+  if (measured.length === 0) return createCheck('mutation', 'skipped', 'Not measured')
+  return measured.every((one) => one.mutationScore >= MUTATION_THRESHOLD)
+    ? createCheck('mutation', 'pass', 'Passed')
+    : createCheck('mutation', 'warn', `Below ${MUTATION_THRESHOLD}%`)
 }
 
 /** Every Vue component of the frontend is shown by a story; skipped without a frontend or components. */
@@ -128,7 +126,7 @@ export const checkNetwork = (use) => {
     ...(use.hosts.length > 0 ? [`Hosts in the code: ${use.hosts.join(', ')}.`] : []),
     ...(use.frameOrigins.length > 0 ? [`Frames: ${use.frameOrigins.join(', ')}.`] : []),
     ...(use.downloadHosts.length > 0 ? [`Downloads from: ${use.downloadHosts.join(', ')}.`] : []),
-    ...(use.canOpenLinks ? ['Opens links in the browser (link:open).'] : []),
+    ...(use.canOpenLinks ? ['Opens links in your browser.'] : []),
   ]
   return createCheck('network', 'info', lines.join('\n'))
 }

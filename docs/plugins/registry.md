@@ -60,8 +60,8 @@ The registry runs these checks itself and shows them on the Quality tab of each 
 | `permissions`: a warning when the current version added permissions | yes | yes |
 | `artifacts`: a SHA-256 for each artifact | | yes |
 | `attestation`: `gh attestation verify` of each artifact | | where gh is installed |
-| `tests`: a warning when no test was counted | yes | from `quality.json` |
-| `mutation`: every measured mutation score is at least 80 percent, else a warning; not run when none is measured | yes | from `quality.json` |
+| `tests`: passed, or a warning when no test was counted; the counts are in the tests section | yes | from `quality.json` |
+| `mutation`: passed when every measured mutation score is at least 80 percent, else a warning; not run when none is measured; the scores are in the tests section | yes | from `quality.json` |
 | `stories`: every Vue component is shown by a story | yes | in the source at the tag |
 | `manual`: a page of the manual names the plugin | yes | |
 | `network`: whether the plugin makes network requests (information, never a failure) | yes | in the source at the tag |
@@ -71,14 +71,15 @@ The registry runs these checks itself and shows them on the Quality tab of each 
 
 `manual`: a page of `apps/docs/src/content/docs` (`.md` and `.mdx`) names the plugin when its text has the manifest `name` or the `id`, as a whole word and in the same case. The blocks `apps/docs/tools/manual.mjs` generates between the BEGIN AUTOGEN and END AUTOGEN marks list every plugin and are left out. The check lists the addresses of the pages on docs.numen.md.
 
-`network`: read statically from the code that is not a test, story, fixture or test data, and from the manifest; calls made inside dependencies are not traced. It lists:
+`network`: whether the plugin makes requests that can reach the internet, read statically from the code that is not a test, story, fixture or test data, and from the manifest; calls made inside dependencies are not traced. A request to the app's own server or to the person's own machine is not a network request. It lists:
 
-- the Go client calls: `http.Client`, `http.Transport`, `http.DefaultClient`, `http.Get`, `http.Head`, `http.Post`, `http.PostForm`, `http.NewRequest`, `net.Dial`, `net.Dialer`, `tls.Dial`, `websocket.Dial` and `grpc.Dial` or `grpc.NewClient` (a plugin that only serves HTTP makes no request);
-- the frontend calls under `frontend/`: `fetch(`, `new XMLHttpRequest`, `new WebSocket(` and `new EventSource(`;
+- the Go client calls: `http.Client`, `http.Transport`, `http.DefaultClient`, `http.Get`, `http.Head`, `http.Post`, `http.PostForm`, `http.NewRequest`, `net.Dial`, `net.Dialer`, `tls.Dial`, `websocket.Dial` and `grpc.Dial` or `grpc.NewClient` (a plugin that only serves HTTP makes no request). The calls of a file count unless every `http://`, `https://`, `ws://` or `wss://` literal and every `localhost:`, `127.x.x.x:` or `[::1]:` port literal of that file names a loopback host; a file with no such literal calls an address it is given (a server the person configures, as in connections-llm), so its calls count;
+- the frontend calls under `frontend/`: `fetch(`, `new XMLHttpRequest`, `new WebSocket(` and `new EventSource(`. A call counts when its target is a string or template literal that starts with an absolute `http(s)://`, `ws(s)://` or `//` URL of a host that is not loopback, and that host is listed. A relative path (`/…`, `./…`), a URL built by `getAssetUrl(…)` of `@numen/plugin-sdk` and a URL of `localhost`, `*.localhost`, `127.x.x.x`, `[::1]` or `0.0.0.0` do not count. A call whose target is not a literal (a variable, or a template literal that starts with `${`) counts when the plugin's frontend code names a host in a URL literal, and does not otherwise;
 - the hosts of the `http://` and `https://` string literals of that code, without IP addresses, `localhost`, the reserved names (`.test`, `.example`, `.invalid`, `.localhost`, `.local`, `example.com`, `example.org`, `example.net`) and the XML namespace hosts `www.w3.org`, `purl.org`, `www.idpf.org` and `www.daisy.org`;
-- the `frameOrigins` of the manifest, the hosts its `dependencies` are downloaded from, and the `link:open` permission.
+- the `frameOrigins` of the manifest and the hosts its `dependencies` are downloaded from;
+- "Opens links in your browser" for the `link:open` permission: the link opens in the person's browser, not in the plugin, so it is no request of the plugin.
 
-The answer is yes when there is a client call, a framed origin or a download.
+The answer is yes when there is a counted client call, a framed origin or a download.
 
 For an external plugin, the source is cloned at the tag of its release; where git is not installed or the clone fails, `stories` and `network` are left out, the vulnerabilities are not scanned and no dependency is listed.
 
