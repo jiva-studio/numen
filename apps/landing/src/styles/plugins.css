@@ -310,12 +310,14 @@
 
 .plugin-shot {
   margin: 0;
+  overflow: hidden;
 }
 
 .plugin-shot img {
   display: block;
   width: 100%;
   height: auto;
+  border-radius: 0;
 }
 
 .plugin-prose {
