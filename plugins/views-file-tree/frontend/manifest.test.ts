@@ -112,6 +112,7 @@ describe('the menu of a row', () => {
       {
         slot: 'fileTree.new',
         command: 'app:note.create',
+        title: 'Create note',
         group: '0-tree',
         order: 10,
         when: 'target.isFolder',
@@ -119,6 +120,7 @@ describe('the menu of a row', () => {
       {
         slot: 'fileTree.new',
         command: 'app:folder.create',
+        title: 'Create folder',
         group: '0-tree',
         order: 20,
         when: 'target.isFolder',

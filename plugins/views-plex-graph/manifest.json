@@ -69,17 +69,18 @@
         "icon": "waypoints",
         "group": "4-relation"
       },
-      { "slot": "plex.relation", "command": "app:note.createChild", "order": 10 },
-      { "slot": "plex.relation", "command": "app:note.createParent", "order": 20 },
-      { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 },
+      { "slot": "plex.relation", "command": "app:note.createChild", "title": "Create child note", "order": 10 },
+      { "slot": "plex.relation", "command": "app:note.createParent", "title": "Create parent note", "order": 20 },
+      { "slot": "plex.relation", "command": "app:note.createJump", "title": "Create jump note", "order": 30 },
       {
         "slot": "plexGraph.context",
         "command": "app:note.create",
+        "title": "Create note",
         "group": "0-new",
         "order": 10,
         "when": "target.isFolder"
       },
-      { "slot": "plexGraph.context", "command": "app:file.open", "group": "0-open", "order": 10 },
+      { "slot": "plexGraph.context", "command": "app:file.open", "title": "Open note", "group": "0-open", "order": 10 },
       {
         "slot": "plexGraph.context",
         "command": "app:file.reveal",
@@ -93,29 +94,33 @@
       {
         "slot": "plexGraph.context",
         "command": "app:file.copyPath",
+        "title": "Copy note path",
         "group": "2-file",
         "order": 10
       },
       {
         "slot": "plexGraph.context",
         "command": "app:note.createChild",
+        "title": "Create child note",
         "group": "3-plex",
         "order": 10
       },
       {
         "slot": "plexGraph.context",
         "command": "app:note.createParent",
+        "title": "Create parent note",
         "group": "3-plex",
         "order": 20
       },
       {
         "slot": "plexGraph.context",
         "command": "app:note.createJump",
+        "title": "Create jump note",
         "group": "3-plex",
         "order": 30
       },
-      { "slot": "plexGraph.context", "command": "app:note.rename", "group": "3-plex", "order": 40 },
-      { "slot": "plexGraph.context", "command": "app:file.remove", "group": "9-remove" }
+      { "slot": "plexGraph.context", "command": "app:note.rename", "title": "Rename note", "group": "3-plex", "order": 40 },
+      { "slot": "plexGraph.context", "command": "app:file.remove", "title": "Move to trash", "group": "9-remove" }
     ],
     "keybindings": [
       { "key": "mod+shift+x", "command": "graph.open" },
