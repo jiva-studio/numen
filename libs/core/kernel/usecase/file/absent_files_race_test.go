@@ -55,7 +55,7 @@ func replaceOnDisk(t *testing.T, p phone, path, content string) {
 	if err := os.WriteFile(temp, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	later := time.Now().Add(time.Hour)
+	later := time.Date(2100, time.January, 1, 12, 0, 0, 0, time.UTC)
 	if err := os.Chtimes(temp, later, later); err != nil {
 		t.Fatal(err)
 	}
