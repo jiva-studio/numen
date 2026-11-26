@@ -3,8 +3,8 @@
     "md.numen.engines.ocr",
     "md.numen.views.agent.chat",
     "md.numen.views.plex.graph",
-    "md.numen.readers.epub",
     "md.numen.engines.transcription",
+    "md.numen.readers.epub",
     "md.numen.views.flashcards.studio",
     "md.numen.tools.sync"
   ],
