@@ -29,7 +29,9 @@ const plugins = defineCollection({
           store.set({ id: plugin.id, data })
         }
       }
-      logger.info(`${registry.plugins.length} plugins, registry ${registry.contentHash.slice(0, 12)}`)
+      logger.info(
+        `${registry.plugins.length} plugins, registry ${registry.contentHash.slice(0, 12)}`,
+      )
     },
   },
 })
