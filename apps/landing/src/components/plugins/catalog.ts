@@ -33,17 +33,24 @@ const PLATFORM_NAMES: Readonly<Record<string, string>> = {
 
 const KIND_NAMES: Readonly<Record<string, string>> = { go: 'Go', ts: 'TypeScript' }
 
-/** The application names of a plugin's targets, in the order of APP_NAMES. */
-export function getAppNames(targets: readonly string[]): string[] {
+/** The applications of a plugin's targets, in the order of APP_NAMES. */
+export function listApps(targets: readonly string[]): { target: string; name: string }[] {
   return Object.entries(APP_NAMES)
     .filter(([target]) => targets.includes(target))
-    .map(([, name]) => name)
+    .map(([target, name]) => ({ target, name }))
+}
+
+/** The operating system of a platform: `macos`, `windows`, `linux` or `any`. */
+export function getPlatformSystem(platform: string): string {
+  const system = platform.split('/')[0] ?? platform
+  return system === 'darwin' ? 'macos' : system
 }
 
 /** The display name of a platform, `linux/amd64` included. */
 export function getPlatformName(platform: string): string {
-  const [system = platform, arch] = platform.split('/')
-  const name = PLATFORM_NAMES[system === 'darwin' ? 'macos' : system] ?? system
+  const arch = platform.split('/')[1]
+  const system = getPlatformSystem(platform)
+  const name = PLATFORM_NAMES[system] ?? system
   return arch ? `${name} ${arch}` : name
 }
 
@@ -139,6 +146,30 @@ export function listRelated(
     .sort((a, b) => a.name.localeCompare(b.name))
   const featured = listFeatured(others).filter((one) => one.category !== plugin.category)
   return [...sameCategory, ...featured].slice(0, count)
+}
+
+/** What a contributor is shown as: their GitHub login, else their name. */
+export function getContributorName(person: { name: string; login: string | null }): string {
+  return person.login ?? person.name
+}
+
+const AVATAR_HOST = 'avatars.githubusercontent.com'
+
+/**
+ * The GitHub avatar of a contributor at `size` pixels, or null when they have none or it is not
+ * served from GitHub's avatar host.
+ */
+export function getAvatarUrl(person: { avatarUrl: string | null }, size: number): string | null {
+  if (!person.avatarUrl) return null
+  let url: URL
+  try {
+    url = new URL(person.avatarUrl)
+  } catch {
+    return null
+  }
+  if (url.protocol !== 'https:' || url.hostname !== AVATAR_HOST) return null
+  url.searchParams.set('s', String(size))
+  return url.toString()
 }
 
 /** The first letter of a name in upper case, for an avatar. */

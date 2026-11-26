@@ -18,8 +18,9 @@
  *                    [--sources <file>] [--offline]
  *
  * `--quality` holds `mutation.json` and `coverage.json` (`tools/shared/plugin-quality.mjs`).
- * `--offline` asks nothing over the network: download sizes are unknown, and external plugins keep
- * their previous entries.
+ * `--offline` asks nothing over the network: download sizes are unknown, external plugins keep
+ * their previous entries, and contributors have no GitHub accounts. Online, the accounts are asked
+ * for only with GITHUB_TOKEN (or GH_TOKEN) set.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -27,7 +28,12 @@ import { fileURLToPath } from 'node:url'
 import { listPluginNames } from '../shared/manifests.mjs'
 import { fetchSize, listKnownSizes } from './downloads.mjs'
 import { collectExternal, createGitHub } from './external.mjs'
-import { collectInternal, readRepositoryLicense } from './internal.mjs'
+import {
+  INTERNAL_REPO,
+  collectInternal,
+  listCommitAccounts,
+  readRepositoryLicense,
+} from './internal.mjs'
 import { readQualityFiles } from './quality.mjs'
 import {
   assertFeaturedKnown,
@@ -45,6 +51,17 @@ export const LATEST_FILE = 'latest.json'
 
 const readPrevious = (file) =>
   file && existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null
+
+const NO_ACCOUNTS = async () => new Map()
+
+const createAccountReader = (github) => async (path) => {
+  try {
+    return await listCommitAccounts(github, INTERNAL_REPO, path)
+  } catch (error) {
+    console.warn(`::warning::${path}: ${error.message}`)
+    return new Map()
+  }
+}
 
 const collectExternals = async (sources, context, isOffline) => {
   const entries = []
@@ -91,6 +108,8 @@ export const collectRegistry = async ({
   generatedAt = new Date().toISOString(),
 }) => {
   const previousById = new Map((previous?.plugins ?? []).map((one) => [one.id, one]))
+  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
+  const github = createGitHub({ token, fetcher })
   const context = {
     root,
     outDir,
@@ -99,7 +118,8 @@ export const collectRegistry = async ({
     knownSizes: listKnownSizes(previous),
     getSize: isOffline ? async () => null : (url) => fetchSize(url, fetcher),
     quality: await readQualityFiles(quality, fetcher),
-    github: createGitHub({ token: process.env.GITHUB_TOKEN || process.env.GH_TOKEN, fetcher }),
+    github,
+    getCommitAccounts: isOffline || !token ? NO_ACCOUNTS : createAccountReader(github),
     ...(verifiers ? { verifiers } : {}),
   }
   const folders = listPluginNames(join(root, 'plugins'))

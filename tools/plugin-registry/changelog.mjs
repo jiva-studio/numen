@@ -72,38 +72,70 @@ export const groupByVersion = (commits, versions, limit = CHANGELOG_VERSIONS) =>
   return groups.reverse().slice(0, limit)
 }
 
+
 /**
- * The authors of `names`, one name per commit, with their commit counts: most commits first, then
- * by name.
+ * Whether a commit was written by a GitHub App such as `dependabot[bot]`.
  *
- * @param {string[]} names
- * @returns {{ name: string, commits: number }[]}
+ * @param {{ name: string, email: string }} author
  */
-export const countContributors = (names) => {
-  const counts = new Map()
-  for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1)
-  return [...counts]
-    .map(([name, commits]) => ({ name, commits }))
-    .sort((a, b) => b.commits - a.commits || a.name.localeCompare(b.name))
+export const isBot = ({ name, email }) =>
+  name.endsWith('[bot]') || /\[bot\]@users\.noreply\.github\.com$/i.test(email)
+
+/**
+ * The people who wrote `authors`, one entry per commit, newest first, with their commit counts:
+ * most commits first, then by name. A person is an email address in any case, named as on their
+ * newest commit; bots are left out. `accounts` gives the GitHub account of a commit by its hash, and
+ * a person takes the account of their newest commit that has one.
+ *
+ * @param {{ hash: string, name: string, email: string }[]} authors
+ * @param {Map<string, { login: string, avatarUrl: string | null }>} [accounts]
+ * @returns {{ name: string, commits: number, login: string | null, avatarUrl: string | null }[]}
+ */
+export const countContributors = (authors, accounts = new Map()) => {
+  const people = new Map()
+  for (const author of authors) {
+    if (isBot(author)) continue
+    const key = author.email.toLowerCase()
+    const person = people.get(key) ?? { name: author.name, commits: 0, login: null, avatarUrl: null }
+    person.commits += 1
+    const account = accounts.get(author.hash)
+    if (person.login === null && account) {
+      person.login = account.login
+      person.avatarUrl = account.avatarUrl
+    }
+    people.set(key, person)
+  }
+  return [...people.values()].sort((a, b) => b.commits - a.commits || a.name.localeCompare(b.name))
 }
 
-/** The author names of the commits that touched `path`, with their commit counts. */
-export const readContributors = (root, path) =>
-  countContributors(runGit(root, ['log', '--format=%aN', '--', path]).split('\n').filter(Boolean))
+/**
+ * The author of each commit that touched `path`, newest first, as `.mailmap` names them.
+ *
+ * @returns {{ hash: string, name: string, email: string }[]}
+ */
+export const readAuthors = (root, path) =>
+  runGit(root, ['log', '--format=%H%x09%aN%x09%aE', '--', path])
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [hash = '', name = '', email = ''] = line.split('\t')
+      return { hash, name, email }
+    })
 
 /**
  * The changelog, last change date and contributors of the plugin folder `folder` under `plugins/`.
  *
  * @param {string} root - the repository root
  * @param {string} folder - the plugin folder name
- * @returns {{ changelog: { version: string, date: string, changes: string[] }[], updatedAt: string | null, contributors: { name: string, commits: number }[] }}
+ * @param {Map<string, { login: string, avatarUrl: string | null }>} [accounts] - GitHub accounts by commit hash
+ * @returns {{ changelog: { version: string, date: string, changes: string[] }[], updatedAt: string | null, contributors: { name: string, commits: number, login: string | null, avatarUrl: string | null }[] }}
  */
-export const readInternalHistory = (root, folder) => {
+export const readInternalHistory = (root, folder, accounts = new Map()) => {
   const commits = readCommits(root, `plugins/${folder}`)
   const versions = readVersions(root, `plugins/${folder}/manifest.json`)
   return {
     changelog: groupByVersion(commits, versions),
     updatedAt: commits[0]?.date ?? null,
-    contributors: readContributors(root, `plugins/${folder}`),
+    contributors: countContributors(readAuthors(root, `plugins/${folder}`), accounts),
   }
 }

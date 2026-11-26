@@ -10,7 +10,7 @@ Every folder of `plugins/` with a `manifest.json` is in the registry. Its entry 
 - `README.md`: the text before `<!-- more -->` is the introduction the catalog search and the page description use, and the whole README is the Overview of the plugin page;
 - `screenshots/<name>-light.webp` and `screenshots/<name>-dark.webp`, one pair per screenshot;
 - the changelog: the commits that touched the folder, grouped by the commit that changed the `version` of the manifest;
-- the contributors: the author names of the commits that touched the folder, with their commit counts;
+- the contributors: the people who wrote the commits that touched the folder, one per email address as `.mailmap` maps it, named as in their newest commit, with their commit counts, bots left out; online with a GitHub token, each also gets the login and avatar of their GitHub account from the commits API;
 - the mutation score and the coverage of the nightly `mutation.yml` and `coverage.yml`, which publish them at `plugins/quality/mutation.json` and `plugins/quality/coverage.json`.
 
 Every entry, internal or external, has an `icon`: the lucide name of the first icon its manifest declares on a tab kind, a command, a slot or a setting, else the icon of its category (`agents` bot, `connections` plug, `engines` cpu, `readers` book-open, `themes` palette, `tools` wrench, `views` layout-panel-left).
