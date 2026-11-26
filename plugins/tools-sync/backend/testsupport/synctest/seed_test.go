@@ -33,3 +33,25 @@ func TestSeedAccount_JoinsTheSecondAndTheThirdComputerToTheAccountOfTheFirst(t *
 		t.Errorf("sign-ins counted by the proxy = %d, want one for each computer", server.CountCalls(syncv1connect.SignInServiceSignInProcedure))
 	}
 }
+
+func TestSubscribe_LetsTheAccountPushAFileThatTheOtherComputerReceives(t *testing.T) {
+	stack := synctest.GetStack(t)
+	server := synctest.NewRealServer(t, stack)
+	account := synctest.SeedAccount(t, server, synctest.NewClock(synctest.GetNow()), synctest.NewLabel(t))
+	account.First.Subscribe(t, stack, "prod_basic")
+	account.First.Connect(t, synctest.FirstVault)
+	account.First.WriteNote(synctest.FirstVault, "Papers/Report.md", "the text of a report")
+	account.Second.ConnectExisting(t, synctest.SecondVault, account.First.Link(t, synctest.FirstVault).RemoteVaultID)
+
+	if err := account.First.Sync(t.Context(), synctest.FirstVault); err != nil {
+		t.Fatalf("push by the subscribed computer: %v", err)
+	}
+	if err := account.Second.Sync(t.Context(), synctest.SecondVault); err != nil {
+		t.Fatalf("pull by the other computer: %v", err)
+	}
+
+	got, ok := account.Second.ReadNote(synctest.SecondVault, "Papers/Report.md")
+	if !ok || got != "the text of a report" {
+		t.Errorf("file on the other computer = %q (present %v), want the text pushed by the first", got, ok)
+	}
+}

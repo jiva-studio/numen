@@ -17,14 +17,17 @@ const (
 	EnvURL = "NUMEN_SYNC_TEST_URL"
 	// EnvRootKey is the root public key of that stack, 64 hex digits, as `make sync_stack_env` prints it.
 	EnvRootKey = "NUMEN_SYNC_TEST_ROOT_KEY"
+	// EnvPaymentURL is the control API of the payment stand-in of that stack; a test that buys a plan needs it.
+	EnvPaymentURL = "NUMEN_SYNC_TEST_PAYMENT_URL"
 	// EnvRequired set to 1 makes a test of the real server fail, not skip, when the stack is not set. The job that runs the stack sets it; a job without the stack, such as the one of a pull request from a fork, does not.
 	EnvRequired = "NUMEN_SYNC_TEST_REQUIRED"
 )
 
 // Stack is where the real sync server of the test stack is and the key its epochs are signed under.
 type Stack struct {
-	URL   string
-	Roots []ed25519.PublicKey
+	URL        string
+	PaymentURL string
+	Roots      []ed25519.PublicKey
 }
 
 // GetStack reads the stack from the environment. The test skips when the stack is not set, and fails then when EnvRequired is 1.
@@ -41,7 +44,7 @@ func GetStack(t *testing.T) *Stack {
 	if err != nil || len(root) != ed25519.PublicKeySize {
 		t.Fatalf("%s is not 64 hex digits of an ed25519 public key", EnvRootKey)
 	}
-	return &Stack{URL: address, Roots: []ed25519.PublicKey{root}}
+	return &Stack{URL: address, PaymentURL: os.Getenv(EnvPaymentURL), Roots: []ed25519.PublicKey{root}}
 }
 
 // NewRealServer puts a proxy of the test in front of the real sync server of the stack. The computers keep the public address
