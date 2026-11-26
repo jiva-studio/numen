@@ -15,6 +15,18 @@
   }
 }
 
+/* The application's window stylesheet fixes the page to one screen and makes its text unselectable; a page scrolls and is read. */
+html,
+body {
+  block-size: auto;
+  overscroll-behavior: auto;
+}
+
+body {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 @layer base {
   *,
   *::before,
@@ -92,8 +104,7 @@
 
 /* ------------------------------- Site Header ------------------------------ */
 .site-header {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 30;
   display: flex;
   align-items: center;
@@ -1001,36 +1012,71 @@ body > footer .brand-logo {
 /* --------------------------------- Footer --------------------------------- */
 body > footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-  padding: 2rem clamp(1.5rem, 6vw, 5.5rem);
+  flex-direction: column;
+  gap: 3rem;
+  padding: 3.5rem clamp(1.5rem, 6vw, 5.5rem) 2rem;
   background: var(--deep);
   color: var(--on-accent);
   border-top: 1px solid var(--footer-border);
 }
 
-body > footer p {
+.footer-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2.5rem 4rem;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-brand p {
+  max-width: 18rem;
   margin: 0;
+  color: var(--footer-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem 4.5rem;
+}
+
+.footer-links div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-width: 8rem;
+}
+
+.footer-links h2 {
+  margin: 0 0 0.25rem;
+  color: var(--footer-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.footer-links a {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.footer-bottom {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--footer-border);
   color: var(--footer-muted);
   font-size: 0.8rem;
 }
 
-body > footer p a {
+.footer-bottom a {
   color: var(--on-accent);
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 0.2rem;
-}
-
-body > footer p a:hover {
-  color: var(--lime);
-}
-
-body > footer > div {
-  display: flex;
-  gap: 1.5rem;
-  font-size: 0.8rem;
   font-weight: 700;
 }
 
@@ -1087,10 +1133,6 @@ body > footer a:hover {
   }
   .shelf-row {
     grid-template-columns: 1fr;
-  }
-  body > footer {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 

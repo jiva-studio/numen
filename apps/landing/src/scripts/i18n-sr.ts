@@ -98,8 +98,10 @@ export const SR: Record<string, string> = {
     'Bez ograničenja broja uređaja: jedna pretplata pokriva sve vaše baze. Pretplata je potrebna za pisanje; čitanje onoga što je podeljeno sa vama je besplatno. Kupuje se u aplikaciji.',
   close_title: 'Preuzmite Numen.',
   close_lede: 'Besplatno tokom alfe za macOS, Windows i Linux. Uključuje Numen i Numen Flashcards.',
-  footer_privacy:
-    'Privatnost na prvom mestu: bez naloga, bez e-pošte, bez telemetrije. Otvoreni kod pod AGPL-3.0.',
+  footer_product: 'Proizvod',
+  footer_resources: 'Resursi',
+  footer_issues: 'Prijavi problem',
+  footer_code: 'Izvorni kod',
   nav_plugins: 'Dodaci',
   plugins_title: 'Dodaci',
   plugins_lede:
