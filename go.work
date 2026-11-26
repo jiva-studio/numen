@@ -45,6 +45,7 @@ use (
 	./plugins/views-media-viewer
 	./tools/checks/structure/go
 	./tools/checks/style/comments
+	./tools/plugin-registry/licenses
 )
 
 replace (

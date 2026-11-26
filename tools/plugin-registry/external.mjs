@@ -14,13 +14,17 @@ import { join } from 'node:path'
 import { parseManifest } from '../shared/manifests.mjs'
 import { findTool, runTool } from '../shared/tools.mjs'
 import {
+  checkAddedPermissions,
   checkArtifacts,
+  checkHasTests,
   checkLicense,
   checkManifest,
-  checkPermissions,
+  checkMutationScore,
+  checkNetwork,
   checkReadme,
   checkScreenshots,
-  checkUpdated,
+  checkStories,
+  checkVulnerabilities,
   createCheck,
 } from './checks.mjs'
 import { describeDownloads } from './downloads.mjs'
@@ -32,6 +36,7 @@ import {
   toManifestJson,
 } from './entry.mjs'
 import { getExternalQuality } from './quality.mjs'
+import { inspectSource } from './source.mjs'
 
 /** The storage folder the registry and the screenshots of external plugins are published to. */
 export const REGISTRY_PATH = 'plugins/registry'
@@ -114,13 +119,12 @@ export const verifyAttestation = async ({ repo, file }) => {
 }
 
 /**
- * Scans the source at the release tag with osv-scanner; skipped where osv-scanner or git is not
- * installed.
+ * Reads the source at the release tag, cloned with git, as an internal plugin's folder is read: its
+ * dependencies, their known vulnerabilities, its network use and its stories. Null where git is
+ * not installed or the tag cannot be cloned.
  */
-export const scanVulnerabilities = async ({ repo, tag }) => {
-  if (!findTool('osv-scanner') || !findTool('git')) {
-    return createCheck('vulnerabilities', 'skipped', 'osv-scanner is not installed.')
-  }
+export const inspectRelease = async ({ repo, tag, json, readers }) => {
+  if (!findTool('git')) return null
   const dir = mkdtempSync(join(tmpdir(), 'plugin-source-'))
   try {
     const clone = runTool(
@@ -128,17 +132,8 @@ export const scanVulnerabilities = async ({ repo, tag }) => {
       ['clone', '--quiet', '--depth', '1', '--branch', tag, `https://github.com/${repo}.git`, dir],
       { encoding: 'utf8' },
     )
-    if (clone.status !== 0) return createCheck('vulnerabilities', 'warn', 'The source could not be cloned.')
-    const scan = runTool('osv-scanner', ['scan', 'source', '-r', '--format', 'json', dir], {
-      encoding: 'utf8',
-      maxBuffer: 64 * 1024 * 1024,
-    })
-    if (scan.status === 0) return createCheck('vulnerabilities', 'pass', 'No known vulnerabilities.')
-    if (scan.status !== 1) return createCheck('vulnerabilities', 'warn', 'osv-scanner did not finish.')
-    const found = JSON.parse(scan.stdout).results?.flatMap((one) =>
-      one.packages.flatMap((pkg) => pkg.vulnerabilities ?? []),
-    )
-    return createCheck('vulnerabilities', 'fail', `${found?.length ?? 0} known vulnerabilities.`)
+    if (clone.status !== 0) return null
+    return await inspectSource({ dir, lockRoot: dir, json, readers })
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -148,7 +143,7 @@ export const scanVulnerabilities = async ({ repo, tag }) => {
 export const DEFAULT_VERIFIERS = {
   canVerifyAttestation: () => findTool('gh') !== null,
   verifyAttestation,
-  scanVulnerabilities,
+  inspectRelease,
 }
 
 const summarizeAttestations = (checks, canVerify) => {
@@ -245,6 +240,8 @@ const readJsonFile = (bytes) => {
  * @param {(url: string) => Promise<number | null>} context.getSize
  * @param {string} context.outDir - the folder the registry is written to
  * @param {typeof DEFAULT_VERIFIERS} [context.verifiers]
+ * @param {ReturnType<typeof import('./source.mjs').createSourceReaders>} context.readers - the
+ *   license and vulnerability readers
  * @returns {Promise<object>} the registry entry
  */
 export const collectExternal = async (source, context) => {
@@ -279,6 +276,16 @@ export const collectExternal = async (source, context) => {
   const { artifacts, attestation } = await describeArtifacts(release, source.repo, github, verifiers)
   const permissionsAdded = listAddedPermissions(fields, previous)
   const updatedAt = release.published_at ?? null
+  const quality = getExternalQuality(
+    readJsonFile(await github.getFile(source.repo, tag, 'quality.json')),
+  )
+  const inspected = await verifiers.inspectRelease({
+    repo: source.repo,
+    tag,
+    json,
+    readers: context.readers,
+  })
+  const scan = inspected?.scan ?? { vulnerabilities: null, reason: 'The source could not be cloned.' }
 
   return {
     ...fields,
@@ -300,17 +307,22 @@ export const collectExternal = async (source, context) => {
     downloads: await describeDownloads(json.dependencies, context.knownSizes, context.getSize),
     permissionsAdded,
     artifacts,
+    dependencies: inspected?.dependencies ?? { packages: [], indirect: { go: 0, npm: 0 } },
+    vulnerabilities: scan.vulnerabilities ?? [],
     checks: [
       checkManifest(warnings),
       checkLicense(license),
       checkReadme(readme),
       checkScreenshots(screenshots),
-      checkPermissions(fields.permissions, permissionsAdded),
-      checkUpdated(updatedAt),
+      checkAddedPermissions(permissionsAdded),
       checkArtifacts(artifacts),
       attestation,
-      await verifiers.scanVulnerabilities({ repo: source.repo, tag }),
-    ],
-    quality: getExternalQuality(readJsonFile(await github.getFile(source.repo, tag, 'quality.json'))),
+      checkHasTests(quality?.tests),
+      checkMutationScore(quality?.entries),
+      inspected && checkStories(inspected.stories),
+      inspected && checkNetwork(inspected.network),
+      checkVulnerabilities(scan),
+    ].filter(Boolean),
+    quality,
   }
 }

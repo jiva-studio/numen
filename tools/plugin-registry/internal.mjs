@@ -6,12 +6,17 @@ import { join } from 'node:path'
 import { MANIFEST_FILE, readManifestFile } from '../shared/manifests.mjs'
 import { readInternalHistory } from './changelog.mjs'
 import {
+  checkAddedPermissions,
+  checkHasTests,
   checkLicense,
   checkManifest,
-  checkPermissions,
+  checkManual,
+  checkMutationScore,
+  checkNetwork,
   checkReadme,
   checkScreenshots,
-  checkUpdated,
+  checkStories,
+  checkVulnerabilities,
 } from './checks.mjs'
 import { describeDownloads } from './downloads.mjs'
 import {
@@ -21,7 +26,9 @@ import {
   splitReadme,
   toManifestJson,
 } from './entry.mjs'
+import { listManualPages } from './manual.mjs'
 import { getInternalQuality } from './quality.mjs'
+import { inspectSource } from './source.mjs'
 import { countTests } from './tests.mjs'
 
 /** The repository the internal plugins are published from. */
@@ -86,6 +93,8 @@ export const listCommitAccounts = async (github, repo, path) => {
  * @param {(path: string) => Promise<Map<string, { login: string, avatarUrl: string | null }>>} context.getCommitAccounts
  *   - the GitHub accounts of the commits that touched a path, by commit hash
  * @param {{ mutation: Map<string, object>, coverage: Map<string, object> }} context.quality
+ * @param {ReturnType<typeof import('./source.mjs').createSourceReaders>} context.readers - the
+ *   license and vulnerability readers
  * @returns {Promise<object>} the registry entry
  */
 export const collectInternal = async (folder, context) => {
@@ -103,6 +112,9 @@ export const collectInternal = async (folder, context) => {
   const previous = context.previousById.get(fields.id)
   const permissionsAdded = listAddedPermissions(fields, previous)
   const downloads = await describeDownloads(json.dependencies, context.knownSizes, context.getSize)
+  const tests = countTests(dir)
+  const quality = getInternalQuality(folder, context.quality, tests)
+  const source = await inspectSource({ dir, lockRoot: context.root, json, readers: context.readers })
   return {
     ...fields,
     source: {
@@ -122,15 +134,22 @@ export const collectInternal = async (folder, context) => {
     downloads,
     permissionsAdded,
     artifacts: [],
+    dependencies: source.dependencies,
+    vulnerabilities: source.scan.vulnerabilities ?? [],
     checks: [
       checkManifest(warnings),
       checkLicense(context.license),
       checkReadme(readme),
       checkScreenshots(screenshots),
-      checkPermissions(fields.permissions, permissionsAdded),
-      checkUpdated(updatedAt),
-    ],
-    quality: getInternalQuality(folder, context.quality, countTests(dir)),
+      checkAddedPermissions(permissionsAdded),
+      checkHasTests(tests),
+      checkMutationScore(quality?.entries),
+      checkStories(source.stories),
+      checkManual(listManualPages(context.root, fields)),
+      checkNetwork(source.network),
+      checkVulnerabilities(source.scan),
+    ].filter(Boolean),
+    quality,
   }
 }
 

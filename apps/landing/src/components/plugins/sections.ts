@@ -169,17 +169,59 @@ const listTestRows = (plugin: CatalogPlugin): PluginRow[] => {
   return [...counts, ...measured]
 }
 
-/** The checks the registry ran and the tests of the plugin. */
+const ECOSYSTEM_NAMES: Readonly<Record<string, string>> = { go: 'Go', npm: 'npm' }
+
+const INDIRECT_COUNTS = [
+  { ecosystem: 'go', key: 'plugin_indirect_go', name: 'Indirect Go modules' },
+  { ecosystem: 'npm', key: 'plugin_indirect_npm', name: 'Indirect npm packages' },
+] as const
+
+const listDependencyRows = (plugin: CatalogPlugin): PluginRow[] => {
+  const dependencies = plugin.dependencies
+  if (!dependencies) return []
+  const packages = dependencies.packages.map((one) =>
+    row(
+      [code(one.name)],
+      [
+        [
+          plain(ECOSYSTEM_NAMES[one.ecosystem] ?? one.ecosystem),
+          code(one.version),
+          one.license === null
+            ? translated('plugin_license_unknown', 'license unknown')
+            : plain(one.license),
+        ],
+      ],
+    ),
+  )
+  const indirect = INDIRECT_COUNTS.filter((one) => dependencies.indirect[one.ecosystem] > 0).map(
+    (one) =>
+      row([translated(one.key, one.name)], [[plain(String(dependencies.indirect[one.ecosystem]))]]),
+  )
+  return [...packages, ...indirect]
+}
+
+/** The checks the registry ran, the known vulnerabilities, the dependencies and the tests. */
 export function listQualitySections(plugin: CatalogPlugin): PluginSection[] {
   const isReportedByAuthor = plugin.quality?.reportedBy === 'author'
   return listShownSections([
     section(
       'checks',
       plugin.checks.map((one) => ({
-        ...row([translated(`plugin_check_${one.id}`, one.id)], [[plain(one.detail)]]),
+        ...row(
+          [translated(`plugin_check_${one.id}`, one.id)],
+          one.detail.split('\n').map((line) => [plain(line)]),
+        ),
         status: one.status,
       })),
     ),
+    section(
+      'vulnerabilities',
+      (plugin.vulnerabilities ?? []).map((one) => ({
+        ...row([plain(one.id)], [[code(`${one.name} ${one.version}`)], [plain(one.summary)]]),
+        href: one.url,
+      })),
+    ),
+    section('dependencies', listDependencyRows(plugin)),
     section(
       'tests',
       listTestRows(plugin),

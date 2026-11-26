@@ -176,7 +176,7 @@ test('a plugin that adds nothing has no Contributions sections', async () => {
 })
 
 test('the Tests section lists the counted tests and the measured numbers, without zero counts', async () => {
-  const [checks, tests] = listQualitySections(await readPlugin('md.numen.engines.transcription'))
+  const [checks, , , tests] = listQualitySections(await readPlugin('md.numen.engines.transcription'))
 
   assert.equal(checks.title, 'Checks')
   assert.equal(checks.rows[0].status, 'pass')
@@ -186,6 +186,46 @@ test('the Tests section lists the counted tests and the measured numbers, withou
     ['Coverage', '71.2%'],
   ])
   assert.equal(tests.note, null)
+})
+
+test('the Quality tab shows the checks, the vulnerabilities, the dependencies and the tests', async () => {
+  const sections = listQualitySections(await readPlugin('md.numen.engines.transcription'))
+
+  assert.deepEqual(
+    sections.map((one) => one.title),
+    ['Checks', 'Vulnerabilities', 'Dependencies', 'Tests'],
+  )
+})
+
+test('a check detail of several lines is one value line each', async () => {
+  const [checks] = listQualitySections(await readPlugin('md.numen.engines.transcription'))
+  const network = checks.rows.find((one) => one.name[0].key === 'plugin_check_network')
+
+  assert.equal(network.status, 'info')
+  assert.deepEqual(
+    network.value.map((line) => line[0].text),
+    ['Yes, read from the code and the manifest.', 'Downloads from: huggingface.co.'],
+  )
+})
+
+test('a vulnerability links to its OSV page and names the package it was found in', async () => {
+  const [, vulnerabilities] = listQualitySections(await readPlugin('md.numen.engines.transcription'))
+
+  assert.deepEqual(readRows(vulnerabilities), [
+    ['GO-2026-0001', 'golang.org/x/net 0.62.0 / Header parsing loops'],
+  ])
+  assert.equal(vulnerabilities.rows[0].href, 'https://osv.dev/vulnerability/GO-2026-0001')
+})
+
+test('the Dependencies section lists each package with its version and license, then the indirect count', async () => {
+  const [, , dependencies] = listQualitySections(await readPlugin('md.numen.engines.transcription'))
+
+  assert.deepEqual(readRows(dependencies), [
+    ['github.com/yalue/onnxruntime_go', 'Go v1.21.0 MIT'],
+    ['@lucide/vue', 'npm 1.72.0 license unknown'],
+    ['Indirect Go modules', '4'],
+  ])
+  assert.equal(dependencies.rows[1].value[0][2].key, 'plugin_license_unknown')
 })
 
 test('the numbers an author reports are marked as theirs', async () => {
