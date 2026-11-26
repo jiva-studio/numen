@@ -1,4 +1,4 @@
-/** The person at the card of the identity on the page "Identity and licenses": deletes the cloud data, restores the cloud data and exports what the server holds. */
+/** The person at the card of the identity on the page "Identity and licenses": deletes the cloud data and exports what the server holds. */
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect, type Locator } from 'playwright/test'
@@ -11,7 +11,8 @@ const SUBSCRIPTION_TITLE = 'Numen Sync'
 const MORE_ACTIONS = 'More actions'
 const DELETE_CLOUD_DATA = 'Delete cloud data'
 const CANCEL = 'Cancel'
-const RESTORE_ACCOUNT = 'Restore cloud data'
+const DELETED_BADGE = 'Deleted'
+const DELETED_TEXT = 'The cloud data of this identity is deleted.'
 const EXPORT_ACCOUNT_DATA = 'Export identity data'
 const EXPORT_FILE = 'Numen Sync identity data.json'
 /** The plugin reads the identity when the card opens and every 3 seconds while a payment is awaited. */
@@ -61,21 +62,18 @@ export class AccountDriver {
     await dialog.getByRole('button', { name: CANCEL }).click()
   }
 
-  /** Expects the card to show that the cloud data is being deleted, with the action to restore. */
-  async expectDeleting(isDeleting: boolean): Promise<void> {
+  /** Expects the card to show that the cloud data is deleted and offer no way to restore it, or to keep its actions. */
+  async expectDeleted(isDeleted: boolean): Promise<void> {
     const card = await this.getCard()
-    const restore = card.getByRole('button', { name: RESTORE_ACCOUNT })
-    if (isDeleting) {
-      await expect(card.locator('header').getByText('Deleting', { exact: true })).toBeVisible({ timeout: ACCOUNT_LIMIT_MS })
-      await expect(restore).toBeVisible()
+    const badge = card.locator('header').getByText(DELETED_BADGE, { exact: true })
+    if (isDeleted) {
+      await expect(badge).toBeVisible({ timeout: ACCOUNT_LIMIT_MS })
+      await expect(card.getByText(DELETED_TEXT)).toBeVisible()
+      await expect(card.getByRole('button', { name: /restore/i })).toHaveCount(0)
     } else {
-      await expect(restore).toHaveCount(0, { timeout: ACCOUNT_LIMIT_MS })
+      await expect(badge).toHaveCount(0, { timeout: ACCOUNT_LIMIT_MS })
+      await expect(card.getByRole('button', { name: MORE_ACTIONS })).toBeVisible()
     }
-  }
-
-  async restoreAccount(): Promise<void> {
-    const card = await this.getCard()
-    await card.getByRole('button', { name: RESTORE_ACCOUNT }).click()
   }
 
   /** Exports the identity data into the folder the save dialog answers with, and keeps the text of the file. */

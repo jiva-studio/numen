@@ -35,17 +35,15 @@ describe('the fixtures of the identity methods', () => {
     const response: Awaited<ReturnType<AccountClient['getAccountState']>> = {
       hasIdentity: true,
       account: '0123456789abcdef0123456789abcdef',
-      isDeleting: true,
-      deleteAt: '2026-11-30T12:00:00Z',
+      isDeleted: true,
     }
 
     expect(read('GetAccountState.request')).toStrictEqual({})
     expect(read('GetAccountState.response')).toStrictEqual(response)
   })
 
-  it('reads the fixtures of the deletion, the restore and the export', () => {
-    expect(read('DeleteCloudData.response')).toStrictEqual({ deleteAt: '2026-11-30T12:00:00Z' })
-    expect(read('RestoreAccount.response')).toStrictEqual({})
+  it('reads the fixtures of the deletion and the export', () => {
+    expect(read('DeleteCloudData.response')).toStrictEqual({})
     expect(read('ExportAccountData.response')).toStrictEqual({
       document: '{"account":"0123456789abcdef0123456789abcdef","vaults":[]}',
     })
@@ -61,12 +59,11 @@ describe('createAccountClient', () => {
     expect((await client.getAccountState()).hasIdentity).toBe(false)
   })
 
-  it('sends the method of the service and returns the time the server deletes the account', async () => {
+  it('sends the method of the service to delete the cloud data', async () => {
     const { client, sent } = createClient(() => answer(read('DeleteCloudData.response')))
 
-    const deleteAt = await client.deleteCloudData()
+    await client.deleteCloudData()
 
-    expect(deleteAt).toBe('2026-11-30T12:00:00Z')
     expect(sent).toStrictEqual([{ url: `http://window/${SERVICE}/DeleteCloudData`, body: {} }])
   })
 
@@ -87,6 +84,6 @@ describe('createAccountClient', () => {
         }),
     )
 
-    await expect(client.restoreAccount()).rejects.toMatchObject({ code: 'unavailable' })
+    await expect(client.deleteCloudData()).rejects.toMatchObject({ code: 'unavailable' })
   })
 })

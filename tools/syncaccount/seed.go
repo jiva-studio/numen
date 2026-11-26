@@ -127,7 +127,7 @@ func signIn(ctx context.Context, client *http.Client, server string, device iden
 	}
 	signature := device.SignForPlugin(syncprotocol.SignInPluginID, challenge.Message)
 	session, err := rpc.SignIn(ctx, syncclient.Proof{
-		ChallengeID: challenge.ID, DeviceSignKey: device.Public().Sign, Signature: signature[:], Chain: chain.Bytes(), RestoreAccount: false,
+		ChallengeID: challenge.ID, DeviceSignKey: device.Public().Sign, Signature: signature[:], Chain: chain.Bytes(),
 	})
 	if err != nil {
 		return "", err

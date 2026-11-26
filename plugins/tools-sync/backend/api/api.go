@@ -18,7 +18,6 @@ const (
 	MethodCreatePortalSession      = "CreatePortalSession"
 	MethodGetAccountState          = "GetAccountState"
 	MethodDeleteCloudData          = "DeleteCloudData"
-	MethodRestoreAccount           = "RestoreAccount"
 	MethodExportAccountData        = "ExportAccountData"
 	MethodGetShare                 = "GetShare"
 	MethodListShares               = "ListShares"
@@ -340,31 +339,22 @@ type DeleteCloudVaultRequest struct {
 
 type DeleteCloudVaultResponse struct{}
 
-// GetAccountStateRequest asks whether the account is being deleted on the server.
+// GetAccountStateRequest asks whether this device deleted the cloud data of the account.
 type GetAccountStateRequest struct{}
 
 // GetAccountStateResponse is the state of the deletion of the account. HasIdentity is false on a device with no identity.
-// Account is the account fingerprint, the name of the account that the person types to confirm a deletion. DeleteAt is an RFC 3339
-// time, empty unless IsDeleting.
+// Account is the account fingerprint, the name of the account that the person types to confirm a deletion. IsDeleted is
+// true once this device deleted the cloud data, until a sign-in succeeds again.
 type GetAccountStateResponse struct {
 	HasIdentity bool   `json:"hasIdentity"`
 	Account     string `json:"account"`
-	IsDeleting  bool   `json:"isDeleting"`
-	DeleteAt    string `json:"deleteAt"`
+	IsDeleted   bool   `json:"isDeleted"`
 }
 
-// DeleteCloudDataRequest asks the server to delete the account after its grace period.
+// DeleteCloudDataRequest asks the server to delete the account. Nothing restores it.
 type DeleteCloudDataRequest struct{}
 
-// DeleteCloudDataResponse says when the server deletes the account for good, an RFC 3339 time.
-type DeleteCloudDataResponse struct {
-	DeleteAt string `json:"deleteAt"`
-}
-
-// RestoreAccountRequest cancels the deletion of an account that is being deleted.
-type RestoreAccountRequest struct{}
-
-type RestoreAccountResponse struct{}
+type DeleteCloudDataResponse struct{}
 
 // ExportAccountDataRequest asks for what the server holds of the account.
 type ExportAccountDataRequest struct{}

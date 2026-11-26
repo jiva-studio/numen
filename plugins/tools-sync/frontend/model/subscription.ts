@@ -22,8 +22,8 @@ export interface UseSubscriptionOptions {
 
 /**
  * The subscription card: the account as the server tells it, the plans it offers, the purchase and what the card says.
- * With an account client it also holds the deletion of the cloud data; while the account is being deleted the server
- * stops answering the subscription, so the card stops asking.
+ * With an account client it also holds the deletion of the cloud data; once this device deleted it the server stops
+ * answering the subscription, so the card stops asking.
  */
 export function useSubscription(options: UseSubscriptionOptions) {
   const accountData =
@@ -32,7 +32,7 @@ export function useSubscription(options: UseSubscriptionOptions) {
       : useAccountData({ client: options.accountClient, saveFile: options.saveFile })
   const session = useSubscriptionSession({
     ...options,
-    isPaused: () => accountData?.state.isDeleting.value === true,
+    isPaused: () => accountData?.state.isDeleted.value === true,
   })
   const payment = useSubscriptionPayment(options, session)
   const offers = useSubscriptionOffers(session.account)

@@ -240,7 +240,7 @@ func (c *Computer) SignIn(ctx context.Context) error {
 		return err
 	}
 	opened, err := c.Sessions.SignIn(ctx, domainsession.Proof{
-		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain, RestoreAccount: false,
+		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain,
 	})
 	if err != nil {
 		return err

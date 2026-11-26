@@ -319,16 +319,12 @@ When('the person deletes the cloud data', async ({ person }) => {
   await person.accounts.deleteCloudData()
 })
 
-Then('the cloud data is being deleted', async ({ person }) => {
-  await person.accounts.expectDeleting(true)
+Then('the cloud data is deleted', async ({ person }) => {
+  await person.accounts.expectDeleted(true)
 })
 
 Then('the cloud data is kept', async ({ person }) => {
-  await person.accounts.expectDeleting(false)
-})
-
-When('the person restores the cloud data', async ({ person }) => {
-  await person.accounts.restoreAccount()
+  await person.accounts.expectDeleted(false)
 })
 
 When('the person exports the identity data', async ({ person }) => {

@@ -394,15 +394,14 @@ type DeleteChallenges interface {
 
 // AccountData is what the server holds of the account, and the deletion of it.
 type AccountData interface {
-	DeleteAccount(ctx context.Context, challengeID, signature []byte) (time.Time, error)
+	DeleteAccount(ctx context.Context, challengeID, signature []byte) error
 	ExportAccount(ctx context.Context) ([]byte, error)
 }
 
-// Deletion is whether the account is being deleted, as the last sign-in found it, and the way back.
+// Deletion is whether this device deleted the cloud data of the account since its last sign-in.
 type Deletion interface {
-	GetDeletion() (deleteAt time.Time, isDeleting bool)
-	SetDeletion(deleteAt time.Time)
-	Restore(ctx context.Context) error
+	IsDeleted() bool
+	SetDeleted()
 }
 
 // CommitInput is the files to commit to a vault. VaultID names the vault on this device; a note under the folder of

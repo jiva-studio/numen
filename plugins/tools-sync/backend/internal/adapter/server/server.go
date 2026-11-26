@@ -47,7 +47,7 @@ func (s *Server) GetChallenge(ctx context.Context, deviceSignKey []byte) (sessio
 // SignIn sends the proof and returns the session the server gives.
 func (s *Server) SignIn(ctx context.Context, proof session.Proof) (session.Session, error) {
 	opened, err := s.client.SignIn(ctx, syncclient.Proof{
-		ChallengeID: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain, RestoreAccount: proof.RestoreAccount,
+		ChallengeID: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain,
 	})
 	if err != nil {
 		return session.Session{}, readError(err)
@@ -56,9 +56,6 @@ func (s *Server) SignIn(ctx context.Context, proof session.Proof) (session.Sessi
 }
 
 func readError(err error) error {
-	if deleting, ok := errors.AsType[syncprotocol.AccountDeletingError](err); ok {
-		return session.AccountDeletingError{DeleteAt: deleting.DeleteAt}
-	}
 	if revoked, ok := errors.AsType[syncprotocol.DeviceRevokedError](err); ok {
 		return session.DeviceRevokedError{Chain: revoked.Chain}
 	}

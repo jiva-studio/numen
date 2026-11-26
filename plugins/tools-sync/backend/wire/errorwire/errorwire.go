@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -65,8 +64,6 @@ func findText(err error) (string, bool) {
 		return "The folder of the vault «" + missing.Name + "» is missing: " + missing.Path + ". Remove the vault from the list or restore the folder.", true
 	case errors.As(err, &quota):
 		return textStorageFull, true
-	case isAccountDeleting(err):
-		return "The identity is being deleted. Restore it in the settings to keep syncing.", true
 	case errors.As(err, new(sessiondomain.DeviceRevokedError)):
 		return "This computer was removed from the identity. Sign in again in the settings.", true
 	}
@@ -85,7 +82,7 @@ func findText(err error) (string, bool) {
 func GetCode(err error) server.ErrorCode {
 	var quota syncprotocol.QuotaExceededError
 	var missing vaultlink.FolderMissingError
-	if errors.As(err, &quota) || errors.As(err, &missing) || isAccountDeleting(err) {
+	if errors.As(err, &quota) || errors.As(err, &missing) {
 		return server.CodeFailedPrecondition
 	}
 	for _, one := range getEntries() {
@@ -97,10 +94,6 @@ func GetCode(err error) server.ErrorCode {
 		return server.CodeFailedPrecondition
 	}
 	return server.CodeInternal
-}
-
-func isAccountDeleting(err error) bool {
-	return errors.Is(err, sessiondomain.AccountDeletingError{DeleteAt: time.Time{}})
 }
 
 func findRefusal(err error) error {

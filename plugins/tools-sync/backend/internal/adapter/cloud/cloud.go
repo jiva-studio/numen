@@ -216,9 +216,10 @@ func (c *Cloud) GetShareBlobUrls(ctx context.Context, shareRootID []byte, blobID
 	return call(ctx, c, func() ([]*syncv1.BlobDownload, error) { return c.shares.GetShareBlobUrls(ctx, shareRootID, blobIDs) })
 }
 
-// DeleteAccount asks the server to delete the account after its grace period, and returns when it deletes it for good.
-func (c *Cloud) DeleteAccount(ctx context.Context, challengeID, signature []byte) (time.Time, error) {
-	return call(ctx, c, func() (time.Time, error) { return c.account.DeleteAccount(ctx, challengeID, signature) })
+// DeleteAccount asks the server to delete the account; nothing restores it.
+func (c *Cloud) DeleteAccount(ctx context.Context, challengeID, signature []byte) error {
+	_, err := call(ctx, c, func() (struct{}, error) { return struct{}{}, c.account.DeleteAccount(ctx, challengeID, signature) })
+	return err
 }
 
 // ExportAccount returns the JSON document of what the server holds of the account.

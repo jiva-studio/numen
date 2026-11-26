@@ -9,9 +9,9 @@ import { formatErrorMessage } from '@numen/plugin-sdk'
  * stop waiting.
  */
 import { computed, onMounted, ref } from 'vue'
-import { ChevronRight, RotateCcw, ServerOff, Settings, UserRound } from '@lucide/vue'
+import { ChevronRight, ServerOff, Settings, UserRound } from '@lucide/vue'
 import { Button, CardAction, IslandCard, Spinner } from '@numen/ui'
-import { formatDate, getOfferDetail, getOfferLine, type PlanOffer } from '../lib/subscriptionView'
+import { getOfferDetail, getOfferLine, type PlanOffer } from '../lib/subscriptionView'
 import { useSubscription } from '../model/subscription'
 import { WORDS as words } from '../words'
 import AccountMenu from './AccountMenu.vue'
@@ -45,12 +45,9 @@ const hasSettingsAction = computed(
   () => status.value === 'unreachable' && props.openSettings !== undefined,
 )
 const isPaying = computed(() => waiting.value || starting.value)
-const isDeleting = computed(() => accountData?.state.isDeleting.value === true)
+const isDeleted = computed(() => accountData?.state.isDeleted.value === true)
 const canChangeAccount = computed(
-  () => accountData !== undefined && status.value === 'ready' && !isDeleting.value,
-)
-const deletingText = computed(() =>
-  words.deletingText(formatDate(accountData?.state.deleteAt.value ?? '')),
+  () => accountData !== undefined && status.value === 'ready' && !isDeleted.value,
 )
 const isConfirmingDelete = ref(false)
 
@@ -101,10 +98,6 @@ function onConfirmDelete(): void {
   accountData?.actions.remove().catch(onFailure)
 }
 
-function onRestore(): void {
-  accountData?.actions.restore().catch(onFailure)
-}
-
 function onExport(): void {
   accountData?.actions.exportData().catch(onFailure)
 }
@@ -121,8 +114,8 @@ function onFailure(failure: unknown): void {
     :aria-label="words.subscriptionTitle"
   >
     <template #aside>
-      <span v-if="isDeleting" class="subscription__badge subscription__badge--warning">
-        {{ words.deletingBadge }}
+      <span v-if="isDeleted" class="subscription__badge subscription__badge--warning">
+        {{ words.cloudDataDeletedBadge }}
       </span>
       <span
         v-else-if="view.badge !== ''"
@@ -131,16 +124,7 @@ function onFailure(failure: unknown): void {
       >
         {{ view.badge }}
       </span>
-      <CardAction
-        v-if="isDeleting"
-        is-primary
-        :label="words.restoreAccount"
-        :is-disabled="accountData?.state.isBusy.value ?? false"
-        @click="onRestore"
-      >
-        <RotateCcw :size="14" aria-hidden="true" />
-      </CardAction>
-      <template v-else>
+      <template v-if="!isDeleted">
         <CardAction
           v-if="hasSettingsAction"
           is-primary
@@ -163,8 +147,8 @@ function onFailure(failure: unknown): void {
         />
       </template>
     </template>
-    <div v-if="isDeleting" class="subscription__content">
-      <p class="subscription__text">{{ deletingText }}</p>
+    <div v-if="isDeleted" class="subscription__content">
+      <p class="subscription__text">{{ words.cloudDataDeletedText }}</p>
     </div>
     <div v-else class="subscription__content" :inert="isPaying || undefined" :aria-busy="isPaying">
       <p v-if="isFull" class="subscription__full">{{ words.cloudFull }}</p>

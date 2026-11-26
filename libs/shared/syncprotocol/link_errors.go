@@ -1,9 +1,6 @@
 package syncprotocol
 
-import (
-	"errors"
-	"time"
-)
+import "errors"
 
 var (
 	// ErrChannelGone means the link channel is unknown, expired or closed; the server does not say which.
@@ -23,9 +20,3 @@ func (ChainStaleError) Error() string { return "the sync server holds a newer ch
 type DeviceRevokedError struct{ Chain []byte }
 
 func (DeviceRevokedError) Error() string { return "this device was revoked" }
-
-// AccountDeletingError means the account is deleting: the server refused the sign-in and stops syncing it until it is
-// restored. DeleteAt is when the server deletes it for good.
-type AccountDeletingError struct{ DeleteAt time.Time }
-
-func (AccountDeletingError) Error() string { return "the account is being deleted" }

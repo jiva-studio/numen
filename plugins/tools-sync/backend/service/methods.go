@@ -32,7 +32,6 @@ func mountMethods(service *server.API, r *runtime) {
 	mountCall(service, r, api.MethodCreatePortalSession, (*Backend).CreatePortalSession)
 	mountCall(service, r, api.MethodGetAccountState, (*Backend).GetAccountState)
 	mountCall(service, r, api.MethodDeleteCloudData, (*Backend).DeleteCloudData)
-	mountCall(service, r, api.MethodRestoreAccount, (*Backend).RestoreAccount)
 	mountCall(service, r, api.MethodExportAccountData, (*Backend).ExportAccountData)
 	mountShareMethods(service, r)
 	mountInviteMethods(service, r)

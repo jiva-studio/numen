@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The question the card asks before it deletes the cloud data of the identity: how long the server keeps it,
+ * The question the card asks before it deletes the cloud data of the identity: that the deletion cannot be undone,
  * what stays on the devices and that an active subscription is cancelled.
  */
 import { ConfirmDialog } from '@numen/ui'

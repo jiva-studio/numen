@@ -109,8 +109,8 @@ message GetChangesResponse {
   bool has_more = 3;
   // head_seq is the vault seq when the page was read.
   uint64 head_seq = 4;
-  // reset is true when since_seq is older than the deletion records the server keeps; changes is empty and the client lists
-  // the vault again from since_seq 0.
+  // reset is true when since_seq is older than the deletion records the server keeps; the client lists the vault again
+  // from since_seq 0. A reset page carries changes, next_seq and has_more like any other page.
   bool reset = 5;
   // restore_epoch_id is the id of the current restore epoch, 16 bytes, or empty before the first restore.
   bytes restore_epoch_id = 6;

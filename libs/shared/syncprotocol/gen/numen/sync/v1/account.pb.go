@@ -466,7 +466,7 @@ func (x *DeleteAccountRequest) GetSignature() []byte {
 
 type DeleteAccountResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// delete_at is the Unix time in seconds after which the server deletes the account for good.
+	// delete_at is the Unix time in seconds at which the server marked the account as deleted.
 	DeleteAt      int64 `protobuf:"varint,1,opt,name=delete_at,json=deleteAt,proto3" json:"delete_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

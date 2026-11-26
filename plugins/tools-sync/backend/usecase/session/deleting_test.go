@@ -1,18 +1,18 @@
 package session_test
 
 import (
-	"context"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
 )
 
 type deletingPair struct {
 	server *synctest.Server
 	first  *synctest.Computer
 	second *synctest.Computer
+	keep   *session.Keep
 }
 
 func newDeletingPair(t *testing.T) *deletingPair {
@@ -22,17 +22,13 @@ func newDeletingPair(t *testing.T) *deletingPair {
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)
-	deps := accountdata.Deps{Identity: first.Account, Challenges: first.Sessions, Account: first.Cloud, Deletion: &recordedDeletion{}}
-	if _, err := accountdata.NewDeleteCloudData(deps).Execute(t.Context()); err != nil {
+	keep := session.NewKeep(session.Deps{Identity: first.Account, Server: first.Sessions, Health: first.NewHealth(), Clock: first.Clock})
+	if err := keep.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	return &deletingPair{server: server, first: first, second: second}
+	deps := accountdata.Deps{Identity: first.Account, Challenges: first.Sessions, Account: first.Cloud, Deletion: keep}
+	if err := accountdata.NewDeleteCloudData(deps).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	return &deletingPair{server: server, first: first, second: second, keep: keep}
 }
-
-type recordedDeletion struct{}
-
-func (*recordedDeletion) GetDeletion() (deleteAt time.Time, isDeleting bool) {
-	return time.Time{}, false
-}
-func (*recordedDeletion) SetDeletion(time.Time)         {}
-func (*recordedDeletion) Restore(context.Context) error { return nil }

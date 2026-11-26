@@ -73,9 +73,6 @@ func getContracts() map[string]plugintest.MessageContract {
 		api.MethodDeleteCloudData: {
 			CreateRequest: func() any { return &api.DeleteCloudDataRequest{} }, CreateResponse: func() any { return &api.DeleteCloudDataResponse{} },
 		},
-		api.MethodRestoreAccount: {
-			CreateRequest: func() any { return &api.RestoreAccountRequest{} }, CreateResponse: func() any { return &api.RestoreAccountResponse{} },
-		},
 		api.MethodExportAccountData: {
 			CreateRequest: func() any { return &api.ExportAccountDataRequest{} }, CreateResponse: func() any { return &api.ExportAccountDataResponse{} },
 		},

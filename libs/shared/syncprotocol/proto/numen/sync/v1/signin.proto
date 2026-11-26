@@ -42,9 +42,8 @@ message SignInRequest {
   // chain is the signed device chain of the account. It lets the server open the account and check that
   // the device is in it.
   bytes chain = 4;
-  // restore_account asks to cancel the deletion of an account that is deleting. Without it a sign-in to a deleting
-  // account is refused with an AccountDeleting detail, so a device that syncs in the background cannot undo a deletion.
-  bool restore_account = 5;
+  reserved 5;
+  reserved "restore_account";
 }
 
 message SignInResponse {
@@ -58,10 +57,4 @@ message SignInResponse {
 // UpdateRequired is the detail of the FAILED_PRECONDITION that says the protocol versions differ.
 message UpdateRequired {
   uint32 server_version = 1;
-}
-
-// AccountDeleting is the detail of the UNAUTHENTICATED answer to a sign-in of an account that is deleting.
-message AccountDeleting {
-  // delete_at is the Unix time in seconds after which the server deletes the account for good.
-  int64 delete_at = 1;
 }
