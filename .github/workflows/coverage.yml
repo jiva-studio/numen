@@ -39,8 +39,15 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
+      # A Go module that links the window needs the system browser's headers.
+      - uses: ./.github/actions/setup-webkit
+
       - name: Install Node dependencies
         uses: ./.github/actions/install-node-modules
+
+      # Go tests compare the plugin index with the manifests it is written from.
+      - name: Write the plugin index
+        run: node tools/build-plugin-index/build.mjs
 
       - name: Build UI components
         uses: ./.github/actions/build-ui
