@@ -120,9 +120,24 @@ describe('the menu of a row of the file tree', () => {
         icon: 'waypoints',
         group: '4-relation',
       },
-      { slot: 'plex.relation', command: 'app:note.createChild', order: 10 },
-      { slot: 'plex.relation', command: 'app:note.createParent', order: 20 },
-      { slot: 'plex.relation', command: 'app:note.createJump', order: 30 },
+      {
+        slot: 'plex.relation',
+        command: 'app:note.createChild',
+        title: 'Create child note',
+        order: 10,
+      },
+      {
+        slot: 'plex.relation',
+        command: 'app:note.createParent',
+        title: 'Create parent note',
+        order: 20,
+      },
+      {
+        slot: 'plex.relation',
+        command: 'app:note.createJump',
+        title: 'Create jump note',
+        order: 30,
+      },
     ])
   })
 
@@ -167,6 +182,7 @@ describe('the menu of a place with no node', () => {
       {
         slot: 'plexGraph.context',
         command: 'app:note.create',
+        title: 'Create note',
         group: '0-new',
         order: 10,
         when: 'target.isFolder',
