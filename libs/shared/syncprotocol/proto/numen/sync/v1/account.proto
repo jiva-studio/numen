@@ -30,7 +30,7 @@ service AccountService {
 
   // ExportAccount streams what the server holds of the account of the session, as one JSON document cut into
   // chunks. The chunks in the order of the stream concatenate to the document. It needs the session bearer.
-  rpc ExportAccount(ExportAccountRequest) returns (stream ExportAccountChunk);
+  rpc ExportAccount(ExportAccountRequest) returns (stream ExportAccountResponse);
 }
 
 message GetAccountChainRequest {}
@@ -94,7 +94,7 @@ message DeleteAccountResponse {
 
 message ExportAccountRequest {}
 
-message ExportAccountChunk {
+message ExportAccountResponse {
   // data is the next part of a UTF-8 JSON document that lists the device chain, the devices, the vaults, the metadata
   // and sizes of the revisions, and the plan and payment references of the account. It holds no key and no text of
   // a note. A chunk is at most 256 KiB and may end inside a JSON token.

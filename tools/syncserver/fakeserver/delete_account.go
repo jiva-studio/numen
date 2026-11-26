@@ -61,7 +61,7 @@ type exportedVault struct {
 	Files int    `json:"files"`
 }
 
-func (s *Server) ExportAccount(_ context.Context, req *connect.Request[syncv1.ExportAccountRequest], stream *connect.ServerStream[syncv1.ExportAccountChunk]) error {
+func (s *Server) ExportAccount(_ context.Context, req *connect.Request[syncv1.ExportAccountRequest], stream *connect.ServerStream[syncv1.ExportAccountResponse]) error {
 	session, err := s.authenticateSession(req.Header())
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (s *Server) ExportAccount(_ context.Context, req *connect.Request[syncv1.Ex
 		return connect.NewError(connect.CodeInternal, err)
 	}
 	for chunk := range slices.Chunk(document, syncprotocol.MaxExportChunk) {
-		if err := stream.Send(&syncv1.ExportAccountChunk{Data: chunk}); err != nil {
+		if err := stream.Send(&syncv1.ExportAccountResponse{Data: chunk}); err != nil {
 			return err
 		}
 	}
