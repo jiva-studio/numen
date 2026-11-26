@@ -1,18 +1,24 @@
 ---
 /**
- * The side column of a plugin page: contributors, the apps and platforms it works on, its source,
+ * The side column of a plugin page: contributors, the apps and systems it works on, its source,
  * links to report a bug or ask for a feature, and plugins that go with it.
  */
+import numenIcon from '../../../../../tools/build-icons/icon.svg?url'
+import flashcardsIcon from '../../../../../tools/build-icons/flashcards.svg?url'
 import PluginIcon from './PluginIcon.astro'
 import {
   type CatalogPlugin,
-  getAppNames,
+  getAvatarUrl,
   getBugReportUrl,
+  getContributorName,
   getFeatureRequestUrl,
   getInitial,
   getPlatformName,
+  getPlatformSystem,
   getPluginPath,
+  listApps,
 } from './catalog'
+import { SYSTEM_ICONS } from './systems'
 
 interface Props {
   plugin: CatalogPlugin
@@ -20,8 +26,20 @@ interface Props {
 }
 
 const { plugin, related } = Astro.props
-const apps = getAppNames(plugin.targets).join(' · ')
-const platforms = plugin.platforms.map(getPlatformName).join(' · ')
+const APP_ICONS: Readonly<Record<string, string>> = {
+  'desktop.editor': numenIcon,
+  'desktop.flashcards': flashcardsIcon,
+}
+const apps = listApps(plugin.targets).map((app) => ({ ...app, icon: APP_ICONS[app.target] }))
+const systems = plugin.platforms.map((platform) => ({
+  name: getPlatformName(platform),
+  icon: SYSTEM_ICONS[getPlatformSystem(platform)],
+}))
+const people = plugin.contributors.map((person) => ({
+  name: getContributorName(person),
+  avatar: getAvatarUrl(person, 52),
+}))
+const isInternal = plugin.source.kind === 'internal'
 ---
 
 <aside class="plugin-side">
@@ -33,11 +51,15 @@ const platforms = plugin.platforms.map(getPlatformName).join(' · ')
           <span class="plugin-count">{plugin.contributors.length}</span>
         </h2>
         <ul class="plugin-people">
-          {plugin.contributors.map((person) => (
+          {people.map((person) => (
             <li>
-              <span class="plugin-avatar" aria-hidden="true">
-                {getInitial(person.name)}
-              </span>
+              {person.avatar ? (
+                <img class="plugin-avatar" src={person.avatar} width="26" height="26" alt="" loading="lazy" />
+              ) : (
+                <span class="plugin-avatar" aria-hidden="true">
+                  {getInitial(person.name)}
+                </span>
+              )}
               {person.name}
             </li>
           ))}
@@ -48,20 +70,56 @@ const platforms = plugin.platforms.map(getPlatformName).join(' · ')
 
   <section class="plugin-side__section">
     <h2 data-i18n="plugin_compatibility">Compatibility</h2>
-    {apps && <span>{apps}</span>}
-    {platforms && <span>{platforms}</span>}
+    {
+      apps.length > 0 && (
+        <div class="plugin-compat">
+          <h3 data-i18n="plugin_apps">Apps</h3>
+          <ul>
+            {apps.map((app) => (
+              <li>
+                {app.icon && <img src={app.icon} width="20" height="20" alt="" />}
+                {app.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+    {
+      systems.length > 0 && (
+        <div class="plugin-compat">
+          <h3 data-i18n="plugin_systems">Systems</h3>
+          <ul>
+            {systems.map((system) => (
+              <li>
+                {system.icon && (
+                  <svg class="plugin-compat__glyph" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={system.icon} />
+                  </svg>
+                )}
+                {system.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
   </section>
 
   <section class="plugin-side__section">
     <h2 data-i18n="plugin_source">Source code</h2>
-    <a class="plugin-side__link" href={plugin.source.url} target="_blank" rel="noopener">
+    <a class="plugin-source" href={plugin.source.url} target="_blank" rel="noopener">
       <svg viewBox="0 0 16 16" aria-hidden="true">
         <path
           d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.71 1.22 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
         />
       </svg>
-      <span data-i18n="plugin_view_source">View source</span>
-      <span aria-hidden="true">↗</span>
+      <span class="plugin-source__text">
+        <span class="plugin-source__repo">{plugin.source.repo}</span>
+        {isInternal && plugin.source.path && (
+          <span class="plugin-source__path">{plugin.source.path}</span>
+        )}
+      </span>
     </a>
   </section>
 

@@ -33,7 +33,15 @@
         "url": "https://github.com/jiva-studio/numen/tree/main/plugins/engines-transcription"
       },
       "author": "Jiva Studio",
-      "contributors": [{ "name": "Ada Example", "commits": 12 }],
+      "contributors": [
+        {
+          "name": "Ada Example",
+          "commits": 12,
+          "login": "ada-example",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/1?v=4"
+        },
+        { "name": "Ben Example", "commits": 3, "login": null, "avatarUrl": null }
+      ],
       "license": "AGPL-3.0",
       "platforms": ["macos", "windows", "linux"],
       "readme": {

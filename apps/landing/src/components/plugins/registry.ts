@@ -24,7 +24,12 @@ type PluginSetting = { key: string; title: string; description: string }
 
 type PluginCommand = { id: string; title: string }
 
-type PluginContributor = { name: string; commits: number }
+type PluginContributor = {
+  name: string
+  commits: number
+  login: string | null
+  avatarUrl: string | null
+}
 
 type PluginLicense = { id: string; title: string; description: string }
 

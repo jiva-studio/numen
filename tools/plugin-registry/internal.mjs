@@ -46,6 +46,31 @@ const readOptional = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : 
 
 const listScreenshotFiles = (dir) => (existsSync(dir) ? readdirSync(dir).sort() : [])
 
+const COMMITS_PAGE = 100
+
+/**
+ * The GitHub account of each commit of `repo` that touched `path`, by commit hash, from the commits
+ * API; a commit whose email belongs to no account is absent.
+ *
+ * @param {{ getJson: (path: string) => Promise<{ status: number, body?: unknown }> }} github
+ * @returns {Promise<Map<string, { login: string, avatarUrl: string | null }>>}
+ */
+export const listCommitAccounts = async (github, repo, path) => {
+  const accounts = new Map()
+  for (let page = 1; ; page += 1) {
+    const query = `path=${encodeURIComponent(path)}&per_page=${COMMITS_PAGE}&page=${page}`
+    const { status, body } = await github.getJson(`/repos/${repo}/commits?${query}`)
+    if (status !== 200 || !Array.isArray(body)) return accounts
+    for (const commit of body) {
+      const login = commit?.author?.login
+      if (typeof commit?.sha === 'string' && typeof login === 'string') {
+        accounts.set(commit.sha, { login, avatarUrl: commit.author.avatar_url ?? null })
+      }
+    }
+    if (body.length < COMMITS_PAGE) return accounts
+  }
+}
+
 /**
  * The entry of the plugin folder `folder`.
  *
@@ -56,6 +81,8 @@ const listScreenshotFiles = (dir) => (existsSync(dir) ? readdirSync(dir).sort() 
  * @param {Map<string, object>} context.previousById - the entries of the previous registry
  * @param {Map<string, number>} context.knownSizes - download sizes by SHA-256
  * @param {(url: string) => Promise<number | null>} context.getSize - the size of a file at a URL
+ * @param {(path: string) => Promise<Map<string, { login: string, avatarUrl: string | null }>>} context.getCommitAccounts
+ *   - the GitHub accounts of the commits that touched a path, by commit hash
  * @param {{ mutation: Map<string, object>, coverage: Map<string, object> }} context.quality
  * @returns {Promise<object>} the registry entry
  */
@@ -69,7 +96,8 @@ export const collectInternal = async (folder, context) => {
     listScreenshotFiles(join(dir, 'screenshots')),
     (name) => `plugins/${folder}/screenshots/${name}`,
   )
-  const { changelog, updatedAt, contributors } = readInternalHistory(context.root, folder)
+  const accounts = await context.getCommitAccounts(`plugins/${folder}`)
+  const { changelog, updatedAt, contributors } = readInternalHistory(context.root, folder, accounts)
   const previous = context.previousById.get(fields.id)
   const permissionsAdded = listAddedPermissions(fields, previous)
   const downloads = await describeDownloads(json.dependencies, context.knownSizes, context.getSize)

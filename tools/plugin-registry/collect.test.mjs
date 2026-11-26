@@ -9,10 +9,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { execTool } from '../shared/tools.mjs'
-import { countContributors, groupByVersion } from './changelog.mjs'
+import { countContributors, groupByVersion, isBot } from './changelog.mjs'
 import { createCheck } from './checks.mjs'
 import { collectRegistry } from './collect.mjs'
 import { getIcon, listAddedPermissions, pairScreenshots, splitReadme } from './entry.mjs'
+import { listCommitAccounts } from './internal.mjs'
 import { collectExternal, createGitHub, readArtifactPlatform } from './external.mjs'
 import { assertNoCollision, getContentHash, readSources } from './registry.mjs'
 
@@ -189,20 +190,88 @@ test('the quality of an internal plugin is read from the quality folder', async 
   })
 })
 
+const commitAs = (root, name, email, date) => {
+  writeFileSync(join(root, 'plugins/notes/main.ts'), `export const by = ${JSON.stringify(name)}\n`)
+  const env = { ...process.env, GIT_COMMITTER_DATE: date, GIT_AUTHOR_DATE: date }
+  execTool('git', ['add', '-A'], { cwd: root, env })
+  execTool('git', ['-c', `user.name=${name}`, '-c', `user.email=${email}`, 'commit', '--quiet', '-m', 'fix(notes): x'], {
+    cwd: root,
+    env,
+  })
+}
+
 test('an internal plugin takes its contributors from the history of its folder', async () => {
   await withRepository(async (root) => {
     const [plugin] = (await collectOffline(root)).plugins
 
-    assert.deepEqual(plugin.contributors, [{ name: 'Test', commits: 4 }])
+    assert.deepEqual(plugin.contributors, [
+      { name: 'Test', commits: 4, login: null, avatarUrl: null },
+    ])
+  })
+})
+
+test('one person with two spellings of their name is one contributor, named as in their newest commit', async () => {
+  await withRepository(async (root) => {
+    commitAs(root, 'Tést Person', 'TEST@example.org', '2026-11-05T10:00:00Z')
+    commitAs(root, 'dependabot[bot]', '49699333+dependabot[bot]@users.noreply.github.com', '2026-11-06T10:00:00Z')
+    const registry = await collectOffline(root)
+
+    assert.deepEqual(registry.plugins[0].contributors, [
+      { name: 'Tést Person', commits: 5, login: null, avatarUrl: null },
+    ])
+    assert.equal(JSON.stringify(registry).includes('example.org'), false)
   })
 })
 
 test('contributors are ordered by their commits, then by name', () => {
-  assert.deepEqual(countContributors(['Bea', 'Ann', 'Cid', 'Cid', 'Bea', 'Cid']), [
-    { name: 'Cid', commits: 3 },
-    { name: 'Bea', commits: 2 },
-    { name: 'Ann', commits: 1 },
+  const authors = [
+    ['1', 'Bea', 'bea@example.org'],
+    ['2', 'Ann', 'ann@example.org'],
+    ['3', 'Cid', 'cid@example.org'],
+    ['4', 'Cid', 'cid@example.org'],
+    ['5', 'Bea', 'bea@example.org'],
+    ['6', 'Cid', 'cid@example.org'],
+  ].map(([hash, name, email]) => ({ hash, name, email }))
+
+  assert.deepEqual(
+    countContributors(authors).map(({ name, commits }) => ({ name, commits })),
+    [
+      { name: 'Cid', commits: 3 },
+      { name: 'Bea', commits: 2 },
+      { name: 'Ann', commits: 1 },
+    ],
+  )
+})
+
+test('a contributor takes the GitHub account of their newest commit that has one', () => {
+  const authors = [
+    { hash: 'c3', name: 'Ann B', email: 'ann@example.org' },
+    { hash: 'c2', name: 'Ann', email: 'Ann@Example.org' },
+    { hash: 'c1', name: 'Ann', email: 'ann@example.org' },
+  ]
+  const accounts = new Map([
+    ['c2', { login: 'ann-new', avatarUrl: 'https://avatars.githubusercontent.com/u/2?v=4' }],
+    ['c1', { login: 'ann-old', avatarUrl: 'https://avatars.githubusercontent.com/u/1?v=4' }],
   ])
+
+  assert.deepEqual(countContributors(authors, accounts), [
+    {
+      name: 'Ann B',
+      commits: 3,
+      login: 'ann-new',
+      avatarUrl: 'https://avatars.githubusercontent.com/u/2?v=4',
+    },
+  ])
+})
+
+test('a bot is a GitHub App author, by its name or its noreply address', () => {
+  assert.equal(isBot({ name: 'dependabot[bot]', email: 'support@github.com' }), true)
+  assert.equal(
+    isBot({ name: 'Renovate', email: '29139614+renovate[bot]@users.noreply.github.com' }),
+    true,
+  )
+  assert.equal(isBot({ name: 'Claude', email: 'noreply@anthropic.com' }), false)
+  assert.equal(isBot({ name: 'Ann', email: '12+ann@users.noreply.github.com' }), false)
 })
 
 test('the icon is the first one the manifest declares on a tab kind, a command, a slot or a setting', () => {
@@ -524,4 +593,28 @@ test('an external plugin whose release has not changed is copied without downloa
     assert.equal(entry, previous)
     assert.deepEqual(requests, [`https://api.github.com/repos/${REPO}/releases/latest`])
   })
+})
+
+test('the GitHub accounts of the commits of a path are read page by page', async () => {
+  const commitsUrl = (page) =>
+    `https://api.github.com/repos/jiva-studio/numen/commits?path=plugins%2Fnotes&per_page=100&page=${page}`
+  const fullPage = Array.from({ length: 100 }, (_, index) => ({
+    sha: `a${index}`,
+    author: index === 0 ? null : { login: 'ann', avatar_url: 'https://avatars.githubusercontent.com/u/1?v=4' },
+  }))
+  const requests = []
+  const fetcher = createFetcher(
+    {
+      [commitsUrl(1)]: { json: fullPage },
+      [commitsUrl(2)]: { json: [{ sha: 'b0', author: { login: 'bea', avatar_url: null } }] },
+    },
+    requests,
+  )
+
+  const accounts = await listCommitAccounts(createGitHub({ fetcher }), 'jiva-studio/numen', 'plugins/notes')
+
+  assert.equal(accounts.size, 100)
+  assert.equal(accounts.has('a0'), false)
+  assert.deepEqual(accounts.get('b0'), { login: 'bea', avatarUrl: null })
+  assert.deepEqual(requests, [commitsUrl(1), commitsUrl(2)])
 })

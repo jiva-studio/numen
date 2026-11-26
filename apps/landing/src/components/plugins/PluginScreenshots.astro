@@ -1,5 +1,8 @@
 ---
-/** Up to three screenshots of a plugin as 16:10 thumbnails; each opens the full image. */
+/**
+ * Up to three screenshots of a plugin as 16:10 thumbnails. A thumbnail opens the screenshots in a
+ * lightbox, one at a time, with the others below; without the script it opens the full image.
+ */
 import { type CatalogPlugin } from './catalog'
 import { listShots } from './screenshots'
 
@@ -8,31 +11,126 @@ interface Props {
 }
 
 const { plugin } = Astro.props
-const shots = await listShots(plugin, 3)
-const images = shots.flatMap((shot) =>
-  [
+const shots = (await listShots(plugin, 3)).map((shot) => ({
+  alt: `${plugin.name}: ${shot.name}`,
+  images: [
     { image: shot.light, theme: shot.dark ? 'img-light' : undefined },
     { image: shot.dark, theme: shot.light ? 'img-dark' : undefined },
-  ].flatMap(({ image, theme }) =>
-    image ? [{ ...image, theme, alt: `${plugin.name}: ${shot.name}` }] : [],
-  ),
-)
+  ].flatMap(({ image, theme }) => (image ? [{ ...image, theme }] : [])),
+}))
+const hasSeveral = shots.length > 1
 ---
 
 {
-  images.length > 0 && (
-    <div class="plugin-shots">
-      {images.map((image) => (
-        <a class:list={['plugin-shot', image.theme]} href={image.src} target="_blank" rel="noopener">
-          <img
-            src={image.src}
-            width={image.width}
-            height={image.height}
-            alt={image.alt}
-            loading="lazy"
-          />
-        </a>
-      ))}
-    </div>
+  shots.length > 0 && (
+    <>
+      <div class="plugin-shots">
+        {shots.flatMap((shot, index) =>
+          shot.images.map((image) => (
+            <a
+              class:list={['plugin-shot', image.theme]}
+              href={image.src}
+              target="_blank"
+              rel="noopener"
+              data-shot={index}
+            >
+              <img
+                src={image.src}
+                width={image.width}
+                height={image.height}
+                alt={shot.alt}
+                loading="lazy"
+              />
+            </a>
+          )),
+        )}
+      </div>
+
+      <dialog
+        class="plugin-lightbox"
+        aria-label="Screenshots"
+        data-i18n-aria="plugin_lightbox"
+        data-plugin-lightbox
+      >
+        <div class="plugin-lightbox__bar">
+          {hasSeveral && (
+            <span class="plugin-lightbox__counter" data-lightbox-counter>
+              1 / {shots.length}
+            </span>
+          )}
+          <button
+            type="button"
+            class="plugin-lightbox__button"
+            aria-label="Close"
+            data-i18n-aria="plugin_lightbox_close"
+            data-lightbox-close
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="plugin-lightbox__stage" data-lightbox-outside>
+          {hasSeveral && (
+            <button
+              type="button"
+              class="plugin-lightbox__button plugin-lightbox__step"
+              aria-label="Previous screenshot"
+              data-i18n-aria="plugin_lightbox_previous"
+              data-lightbox-step="-1"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+          )}
+          {shots.map((shot, index) => (
+            <figure class="plugin-lightbox__slide" data-lightbox-slide hidden={index > 0}>
+              {shot.images.map((image) => (
+                <img
+                  class={image.theme}
+                  src={image.src}
+                  width={image.width}
+                  height={image.height}
+                  alt={shot.alt}
+                  loading="lazy"
+                />
+              ))}
+            </figure>
+          ))}
+          {hasSeveral && (
+            <button
+              type="button"
+              class="plugin-lightbox__button plugin-lightbox__step"
+              aria-label="Next screenshot"
+              data-i18n-aria="plugin_lightbox_next"
+              data-lightbox-step="1"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {hasSeveral && (
+          <div class="plugin-lightbox__strip" data-lightbox-outside>
+            {shots.map((shot, index) => (
+              <button
+                type="button"
+                class="plugin-lightbox__thumb"
+                aria-current={index === 0 ? 'true' : 'false'}
+                data-lightbox-thumb={index}
+              >
+                {shot.images.map((image) => (
+                  <img class={image.theme} src={image.src} alt={shot.alt} loading="lazy" />
+                ))}
+              </button>
+            ))}
+          </div>
+        )}
+      </dialog>
+    </>
   )
 }
