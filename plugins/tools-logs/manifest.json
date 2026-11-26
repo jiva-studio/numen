@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.logs",
   "name": "Logs",
-  "version": "2026.11.1",
+  "version": "2026.11.2",
   "protocol": 1,
   "description": "Structured application log viewer with level filtering, search, formatted SQL queries and JSON property inspection",
   "targets": ["desktop.editor"],

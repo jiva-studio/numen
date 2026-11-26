@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.sync",
   "name": "Numen Sync",
-  "version": "2026.11.1",
+  "version": "2026.11.2",
   "protocol": 1,
   "description": "Synchronizes your vaults across devices",
   "targets": ["desktop.editor"],
