@@ -70,7 +70,7 @@ describe('ShareInvitationDialog', () => {
 
     expect(document.body.textContent).toContain(REQUEST.fingerprint)
     expect(document.body.textContent).toContain(
-      'The code only shows the person has the link. Ask the person to read you their fingerprint from Numen, and allow only if it is the same as this one.',
+      'A link can be forwarded, so ask the person to read you their fingerprint from Numen, and allow only if it is the same as this one.',
     )
   })
 
