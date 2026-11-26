@@ -35,7 +35,7 @@
 
 .plugin-tile--filled {
   border-color: transparent;
-  background: var(--sage);
+  background: var(--chip);
 }
 
 .plugin-tile--filled .plugin-icon {
@@ -203,13 +203,13 @@
   height: 11.25rem;
   overflow: hidden;
   border-bottom: 1px solid var(--border);
-  background: var(--sage);
+  background: var(--chip);
 }
 
 .plugin-feature__shot img {
-  width: 200%;
+  width: 160%;
   max-width: none;
-  transform: translate(-25%, -8%);
+  transform: translate(-18.75%, -6%);
 }
 
 .plugin-feature__body {
@@ -400,7 +400,7 @@
   margin-top: 3.25rem;
   padding: 0.25rem;
   border-radius: 0.6rem;
-  background: var(--sage);
+  background: var(--chip);
 }
 
 .plugin-tabs button {
@@ -489,7 +489,7 @@
   min-width: 1.375rem;
   padding: 0.0625rem 0.4375rem;
   border-radius: 0.6875rem;
-  background: var(--sage);
+  background: var(--chip);
   font-size: 0.8125rem;
   text-align: center;
 }
@@ -821,7 +821,7 @@
   padding: 0.0625rem 0.3125rem;
   border: 0;
   border-radius: 0.25rem;
-  background: var(--sage);
+  background: var(--chip);
   font-size: 0.875rem;
 }
 
