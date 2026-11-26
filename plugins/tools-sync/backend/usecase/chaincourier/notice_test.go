@@ -100,7 +100,6 @@ func TestListNotices_RaisesTheAddedNoticeOnlyOnTheDeviceThatNeitherAddedNorWasAd
 	}
 }
 
-// signedTimes is the sightings of a device that saw each entry at the time its signer gave it.
 func signedTimes(chain identity.Chain) map[string]int64 {
 	seen := map[string]int64{}
 	for id, at := range listEntries(chain) {

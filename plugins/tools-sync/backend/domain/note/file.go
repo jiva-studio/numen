@@ -8,7 +8,6 @@ type FileSnapshot struct {
 	Size       int64  `json:"size"`
 	ModifiedAt int64  `json:"mtime"`
 	SourceID   int64  `json:"sourceId"`
-	// SeenAt is when a scan first found the file with this hash and time, in nanoseconds since the Unix epoch.
 	SeenAt int64 `json:"seenAt,omitempty"`
 }
 

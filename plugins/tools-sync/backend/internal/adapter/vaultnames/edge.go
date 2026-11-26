@@ -60,7 +60,6 @@ func newTable(feed host.FileChangeLister) *table {
 	return &table{feed: feed, mu: sync.Mutex{}, cursor: host.FileChangeCursor{FeedID: "", Seq: 0}, isLoaded: false, byName: map[string]int64{}, bySource: map[int64]string{}}
 }
 
-// getName returns the disk name of the note, which is the path itself when no other name is known.
 func (t *table) getName(path string) string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -90,7 +89,6 @@ func (t *table) apply(changes []host.FileChange) {
 	}
 }
 
-// refresh brings the table up to the feed: it reads the whole vault the first time and the changes after that.
 func (t *table) refresh(ctx context.Context) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -143,8 +141,6 @@ func (t *table) load(ctx context.Context) error {
 	}
 }
 
-// run calls the host with the disk name of the path. A call that finds no file for a name that may have another form
-// reads the feed for the names it has not seen and calls again when the file has another name.
 func run[T any](ctx context.Context, t *table, path string, call func(name string) (T, error)) (T, error) {
 	name := t.getName(path)
 	out, err := call(name)
@@ -160,7 +156,6 @@ func run[T any](ctx context.Context, t *table, path string, call func(name strin
 	return out, err
 }
 
-// create calls the host with the disk name of a path that may name a file that is there already under another form.
 func create[T any](ctx context.Context, t *table, path string, call func(name string) (T, error)) (T, error) {
 	if !isInvariant(path) && t.getName(path) == path {
 		if err := t.refresh(ctx); err != nil {

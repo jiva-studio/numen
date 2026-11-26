@@ -177,7 +177,6 @@ func joinRestore(restore *pendingRestore, chainBytes []byte, now time.Time) (fak
 	return appendDevice(restore, chain, keys, now)
 }
 
-// rotateAfterJoin is the restore of the core: the device joins, and the recovery key starts a new epoch of keys for every device.
 func rotateAfterJoin(restore *pendingRestore, chain identity.Chain, keys identity.AccountKeys, now time.Time) (fakeIdentity, error) {
 	history, err := chain.OpenKeyHistory(keys)
 	if err != nil {

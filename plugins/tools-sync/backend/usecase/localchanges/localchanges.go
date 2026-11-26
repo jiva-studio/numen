@@ -144,7 +144,6 @@ func (u *ScanLocalChanges) scanFile(ctx context.Context, files ports.Files, path
 	return &transfer.Change{Path: path, Hash: stat.Hash, Size: stat.Size, ModifiedAt: stat.ModTime.UnixNano()}, nil
 }
 
-// updateSnapshot is the snapshot of the file as the stat found it, keeping the time of the first sight of the same content.
 func updateSnapshot(before note.FileSnapshot, stat domain.FileStat, now time.Time) note.FileSnapshot {
 	seenAt := now.UnixNano()
 	if before.Hash == stat.Hash && before.ModifiedAt == stat.ModTime.UnixNano() && before.SeenAt != 0 {

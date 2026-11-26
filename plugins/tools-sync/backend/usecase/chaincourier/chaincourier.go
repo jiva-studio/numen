@@ -37,7 +37,6 @@ type Deps struct {
 	Health   ports.Health
 	Clock    ports.Clock
 	IsIdle   func() bool
-	// Sightings keeps when this device first saw each entry of the chain, which the notices count their cooling-off from.
 	Sightings ports.EntrySightings
 }
 
@@ -101,7 +100,6 @@ type Adopt struct {
 	isClean  bool
 	seen     map[string]int64
 	isFresh  bool
-	// isUnsaved says the last write of the sightings failed, so the next look writes them again.
 	isUnsaved bool
 }
 
@@ -156,9 +154,6 @@ func (u *Adopt) notify(ctx context.Context, chain identity.Chain, own []byte) er
 	return nil
 }
 
-// recordSightings notes the time this device first saw each entry that a device signed, and returns the times by entry. The first look of a
-// device that has no record takes the entries already in the chain at the time their signers gave them: the person who linked the device
-// saw them. Every entry that appears after that counts from the moment this device saw it, whatever time its signer wrote in it.
 func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now time.Time) map[string]int64 {
 	if u.seen == nil {
 		stored, err := u.deps.Sightings.ReadEntrySightings(ctx)
@@ -173,6 +168,7 @@ func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now t
 			continue
 		}
 		u.seen[id] = now.Unix()
+		// The first look of a device with no record takes the entries already in the chain at their signers' time: the person who linked the device saw them.
 		if u.isFresh {
 			u.seen[id] = min(signed.Unix(), now.Unix())
 		}
@@ -185,7 +181,6 @@ func (u *Adopt) recordSightings(ctx context.Context, chain identity.Chain, now t
 	return u.seen
 }
 
-// listEntries returns the time its signer gave to each entry that a device signed, by the hex of the hash of the entry.
 func listEntries(chain identity.Chain) map[string]time.Time {
 	found := map[string]time.Time{}
 	for _, revocation := range chain.ListDeviceRevocations() {

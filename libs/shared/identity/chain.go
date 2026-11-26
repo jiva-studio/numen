@@ -153,7 +153,6 @@ func (c Chain) Verify() error {
 	return c.checkSize()
 }
 
-// checkSize refuses a chain of more than MaxChainBytes, and an entry that a device signed after the chain passed MaxChainBytes - RecoveryReserveBytes.
 func (c Chain) checkSize() error {
 	deviceLimit := MaxChainBytes - RecoveryReserveBytes
 	root := c.Root().Sign
