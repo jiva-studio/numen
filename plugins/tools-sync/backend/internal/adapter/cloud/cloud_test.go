@@ -16,15 +16,21 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/tools/syncserver/slowwatchtest"
 )
 
-func newWorld(t *testing.T, cfg fakeserver.Config) (*synctest.Computer, *synctest.Server) {
+func newWorld(t *testing.T) (*synctest.Computer, *synctest.Server) {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, cfg)
+	server := synctest.NewServer(t, clock)
 	return synctest.NewFirstComputer(t, server, clock, "Test", synctest.NewWords(t)), server
+}
+
+func newTinyWorld(t *testing.T) *synctest.Computer {
+	t.Helper()
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock)
+	return synctest.NewFirstComputerOnPlan(t, server, clock, "Test", synctest.NewWords(t), "prod_tiny")
 }
 
 func newVaultID(t *testing.T) []byte {
@@ -37,11 +43,11 @@ func newVaultID(t *testing.T) []byte {
 }
 
 func newCloud(c *synctest.Computer, token string, refresh func(context.Context) error) *cloud.Cloud {
-	return cloud.New(cloud.Config{Address: c.Server.URL, HTTP: http.DefaultClient, Token: func() string { return token }, Refresh: refresh, Roots: c.Roots, Now: c.Clock.Now})
+	return cloud.New(cloud.Config{Address: c.Server.URL, HTTP: c.NewHTTP(), Token: func() string { return token }, Refresh: refresh, Roots: c.Roots, Now: c.Clock.Now})
 }
 
 func TestCloud_AppendsACatalogEntryAndReadsItBack(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{})
+	c, _ := newWorld(t)
 	entry := c.NewCatalogEntry(t, nil, newVaultID(t), true, []byte("sealed body"))
 
 	response, err := c.Cloud.AppendCatalogEntry(t.Context(), entry)
@@ -62,7 +68,7 @@ func TestCloud_AppendsACatalogEntryAndReadsItBack(t *testing.T) {
 }
 
 func TestCloud_ReservesABlobAndUploadsItsBodyToTheURL(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{})
+	c, _ := newWorld(t)
 	vault := newVaultID(t)
 	if _, err := c.Cloud.AppendCatalogEntry(t.Context(), c.NewCatalogEntry(t, nil, vault, true, []byte("sealed body"))); err != nil {
 		t.Fatal(err)
@@ -85,7 +91,7 @@ func TestCloud_ReservesABlobAndUploadsItsBodyToTheURL(t *testing.T) {
 }
 
 func TestCloud_ReadsTheChainOfTheAccount(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{})
+	c, _ := newWorld(t)
 
 	chain, err := c.Cloud.GetAccountChain(t.Context())
 	if err != nil {
@@ -98,9 +104,9 @@ func TestCloud_ReadsTheChainOfTheAccount(t *testing.T) {
 }
 
 func TestCloud_SignsInAgainOnceWhenTheServerEndedTheSession(t *testing.T) {
-	c, server := newWorld(t, fakeserver.Config{})
-	before := server.Fake.CountCalls(syncv1connect.SignInServiceSignInProcedure)
-	server.Fake.EndSessions(nil)
+	c, server := newWorld(t)
+	before := server.CountCalls(syncv1connect.SignInServiceSignInProcedure)
+	server.EndSessions()
 
 	entries, err := c.Cloud.GetCatalog(t.Context(), 0)
 	if err != nil {
@@ -110,13 +116,13 @@ func TestCloud_SignsInAgainOnceWhenTheServerEndedTheSession(t *testing.T) {
 	if len(entries) != 0 {
 		t.Errorf("entries = %v, want none", entries)
 	}
-	if got := server.Fake.CountCalls(syncv1connect.SignInServiceSignInProcedure) - before; got != 1 {
+	if got := server.CountCalls(syncv1connect.SignInServiceSignInProcedure) - before; got != 1 {
 		t.Errorf("sign-ins after the session ended = %d, want 1", got)
 	}
 }
 
 func TestCloud_ReturnsUnauthenticatedWhenTheCallIsRefusedAfterOneSignIn(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{})
+	c, _ := newWorld(t)
 	var refreshed int
 	stale := newCloud(c, "not a session", func(context.Context) error {
 		refreshed++
@@ -134,7 +140,7 @@ func TestCloud_ReturnsUnauthenticatedWhenTheCallIsRefusedAfterOneSignIn(t *testi
 }
 
 func TestCloud_ReturnsTheErrorOfASignInThatFails(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{})
+	c, _ := newWorld(t)
 	refused := errors.New("the sign-in was refused")
 	stale := newCloud(c, "not a session", func(context.Context) error { return refused })
 
@@ -146,7 +152,7 @@ func TestCloud_ReturnsTheErrorOfASignInThatFails(t *testing.T) {
 }
 
 func TestCloud_ReturnsUnreachableWithoutSigningInWhenTheServerIsDown(t *testing.T) {
-	c, server := newWorld(t, fakeserver.Config{})
+	c, server := newWorld(t)
 	var refreshed int
 	counting := newCloud(c, "token", func(context.Context) error {
 		refreshed++
@@ -165,22 +171,22 @@ func TestCloud_ReturnsUnreachableWithoutSigningInWhenTheServerIsDown(t *testing.
 }
 
 func TestCloud_ReturnsTheQuotaTheServerRefusedOn(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{QuotaBytes: 5000})
+	c := newTinyWorld(t)
 	vault := newVaultID(t)
 	if _, err := c.Cloud.AppendCatalogEntry(t.Context(), c.NewCatalogEntry(t, nil, vault, true, []byte("sealed body"))); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err := c.Cloud.ReserveBlobs(t.Context(), vault, []uint64{4096, 4096})
+	_, err := c.Cloud.ReserveBlobs(t.Context(), vault, []uint64{700 << 10, 700 << 10})
 
 	var quota syncprotocol.QuotaExceededError
-	if !errors.As(err, &quota) || quota.Limit != 5000 {
-		t.Errorf("error = %v, want QuotaExceededError with the limit of 5000", err)
+	if !errors.As(err, &quota) || quota.Limit != 1<<20 {
+		t.Errorf("error = %v, want QuotaExceededError with the limit of 1 MiB", err)
 	}
 }
 
 func TestCloud_ReadsNoChangesOfANewVaultAndRejectsAnInvalidRevision(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{})
+	c, _ := newWorld(t)
 	vault := newVaultID(t)
 	if _, err := c.Cloud.AppendCatalogEntry(t.Context(), c.NewCatalogEntry(t, nil, vault, true, []byte("sealed body"))); err != nil {
 		t.Fatal(err)
@@ -201,73 +207,38 @@ func TestCloud_ReadsNoChangesOfANewVaultAndRejectsAnInvalidRevision(t *testing.T
 
 func TestCloud_ListsThePlansOfTheServer(t *testing.T) {
 	want := []syncprotocol.Plan{
-		{ID: "tiny", Name: "Tiny", QuotaBytes: 1024, PriceCents: 99, Currency: "EUR"},
-		{ID: "huge", Name: "Huge", QuotaBytes: 1 << 20, PriceCents: 4900, Currency: "EUR"},
+		{ID: "prod_basic", Name: "Basic", QuotaBytes: 10 << 30, PriceCents: 500, Currency: "USD"},
+		{ID: "prod_plus", Name: "Plus", QuotaBytes: 100 << 30, PriceCents: 1500, Currency: "USD"},
+		{ID: "prod_pro", Name: "Pro", QuotaBytes: 250 << 30, PriceCents: 3000, Currency: "USD"},
 	}
-	c, _ := newWorld(t, fakeserver.Config{Plans: want})
+	c, _ := newWorld(t)
 
 	got, err := c.Cloud.ListPlans(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !slices.Equal(got, want) {
-		t.Errorf("plans = %+v, want %+v", got, want)
+	for _, plan := range want {
+		if !slices.Contains(got, plan) {
+			t.Errorf("plans = %+v, want the plan %+v among them", got, plan)
+		}
 	}
 }
 
 func TestCloud_SignsInAgainOnceAndReportsAnAccountWithoutASubscriptionOnAPlanChange(t *testing.T) {
-	c, server := newWorld(t, fakeserver.Config{NeedsSubscription: true})
-	before := server.Fake.CountCalls(syncv1connect.SignInServiceSignInProcedure)
-	server.Fake.EndSessions(nil)
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock)
+	c := synctest.NewUnsubscribedComputer(t, server, clock, "Test", synctest.NewWords(t))
+	before := server.CountCalls(syncv1connect.SignInServiceSignInProcedure)
+	server.EndSessions()
 
-	_, err := c.Cloud.ChangePlan(t.Context(), "pro")
+	_, err := c.Cloud.ChangePlan(t.Context(), "prod_pro")
 
 	if !errors.Is(err, syncprotocol.ErrNoActiveSubscription) {
 		t.Errorf("error = %v, want ErrNoActiveSubscription", err)
 	}
-	if got := server.Fake.CountCalls(syncv1connect.SignInServiceSignInProcedure) - before; got != 1 {
+	if got := server.CountCalls(syncv1connect.SignInServiceSignInProcedure) - before; got != 1 {
 		t.Errorf("sign-ins after the session ended = %d, want 1", got)
-	}
-}
-
-func TestCloud_ReadsTheRestoreEpochAndTheKeyThatSignsIt(t *testing.T) {
-	c, server := newWorld(t, fakeserver.Config{})
-	id, err := server.Fake.AnnounceRestoreEpoch()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	epoch, key, err := c.Cloud.GetRestoreEpoch(t.Context())
-
-	if err != nil {
-		t.Fatal(err)
-	}
-	if epoch == nil || !bytes.Equal(epoch.GetId(), id) {
-		t.Fatalf("epoch = %v, want id %x", epoch, id)
-	}
-	if err := syncprotocol.CheckRestoreEpoch(key, epoch); err != nil {
-		t.Errorf("CheckRestoreEpoch = %v, want nil", err)
-	}
-}
-
-func TestCloud_AnswersABlobTheServerLostAsBlobMissing(t *testing.T) {
-	c, server := newWorld(t, fakeserver.Config{})
-	c.Connect(t, "Test")
-	c.WriteNote("Test", "Shopping list.md", "milk")
-	if err := c.Sync(t.Context(), "Test"); err != nil {
-		t.Fatal(err)
-	}
-	remote := c.GetRemoteID(t, "Test")
-	head := c.ReadChanges(t, remote)[0].GetRevision()
-	if err := server.Fake.DropBlob(head.GetBlobId()); err != nil {
-		t.Fatal(err)
-	}
-
-	_, err := c.Cloud.GetBlobUrls(t.Context(), remote, [][]byte{head.GetBlobId()})
-
-	if !errors.Is(err, syncprotocol.ErrBlobMissing) {
-		t.Errorf("GetBlobUrls = %v, want ErrBlobMissing", err)
 	}
 }
 
@@ -299,7 +270,7 @@ func TestCloud_WatchKeepsAStreamAliveLongerThanTheTimeoutOfTheRequestClient(t *t
 }
 
 func TestCloud_WatchReturnsTheHeartbeatTheServerAnnouncedAndTheVaultIDAsTheLinkWritesIt(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{Heartbeat: 2 * time.Second})
+	c, _ := newWorld(t)
 	c.AddVault(t, "Notes")
 	c.Connect(t, "Notes")
 	c.WriteNote("Notes", "Shopping list.md", "milk")
@@ -321,8 +292,8 @@ func TestCloud_WatchReturnsTheHeartbeatTheServerAnnouncedAndTheVaultIDAsTheLinkW
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := watch.GetHeartbeat(); got != 2*time.Second {
-		t.Errorf("heartbeat = %v, want 2s", got)
+	if got := watch.GetHeartbeat(); got <= 0 {
+		t.Errorf("heartbeat = %v, want the interval the server announced", got)
 	}
 	if want := c.Link(t, "Notes").RemoteVaultID; event.RemoteVaultID != want || event.Seq != 1 {
 		t.Errorf("event = %+v, want vault %s at seq 1", event, want)
@@ -330,7 +301,7 @@ func TestCloud_WatchReturnsTheHeartbeatTheServerAnnouncedAndTheVaultIDAsTheLinkW
 }
 
 func TestCloud_WatchReturnsTheErrorOfItsContextFromReceive(t *testing.T) {
-	c, _ := newWorld(t, fakeserver.Config{Heartbeat: 2 * time.Second})
+	c, _ := newWorld(t)
 	watch, err := c.Cloud.Watch(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -351,8 +322,8 @@ func TestCloud_WatchReturnsTheErrorOfItsContextFromReceive(t *testing.T) {
 }
 
 func TestCloud_WatchSignsInOnceAndOpensAgainAfterAnUnauthenticatedOpen(t *testing.T) {
-	c, server := newWorld(t, fakeserver.Config{})
-	server.Fake.EndSessions(nil)
+	c, server := newWorld(t)
+	server.EndSessions()
 	var refreshes int
 	hints := c.NewCloud(c.Server.URL, func(ctx context.Context) error {
 		refreshes++

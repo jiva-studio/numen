@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/receive"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 // olderLog is a server that serves the share log as it was: only the entries up to a version, and the owner chain it
@@ -178,7 +177,7 @@ func TestPullShare_AcceptsTheSameRevisionServedAgain(t *testing.T) {
 func TestPullShare_RefusesAnOwnerChainOlderThanTheOneStored(t *testing.T) {
 	words := synctest.NewWords(t)
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	first := synctest.NewFirstComputer(t, server, clock, string(owned), words)
 	first.Connect(t, owned)
 	reader := synctest.NewReaderComputer(t, server, clock, "Reader")
@@ -247,7 +246,7 @@ func TestPullShare_KeepsAChangeOfTheLinkMadeWhileItRuns(t *testing.T) {
 func TestAcceptInvitation_RefusesAnOwnerChainShorterThanTheOneOfTheInvitation(t *testing.T) {
 	words := synctest.NewWords(t)
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	first := synctest.NewFirstComputer(t, server, clock, string(owned), words)
 	first.Connect(t, owned)
 	reader := synctest.NewReaderComputer(t, server, clock, "Reader")

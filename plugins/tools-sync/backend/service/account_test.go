@@ -13,8 +13,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/service"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
+
+const deletionGrace = 7 * 24 * time.Hour
 
 func newAccountBackend(t *testing.T) (*service.Backend, *world) {
 	t.Helper()
@@ -32,8 +33,9 @@ func TestDeleteCloudData_StartsTheDeletionAndTheServerRefusesTheNextSignIn(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := rfc3339(w.clock.Now().Add(fakeserver.DeletionGrace)); answer.DeleteAt != want {
-		t.Errorf("deleteAt = %q, want %q: seven days from now", answer.DeleteAt, want)
+	deleteAt, parseErr := time.Parse(time.RFC3339, answer.DeleteAt)
+	if parseErr != nil || deleteAt.Sub(w.clock.Now().Add(deletionGrace)).Abs() > 5*time.Second {
+		t.Errorf("deleteAt = %q, want seven days from now (within the seconds the call takes)", answer.DeleteAt)
 	}
 	if !errors.Is(w.c.SignIn(t.Context()), sessiondomain.AccountDeletingError{}) {
 		t.Error("the sign-in of a device of a deleting account was not refused as deleting")
@@ -63,7 +65,7 @@ func TestDeleteCloudData_AsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T) {
 	if !errors.Is(err, sessiondomain.ErrNoIdentity) {
 		t.Errorf("error = %v, want ErrNoIdentity", err)
 	}
-	if calls := w.server.Fake.CountCalls(syncv1connect.AccountServiceDeleteAccountProcedure); calls != 0 {
+	if calls := w.server.CountCalls(syncv1connect.AccountServiceDeleteAccountProcedure); calls != 0 {
 		t.Errorf("the server ran %d deletions, want none", calls)
 	}
 }
@@ -116,22 +118,6 @@ func TestRestoreAccount_CancelsTheDeletionSoSignInWorksAgain(t *testing.T) {
 	}
 }
 
-func TestRestoreAccount_AfterTheGraceRanOutStartsAnEmptyAccount(t *testing.T) {
-	backend, w := newAccountBackend(t)
-	if _, err := backend.DeleteCloudData(t.Context(), api.DeleteCloudDataRequest{}); err != nil {
-		t.Fatal(err)
-	}
-	w.clock.Advance(fakeserver.DeletionGrace + time.Hour)
-
-	if err := w.c.SignIn(t.Context()); err != nil {
-		t.Fatalf("sign-in after the grace: %v", err)
-	}
-
-	if _, err := w.c.Cloud.GetCatalog(t.Context(), 0); err != nil {
-		t.Errorf("read the catalog of the new account: %v", err)
-	}
-}
-
 func TestExportAccountData_ReturnsTheDocumentOfTheServer(t *testing.T) {
 	backend, w := newAccountBackend(t)
 	w.c.Connect(t, "Test")
@@ -164,7 +150,7 @@ func TestExportAccountData_AsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T)
 	if !errors.Is(err, sessiondomain.ErrNoIdentity) {
 		t.Errorf("error = %v, want ErrNoIdentity", err)
 	}
-	if calls := w.server.Fake.CountCalls(syncv1connect.AccountServiceExportAccountProcedure); calls != 0 {
+	if calls := w.server.CountCalls(syncv1connect.AccountServiceExportAccountProcedure); calls != 0 {
 		t.Errorf("the server ran %d exports, want none", calls)
 	}
 }

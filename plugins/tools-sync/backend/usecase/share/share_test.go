@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 	usecase "github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -31,7 +30,7 @@ type world struct {
 func newWorld(t *testing.T) *world {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	owner := synctest.NewFirstComputer(t, server, clock, string(owned), synctest.NewWords(t))
 	owner.Connect(t, owned)
 	reader := synctest.NewReaderComputer(t, server, clock, "Reader")
@@ -141,7 +140,7 @@ func TestCreateShare_HidesThePathAboveTheFolderFromTheServer(t *testing.T) {
 			t.Error("the enc_meta of a share revision shows a path")
 		}
 	}
-	if bytes.Contains(w.server.GetStoredBlobs(t), []byte("carrots")) {
+	if bytes.Contains(w.owner.ReadStoredBlobs(t), []byte("carrots")) {
 		t.Error("the server holds a plain text")
 	}
 }
@@ -176,7 +175,7 @@ func TestCreateShare_RefusesNestingAndAVaultThatIsNotSynced(t *testing.T) {
 func TestCreateShare_RejectsFolderContainingSharedFolderOnSecondComputer(t *testing.T) {
 	words := synctest.NewWords(t)
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	first := synctest.NewFirstComputer(t, server, clock, string(owned), words)
 	first.Connect(t, owned)
 	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)
@@ -344,7 +343,7 @@ func TestRemoveReader_RotatesTheEpochAndTheNextRevisionOfTheOwnerCarriesIt(t *te
 	if len(epochs) != 1 || epochs[0] != 1 {
 		t.Errorf("epochs of the share revisions = %v, want [1]", epochs)
 	}
-	if got := w.server.Fake.CountCalls(syncv1connect.ShareServiceAppendShareLogEntryProcedure); got < 4 {
+	if got := w.server.CountCalls(syncv1connect.ShareServiceAppendShareLogEntryProcedure); got < 4 {
 		t.Errorf("%d log entries appended, want CREATE, two ADD_READER and REMOVE_READER", got)
 	}
 }

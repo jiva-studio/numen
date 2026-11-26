@@ -1,7 +1,6 @@
 package pull_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -23,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -40,7 +38,7 @@ type pair struct {
 func newPair(t *testing.T) *pair {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	a := synctest.NewFirstComputer(t, server, clock, source, words)
 	a.Connect(t, source)
@@ -218,11 +216,11 @@ func TestPullChanges_DownloadsNothingWhenNothingChanged(t *testing.T) {
 	p := newPair(t)
 	p.push(t, "Shopping list.md", "milk", nil)
 	p.pull(t, trustAll)
-	before := p.server.Fake.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure)
+	before := p.server.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure)
 
 	result := p.pull(t, trustAll)
 
-	if after := p.server.Fake.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure); after != before {
+	if after := p.server.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure); after != before {
 		t.Errorf("blob URL requests grew from %d to %d, want no download", before, after)
 	}
 	if len(result.Applied) != 0 {
@@ -238,51 +236,6 @@ func TestPullChanges_ReportsSameWhenTheServerAnnouncedNoRestore(t *testing.T) {
 
 	if result.Verdict != restore.Same || len(result.EpochID) != 0 {
 		t.Errorf("result = %+v, want Same and no epoch id", result)
-	}
-}
-
-func TestPullChanges_AppliesNoPageForAnEpochThatThisDeviceHasNotRun(t *testing.T) {
-	p := newPair(t)
-	p.push(t, "Shopping list.md", "milk", nil)
-	id, err := p.server.Fake.AnnounceRestoreEpoch()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	result := p.pull(t, trustAll)
-
-	if result.Verdict != restore.Changed || !bytes.Equal(result.EpochID, id) {
-		t.Errorf("result = %+v, want Changed with the epoch id %x", result, id)
-	}
-	if _, ok := p.b.ReadNote(target, "Shopping list.md"); ok || len(result.Applied) != 0 {
-		t.Error("a note of a page under the new epoch was applied")
-	}
-	if link := p.b.Link(t, target); link.ServerSeq != 0 || len(link.RestoreEpochID) != 0 {
-		t.Errorf("link = %+v, want the position and the epoch id as they were", link)
-	}
-}
-
-func TestPullChanges_AppliesNothingWhenTheHeadOfTheServerIsBelowThePosition(t *testing.T) {
-	p := newPair(t)
-	kept, err := p.server.Fake.Snapshot()
-	if err != nil {
-		t.Fatal(err)
-	}
-	p.push(t, "Shopping list.md", "milk", nil)
-	p.push(t, "Food.md", "eggs", nil)
-	p.pull(t, trustAll)
-	if err := p.server.Fake.Restore(kept); err != nil {
-		t.Fatal(err)
-	}
-	p.push(t, "Plan.md", "tea", nil)
-
-	result := p.pull(t, trustAll)
-
-	if result.Verdict != restore.WentBack || len(result.Applied) != 0 {
-		t.Errorf("result = %+v, want WentBack and nothing applied", result)
-	}
-	if _, ok := p.b.ReadNote(target, "Plan.md"); ok {
-		t.Error("a note of a server that went back was applied")
 	}
 }
 

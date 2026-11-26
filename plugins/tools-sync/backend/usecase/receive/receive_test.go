@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -26,29 +25,14 @@ type world struct {
 	reader *synctest.Computer
 }
 
-func newWorldOn(t *testing.T, cfg fakeserver.Config) *world {
+func newWorld(t *testing.T) *world {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, cfg)
+	server := synctest.NewServer(t, clock)
 	owner := synctest.NewFirstComputer(t, server, clock, string(owned), synctest.NewWords(t))
-	if cfg.NeedsSubscription {
-		setPhase(t, server, "active")
-	}
 	owner.Connect(t, owned)
 	reader := synctest.NewReaderComputer(t, server, clock, "Reader")
 	return &world{server: server, clock: clock, owner: owner, reader: reader}
-}
-
-func newWorld(t *testing.T) *world {
-	t.Helper()
-	return newWorldOn(t, fakeserver.Config{})
-}
-
-func setPhase(t *testing.T, server *synctest.Server, phase string) {
-	t.Helper()
-	if status := server.CallAdmin(t, "/admin/subscription?phase="+phase); status >= 300 {
-		t.Fatalf("the admin path answered %d", status)
-	}
 }
 
 func (w *world) syncOwner(t *testing.T) {
@@ -297,7 +281,7 @@ func TestPullShare_MakesNoWriteCallAndNeverReadsTheRevisionOrBlobServicesOfTheOw
 	w.owner.WriteNote(owned, "Food/Bread.md", "flour")
 	w.syncOwner(t)
 	for i, procedure := range procedures {
-		before[i] = w.server.Fake.CountCalls(procedure)
+		before[i] = w.server.CountCalls(procedure)
 	}
 
 	if err := w.reader.Sync(t.Context(), received.VaultID); err != nil {
@@ -305,11 +289,11 @@ func TestPullShare_MakesNoWriteCallAndNeverReadsTheRevisionOrBlobServicesOfTheOw
 	}
 
 	for i, procedure := range procedures {
-		if got := w.server.Fake.CountCalls(procedure); got != before[i] {
+		if got := w.server.CountCalls(procedure); got != before[i] {
 			t.Errorf("%s ran %d times for a pass of the reader", procedure, got-before[i])
 		}
 	}
-	if w.server.Fake.CountCalls(syncv1connect.ShareServiceGetShareChangesProcedure) == 0 {
+	if w.server.CountCalls(syncv1connect.ShareServiceGetShareChangesProcedure) == 0 {
 		t.Error("the pass of the reader did not read the share feed")
 	}
 }
@@ -393,11 +377,11 @@ func TestPullShare_AReaderRemovedByTheOwnerKeepsItsFilesGetsNothingNewAndShowsTh
 	if listErr != nil || len(listed) != 1 || listed[0].State != "ended" {
 		t.Errorf("received = %+v, error = %v, want the share ended", listed, listErr)
 	}
-	before := w.server.Fake.CountCalls(syncv1connect.ShareServiceGetShareChangesProcedure)
+	before := w.server.CountCalls(syncv1connect.ShareServiceGetShareChangesProcedure)
 	if err := w.reader.Sync(t.Context(), received.VaultID); err != nil && !errors.Is(err, share.ErrEnded) {
 		t.Fatal(err)
 	}
-	if got := w.server.Fake.CountCalls(syncv1connect.ShareServiceGetShareChangesProcedure); got != before {
+	if got := w.server.CountCalls(syncv1connect.ShareServiceGetShareChangesProcedure); got != before {
 		t.Errorf("an ended share asked the server for changes %d more times, want none", got-before)
 	}
 }
@@ -429,25 +413,25 @@ func TestPullShare_TheReaderThatRemainsReadsTheNewEpochAndALaterReaderReadsEvery
 }
 
 func TestPullShare_AReaderWithoutASubscriptionReadsTheFolderAndMakesNoWriteCall(t *testing.T) {
-	w := newWorldOn(t, fakeserver.Config{NeedsSubscription: true})
+	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.syncOwner(t)
 	received := w.receive(t, w.reader, w.shareWith(t, w.reader, "Anna"))
 	wantNote(t, w.reader, received.VaultID, "Soup.md", "carrots")
 	w.owner.WriteNote(owned, "Food/Bread.md", "flour")
 	w.syncOwner(t)
-	commits := w.server.Fake.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure)
-	reserves := w.server.Fake.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure)
+	commits := w.server.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure)
+	reserves := w.server.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure)
 
 	if err := w.reader.Sync(t.Context(), received.VaultID); err != nil {
 		t.Fatal(err)
 	}
 
 	wantNote(t, w.reader, received.VaultID, "Bread.md", "flour")
-	if got := w.server.Fake.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure); got != commits {
+	if got := w.server.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure); got != commits {
 		t.Errorf("the reader committed %d revisions, want none", got-commits)
 	}
-	if got := w.server.Fake.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure); got != reserves {
+	if got := w.server.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure); got != reserves {
 		t.Errorf("the reader reserved %d blobs, want none", got-reserves)
 	}
 	if w.reader.HasItemKey("subscription-needed") {

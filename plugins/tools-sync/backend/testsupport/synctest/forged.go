@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
-// ForgedSignatures is a server that serves every revision with a signature that is not the one of its author.
 type ForgedSignatures struct {
 	ports.Revisions
 }

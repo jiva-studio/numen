@@ -348,7 +348,7 @@ func TestPullChanges_MovesAFileToItsNewPathWithTheStatItReadAndDownloadsNothing(
 	first := p.push(t, pdf, pdfText, nil)
 	p.pull(t, trustAll)
 	p.move(t, transfer.Move{Record: first.Record, To: "Papers/Old report.pdf"})
-	urls := p.server.Fake.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure)
+	urls := p.server.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure)
 
 	result := p.pull(t, trustAll)
 
@@ -362,7 +362,7 @@ func TestPullChanges_MovesAFileToItsNewPathWithTheStatItReadAndDownloadsNothing(
 	if len(moves) != 1 || moves[0].From != pdf || moves[0].To != "Papers/Old report.pdf" || moves[0].Baseline == nil || moves[0].Baseline.Hash != note.Hash([]byte(pdfText)) {
 		t.Errorf("moves = %+v, want one with the stat of the file", moves)
 	}
-	if got := p.server.Fake.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure); got != urls {
+	if got := p.server.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure); got != urls {
 		t.Errorf("blob URL requests grew from %d to %d, want no download for a move", urls, got)
 	}
 	row, ok := p.b.GetFileRow(t, target, "Papers/Old report.pdf")

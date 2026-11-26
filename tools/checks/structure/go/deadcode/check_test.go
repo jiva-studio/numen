@@ -15,8 +15,12 @@ func TestEveryFunctionIsReachedFromAMain(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and builds every package of the workspace for each platform")
 	}
-	for _, one := range findUnreachableFunctions(t, newRepositoryScope(t)) {
+	dead, missing := findUnreachableFunctions(t, newRepositoryScope(t))
+	for _, one := range dead {
 		t.Errorf("%s: %s is reached by no main package, bound package or test support that a test uses; delete it or call it where it is meant to be used", one.Position, one.Name)
+	}
+	for _, name := range missing {
+		t.Errorf("used-by-other-repositories.json lists %s, which no package here declares; delete the entry", name)
 	}
 }
 
@@ -195,16 +199,23 @@ func stop() {}
 // and a marker method are not.
 func TestDeadcodeRule_FindsThePlantedFunctions(t *testing.T) {
 	dir := load.WriteTreeFixture(t, listPlantedFiles())
-	s := scope{root: getRealDir(t, dir), patterns: []string{"./libs/...", "./plugins/...", "./apps/..."}, env: []string{"GOWORK=off"}}
+	external := []externalSymbol{
+		{Package: "fixture/libs/notes", Name: "Hidden"},
+		{Package: "fixture/libs/notes", Name: "Gone"},
+	}
+	s := scope{root: getRealDir(t, dir), patterns: []string{"./libs/...", "./plugins/...", "./apps/..."}, env: []string{"GOWORK=off"}, external: external}
 	var got []string
-	for _, one := range findUnreachableFunctions(t, s) {
+	dead, missing := findUnreachableFunctions(t, s)
+	if !slices.Equal(missing, []string{"fixture/libs/notes.Gone"}) {
+		t.Errorf("missing listed functions %v, want the one that is not declared", missing)
+	}
+	for _, one := range dead {
 		got = append(got, one.Name)
 	}
 	slices.Sort(got)
 	want := []string{
 		"fixture/apps/mobile/bind.stop",
 		"fixture/libs/notes.(Note).Unused",
-		"fixture/libs/notes.Hidden",
 		"fixture/libs/notes.OnlyTested",
 		"fixture/libs/notes.Total",
 		"fixture/libs/notes/internal/testsupport/notesfake.Spare",

@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 // NewPhone makes a computer that is a phone: it restores the identity of the words, joins the account, signs in
@@ -28,7 +27,6 @@ func NewPhone(t *testing.T, server *Server, clock *Clock, vault string, words []
 	return phone
 }
 
-// FetchDeps are the dependencies of the download of an absent file.
 func (c *Computer) FetchDeps() fetchfile.Deps {
 	return fetchfile.Deps{
 		Stage: c.WireDeps().Downloads, Revisions: c.Cloud, Blobs: cloud.NewBlobs(c.Cloud), Crypto: c.Account, Host: c.Host, State: c.State,
@@ -36,7 +34,6 @@ func (c *Computer) FetchDeps() fetchfile.Deps {
 	}
 }
 
-// DropDeps are the dependencies of the removal of a download.
 func (c *Computer) DropDeps() dropdownload.Deps {
 	return dropdownload.Deps{Host: c.Host, State: c.State}
 }
@@ -60,7 +57,6 @@ func (r syncRunner) Execute(ctx context.Context) error {
 	return syncvault.NewRunSync(r.c.RunDeps(r.interval, r.changed)).Execute(ctx)
 }
 
-// WriteFileOfSize writes a file of the size in bytes in the vault, as another window would.
 func (c *Computer) WriteFileOfSize(id domain.VaultID, path string, size int) string {
 	content := strings.Repeat("g", size)
 	c.Vaults.With(id).WriteFile(path, content)
@@ -76,7 +72,6 @@ func (c *Computer) ListAbsent(t *testing.T, id domain.VaultID) []host.AbsentFile
 	return files
 }
 
-// IsAbsent reports whether the vault lists the file as absent.
 func (c *Computer) IsAbsent(t *testing.T, id domain.VaultID, path string) bool {
 	t.Helper()
 	for _, one := range c.ListAbsent(t, id) {
@@ -103,11 +98,10 @@ type PhoneWorld struct {
 	fetch    *fetchfile.FetchFile
 }
 
-// NewPhoneWorld makes the world. No pass has run on the phone.
 func NewPhoneWorld(t *testing.T) *PhoneWorld {
 	t.Helper()
 	clock := NewClock(GetStart())
-	server := NewServer(t, clock, fakeserver.Config{})
+	server := NewServer(t, clock)
 	words := NewWords(t)
 	computer := NewFirstComputer(t, server, clock, ComputerVault, words)
 	computer.Connect(t, ComputerVault)
@@ -118,7 +112,6 @@ func NewPhoneWorld(t *testing.T) *PhoneWorld {
 	}
 }
 
-// SyncComputer runs a pass of the computer.
 func (w *PhoneWorld) SyncComputer(t *testing.T) {
 	t.Helper()
 	if err := w.Computer.Sync(t.Context(), ComputerVault); err != nil {
@@ -126,7 +119,6 @@ func (w *PhoneWorld) SyncComputer(t *testing.T) {
 	}
 }
 
-// SyncPhone runs a pass of the phone.
 func (w *PhoneWorld) SyncPhone(t *testing.T) {
 	t.Helper()
 	if err := w.Phone.Sync(t.Context(), PhoneVault); err != nil {
@@ -134,7 +126,6 @@ func (w *PhoneWorld) SyncPhone(t *testing.T) {
 	}
 }
 
-// Fetch downloads the absent file of the phone.
 func (w *PhoneWorld) Fetch(ctx context.Context, path string) error {
 	return w.fetch.Execute(ctx, PhoneVault, path)
 }
@@ -143,7 +134,6 @@ func (w *PhoneWorld) DropDownload(ctx context.Context, path string) error {
 	return dropdownload.NewDropDownload(w.Phone.DropDeps()).Execute(ctx, PhoneVault, path)
 }
 
-// WriteGuide writes the file of 5 MiB on the computer and sends it, and the phone pass lists it.
 func (w *PhoneWorld) WriteGuide(t *testing.T, path string) string {
 	t.Helper()
 	content := w.Computer.WriteFileOfSize(ComputerVault, path, 5<<20)
@@ -162,7 +152,6 @@ type Stream struct {
 	hints  []func(domain.VaultID)
 }
 
-// Watch holds a stream open until ctx ends.
 func (s *Stream) Watch(ctx context.Context, changed func(domain.VaultID)) error {
 	s.open.Add(1)
 	s.opened.Add(1)
@@ -174,13 +163,10 @@ func (s *Stream) Watch(ctx context.Context, changed func(domain.VaultID)) error 
 	return ctx.Err()
 }
 
-// CountOpen returns how many streams are open now.
 func (s *Stream) CountOpen() int { return int(s.open.Load()) }
 
-// CountOpened returns how many streams were opened in all.
 func (s *Stream) CountOpened() int { return int(s.opened.Load()) }
 
-// SendHint tells every open stream that the vault changed on the server.
 func (s *Stream) SendHint(id domain.VaultID) {
 	s.mu.Lock()
 	calls := append([]func(domain.VaultID){}, s.hints...)

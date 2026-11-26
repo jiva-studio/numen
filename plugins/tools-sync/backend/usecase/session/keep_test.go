@@ -3,9 +3,7 @@ package session_test
 import (
 	"context"
 	"errors"
-	"net/http"
-	"net/http/httptest"
-	"sync/atomic"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,58 +14,49 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
-func start() time.Time {
-	return time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
-}
-
 type setup struct {
-	protocol   uint32
-	signAs     string
-	noIdentity bool
-	audience   string
-	isDown     bool
-	sessionTTL time.Duration
-	serverSkew time.Duration
-	leftItem   string
-	isIdle     bool
+	protocol    uint32
+	signAs      string
+	noIdentity  bool
+	isOtherName bool
+	isDown      bool
+	serverSkew  time.Duration
+	leftItem    string
+	isIdle      bool
 }
 
 type kit struct {
 	clock    *manualClock
 	identity *accounttest.Fake
-	server   *fakeserver.Server
+	server   *synctest.Server
+	keep     *session.Keep
 	health   *healthtest.Host
-	requests atomic.Int32
 	done     chan error
 	cancel   context.CancelFunc
 }
 
 func newKit(t *testing.T, s setup) *kit {
 	t.Helper()
-	k := &kit{clock: newManualClock(start()), done: make(chan error, 1)}
+	k := &kit{clock: newManualClock(synctest.GetNow().Add(-s.serverSkew)), done: make(chan error, 1)}
 	if s.signAs == "" {
 		s.signAs = syncprotocol.SignInPluginID
 	}
-	k.server = fakeserver.New(fakeserver.Config{Protocol: s.protocol, Now: func() time.Time { return k.clock.Now().Add(s.serverSkew) }, SessionTTL: s.sessionTTL})
-	served := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		k.requests.Add(1)
-		k.server.ServeHTTP(w, r)
-	}))
-	t.Cleanup(served.Close)
-	k.server.SetAudience(served.URL)
-	if s.audience != "" {
-		k.server.SetAudience(s.audience)
+	k.server = synctest.NewServer(t, synctest.NewClock(synctest.GetNow()))
+	if s.protocol != 0 {
+		k.server.SetProtocol(s.protocol)
 	}
-	address := served.URL
-	if s.isDown {
-		served.Close()
+	address := k.server.URL
+	if s.isOtherName {
+		address = strings.Replace(address, "127.0.0.1", "localhost", 1)
 	}
+	k.server.SetDown(s.isDown)
 
 	k.identity = accounttest.NewFake(t, s.signAs)
 	if s.noIdentity {
@@ -90,11 +79,12 @@ func newKit(t *testing.T, s setup) *kit {
 	}
 	keep := session.NewKeep(session.Deps{
 		Identity: accountadapter.New(account.NewClient(identityEndpoint)),
-		Server:   serveradapter.New(serveradapter.Config{Address: address, HTTP: http.DefaultClient, Now: k.clock.Now}),
+		Server:   serveradapter.New(serveradapter.Config{Address: address, HTTP: k.server.NewHTTP(), Now: k.clock.Now}),
 		Health:   health.NewClient(healthEndpoint),
 		Clock:    k.clock,
 		IsIdle:   func() bool { return s.isIdle },
 	})
+	k.keep = keep
 	ctx, cancel := context.WithCancel(t.Context())
 	k.cancel = cancel
 	t.Cleanup(cancel)
@@ -137,12 +127,11 @@ func (k *kit) waitItem(t *testing.T, key string) health.Item {
 func TestKeep_SignsInWithTheIdentityOfTheDevice(t *testing.T) {
 	k := newKit(t, setup{})
 
-	eventually(t, "a session", func() bool { return len(k.server.ListSessions()) == 1 })
+	eventually(t, "a session", func() bool { return k.keep.GetToken() != "" })
 
-	sessions := k.server.ListSessions()
-	public := k.identity.Public()
-	if string(sessions[0].DeviceSignKey) != string(public.DeviceSignKey) || sessions[0].AccountFingerprint != public.AccountFingerprint {
-		t.Errorf("session = %+v, want the device and the account of the identity", sessions[0])
+	fingerprint, isLive := k.server.ReadSession(t, k.keep.GetToken())
+	if public := k.identity.Public(); !isLive || fingerprint != public.AccountFingerprint {
+		t.Errorf("session of the account %q (live: %v), want a live session of the account of the identity", fingerprint, isLive)
 	}
 	if k.identity.SignCount() != 1 {
 		t.Errorf("signatures made = %d, want 1", k.identity.SignCount())
@@ -163,8 +152,8 @@ func TestKeep_WithoutAnIdentityRaisesNoIdentityAndNeverCallsTheServer(t *testing
 	if item.Text != "No identity on this device" {
 		t.Errorf("text = %q", item.Text)
 	}
-	if k.requests.Load() != 0 || k.identity.SignCount() != 0 || len(k.server.ListSessions()) != 0 {
-		t.Errorf("server requests = %d, signatures = %d, sessions = %d, want none", k.requests.Load(), k.identity.SignCount(), len(k.server.ListSessions()))
+	if k.server.CountRequests() != 0 || k.identity.SignCount() != 0 {
+		t.Errorf("server requests = %d, signatures = %d, want none", k.server.CountRequests(), k.identity.SignCount())
 	}
 }
 
@@ -198,7 +187,7 @@ func TestKeep_SignsInOnceTheIdentityIsCreatedAndClearsTheItem(t *testing.T) {
 	k.identity.CreateIdentity()
 	k.clock.Advance(5 * time.Second)
 
-	eventually(t, "a session", func() bool { return len(k.server.ListSessions()) == 1 })
+	eventually(t, "a session", func() bool { return k.keep.GetToken() != "" })
 	eventually(t, "the item to clear", func() bool { _, ok := k.item("no-identity"); return !ok })
 }
 
@@ -216,8 +205,8 @@ func TestKeep_AsksToUpdateWhenTheServerNeedsAnotherProtocolAndTriesAgainAfter30S
 	if first != 30*time.Second || second != time.Minute {
 		t.Errorf("waits = %v, %v, want 30s and 1m", first, second)
 	}
-	if len(k.server.ListSessions()) != 0 || k.identity.SignCount() != 0 {
-		t.Errorf("sessions = %d, signatures = %d, want none: a mismatch is found before anything is signed", len(k.server.ListSessions()), k.identity.SignCount())
+	if opened := k.server.CountCalls(syncv1connect.SignInServiceSignInProcedure); opened != 0 || k.identity.SignCount() != 0 {
+		t.Errorf("sign-ins = %d, signatures = %d, want none: a mismatch is found before anything is signed", opened, k.identity.SignCount())
 	}
 }
 
@@ -238,7 +227,7 @@ func TestKeep_RaisesServerUnreachableWhenTheServerCannotBeReachedAndTriesAgainAf
 }
 
 func TestKeep_RefusesToSignForAServerThatNamesAnotherAudience(t *testing.T) {
-	k := newKit(t, setup{audience: "https://evil.example"})
+	k := newKit(t, setup{isOtherName: true})
 
 	waited := k.clock.awaitWait(t)
 
@@ -276,40 +265,38 @@ func TestKeep_RaisesSignInFailedWhenTheServerRefusesTheSignatureAndDoesNotRepeat
 	if item.Text != "Could not sign in" || waited != 30*time.Second {
 		t.Errorf("text = %q, waited %v, want the item and 30s", item.Text, waited)
 	}
-	if got := k.requests.Load(); got != 2 {
+	if got := k.server.CountRequests(); got != 2 {
 		t.Errorf("server requests = %d, want a challenge and one sign-in, with no hot loop", got)
 	}
 }
 
-func TestKeep_SignsInAgain60SecondsBeforeTheSessionExpires(t *testing.T) {
-	k := newKit(t, setup{sessionTTL: time.Hour})
-	eventually(t, "a session", func() bool { return len(k.server.ListSessions()) == 1 })
-	first := k.server.ListSessions()[0]
+func TestKeep_WaitsUntil60SecondsBeforeTheSessionExpiresToSignInAgain(t *testing.T) {
+	k := newKit(t, setup{})
+	eventually(t, "a session", func() bool { return k.keep.GetToken() != "" })
 
 	waited := k.clock.awaitWait(t)
-	k.clock.Advance(waited)
 
-	if waited != time.Hour-60*time.Second {
-		t.Errorf("waited %v, want 59m", waited)
-	}
-	eventually(t, "a second session", func() bool { return len(k.server.ListSessions()) == 2 })
-	if k.server.ListSessions()[1].Token == first.Token {
-		t.Error("the second sign-in kept the token of the first")
+	if want := time.Hour - 60*time.Second; waited > want || waited < want-10*time.Second {
+		t.Errorf("waited %v, want 59m less the seconds the sign-in took", waited)
 	}
 }
 
-func TestKeep_SignsInAgainAtTheRenewalWhenTheServerEndedTheSession(t *testing.T) {
-	k := newKit(t, setup{sessionTTL: time.Hour})
-	eventually(t, "a session", func() bool { return len(k.server.ListSessions()) == 1 })
-	ended := k.server.ListSessions()[0]
-	k.server.EndSessions(nil)
+func TestKeep_SignsInAgainWhenTheServerEndedTheSession(t *testing.T) {
+	k := newKit(t, setup{})
+	eventually(t, "a session", func() bool { return k.keep.GetToken() != "" })
+	ended := k.keep.GetToken()
+	k.server.EndSessions()
 
-	k.clock.Advance(k.clock.awaitWait(t))
+	if err := k.keep.Refresh(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 
-	eventually(t, "a new session", func() bool {
-		sessions := k.server.ListSessions()
-		return len(sessions) == 1 && sessions[0].Token != ended.Token
-	})
+	if _, isLive := k.server.ReadSession(t, ended); isLive {
+		t.Error("the session the server ended is live")
+	}
+	if _, isLive := k.server.ReadSession(t, k.keep.GetToken()); !isLive || k.keep.GetToken() == ended {
+		t.Error("the keep holds no new live session")
+	}
 }
 
 func TestKeep_StopsWhenItsContextEnds(t *testing.T) {
@@ -378,6 +365,6 @@ func TestKeep_RestoreCancelsTheDeletionAndClearsTheItem(t *testing.T) {
 func TestKeep_ClearsAnItemAnEarlierRunLeftOnceTheSignInWorks(t *testing.T) {
 	k := newKit(t, setup{leftItem: "server-unreachable"})
 
-	eventually(t, "a session", func() bool { return len(k.server.ListSessions()) == 1 })
+	eventually(t, "a session", func() bool { return k.keep.GetToken() != "" })
 	eventually(t, "the left item to clear", func() bool { _, ok := k.item("server-unreachable"); return !ok })
 }

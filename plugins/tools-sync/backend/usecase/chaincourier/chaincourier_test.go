@@ -15,13 +15,12 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func newComputer(t *testing.T) (*synctest.Computer, []string) {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	return synctest.NewFirstComputer(t, server, clock, "Test", words), words
 }
@@ -93,7 +92,7 @@ func TestAdopt_DoesNothingWhenTheChainsAreTheSameLength(t *testing.T) {
 func newRevokedByFirst(t *testing.T) (observer *synctest.Computer, clock *synctest.Clock) {
 	t.Helper()
 	clock = synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)
@@ -145,7 +144,7 @@ func TestAdopt_ClearsTheNoticeWhenTheCoolingOffEnds(t *testing.T) {
 func newThreeRestores(t *testing.T) (earlier, current *synctest.Computer) {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	synctest.NewFirstComputer(t, server, clock, "Test", words)
 	earlier = synctest.NewSecondComputer(t, server, clock, "Test", words)
@@ -226,7 +225,7 @@ func TestLoop_ClearsTheFailureAnEarlierRunLeftWhenNothingIsPending(t *testing.T)
 func TestAdopt_RaisesANoticeWhenAnotherDeviceAddedADevice(t *testing.T) {
 	t.Parallel()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	observer := synctest.NewSecondComputer(t, server, clock, "Tablet", words)
@@ -313,7 +312,7 @@ func TestLoop_DoesNothingWhileIdleAndWorksAgainWhenNotIdle(t *testing.T) {
 func newBackdatedAddition(t *testing.T) (observer *synctest.Computer, clock *synctest.Clock) {
 	t.Helper()
 	clock = synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	observer = synctest.NewSecondComputer(t, server, clock, "Tablet", words)
@@ -323,15 +322,11 @@ func newBackdatedAddition(t *testing.T) (observer *synctest.Computer, clock *syn
 	if _, err := chaincourier.NewAdopt(observer.ChainDeps()).Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	clock.Advance(4 * 24 * time.Hour)
-	if err := first.SignIn(t.Context()); err != nil {
-		t.Fatal(err)
-	}
 	stranger, err := identity.NewDeviceKey(rand.Reader)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := first.Fake.AddDeviceAt(stranger.Public(), "Stranger", synctest.GetStart()); err != nil {
+	if err := first.Fake.AddDeviceAt(stranger.Public(), "Stranger", clock.Now().Add(-4*24*time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if published, err := chaincourier.NewPublish(first.ChainDeps()).Execute(t.Context()); err != nil || !published {
@@ -402,7 +397,7 @@ func (s rolledBackServer) GetAccountChain(context.Context) ([]byte, error) { ret
 func newForkedByWords(t *testing.T) (observer *synctest.Computer, deps chaincourier.Deps, clock *synctest.Clock) {
 	t.Helper()
 	clock = synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)
@@ -479,7 +474,7 @@ func TestAdopt_KeepsTheNoticeOfAForkUntilTheCoolingOffEndsFromTheFirstSighting(t
 func TestAdopt_RaisesNoForkNoticeWhenTheWordsOnlyAddedADevice(t *testing.T) {
 	t.Parallel()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	synctest.NewRestoredComputer(t, server, clock, "Laptop", words)

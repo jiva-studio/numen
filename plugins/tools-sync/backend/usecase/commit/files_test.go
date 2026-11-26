@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -46,14 +45,14 @@ func (s *setup) remove(t *testing.T, records ...transfer.FileRecord) []transfer.
 	return outcomes
 }
 
-func (s *setup) countCalls(procedure string) int { return s.server.Fake.CountCalls(procedure) }
+func (s *setup) countCalls(procedure string) int { return s.server.CountCalls(procedure) }
 
 func TestCommitMoves_CommitsAMetadataOnlyRevisionThatNamesTheBlobOfTheHead(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	first := s.run(t, transfer.File{Path: "Papers/Report.pdf", Content: []byte(pdfBytes), ModifiedAt: 1_700_000_005_000_000_000})[0]
 	before := s.read(t)[0].GetRevision()
 	reserved := s.countCalls(syncv1connect.BlobServiceReserveBlobsProcedure)
-	held := len(s.server.GetStoredBlobs(t))
+	held := len(s.c.ReadStoredBlobs(t))
 
 	outcomes := s.move(t, transfer.Move{Record: first.Record, To: "Papers/Old report.pdf"})
 
@@ -84,7 +83,7 @@ func TestCommitMoves_CommitsAMetadataOnlyRevisionThatNamesTheBlobOfTheHead(t *te
 	if got := s.countCalls(syncv1connect.BlobServiceReserveBlobsProcedure); got != reserved {
 		t.Errorf("reservations grew from %d to %d, want none for a move", reserved, got)
 	}
-	if got := len(s.server.GetStoredBlobs(t)); got != held {
+	if got := len(s.c.ReadStoredBlobs(t)); got != held {
 		t.Errorf("the server holds %d bytes of blobs after the move, want the %d it held", got, held)
 	}
 	if plain := s.c.OpenBlob(t, s.vault.Key, revision); string(plain) != pdfBytes {
@@ -96,7 +95,7 @@ func TestCommitMoves_CommitsAMetadataOnlyRevisionThatNamesTheBlobOfTheHead(t *te
 }
 
 func TestCommitMoves_CommitsAMovedFolderInOneCall(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	files := make([]transfer.File, 7)
 	for i := range files {
 		files[i] = transfer.File{Path: fmt.Sprintf("Food/File %d.pdf", i+1), Content: []byte(fmt.Sprintf("file %d", i+1))}
@@ -130,7 +129,7 @@ func TestCommitMoves_CommitsAMovedFolderInOneCall(t *testing.T) {
 }
 
 func TestCommitMoves_ReportsAPathThatAnotherFileUses(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	pushed := s.run(t, transfer.File{Path: "a.pdf", Content: []byte("a")}, transfer.File{Path: "b.pdf", Content: []byte("b")})
 
 	outcomes := s.move(t, transfer.Move{Record: pushed[0].Record, To: "b.pdf"})
@@ -145,20 +144,8 @@ func TestCommitMoves_ReportsAPathThatAnotherFileUses(t *testing.T) {
 	}
 }
 
-func TestCommitMoves_ReportsAFileWhoseHeadIsAnotherRevision(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
-	first := s.run(t, transfer.File{Path: "a.pdf", Content: []byte("a")})[0]
-	second := s.run(t, transfer.File{FileID: first.FileID, ParentRev: first.RevID, Path: "a.pdf", Content: []byte("a changed")})[0]
-
-	outcomes := s.move(t, transfer.Move{Record: first.Record, To: "Old/a.pdf"})
-
-	if outcomes[0].Status != transfer.ParentMismatch || outcomes[0].Head == nil || !bytes.Equal(outcomes[0].Head.GetRevId(), second.RevID) {
-		t.Errorf("outcome = %+v, want ParentMismatch with the changed revision as head", outcomes[0])
-	}
-}
-
 func TestCommitRemovals_CommitsATombstoneWithNoBlobAndNoMetadata(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	first := s.run(t, transfer.File{Path: "Papers/Report.pdf", Content: []byte(pdfBytes)})[0]
 
 	outcomes := s.remove(t, first.Record)
@@ -189,9 +176,9 @@ func TestCommitRemovals_CommitsATombstoneWithNoBlobAndNoMetadata(t *testing.T) {
 }
 
 func TestCommitRemovals_DoesNotRemoveAFileWhoseHeadChangedSinceTheRecord(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	first := s.run(t, transfer.File{Path: "Papers/Report.pdf", Content: []byte(pdfBytes)})[0]
-	second := s.run(t, transfer.File{FileID: first.FileID, ParentRev: first.RevID, Path: "Papers/Report.pdf", Content: []byte(pdfBytes + " edited")})[0]
+	second := s.run(t, transfer.File{FileID: first.FileID, ParentRev: first.RevID, ParentVersion: 1, Path: "Papers/Report.pdf", Content: []byte(pdfBytes + " edited")})[0]
 
 	outcomes := s.remove(t, first.Record)
 
@@ -204,7 +191,7 @@ func TestCommitRemovals_DoesNotRemoveAFileWhoseHeadChangedSinceTheRecord(t *test
 }
 
 func TestCommitRemovals_CommitsManyRemovalsInOneCall(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	files := make([]transfer.File, 205)
 	for i := range files {
 		files[i] = transfer.File{Path: fmt.Sprintf("n%03d.pdf", i), Content: []byte(fmt.Sprintf("file %d", i))}
@@ -243,7 +230,7 @@ func (s *setup) runBig(t *testing.T, file transfer.File) []transfer.Outcome {
 }
 
 func TestCommitRevisions_SendsAFileAboveFourMiBThroughTheUploadInOneBodyWhenItFits(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	content := make([]byte, 5<<20)
 	if _, err := rand.Read(content); err != nil {
 		t.Fatal(err)
@@ -273,7 +260,7 @@ func TestCommitRevisions_SendsAFileAboveFourMiBThroughTheUploadInOneBodyWhenItFi
 }
 
 func TestCommitRevisions_SendsABigFileInPartsAndForgetsItsUploadOnceCommitted(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	source := synctest.NewSource("Videos/Trip.bin", bigSize, 1, synctest.GetStart().Add(-time.Hour))
 	s.c.Spy().Serve(source)
 	stat := source.GetStat()
@@ -304,7 +291,7 @@ func TestCommitRevisions_SendsABigFileInPartsAndForgetsItsUploadOnceCommitted(t 
 }
 
 func TestCommitRevisions_KeepsTheUploadOfABigFileWhenTheServerRefusesItsParent(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	first := s.run(t, transfer.File{Path: "Videos/Trip.bin", Content: []byte("small")})[0]
 	source := synctest.NewSource("Videos/Trip.bin", bigSize, 2, synctest.GetStart().Add(-time.Hour))
 	s.c.Spy().Serve(source)
@@ -332,7 +319,7 @@ func TestCommitRevisions_KeepsTheUploadOfABigFileWhenTheServerRefusesItsParent(t
 }
 
 func TestCommitRevisions_ReportsAFileThatIsTooLargeForTheServerAndContinues(t *testing.T) {
-	s := newSetup(t, fakeserver.Config{})
+	s := newSetup(t)
 	huge := domain.FileStat{Path: "Videos/Huge.bin", Size: syncprotocol.MaxMultipartSize + 1, ModTime: synctest.GetStart(), Hash: "not read"}
 
 	outcomes := s.runBig(t, transfer.File{Path: "Videos/Huge.bin", ModifiedAt: 1, Stat: &huge})

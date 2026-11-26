@@ -12,7 +12,6 @@ import (
 
 const metaContext = "numen-sync/meta/v1"
 
-// Meta is the metadata of a revision once opened with the vault key.
 type Meta struct {
 	Path  string `json:"path"`
 	Size  int64  `json:"size"`
@@ -48,7 +47,6 @@ func OpenMeta(t *testing.T, vaultKey [32]byte, revision *syncv1.Revision) Meta {
 	return meta
 }
 
-// OpenBlob downloads the blob of the revision and opens it with the key of its metadata.
 func (c *Computer) OpenBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Revision) []byte {
 	t.Helper()
 	plain, isFound := c.FindBlob(t, vaultKey, revision)
@@ -58,7 +56,6 @@ func (c *Computer) OpenBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Re
 	return plain
 }
 
-// FindBlob is OpenBlob that reports a blob the server no longer holds, as a newer revision replaced it, instead of failing.
 func (c *Computer) FindBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Revision) ([]byte, bool) {
 	t.Helper()
 	meta := OpenMeta(t, vaultKey, revision)

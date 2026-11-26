@@ -37,20 +37,23 @@ func TestSeedAccount_JoinsTheSecondAndTheThirdComputerToTheAccountOfTheFirst(t *
 func TestSubscribe_LetsTheAccountPushAFileThatTheOtherComputerReceives(t *testing.T) {
 	stack := synctest.GetStack(t)
 	server := synctest.NewRealServer(t, stack)
-	account := synctest.SeedAccount(t, server, synctest.NewClock(synctest.GetNow()), synctest.NewLabel(t))
-	account.First.Subscribe(t, stack, "prod_basic")
-	account.First.Connect(t, synctest.FirstVault)
-	account.First.WriteNote(synctest.FirstVault, "Papers/Report.md", "the text of a report")
-	account.Second.ConnectExisting(t, synctest.SecondVault, account.First.Link(t, synctest.FirstVault).RemoteVaultID)
+	clock := synctest.NewClock(synctest.GetNow())
+	words := synctest.NewWords(t)
+	first := synctest.NewUnsubscribedComputer(t, server, clock, string(synctest.FirstVault), words)
+	second := synctest.NewSecondComputer(t, server, clock, string(synctest.SecondVault), words)
+	first.Subscribe(t, stack, "prod_basic")
+	first.Connect(t, synctest.FirstVault)
+	first.WriteNote(synctest.FirstVault, "Papers/Report.md", "the text of a report")
+	second.ConnectExisting(t, synctest.SecondVault, first.Link(t, synctest.FirstVault).RemoteVaultID)
 
-	if err := account.First.Sync(t.Context(), synctest.FirstVault); err != nil {
+	if err := first.Sync(t.Context(), synctest.FirstVault); err != nil {
 		t.Fatalf("push by the subscribed computer: %v", err)
 	}
-	if err := account.Second.Sync(t.Context(), synctest.SecondVault); err != nil {
+	if err := second.Sync(t.Context(), synctest.SecondVault); err != nil {
 		t.Fatalf("pull by the other computer: %v", err)
 	}
 
-	got, ok := account.Second.ReadNote(synctest.SecondVault, "Papers/Report.md")
+	got, ok := second.ReadNote(synctest.SecondVault, "Papers/Report.md")
 	if !ok || got != "the text of a report" {
 		t.Errorf("file on the other computer = %q (present %v), want the text pushed by the first", got, ok)
 	}

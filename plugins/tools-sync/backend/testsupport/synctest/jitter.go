@@ -19,7 +19,6 @@ func NewJitter(fractions ...float64) *Jitter {
 	return &Jitter{mu: sync.Mutex{}, fractions: fractions, next: 0}
 }
 
-// Pick returns the next fraction of the limit.
 func (j *Jitter) Pick(limit time.Duration) time.Duration {
 	j.mu.Lock()
 	defer j.mu.Unlock()

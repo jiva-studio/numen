@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/shareinvite"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -32,7 +31,7 @@ type world struct {
 func newWorld(t *testing.T) *world {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	owner := synctest.NewFirstComputer(t, server, clock, string(owned), synctest.NewWords(t))
 	owner.Connect(t, owned)
 	owner.WriteNote(owned, "Food/Soup.md", "carrots")

@@ -6,12 +6,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func TestSyncVault_RestoreOnAnotherComputerKeepsTheFirstComputerWorking(t *testing.T) {
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, string(source), words)
 	first.Connect(t, source)

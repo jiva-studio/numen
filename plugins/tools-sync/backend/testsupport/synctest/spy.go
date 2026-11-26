@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
-// PlaceCall is a call of PlaceFile as the host got it.
 type PlaceCall struct {
 	Name     string
 	Path     string
@@ -18,14 +17,12 @@ type PlaceCall struct {
 	Baseline *domain.FileStat
 }
 
-// MoveCall is a call of MoveFile as the host got it.
 type MoveCall struct {
 	From     string
 	To       string
 	Baseline *domain.FileStat
 }
 
-// RemoveCall is a call of RemoveFile as the host got it.
 type RemoveCall struct {
 	Path     string
 	Baseline *domain.FileStat
@@ -48,47 +45,40 @@ type SpyHost struct {
 	readCallback  func(path string, start, length int64)
 }
 
-// NewSpyHost returns the host over the inner host.
 func NewSpyHost(inner ports.Host, notes ports.NoteHost) *SpyHost {
 	return &SpyHost{inner: inner, notes: notes, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, readCalls: 0, placeCallback: nil, readCallback: nil}
 }
 
-// Serve makes the host read the file at the path of the source from the source, not from the vault.
 func (h *SpyHost) Serve(source *Source) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.sources[source.GetPath()] = source
 }
 
-// GetPlaces returns the calls of PlaceFile, in order.
 func (h *SpyHost) GetPlaces() []PlaceCall {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return slices.Clone(h.places)
 }
 
-// GetMoves returns the calls of MoveFile, in order.
 func (h *SpyHost) GetMoves() []MoveCall {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return slices.Clone(h.moves)
 }
 
-// GetRemoves returns the calls of RemoveFile, in order.
 func (h *SpyHost) GetRemoves() []RemoveCall {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return slices.Clone(h.removes)
 }
 
-// GetReadCalls returns how many ranged reads the host served.
 func (h *SpyHost) GetReadCalls() int {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.readCalls
 }
 
-// GetMaxRead returns the most bytes one ranged read asked for.
 func (h *SpyHost) GetMaxRead() int64 {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -105,10 +95,8 @@ func (h *SpyHost) GetAbsent(id domain.VaultID) ports.Absent { return h.inner.Get
 
 func (h *SpyHost) GetNotes(id domain.VaultID) ports.Notes { return h.notes.GetNotes(id) }
 
-// Store returns the store folder of the plugin in the vault.
 func (h *SpyHost) Store(id domain.VaultID) ports.Store { return h.inner.Store(id) }
 
-// Transfers returns what the host does with the bytes of the files of the vault, written down.
 func (h *SpyHost) GetTransfers(id domain.VaultID) ports.Transfers {
 	return &spyTransfers{spy: h, inner: h.inner.GetTransfers(id)}
 }

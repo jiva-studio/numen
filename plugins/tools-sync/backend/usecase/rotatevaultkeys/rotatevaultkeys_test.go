@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/tools/syncserver/wiretest"
 )
 
@@ -25,7 +24,7 @@ const vault = "Test"
 func newComputer(t *testing.T) *synctest.Computer {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	c := synctest.NewFirstComputer(t, server, clock, vault, synctest.NewWords(t))
 	c.Connect(t, vault)
 	return c
@@ -91,7 +90,7 @@ func TestExecute_RotatesOncePerEpoch(t *testing.T) {
 func TestExecute_SecondDeviceRotatesOnceAndFirstAdoptsItsKey(t *testing.T) {
 	t.Parallel()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, vault, words)
 	first.Connect(t, vault)
@@ -136,13 +135,13 @@ func TestExecute_AVaultAlreadyRotatedCostsNoCallToTheServer(t *testing.T) {
 	if _, err := rotatevaultkeys.NewRotateVaultKeys(c.RotateDeps()).Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	reads := c.Server.Fake.CountCalls(syncv1connect.CatalogServiceGetCatalogProcedure)
+	reads := c.Server.CountCalls(syncv1connect.CatalogServiceGetCatalogProcedure)
 
 	if _, err := rotatevaultkeys.NewRotateVaultKeys(c.RotateDeps()).Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := c.Server.Fake.CountCalls(syncv1connect.CatalogServiceGetCatalogProcedure); got != reads {
+	if got := c.Server.CountCalls(syncv1connect.CatalogServiceGetCatalogProcedure); got != reads {
 		t.Errorf("catalog reads %d -> %d, want none for a vault whose key is of the epoch of the account", reads, got)
 	}
 }
@@ -171,7 +170,7 @@ func TestExecute_StoresNoKeyOfAnEntryASignerOutsideTheAccountForged(t *testing.T
 	if err := c.Fake.AdvanceEpoch(); err != nil {
 		t.Fatal(err)
 	}
-	outsider := synctest.NewFirstComputer(t, c.Server, synctest.NewClock(synctest.GetStart()), "Other", synctest.NewWords(t))
+	outsider := synctest.NewFirstComputer(t, c.Server, c.Clock, "Other", synctest.NewWords(t))
 	before := c.Link(t, vault)
 	deps := c.RotateDeps()
 	deps.Catalog = &forgedCatalog{Cloud: c.Cloud, forge: func(entries []*syncv1.CatalogEntry) []*syncv1.CatalogEntry {

@@ -30,7 +30,7 @@ image=$(read_digest numen-sync)
 devtools=$(read_digest numen-sync-devtools)
 
 cat >"$here/stack.lock" <<LOCK
-# The images of the real sync server, by digest. numen-cloud publishes them to private GHCR packages (tag main); \`make sync_stack_bump\` writes this file.
+# The images of the real sync server, by digest. they are published as private packages (tag main); \`make sync_stack_bump\` writes this file.
 # While the digests are empty, \`make sync_stack_up\` takes the images from NUMEN_SYNC_IMAGE and NUMEN_SYNC_DEVTOOLS_IMAGE in the environment.
 NUMEN_SYNC_IMAGE=ghcr.io/$owner/numen-sync@$image
 NUMEN_SYNC_DEVTOOLS_IMAGE=ghcr.io/$owner/numen-sync-devtools@$devtools

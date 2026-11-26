@@ -567,6 +567,11 @@ sync_stack_up: ## start the real sync server of the tests (tests/server)
 sync_stack_down: ## stop the real sync server of the tests and drop its data
 	bash $(TESTS)/server/stack.sh down
 
+.PHONY: sync_stack_fresh
+sync_stack_fresh: ## recreate a stand empty after a full run: make sync_stack_fresh PROJECT=name [COMPOSE=file]
+	@test -n "$(PROJECT)" || { echo "give the project to recreate: make sync_stack_fresh PROJECT=name [COMPOSE=file]" >&2; exit 2; }
+	bash $(TESTS)/server/stack.sh fresh "$(PROJECT)" $(COMPOSE)
+
 .PHONY: sync_stack_bump
 sync_stack_bump: ## pin the digests of the tag main of both server packages in tests/server/stack.lock
 	@bash $(TESTS)/server/bump.sh

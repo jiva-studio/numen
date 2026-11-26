@@ -24,7 +24,6 @@ func NewLabel(t *testing.T) string {
 	return t.Name() + " " + hex.EncodeToString(run)
 }
 
-// labelStream is the stream of bytes of one label: the same label gives the same bytes.
 type labelStream struct {
 	label   string
 	counter uint64
@@ -46,7 +45,6 @@ func (s *labelStream) Read(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// NewWordsFor returns the recovery words of the account of the label. The words are for tests only.
 func NewWordsFor(t *testing.T, label string) []string {
 	t.Helper()
 	words, err := identity.NewRecoveryWords(&labelStream{label: label, counter: 0, block: nil})
@@ -56,7 +54,6 @@ func NewWordsFor(t *testing.T, label string) []string {
 	return words.List()
 }
 
-// SeededAccount is one person of the label with three computers on the server.
 type SeededAccount struct {
 	Words  []string
 	First  *Computer

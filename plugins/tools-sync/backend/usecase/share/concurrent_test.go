@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	usecase "github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/share"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 // racingShares is a server that lets another device of the owner append first: the call of the entry runs rival,
@@ -30,7 +29,7 @@ func (r *racingShares) AppendShareLogEntry(ctx context.Context, entry *syncv1.Sh
 func TestRemoveReader_LosingDeviceAdoptsWinnerKeyAndSealsNewKey(t *testing.T) {
 	words := synctest.NewWords(t)
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	first := synctest.NewFirstComputer(t, server, clock, string(owned), words)
 	first.Connect(t, owned)
 	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)

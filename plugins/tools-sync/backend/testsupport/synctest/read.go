@@ -24,7 +24,6 @@ const (
 	catalogContext  = "numen-sync/catalog/v1"
 )
 
-// FileRow is a row of files.json as the tests read it.
 type FileRow struct {
 	FileID   json.RawMessage `json:"fileId"`
 	Path     string          `json:"path"`
@@ -32,7 +31,6 @@ type FileRow struct {
 	HeadRev  json.RawMessage `json:"headRev"`
 }
 
-// Connect connects the vault as a new synced vault.
 func (c *Computer) Connect(t *testing.T, id domain.VaultID) {
 	t.Helper()
 	in := catalog.ConnectInput{VaultID: id, Mode: catalog.ModeNew, RemoteID: ""}
@@ -49,7 +47,6 @@ func (c *Computer) ConnectExisting(t *testing.T, id domain.VaultID, remoteID str
 	}
 }
 
-// ReadStoreFile returns a file of the store folder of the plugin in the vault.
 func (c *Computer) ReadStoreFile(t *testing.T, id domain.VaultID, name string) []byte {
 	t.Helper()
 	raw, err := c.Host.Store(id).Read(t.Context(), name)
@@ -59,7 +56,6 @@ func (c *Computer) ReadStoreFile(t *testing.T, id domain.VaultID, name string) [
 	return raw
 }
 
-// Link returns link.json of the vault.
 func (c *Computer) Link(t *testing.T, id domain.VaultID) vaultlink.Link {
 	t.Helper()
 	var link vaultlink.Link
@@ -69,7 +65,6 @@ func (c *Computer) Link(t *testing.T, id domain.VaultID) vaultlink.Link {
 	return link
 }
 
-// GetRemoteID returns the id the server knows the vault by.
 func (c *Computer) GetRemoteID(t *testing.T, id domain.VaultID) []byte {
 	t.Helper()
 	remote, err := hex.DecodeString(c.Link(t, id).RemoteVaultID)
@@ -79,7 +74,6 @@ func (c *Computer) GetRemoteID(t *testing.T, id domain.VaultID) []byte {
 	return remote
 }
 
-// GetVaultKey opens the key of the vault from link.json.
 func (c *Computer) GetVaultKey(t *testing.T, id domain.VaultID) [32]byte {
 	t.Helper()
 	remote := c.GetRemoteID(t, id)
@@ -114,7 +108,6 @@ func (c *Computer) GetFileRow(t *testing.T, id domain.VaultID, path string) (Fil
 	return rows[at], true
 }
 
-// ReadCatalog returns every entry of the catalog of the account on the server.
 func (c *Computer) ReadCatalog(t *testing.T) []*syncv1.CatalogEntry {
 	t.Helper()
 	entries, err := c.Cloud.GetCatalog(t.Context(), 0)
@@ -124,7 +117,6 @@ func (c *Computer) ReadCatalog(t *testing.T) []*syncv1.CatalogEntry {
 	return entries
 }
 
-// ReadChanges returns the head revision of every file of the vault on the server.
 func (c *Computer) ReadChanges(t *testing.T, remoteID []byte) []*syncv1.StoredRevision {
 	t.Helper()
 	var all []*syncv1.StoredRevision
@@ -155,7 +147,6 @@ func (c *Computer) OpenCatalogBody(t *testing.T, entry *syncv1.CatalogEntry) Cat
 	return body
 }
 
-// CatalogBody is the body of a catalog entry once opened.
 type CatalogBody struct {
 	LocalID string     `json:"localId"`
 	Name    string     `json:"name"`
@@ -163,33 +154,27 @@ type CatalogBody struct {
 	Keys    []VaultKey `json:"keys"`
 }
 
-// WriteNote writes a file in the vault as another window would, and the host indexes it.
 func (c *Computer) WriteNote(id domain.VaultID, path, text string) {
 	c.Vaults.With(id).WriteFile(path, text)
 }
 
-// ReadNote returns the text of the file in the vault, and whether the file is there.
 func (c *Computer) ReadNote(id domain.VaultID, path string) (string, bool) {
 	return c.Vaults.With(id).ReadContent(path)
 }
 
-// HasItem reports whether the health host holds an item of the text.
 func (c *Computer) HasItem(text string) bool {
 	return slices.ContainsFunc(c.Health.List(), func(item health.Item) bool { return item.Text == text })
 }
 
-// HasItemKey reports whether the health host holds an item of the key.
 func (c *Computer) HasItemKey(key string) bool {
 	return slices.ContainsFunc(c.Health.List(), func(item health.Item) bool { return item.Key == key })
 }
 
-// GetCatalogContext returns the context the body of the catalog entry is sealed under.
 func GetCatalogContext(entry *syncv1.CatalogEntry) []byte {
 	sealedFor := append([]byte(catalogContext), entry.GetVaultId()...)
 	return binary.BigEndian.AppendUint64(sealedFor, entry.GetVersion())
 }
 
-// VaultKey is a key of a synced vault with the epoch of the account keys it was made under.
 type VaultKey struct {
 	Epoch uint32 `json:"epoch"`
 	Key   []byte `json:"key"`

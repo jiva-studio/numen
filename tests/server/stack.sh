@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Brings the test stack of the real sync server up and down, and prints the settings the tests read.
-# usage: stack.sh up | down | env
+# usage: stack.sh up | down | env | fresh PROJECT [COMPOSE_FILE]
+# fresh drops the containers and volumes of the named project, then brings it up again from COMPOSE_FILE (default: compose.yaml here) and prints its settings.
+# The real server cannot delete uploaded files, so a stack that ran a full test run holds gigabytes in its bucket; fresh empties it.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
 project=numen-sync-test
-url=http://127.0.0.1:8787
-payment_url=http://127.0.0.1:8789
-bucket_url=http://127.0.0.1:8790
+file=$here/compose.yaml
 
 read_lock() {
   local line key
@@ -22,7 +22,18 @@ read_lock() {
   fi
 }
 
-compose() { docker compose -f "$here/compose.yaml" "$@"; }
+compose() { docker compose -p "$project" -f "$file" "$@"; }
+
+print_env() {
+  local root ports
+  root=$(docker run --rm -v "${project}_keys:/keys:ro" --entrypoint cat "$NUMEN_SYNC_DEVTOOLS_IMAGE" /keys/root-public.hex)
+  # The four published ports in order: the server, the payment page, the payment control, the bucket.
+  mapfile -t ports < <(compose config | sed -n 's/^ *published: "\{0,1\}\([0-9]*\)"\{0,1\}$/\1/p' | sort -n)
+  echo "export NUMEN_SYNC_TEST_URL=http://127.0.0.1:${ports[0]}"
+  echo "export NUMEN_SYNC_TEST_ROOT_KEY=$root"
+  echo "export NUMEN_SYNC_TEST_PAYMENT_URL=http://127.0.0.1:${ports[2]}"
+  echo "export NUMEN_SYNC_TEST_BUCKET_URL=http://127.0.0.1:${ports[3]}"
+}
 
 case "${1:-}" in
   up)
@@ -35,14 +46,25 @@ case "${1:-}" in
     ;;
   env)
     read_lock
-    root=$(docker run --rm -v "${project}_keys:/keys:ro" --entrypoint cat "$NUMEN_SYNC_DEVTOOLS_IMAGE" /keys/root-public.hex)
-    echo "export NUMEN_SYNC_TEST_URL=$url"
-    echo "export NUMEN_SYNC_TEST_ROOT_KEY=$root"
-    echo "export NUMEN_SYNC_TEST_PAYMENT_URL=$payment_url"
-    echo "export NUMEN_SYNC_TEST_BUCKET_URL=$bucket_url"
+    print_env
+    ;;
+  fresh)
+    if [ -z "${2:-}" ]; then
+      echo "fresh needs the project name: stack.sh fresh PROJECT [COMPOSE_FILE]" >&2
+      exit 2
+    fi
+    project=$2
+    file=${3:-$file}
+    read_lock
+    echo "removing the containers and volumes of the project $project:" >&2
+    compose ps --all --format '  container {{.Name}} ({{.Service}})' >&2
+    docker volume ls --filter "label=com.docker.compose.project=$project" --format '  volume {{.Name}}' >&2
+    compose down --volumes --remove-orphans
+    compose up --detach --wait --quiet-pull
+    print_env
     ;;
   *)
-    echo "usage: stack.sh up | down | env" >&2
+    echo "usage: stack.sh up | down | env | fresh PROJECT [COMPOSE_FILE]" >&2
     exit 2
     ;;
 esac

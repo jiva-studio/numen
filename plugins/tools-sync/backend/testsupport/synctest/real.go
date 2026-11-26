@@ -3,6 +3,7 @@ package synctest
 import (
 	"crypto/ed25519"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -19,18 +20,19 @@ const (
 	EnvRootKey = "NUMEN_SYNC_TEST_ROOT_KEY"
 	// EnvPaymentURL is the control API of the payment stand-in of that stack; a test that buys a plan needs it.
 	EnvPaymentURL = "NUMEN_SYNC_TEST_PAYMENT_URL"
+	// EnvBucketURL is the address of the bucket of that stack, which the signed addresses of the blobs lead to.
+	EnvBucketURL = "NUMEN_SYNC_TEST_BUCKET_URL"
 	// EnvRequired set to 1 makes a test of the real server fail, not skip, when the stack is not set. The job that runs the stack sets it; a job without the stack, such as the one of a pull request from a fork, does not.
 	EnvRequired = "NUMEN_SYNC_TEST_REQUIRED"
 )
 
-// Stack is where the real sync server of the test stack is and the key its epochs are signed under.
 type Stack struct {
 	URL        string
 	PaymentURL string
+	BucketURL  string
 	Roots      []ed25519.PublicKey
 }
 
-// GetStack reads the stack from the environment. The test skips when the stack is not set, and fails then when EnvRequired is 1.
 func GetStack(t *testing.T) *Stack {
 	t.Helper()
 	address, rootHex := os.Getenv(EnvURL), os.Getenv(EnvRootKey)
@@ -44,12 +46,13 @@ func GetStack(t *testing.T) *Stack {
 	if err != nil || len(root) != ed25519.PublicKeySize {
 		t.Fatalf("%s is not 64 hex digits of an ed25519 public key", EnvRootKey)
 	}
-	return &Stack{URL: address, PaymentURL: os.Getenv(EnvPaymentURL), Roots: []ed25519.PublicKey{root}}
+	return &Stack{URL: address, PaymentURL: os.Getenv(EnvPaymentURL), BucketURL: os.Getenv(EnvBucketURL), Roots: []ed25519.PublicKey{root}}
 }
 
 // NewRealServer puts a proxy of the test in front of the real sync server of the stack. The computers keep the public address
 // of the server, which the server names as its own in a challenge, and their requests for it go to the proxy, which runs the
-// switches, the lost responses, the hooks and the counters before and after the server.
+// switches, the lost responses, the hooks and the counters before and after the server. A link call the server refuses for its limit of new channels (6 a minute
+// for one source, which every test of a run is) waits and goes again, and the channels a test opened are closed when it ends.
 func NewRealServer(t *testing.T, stack *Stack) *Server {
 	t.Helper()
 	target, err := url.Parse(stack.URL)
@@ -60,11 +63,14 @@ func NewRealServer(t *testing.T, stack *Stack) *Server {
 	proxy.FlushInterval = -1
 	proxy.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, _ error) { w.WriteHeader(http.StatusBadGateway) }
 	s := NewProxy(t, proxy)
-	s.URL, s.roots, s.origin = stack.URL, stack.Roots, target.Host
+	s.URL, s.roots, s.origin, s.Stack = stack.URL, stack.Roots, target.Host, stack
+	t.Cleanup(func() { s.closeChannels(t) })
+	if bucket, err := url.Parse(stack.BucketURL); err == nil {
+		s.bucketHost = bucket.Host
+	}
 	return s
 }
 
-// NewProxy returns a server of the test that runs the switches, the hooks and the counters over the backend, on a loopback port that closes with the test.
 func NewProxy(t *testing.T, backend http.Handler) *Server {
 	t.Helper()
 	s := newServer()
@@ -78,32 +84,35 @@ func NewProxy(t *testing.T, backend http.Handler) *Server {
 	return s
 }
 
-// CountCalls returns how many requests for the path the server has taken, answered or not, for example
-// syncv1connect.BlobServiceReserveBlobsProcedure.
-func (s *Server) CountCalls(path string) int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.calls[path]
-}
+func (s *Server) getRoots() []ed25519.PublicKey { return s.roots }
 
-func (s *Server) getRoots() []ed25519.PublicKey {
-	if s.roots != nil {
-		return s.roots
-	}
-	return fakeRoots()
+// NewServer puts the proxy in front of the real sync server of the stack, which the test skips without, and sets the clock to the time of the machine, as the
+// server reads it.
+func NewServer(t *testing.T, clock *Clock) *Server {
+	t.Helper()
+	server := NewRealServer(t, GetStack(t))
+	clock.Set(GetNow())
+	return server
 }
 
 // NewRealWorld returns the real server of the stack behind a proxy, a clock that reads the time of the machine, as the server does, and
 // the recovery words of an account that only this test of this run has.
 func NewRealWorld(t *testing.T) (*Server, *Clock, []string) {
 	t.Helper()
-	return NewRealServer(t, GetStack(t)), NewClock(GetNow()), NewWordsFor(t, NewLabel(t))
+	clock := NewClock(GetNow())
+	return NewServer(t, clock), clock, NewWords(t)
 }
 
-// machineClock reads the clock of the machine, which the real server also reads.
 type machineClock struct{}
 
 func (machineClock) Now() time.Time { return time.Now() }
 
-// GetNow returns the time of the machine, the start of a clock that a real server runs with.
 func GetNow() time.Time { return machineClock{}.Now() }
+
+func GetConflictCopy(stem string, number int) string {
+	suffix := ""
+	if number > 1 {
+		suffix = fmt.Sprintf(" %d", number)
+	}
+	return fmt.Sprintf("%s (conflict %s%s).md", stem, GetNow().Format(time.DateOnly), suffix)
+}

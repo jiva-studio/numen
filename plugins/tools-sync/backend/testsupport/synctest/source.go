@@ -2,10 +2,13 @@ package synctest
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -21,7 +24,6 @@ type Source struct {
 	seed uint64
 }
 
-// NewSource returns the file at the path, of the size, whose bytes the seed fixes, last changed at modTime.
 func NewSource(path string, size int64, seed uint64, modTime time.Time) *Source {
 	s := &Source{stat: domain.FileStat{Path: path, Kind: "", Size: size, ModTime: modTime, FileID: 0, Hash: "", Version: 0}, seed: seed}
 	hasher := sha256.New()
@@ -33,13 +35,10 @@ func NewSource(path string, size int64, seed uint64, modTime time.Time) *Source 
 	return s
 }
 
-// GetStat returns what the host says of the file, with its hash.
 func (s *Source) GetStat() domain.FileStat { return s.stat }
 
-// GetPath returns the path of the file in the vault.
 func (s *Source) GetPath() string { return s.stat.Path }
 
-// GetBytes returns the bytes from start, at most length of them.
 func (s *Source) GetBytes(start, length int64) []byte {
 	end := min(start+length, s.stat.Size)
 	if start >= end {
@@ -60,10 +59,18 @@ func (s *Source) GetBytes(start, length int64) []byte {
 	return out
 }
 
-// ReadBytes answers a ranged read of the file as the host does: at most host.MaxReadBytes at once.
 func (s *Source) ReadBytes(_ context.Context, start, length int64) (host.ByteRange, error) {
 	if start < 0 || length < 1 || length > host.MaxReadBytes {
 		return host.ByteRange{}, fmt.Errorf("read %d bytes at %d: %w", length, start, host.ErrInvalidRange)
 	}
 	return host.ByteRange{Content: s.GetBytes(start, length), Stat: s.stat}, nil
+}
+
+func NewRandomText(t *testing.T, size int) string {
+	t.Helper()
+	raw := make([]byte, size*3/4)
+	if _, err := rand.Read(raw); err != nil {
+		t.Fatal(err)
+	}
+	return base64.StdEncoding.EncodeToString(raw)
 }

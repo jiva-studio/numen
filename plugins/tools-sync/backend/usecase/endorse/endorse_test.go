@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -31,7 +30,7 @@ type account struct {
 func newAccount(t *testing.T) *account {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	a := &account{server: server, clock: clock, words: words}
 	a.laptop = synctest.NewFirstComputer(t, server, clock, string(laptop), words)

@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func advanceEpoch(t *testing.T, c *synctest.Computer) {
@@ -37,7 +36,7 @@ func readKeys(t *testing.T, c *synctest.Computer, link vaultlink.Link) []vaultli
 }
 
 func TestSyncVault_NoteAddedAfterNewEpochIsCommittedWithKeyOfEpoch(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Eggs.md", "eggs")
 	sync(t, p.a, source)
 	advanceEpoch(t, p.a)
@@ -77,7 +76,7 @@ func keyOf(t *testing.T, keys []vaultlink.VaultKey, epoch uint32) [32]byte {
 
 func TestSyncVault_ADeviceLinkedAfterTheNewEpochReadsTheNotesOfBothPeriods(t *testing.T) {
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, string(source), words)
 	first.Connect(t, source)

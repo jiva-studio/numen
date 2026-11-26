@@ -249,7 +249,8 @@
         "**/*.go",
         "**/go.mod",
         "go.work",
-        "**/Makefile"
+        "**/Makefile",
+        "tools/checks/structure/go/deadcode/used-by-other-repositories.json"
       ],
       "tags": [
         "structure",

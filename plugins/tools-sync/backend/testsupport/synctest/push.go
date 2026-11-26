@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/watchchanges"
 )
 
-// WatchDeps are the dependencies of the stream of change hints, over the cloud of this computer.
 func (c *Computer) WatchDeps(waker ports.Waker) watchchanges.Deps {
 	return watchchanges.Deps{Hints: c.Cloud, Host: c.Host, Links: c.State, Waker: waker, Clock: c.Clock, Jitter: NewJitter(1)}
 }

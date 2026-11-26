@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const interval = 30 * time.Second
@@ -44,7 +43,7 @@ func hasHeadOf(t *testing.T, c *synctest.Computer, text string) func() bool {
 }
 
 func TestRunSync_RunsAPassOverEveryConnectedVaultAtStart(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 
 	startRun(t, p.a, nil)
@@ -53,7 +52,7 @@ func TestRunSync_RunsAPassOverEveryConnectedVaultAtStart(t *testing.T) {
 }
 
 func TestRunSync_RunsAPassAfterEachInterval(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	startRun(t, p.a, nil)
 	synctest.WaitUntil(t, "the first pass", hasHeadOf(t, p.a, "milk"))
@@ -68,7 +67,7 @@ func TestRunSync_RunsAPassAfterEachInterval(t *testing.T) {
 }
 
 func TestRunSync_RunsAPassAtOnceWhenFilesOfAConnectedVaultChange(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	changed := make(chan domain.VaultID, 1)
 	startRun(t, p.a, changed)
 	p.a.Clock.AwaitWait(t)
@@ -80,7 +79,7 @@ func TestRunSync_RunsAPassAtOnceWhenFilesOfAConnectedVaultChange(t *testing.T) {
 }
 
 func TestRunSync_WarnsWhileTheServerIsAwayAndWaitsTheSameIntervalEachTime(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	p.server.SetDown(true)
 	startRun(t, p.a, nil)
@@ -100,7 +99,7 @@ func TestRunSync_WarnsWhileTheServerIsAwayAndWaitsTheSameIntervalEachTime(t *tes
 }
 
 func TestRunSync_PassesOverNoVaultThatIsNotConnected(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.AddVault(t, "Plain")
 	p.a.WriteNote("Plain", "Private.md", "tea")
 	p.a.WriteNote(source, "Shopping list.md", "milk")
@@ -117,7 +116,7 @@ func TestRunSync_PassesOverNoVaultThatIsNotConnected(t *testing.T) {
 }
 
 func TestRunSync_AChangedVaultDoesNotDelayThePassOverEveryVault(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	changed := make(chan domain.VaultID, 1)
 	startRun(t, p.a, changed)
 	p.a.Clock.AwaitWait(t)
@@ -152,7 +151,7 @@ func findItem(c *synctest.Computer, key string) (health.Item, bool) {
 }
 
 func TestRunSync_NamesTheVaultAndTheReasonOfAFailedPassAndClearsThemOnSuccess(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	deps := p.a.RunDeps(interval, nil)
 	failing := &flakyPass{Pass: deps.Pass}
 	var missing error = vaultlink.FolderMissingError{Name: string(source), Path: "/notes/gone"}

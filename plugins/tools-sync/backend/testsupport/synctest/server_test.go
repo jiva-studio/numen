@@ -3,9 +3,6 @@ package synctest_test
 import (
 	"net/http"
 	"testing"
-
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func getStatus(t *testing.T, url string) int {
@@ -25,7 +22,7 @@ func getStatus(t *testing.T, url string) int {
 }
 
 func TestALostResponseWaitsOutTheTimeTheServerIsDown(t *testing.T) {
-	server := synctest.NewServer(t, synctest.NewClock(synctest.GetStart()), fakeserver.Config{})
+	server, _ := newBackend(t)
 	server.LoseNextResponse("/ping")
 	server.SetDown(true)
 	getStatus(t, server.URL+"/ping")

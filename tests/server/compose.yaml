@@ -1,6 +1,9 @@
 # The real sync server and what it needs, for the tests of Numen Sync. The two images are private; their digests are in stack.lock.
 # Bring it up with `make sync_stack_up`; `make sync_stack_env` prints the settings the tests read.
 # The ports are on 127.0.0.1 only. Development keys and passwords: this stack holds no real data.
+# The real server cannot delete uploaded files: a full test run leaves about 1.8 GB in the bucket, and the Docker disk fills. After a full run recreate the stand
+# empty with `make sync_stack_fresh PROJECT=<name> [COMPOSE=<file>]`; it names what it removes first and refuses to run without the project name.
+# A stand made from an older copy of this file lacks NUMEN_SYNC_LIMIT_REQUESTS_ENABLED=false (as the stand numen-dev does); recreating it from this file makes the link tests fast.
 name: numen-sync-test
 
 services:
@@ -20,6 +23,9 @@ services:
   bucket:
     image: versity/versitygw:v1.11.0@sha256:8319a530d08d537426e2f855bae5280709795dc73a3f0c347973ef915d6343c5
     command: ["--access", "numendev", "--secret", "numendevsecret", "--port", ":8790", "--region", "us-east-1", "posix", "--sidecar", "/meta", "/data"]
+    volumes:
+      - bucket-data:/data
+      - bucket-meta:/meta
     ports:
       - "127.0.0.1:8790:8790"
 
@@ -96,6 +102,7 @@ services:
       NUMEN_SYNC_LIMIT_ACCOUNTS_NEW_SOURCE_PER_HOUR: "100000"
       NUMEN_SYNC_LIMIT_ACCOUNTS_NEW_GLOBAL_PER_HOUR: "100000"
       NUMEN_SYNC_LIMIT_CHALLENGES_GLOBAL_PER_MINUTE: "100000"
+      NUMEN_SYNC_LIMIT_REQUESTS_ENABLED: "false"
       NUMEN_SYNC_EPOCH_SIGNING_KEY_FILE: /keys/epoch-signing-key
       NUMEN_SYNC_EPOCH_CERTIFICATE_FILE: /keys/epoch-certificate.json
     volumes: ["keys:/keys:ro"]
@@ -124,3 +131,5 @@ configs:
 
 volumes:
   keys:
+  bucket-data:
+  bucket-meta:

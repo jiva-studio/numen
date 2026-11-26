@@ -2,6 +2,7 @@
 package wiretest
 
 import (
+	"connectrpc.com/connect"
 	"google.golang.org/protobuf/proto"
 
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
@@ -19,3 +20,9 @@ func CloneCatalogEntry(entry *syncv1.CatalogEntry) *syncv1.CatalogEntry {
 	}
 	return cloned
 }
+
+// DecodeMessage fills the message from the bytes it takes on the wire.
+func DecodeMessage(data []byte, message proto.Message) error { return proto.Unmarshal(data, message) }
+
+// IsResourceExhausted reports whether the server refused the call for a limit it keeps.
+func IsResourceExhausted(err error) bool { return connect.CodeOf(err) == connect.CodeResourceExhausted }

@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func (p *pair) pauseRemovals(t *testing.T, count int) {
@@ -40,7 +39,7 @@ func (p *pair) wantPaused(t *testing.T, count int) {
 }
 
 func TestSyncVault_AnAnswerIsDroppedWhenThePersonRestoredTheFilesBeforeTheNextPass(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 20)
 	sync(t, p.a, source)
 	p.pauseRemovals(t, 8)
@@ -60,7 +59,7 @@ func TestSyncVault_AnAnswerIsDroppedWhenThePersonRestoredTheFilesBeforeTheNextPa
 }
 
 func TestSyncVault_AnAnswerIsNotUsedForRemovalsOfALaterDay(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 20)
 	sync(t, p.a, source)
 	p.pauseRemovals(t, 8)
@@ -73,7 +72,7 @@ func TestSyncVault_AnAnswerIsNotUsedForRemovalsOfALaterDay(t *testing.T) {
 }
 
 func TestSyncVault_AnAnswerForEightFilesDoesNotRemoveThirteen(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 20)
 	sync(t, p.a, source)
 	p.removeMany(8)

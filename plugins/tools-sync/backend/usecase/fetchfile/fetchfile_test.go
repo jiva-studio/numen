@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const guidePath = "Books/Guide.pdf"
@@ -214,7 +213,7 @@ func TestFetchFile_DamagedBytes_StoreHasNoFetchFiles(t *testing.T) {
 
 func TestFetchFile_PlacesAFileSealedAtALaterEpochOfTheVault(t *testing.T) {
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	computer := synctest.NewFirstComputer(t, server, clock, synctest.ComputerVault, words)
 	computer.Connect(t, synctest.ComputerVault)

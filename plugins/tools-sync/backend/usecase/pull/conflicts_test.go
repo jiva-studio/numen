@@ -14,10 +14,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
 )
 
-const (
-	list     = "Shopping list.md"
-	listCopy = "Shopping list (conflict 2026-11-23).md"
-)
+const list = "Shopping list.md"
+
+func getListCopy() string { return synctest.GetConflictCopy("Shopping list", 1) }
 
 // countingResolver counts the calls to the resolver it wraps.
 type countingResolver struct {
@@ -69,7 +68,7 @@ func TestPullChanges_SettlesANoteChangedOnBothComputersWithTheHeadAndACopyOfTheL
 	if text, _ := p.b.ReadNote(target, list); text != "bread" {
 		t.Errorf("note = %q, want the head bread", text)
 	}
-	if text, ok := p.b.ReadNote(target, listCopy); !ok || text != "eggs" {
+	if text, ok := p.b.ReadNote(target, getListCopy()); !ok || text != "eggs" {
 		t.Errorf("copy = %q (there: %v), want the local text eggs", text, ok)
 	}
 	if !slices.Equal(result.Resolved, []string{list}) || len(result.Conflicts) != 0 {
@@ -99,7 +98,7 @@ func TestPullChanges_KeepsNoRecordOfTheCopySoThePassSendsItAsANewFile(t *testing
 
 	p.pull(t, trustAll)
 
-	if _, ok := p.b.GetFileRow(t, target, listCopy); ok {
+	if _, ok := p.b.GetFileRow(t, target, getListCopy()); ok {
 		t.Error("the copy has a record, want a new local file with none")
 	}
 }
@@ -114,7 +113,7 @@ func TestPullChanges_SettlesANoteOnceAndMakesNoSecondCopyOnTheNextPull(t *testin
 	if len(again.Resolved) != 0 || len(again.Conflicts) != 0 {
 		t.Errorf("second pull = %+v, want nothing to settle", again)
 	}
-	if _, ok := p.b.ReadNote(target, "Shopping list (conflict 2026-11-23 2).md"); ok {
+	if _, ok := p.b.ReadNote(target, synctest.GetConflictCopy("Shopping list", 2)); ok {
 		t.Error("a second copy of the same text was made")
 	}
 }
@@ -131,10 +130,10 @@ func TestPullChanges_MakesANumberedCopyForASecondConflictAndKeepsTheFirstCopy(t 
 
 	p.pull(t, trustAll)
 
-	if text, _ := p.b.ReadNote(target, listCopy); text != "eggs" {
+	if text, _ := p.b.ReadNote(target, getListCopy()); text != "eggs" {
 		t.Errorf("first copy = %q, want eggs kept", text)
 	}
-	if text, _ := p.b.ReadNote(target, "Shopping list (conflict 2026-11-23 2).md"); text != "tea" {
+	if text, _ := p.b.ReadNote(target, synctest.GetConflictCopy("Shopping list", 2)); text != "tea" {
 		t.Errorf("second copy = %q, want tea", text)
 	}
 }
@@ -203,7 +202,7 @@ func TestPullChanges_KeepsTheNoteAndWarnsWhenTheResolverFails(t *testing.T) {
 	if row, _ := p.b.GetFileRow(t, target, list); row.BaseHash != note.Hash([]byte("milk")) {
 		t.Errorf("base = %s, want the hash of milk, unchanged", row.BaseHash)
 	}
-	if text, ok := p.b.ReadNote(target, listCopy); ok {
+	if text, ok := p.b.ReadNote(target, getListCopy()); ok {
 		t.Errorf("copy = %q, want none when the resolver failed", text)
 	}
 }
@@ -239,7 +238,7 @@ func TestPullChanges_MakesNoCopyOfAFileThatIsNotANote(t *testing.T) {
 
 	p.pull(t, trustAll)
 
-	if _, ok := p.b.ReadNote(target, "Papers/Report (conflict 2026-11-23).md"); ok {
+	if _, ok := p.b.ReadNote(target, synctest.GetConflictCopy("Papers/Report", 1)); ok {
 		t.Error("a copy of a file that is not a note was made")
 	}
 }
@@ -290,7 +289,7 @@ func TestPullChanges_MovesANoteChangedHereToTheNewPathWithItsChangeAndMakesNoCop
 	if len(result.Resolved) != 0 || len(result.Conflicts) != 0 {
 		t.Errorf("result = %+v, want no copy and no hold", result)
 	}
-	if _, ok := p.b.ReadNote(target, "Groceries (conflict 2026-11-23).md"); ok {
+	if _, ok := p.b.ReadNote(target, synctest.GetConflictCopy("Groceries", 1)); ok {
 		t.Error("a conflict copy of a note renamed on one computer was made")
 	}
 }
@@ -343,7 +342,7 @@ func TestPullChanges_SettlesANoteMovedOntoAPathTheLocalNoteHasWithTheHeadAndACop
 	if text, _ := p.b.ReadNote(target, "Groceries.md"); text != "milk" {
 		t.Errorf("note at the new path = %q, want the head milk", text)
 	}
-	if text, ok := p.b.ReadNote(target, "Groceries (conflict 2026-11-23).md"); !ok || text != "eggs" {
+	if text, ok := p.b.ReadNote(target, synctest.GetConflictCopy("Groceries", 1)); !ok || text != "eggs" {
 		t.Errorf("copy = %q (there: %v), want the local text eggs", text, ok)
 	}
 	if len(result.Conflicts) != 0 || !slices.Contains(result.Resolved, "Groceries.md") {
@@ -384,7 +383,7 @@ func TestPullChanges_KeepsANoteChangedHereAndRemovedThereWithNoResolveAndNoCopy(
 	if resolver.calls != 0 || len(result.Resolved) != 0 || len(result.Conflicts) != 0 {
 		t.Errorf("%d resolver calls and result %+v, want none: a removal holds no text", resolver.calls, result)
 	}
-	if _, ok := p.b.ReadNote(target, listCopy); ok {
+	if _, ok := p.b.ReadNote(target, getListCopy()); ok {
 		t.Error("a conflict copy was made against a removal")
 	}
 }
@@ -402,7 +401,7 @@ func TestPullChanges_RestoresANoteRemovedHereAndChangedThereWithNoResolveAndNoCo
 	if text, ok := p.b.ReadNote(target, list); !ok || text != "bread" {
 		t.Errorf("note = %q (there: %v), want the change of the other computer", text, ok)
 	}
-	if _, ok := p.b.ReadNote(target, listCopy); ok || resolver.calls != 0 {
+	if _, ok := p.b.ReadNote(target, getListCopy()); ok || resolver.calls != 0 {
 		t.Errorf("copy there: %v with %d resolver calls, want none", ok, resolver.calls)
 	}
 }
@@ -410,14 +409,14 @@ func TestPullChanges_RestoresANoteRemovedHereAndChangedThereWithNoResolveAndNoCo
 func TestPullChanges_CreatesNoSecondCopyWhenARunFailedAfterTheCopyWasCreated(t *testing.T) {
 	p := newPair(t)
 	p.conflictOn(t, list, "bread", "eggs")
-	p.b.WriteNote(target, listCopy, "eggs")
+	p.b.WriteNote(target, getListCopy(), "eggs")
 
 	p.pull(t, trustAll)
 
 	if text, _ := p.b.ReadNote(target, list); text != "bread" {
 		t.Errorf("note = %q, want the head bread", text)
 	}
-	if _, ok := p.b.ReadNote(target, "Shopping list (conflict 2026-11-23 2).md"); ok {
+	if _, ok := p.b.ReadNote(target, synctest.GetConflictCopy("Shopping list", 2)); ok {
 		t.Error("a second copy of the same text was made")
 	}
 }

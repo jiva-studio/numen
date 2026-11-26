@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// Clock is the clock of the plugin set by hand: a wait ends when Advance moves the clock past it.
 type Clock struct {
 	mu      sync.Mutex
 	now     time.Time
@@ -23,24 +22,20 @@ type waiter struct {
 	done chan struct{}
 }
 
-// NewClock returns a clock that reads now until it is moved.
 func NewClock(now time.Time) *Clock {
 	return &Clock{mu: sync.Mutex{}, now: now, waiters: nil, arrived: make(chan time.Duration, 64)}
 }
 
-// GetStart is the time the tests start their clocks at.
 func GetStart() time.Time {
 	return time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC)
 }
 
-// Now returns the time of the clock.
 func (c *Clock) Now() time.Time {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.now
 }
 
-// Wait returns after d on this clock, or with the error of ctx when it ends first.
 func (c *Clock) Wait(ctx context.Context, d time.Duration) error {
 	c.mu.Lock()
 	w := &waiter{end: c.now.Add(d), done: make(chan struct{})}
@@ -58,7 +53,6 @@ func (c *Clock) Wait(ctx context.Context, d time.Duration) error {
 	}
 }
 
-// Advance moves the clock on and ends the waits that fall due.
 func (c *Clock) Advance(d time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -74,26 +68,28 @@ func (c *Clock) Advance(d time.Duration) {
 	c.waiters = kept
 }
 
-// Set moves the clock to now without ending any wait.
 func (c *Clock) Set(now time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.now = now
 }
 
-// AwaitWait blocks until a use case waits on the clock and returns how long it waits.
 func (c *Clock) AwaitWait(tb testing.TB) time.Duration {
+	tb.Helper()
+	return c.AwaitWaitWithin(tb, 5*time.Second)
+}
+
+func (c *Clock) AwaitWaitWithin(tb testing.TB, limit time.Duration) time.Duration {
 	tb.Helper()
 	select {
 	case d := <-c.arrived:
 		return d
-	case <-time.After(5 * time.Second):
+	case <-time.After(limit):
 		tb.Fatal("the use case started no wait")
 		return 0
 	}
 }
 
-// WaitUntil polls the condition until it holds, and fails the test when it does not hold in five seconds.
 func WaitUntil(tb testing.TB, what string, condition func() bool) {
 	tb.Helper()
 	timeout := time.After(5 * time.Second)

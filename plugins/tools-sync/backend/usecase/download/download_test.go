@@ -21,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -38,7 +37,7 @@ type world struct {
 
 func newWorld(t *testing.T) *world {
 	t.Helper()
-	p := synctest.NewPair(t, fakeserver.Config{})
+	p := synctest.NewPair(t)
 	return &world{p: p, vault: p.GetVault(t), use: syncwire.NewDownloads(p.B.WireDeps())}
 }
 

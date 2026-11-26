@@ -5,12 +5,11 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func newFolderJoinPair(t *testing.T) *pair {
 	t.Helper()
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	sync(t, p.a, source)
 	return p
@@ -53,7 +52,7 @@ func TestSyncVault_KeepsBothTextsOfANoteThatDiffersWhenAFolderJoins(t *testing.T
 	sync(t, p.b, target)
 
 	wantNote(t, p.b, target, "Shopping list.md", "milk")
-	wantNote(t, p.b, target, "Shopping list (conflict "+synctest.GetStart().Format("2006-01-02")+").md", "bread")
+	wantNote(t, p.b, target, synctest.GetConflictCopy("Shopping list", 1), "bread")
 }
 
 func TestSyncVault_SendsTheConflictNoteOfAJoinedFolderToTheOtherComputer(t *testing.T) {
@@ -64,5 +63,5 @@ func TestSyncVault_SendsTheConflictNoteOfAJoinedFolderToTheOtherComputer(t *test
 	sync(t, p.a, source)
 
 	wantNote(t, p.a, source, "Shopping list.md", "milk")
-	wantNote(t, p.a, source, "Shopping list (conflict "+synctest.GetStart().Format("2006-01-02")+").md", "bread")
+	wantNote(t, p.a, source, synctest.GetConflictCopy("Shopping list", 1), "bread")
 }

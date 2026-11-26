@@ -13,11 +13,15 @@ var errOffline = errors.New("this computer is offline")
 type link struct {
 	isOffline    atomic.Bool
 	origin, dial string
+	server       *Server
 }
 
 func (l *link) RoundTrip(r *http.Request) (*http.Response, error) {
 	if l.isOffline.Load() {
 		return nil, errOffline
+	}
+	if l.server != nil && l.server.isBlobHost(r.URL.Host) {
+		return l.server.roundTripBlob(r)
 	}
 	if l.dial != "" && r.URL.Host == l.origin {
 		r = r.Clone(r.Context())
@@ -26,8 +30,6 @@ func (l *link) RoundTrip(r *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(r)
 }
 
-// GoOffline makes every request of this computer to the server fail until GoOnline.
 func (c *Computer) GoOffline() { c.network.isOffline.Store(true) }
 
-// GoOnline lets the requests of this computer reach the server again.
 func (c *Computer) GoOnline() { c.network.isOffline.Store(false) }

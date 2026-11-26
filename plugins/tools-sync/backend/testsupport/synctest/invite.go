@@ -3,7 +3,6 @@ package synctest
 import (
 	"context"
 	"crypto/rand"
-	"net/http"
 	"testing"
 	"time"
 
@@ -20,12 +19,11 @@ const eventuallyLimit = 10 * time.Second
 // computer. They share the hub, so a link made through one set of use cases is found by the others.
 func (c *Computer) NewInviteDeps(hub *shareinvite.Hub) shareinvite.Deps {
 	return shareinvite.Deps{
-		Relay: syncclient.NewLinkClient(c.Server.URL, http.DefaultClient), Health: c.NewHealth(), Clock: c.Clock, Identity: c.Account,
+		Relay: syncclient.NewLinkClient(c.Server.URL, c.Server.NewHTTP()), Health: c.NewHealth(), Clock: c.Clock, Identity: c.Account,
 		Device: device.Host{}, Sharing: sharewire.NewFolderSharer(c.ShareDeps()), Receiving: sharewire.NewInvitationReceiver(c.ReceiveDeps()), Random: rand.Reader, Server: c.Server.URL, Hub: hub,
 	}
 }
 
-// StartInviteCourier runs the courier of the links of this computer until the test ends, and returns the deps it works for.
 func (c *Computer) StartInviteCourier(t *testing.T) shareinvite.Deps {
 	t.Helper()
 	hub := shareinvite.NewHub()
@@ -45,13 +43,11 @@ func (c *Computer) StartInviteCourier(t *testing.T) shareinvite.Deps {
 	return deps
 }
 
-// NewInvites returns the methods of the view about sharing by a link, with the courier running.
 func (c *Computer) NewInvites(t *testing.T) *invitewire.Invites {
 	t.Helper()
 	return invitewire.New(c.StartInviteCourier(t))
 }
 
-// AwaitCondition waits until the condition holds, as the couriers work in the background, and fails the test when it does not.
 func AwaitCondition(t *testing.T, what string, condition func() bool) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(t.Context(), eventuallyLimit)

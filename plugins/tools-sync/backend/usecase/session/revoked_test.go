@@ -1,7 +1,6 @@
 package session_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"testing"
@@ -10,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 // revokedPair is an account of two computers on a server, where the first has revoked the second.
@@ -23,7 +21,7 @@ type revokedPair struct {
 func newRevokedPair(t *testing.T) *revokedPair {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)
@@ -42,10 +40,8 @@ func newRevokedPair(t *testing.T) *revokedPair {
 func TestAServerEndsTheSessionOfARevokedDeviceAndRefusesItsSignIn(t *testing.T) {
 	p := newRevokedPair(t)
 
-	for _, one := range p.server.Fake.ListSessions() {
-		if bytes.Equal(one.DeviceSignKey, p.second.Fake.Public().DeviceSignKey) {
-			t.Error("the revoked device still has a session")
-		}
+	if p.second.HasSession(t) {
+		t.Error("the revoked device still has a session")
 	}
 	err := p.second.SignIn(t.Context())
 

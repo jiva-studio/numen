@@ -22,7 +22,6 @@ type relayConn struct {
 	mu       sync.Mutex
 }
 
-// NewRelay starts a relay to the host of the address (as http://host:port) and stops it when the test ends.
 func NewRelay(t *testing.T, address string) *Relay {
 	t.Helper()
 	target := address[len("http://"):]
@@ -40,7 +39,6 @@ func NewRelay(t *testing.T, address string) *Relay {
 	return r
 }
 
-// Pause makes every open connection discard the bytes it receives.
 func (r *Relay) Pause() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -96,4 +94,10 @@ func closeQuietly(conn net.Conn) {
 	if err := conn.Close(); err != nil {
 		return
 	}
+}
+
+func (r *Relay) CountConns() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.conns)
 }

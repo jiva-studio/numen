@@ -6,12 +6,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/service"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func TestSharing_AFolderReachesAReaderByALinkThroughTheMethodsOfTheView(t *testing.T) {
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	owner := synctest.NewFirstComputer(t, server, clock, "Test", synctest.NewWords(t))
 	owner.Connect(t, "Test")
 	owner.WriteNote("Test", "Food/Soup.md", "carrots")

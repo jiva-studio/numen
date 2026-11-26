@@ -12,14 +12,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/watchchanges"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
 	source           domain.VaultID = "Source"
 	target           domain.VaultID = "Target"
 	retryWait                       = 3 * time.Second
-	heartbeat                       = 2 * time.Second
+	heartbeat                       = 20 * time.Second
 	silenceWait                     = 3 * heartbeat
 	longestRetryWait                = 2 * time.Minute
 )
@@ -33,7 +32,7 @@ type world struct {
 func newWorld(t *testing.T) *world {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{Heartbeat: heartbeat})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	a := synctest.NewFirstComputer(t, server, clock, string(source), words)
 	a.Connect(t, source)
@@ -73,10 +72,10 @@ func startWith(t *testing.T, deps watchchanges.Deps) *running {
 	return run
 }
 
-func (w *world) streams() int { return w.server.Fake.CountStreams() }
+func (w *world) streams() int { return w.server.CountStreams() }
 
 func (w *world) countOpenings() int {
-	return w.server.Fake.CountCalls(syncv1connect.WatchServiceWatchChangesProcedure)
+	return w.server.CountCalls(syncv1connect.WatchServiceWatchChangesProcedure)
 }
 
 func (w *world) awaitStream(t *testing.T) {
@@ -95,7 +94,7 @@ func (w *world) commitOnA(t *testing.T, text string) {
 func awaitWaitOf(t *testing.T, c *synctest.Clock, want time.Duration) {
 	t.Helper()
 	for {
-		if got := c.AwaitWait(t); got == want {
+		if got := c.AwaitWaitWithin(t, 30*time.Second); got == want {
 			return
 		}
 	}
@@ -152,7 +151,7 @@ func TestWatchChanges_WakesAfterTheReopenForACommitMadeWhileTheStreamWasDown(t *
 	w := newWorld(t)
 	start(t, w.b, w.b.Cloud, w.wakes)
 	w.awaitStream(t)
-	w.server.Fake.EndStreams()
+	w.server.EndStreams()
 	awaitWaitOf(t, w.b.Clock, retryWait)
 	if got := w.countOpenings(); got != 1 {
 		t.Fatalf("opens before the retry wait ended = %d, want 1", got)
@@ -192,8 +191,9 @@ func TestWatchChanges_WaitsTheShortRetryWaitAgainOnceTheStreamOpens(t *testing.T
 	w.server.SetDown(false)
 	w.b.Clock.Advance(4 * retryWait)
 	w.awaitStream(t)
+	awaitWaitOf(t, w.b.Clock, silenceWait)
 
-	w.server.Fake.EndStreams()
+	w.server.EndStreams()
 
 	awaitWaitOf(t, w.b.Clock, retryWait)
 }
@@ -216,13 +216,13 @@ func TestWatchChanges_ReopensTheStreamAfterAThreeHeartbeatsOfSilence(t *testing.
 	w := newWorld(t)
 	relay := synctest.NewRelay(t, w.server.URL)
 	start(t, w.b, w.b.NewCloud(relay.URL, w.b.SignIn), w.wakes)
-	w.awaitStream(t)
+	synctest.WaitUntil(t, "the stream through the relay", func() bool { return relay.CountConns() == 1 })
 	awaitWaitOf(t, w.b.Clock, silenceWait)
 	relay.Pause()
 
 	synctest.WaitUntil(t, "the second open", func() bool {
 		w.b.Clock.Advance(silenceWait)
-		return w.countOpenings() == 2
+		return relay.CountConns() == 2
 	})
 }
 
@@ -249,7 +249,7 @@ func TestWatchChanges_SignsInOnceAndOpensAgainWhenTheOpenIsRefusedForWantOfASess
 		refreshes.Add(1)
 		return w.b.SignIn(ctx)
 	})
-	w.server.Fake.EndSessions(nil)
+	w.server.EndSessions()
 
 	start(t, w.b, hints, w.wakes)
 
@@ -266,7 +266,7 @@ func TestWatchChanges_WaitsTheRetryWaitWhenTheSecondOpenIsRefusedToo(t *testing.
 		refreshes.Add(1)
 		return nil
 	})
-	w.server.Fake.EndSessions(nil)
+	w.server.EndSessions()
 
 	start(t, w.b, hints, w.wakes)
 

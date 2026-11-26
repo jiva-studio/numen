@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const vault domain.VaultID = "Test"
@@ -22,7 +21,7 @@ const vault domain.VaultID = "Test"
 func newComputer(t *testing.T) *synctest.Computer {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	return synctest.NewFirstComputer(t, server, clock, string(vault), synctest.NewWords(t))
 }
 

@@ -3,7 +3,7 @@ name: Live
 # The tests that need the real sync server, started from its private images (tests/server): the Go
 # tests of plugins/tools-sync and the acceptance scenarios tagged @live. Called by ci.yml with the
 # area a change touches. GitHub gives a pull request from a fork or from Dependabot no access to the private packages,
-# and tests/server/stack.lock holds no digests until numen-cloud publishes the images: the job then
+# and tests/server/stack.lock holds no digests until the images of the real server are published: the job then
 # runs no test and says so in its summary. It never uploads the images or prints the server log
 # unfiltered.
 on:

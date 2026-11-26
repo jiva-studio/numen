@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/accountdata"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 type deletingPair struct {
@@ -19,7 +18,7 @@ type deletingPair struct {
 func newDeletingPair(t *testing.T) *deletingPair {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	first := synctest.NewFirstComputer(t, server, clock, "Test", words)
 	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)

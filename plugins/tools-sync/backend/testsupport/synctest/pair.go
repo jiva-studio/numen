@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -15,7 +14,6 @@ const (
 	SecondVault domain.VaultID = "Copy"
 )
 
-// Pair is two computers of one person on one server.
 type Pair struct {
 	Server *Server
 	Clock  *Clock
@@ -25,10 +23,10 @@ type Pair struct {
 
 // NewPair returns the first and the second computer, each with its vault, the second tied to the synced vault of the
 // first.
-func NewPair(t *testing.T, cfg fakeserver.Config) *Pair {
+func NewPair(t *testing.T) *Pair {
 	t.Helper()
 	clock := NewClock(GetStart())
-	server := NewServer(t, clock, cfg)
+	server := NewServer(t, clock)
 	words := NewWords(t)
 	a := NewFirstComputer(t, server, clock, string(FirstVault), words)
 	a.Connect(t, FirstVault)
@@ -37,7 +35,6 @@ func NewPair(t *testing.T, cfg fakeserver.Config) *Pair {
 	return &Pair{Server: server, Clock: clock, A: a, B: b}
 }
 
-// GetVault returns the synced vault the two computers share, with its key.
 func (p *Pair) GetVault(t *testing.T) transfer.Vault {
 	t.Helper()
 	return transfer.Vault{ID: p.A.GetRemoteID(t, FirstVault), Key: p.A.GetVaultKey(t, FirstVault), Later: nil}

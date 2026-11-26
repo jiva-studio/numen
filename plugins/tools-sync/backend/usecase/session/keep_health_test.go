@@ -79,3 +79,7 @@ func TestKeep_RestoreWaitsForTheSignInThatClearsTheItems(t *testing.T) {
 		t.Fatalf("%d clears ran at once", most)
 	}
 }
+
+func start() time.Time {
+	return time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
+}

@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 	"github.com/jiva-studio/numen/tools/syncserver/wiretest"
 )
 
@@ -28,12 +27,17 @@ type pair struct {
 	a, b   *synctest.Computer
 }
 
-func newPair(t *testing.T, cfg fakeserver.Config) *pair {
+func newPair(t *testing.T) *pair {
+	t.Helper()
+	return newPairOnPlan(t, synctest.DefaultPlan)
+}
+
+func newPairOnPlan(t *testing.T, plan string) *pair {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, cfg)
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
-	a := synctest.NewFirstComputer(t, server, clock, string(source), words)
+	a := synctest.NewFirstComputerOnPlan(t, server, clock, string(source), words, plan)
 	a.Connect(t, source)
 	b := synctest.NewSecondComputer(t, server, clock, string(target), words)
 	b.ConnectExisting(t, target, a.Link(t, source).RemoteVaultID)
@@ -55,7 +59,7 @@ func wantNote(t *testing.T, c *synctest.Computer, id domain.VaultID, path, text 
 }
 
 func TestSyncVault_ABrandNewNoteAppearsOnTheSecondComputer(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 
 	sync(t, p.a, source)
@@ -69,7 +73,7 @@ func TestSyncVault_ABrandNewNoteAppearsOnTheSecondComputer(t *testing.T) {
 }
 
 func TestSyncVault_AChangedNoteChangesOnTheSecondComputer(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -87,7 +91,7 @@ func TestSyncVault_AChangedNoteChangesOnTheSecondComputer(t *testing.T) {
 }
 
 func TestSyncVault_ANoteInAFolderKeepsItsFolder(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Food/Shopping list.md", "eggs")
 
 	sync(t, p.a, source)
@@ -97,7 +101,7 @@ func TestSyncVault_ANoteInAFolderKeepsItsFolder(t *testing.T) {
 }
 
 func TestSyncVault_ANoteFromTheSecondComputerAppearsOnTheFirst(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.b.WriteNote(target, "Plan.md", "tea")
 
 	sync(t, p.b, target)
@@ -111,7 +115,7 @@ func TestSyncVault_ANoteFromTheSecondComputerAppearsOnTheFirst(t *testing.T) {
 
 func TestSyncVault_UploadsTheNotesThatWereThereBeforeTheVaultWasConnected(t *testing.T) {
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	a := synctest.NewFirstComputer(t, server, clock, string(source), words)
 	a.WriteNote(source, "Shopping list.md", "milk")
@@ -128,26 +132,26 @@ func TestSyncVault_UploadsTheNotesThatWereThereBeforeTheVaultWasConnected(t *tes
 }
 
 func TestSyncVault_DoesNotSendANoteBackThatItWroteItself(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	sync(t, p.a, source)
 	sync(t, p.b, target)
 	p.b.Vaults.With(target).Reindex()
-	reserved := p.server.Fake.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure)
-	committed := p.server.Fake.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure)
+	reserved := p.server.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure)
+	committed := p.server.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure)
 
 	sync(t, p.b, target)
 
-	if got := p.server.Fake.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure); got != reserved {
+	if got := p.server.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure); got != reserved {
 		t.Errorf("reservations grew from %d to %d, want none for a note the pull wrote", reserved, got)
 	}
-	if got := p.server.Fake.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure); got != committed {
+	if got := p.server.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure); got != committed {
 		t.Errorf("commits grew from %d to %d, want none for a note the pull wrote", committed, got)
 	}
 }
 
 func TestSyncVault_AFileThatIsNotANoteAppearsOnTheSecondComputerAsItIs(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Papers/Report.pdf", "%PDF-1.7 bytes")
 
 	sync(t, p.a, source)
@@ -161,7 +165,7 @@ func TestSyncVault_AFileThatIsNotANoteAppearsOnTheSecondComputerAsItIs(t *testin
 }
 
 func TestSyncVault_SendsNoFileThatIsNotThePersons(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Papers/Report.pdf.part", "half")
 	p.a.WriteNote(source, "Papers/~$Report.docx", "lock")
 	p.a.WriteNote(source, "Shopping list.md", "milk")
@@ -181,12 +185,12 @@ func TestSyncVault_SendsNoFileThatIsNotThePersons(t *testing.T) {
 }
 
 func TestSyncVault_ShowsTheServerNoPlainTextOfTheVault(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	sync(t, p.a, source)
 	sync(t, p.b, target)
 
-	wire := bytes.Clone(p.server.GetStoredBlobs(t))
+	wire := bytes.Clone(p.a.ReadStoredBlobs(t))
 	for _, entry := range p.a.ReadCatalog(t) {
 		raw, err := wiretest.EncodeMessage(entry)
 		if err != nil {
@@ -210,7 +214,7 @@ func TestSyncVault_ShowsTheServerNoPlainTextOfTheVault(t *testing.T) {
 }
 
 func TestSyncVault_CountsTheNotesChangedOnTwoComputers(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	for _, path := range []string{"One.md", "Two.md"} {
 		p.a.WriteNote(source, path, "milk")
 	}
@@ -230,7 +234,7 @@ func TestSyncVault_CountsTheNotesChangedOnTwoComputers(t *testing.T) {
 }
 
 func TestSyncVault_ANoteMadeWhileTheServerIsAwayArrivesLater(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.server.SetDown(true)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 
@@ -246,7 +250,7 @@ func TestSyncVault_ANoteMadeWhileTheServerIsAwayArrivesLater(t *testing.T) {
 }
 
 func TestSyncVault_ConvergesAfterTheResponseOfACommitIsLost(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	p.server.LoseNextResponse("/CommitRevisions")
 
@@ -269,8 +273,9 @@ func TestSyncVault_ConvergesAfterTheResponseOfACommitIsLost(t *testing.T) {
 }
 
 func TestSyncVault_WarnsThatTheCloudStorageIsFullAndUploadsNothing(t *testing.T) {
-	p := newPair(t, fakeserver.Config{QuotaBytes: 3000})
-	p.a.WriteNote(source, "Shopping list.md", "milk")
+	p := newPairOnPlan(t, "prod_tiny")
+	text := synctest.NewRandomText(t, 2<<20)
+	p.a.WriteNote(source, "Shopping list.md", text)
 
 	sync(t, p.a, source)
 
@@ -280,11 +285,11 @@ func TestSyncVault_WarnsThatTheCloudStorageIsFullAndUploadsNothing(t *testing.T)
 	if got := len(p.a.ReadChanges(t, p.a.GetRemoteID(t, source))); got != 0 {
 		t.Errorf("server holds %d revisions, want none", got)
 	}
-	wantNote(t, p.a, source, "Shopping list.md", "milk")
+	wantNote(t, p.a, source, "Shopping list.md", text)
 }
 
 func TestSyncVault_FollowsTheNewNameOfTheVault(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	if _, err := p.a.Vaults.RenameVault(t.Context(), source, "Work"); err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +310,7 @@ func TestSyncVault_FollowsTheNewNameOfTheVault(t *testing.T) {
 }
 
 func TestSyncVault_RefusesAVaultThatIsNotConnected(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.AddVault(t, "Plain")
 
 	err := p.a.Sync(t.Context(), "Plain")
@@ -316,7 +321,7 @@ func TestSyncVault_RefusesAVaultThatIsNotConnected(t *testing.T) {
 }
 
 func TestSyncVault_KeepsOneHeadForANoteChangedInManyPasses(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	for i := range 3 {
 		p.a.WriteNote(source, "Shopping list.md", fmt.Sprintf("round %d", i))
 		sync(t, p.a, source)
@@ -330,8 +335,8 @@ func TestSyncVault_KeepsOneHeadForANoteChangedInManyPasses(t *testing.T) {
 }
 
 func TestSyncVault_APassOverAnotherVaultKeepsTheWarningAboutFullStorage(t *testing.T) {
-	p := newPair(t, fakeserver.Config{QuotaBytes: 3000})
-	p.a.WriteNote(source, "Shopping list.md", "milk")
+	p := newPairOnPlan(t, "prod_tiny")
+	p.a.WriteNote(source, "Shopping list.md", synctest.NewRandomText(t, 2<<20))
 	p.a.AddVault(t, "Plain")
 	p.a.Connect(t, "Plain")
 	sync(t, p.a, source)
@@ -353,7 +358,7 @@ func sealKeyForAnotherIdentity(t *testing.T, c *synctest.Computer, id domain.Vau
 }
 
 func TestSyncVault_AVaultWhoseKeyBelongsToAnotherIdentityIsRegisteredAgainAndUploads(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	old := p.a.Link(t, source).RemoteVaultID
 	sealKeyForAnotherIdentity(t, p.a, source)
 	p.a.WriteNote(source, "a.md", "kept")
@@ -376,7 +381,7 @@ func TestSyncVault_AVaultWhoseKeyBelongsToAnotherIdentityIsRegisteredAgainAndUpl
 }
 
 func TestConnectVault_SyncThisVaultRegistersAgainWithAFreshKey(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	old := p.a.Link(t, source).RemoteVaultID
 	sealKeyForAnotherIdentity(t, p.a, source)
 

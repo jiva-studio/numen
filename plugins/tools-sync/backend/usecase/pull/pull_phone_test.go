@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/fetchfile"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -23,7 +22,7 @@ const (
 func newPhonePair(t *testing.T) *pair {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	words := synctest.NewWords(t)
 	a := synctest.NewFirstComputer(t, server, clock, source, words)
 	a.Connect(t, source)
@@ -35,7 +34,7 @@ func newPhonePair(t *testing.T) *pair {
 func getHeavy() string { return strings.Repeat("g", heavySize) }
 
 func countBlobURLCalls(p *pair) int {
-	return p.server.Fake.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure)
+	return p.server.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure)
 }
 
 func TestPullChanges_ListsAHeavyFileAsAbsentAndDownloadsNothingOnAPhone(t *testing.T) {

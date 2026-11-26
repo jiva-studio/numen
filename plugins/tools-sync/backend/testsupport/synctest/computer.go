@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
@@ -83,10 +82,8 @@ func (h Host) GetAbsent(id domain.VaultID) ports.Absent {
 	return h.Names.GetAbsent(id, h.Root.With(id), h.Root.With(id))
 }
 
-// Store returns the store folder of the plugin in the vault.
 func (h Host) Store(id domain.VaultID) ports.Store { return h.Root.Store().With(id) }
 
-// Transfers returns what the host does with the bytes of the files of the vault.
 func (h Host) GetTransfers(id domain.VaultID) ports.Transfers {
 	if h.Names == nil {
 		return h.Root.With(id)
@@ -113,6 +110,7 @@ type Computer struct {
 	Folders   *folders.ReceivedFolders
 	LazyHeavy bool
 
+	subscriptions  ports.Subscriptions
 	network        *link
 	healthEndpoint hostcall.Endpoint
 	token          atomic.Value
@@ -121,19 +119,29 @@ type Computer struct {
 	retries        *pull.Retries
 }
 
-// NewWords makes recovery words that identify one account.
 func NewWords(t *testing.T) []string {
 	t.Helper()
-	words, err := identity.NewRecoveryWords(rand.Reader)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return words.List()
+	return NewWordsFor(t, NewLabel(t))
 }
 
-// NewFirstComputer makes a computer whose identity is the one the words recover, with a vault of the name, and
-// signs it in: the account does not exist on the server before this call.
+// DefaultPlan is the plan a first computer buys, the cheapest of the payment stand-in.
+const DefaultPlan = "prod_basic"
+
+// NewFirstComputer makes a computer whose identity is the one the words recover, with a vault of the name, signs it in and
+// buys the default plan: the account does not exist on the server before this call.
 func NewFirstComputer(t *testing.T, server *Server, clock *Clock, vault string, words []string) *Computer {
+	t.Helper()
+	return NewFirstComputerOnPlan(t, server, clock, vault, words, DefaultPlan)
+}
+
+func NewFirstComputerOnPlan(t *testing.T, server *Server, clock *Clock, vault string, words []string, plan string) *Computer {
+	t.Helper()
+	c := NewUnsubscribedComputer(t, server, clock, vault, words)
+	c.Subscribe(t, server.Stack, plan)
+	return c
+}
+
+func NewUnsubscribedComputer(t *testing.T, server *Server, clock *Clock, vault string, words []string) *Computer {
 	t.Helper()
 	c := newComputer(t, server, clock, vault)
 	c.Fake.StartRestore(words)
@@ -192,14 +200,14 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	client := account.NewClient(accountEndpoint)
 	root := hosttest.New(vault)
 	host := Host{Root: root, Names: vaultnames.New()}
-	network := &link{isOffline: atomic.Bool{}, origin: server.origin, dial: server.dial}
+	network := &link{isOffline: atomic.Bool{}, origin: server.origin, dial: server.dial, server: server}
 	web := &http.Client{Transport: network}
 	receivedRoot := t.TempDir()
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: host, Notes: host,
 		Cloud: nil, Roots: server.getRoots(), State: nil,
 		LazyHeavy: false, Folders: folders.NewReceivedFolders(func() string { return receivedRoot }), token: atomic.Value{},
-		network: network, downloadsOnce: sync.Once{}, downloads: nil, retries: pull.NewRetries(),
+		network: network, downloadsOnce: sync.Once{}, downloads: nil, retries: pull.NewRetries(), subscriptions: nil,
 		Account:        accountadapter.New(client),
 		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,
@@ -218,7 +226,6 @@ func (c *Computer) getToken() string {
 	return token
 }
 
-// SignIn signs this computer in to the server with its identity and keeps the session token for the calls.
 func (c *Computer) SignIn(ctx context.Context) error {
 	public, err := c.Account.GetPublicIdentity(ctx)
 	if err != nil {
@@ -249,12 +256,10 @@ func (c *Computer) AddVault(t *testing.T, name string) {
 	}
 }
 
-// NewHTTP returns a client over the network link of this computer.
 func (c *Computer) NewHTTP() *http.Client { return &http.Client{Transport: c.network} }
 
 func (c *Computer) NewHealth() *health.Client { return health.NewClient(c.healthEndpoint) }
 
-// CatalogDeps are the dependencies of the catalog use cases.
 func (c *Computer) CatalogDeps() catalog.Deps {
 	return catalog.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Journals: c.State,
@@ -262,12 +267,10 @@ func (c *Computer) CatalogDeps() catalog.Deps {
 	}
 }
 
-// LocalChangesDeps are the dependencies of the scan of local changes.
 func (c *Computer) LocalChangesDeps() localchanges.Deps {
 	return localchanges.Deps{Host: c.Host, State: c.State, Clock: c.Clock}
 }
 
-// WireDeps are the dependencies of the pass and of the transfers of files of any size.
 func (c *Computer) WireDeps() syncwire.Deps {
 	uploader := cloud.NewUploader(c.Cloud, c.Clock.Now)
 	wired := syncwire.Deps{
@@ -281,7 +284,6 @@ func (c *Computer) WireDeps() syncwire.Deps {
 	return wired
 }
 
-// CommitDeps are the dependencies of the commit of revisions.
 func (c *Computer) CommitDeps() commit.Deps {
 	wired := c.WireDeps()
 	uploads := upload.NewUploadFile(upload.Deps{
@@ -290,7 +292,6 @@ func (c *Computer) CommitDeps() commit.Deps {
 	return commit.Deps{Revisions: c.Cloud, Blobs: c.Cloud, Identity: c.Account, Crypto: c.Account, Uploads: uploads, Random: rand.Reader}
 }
 
-// PullDeps are the dependencies of the pull of changes.
 func (c *Computer) PullDeps() pull.Deps {
 	wired := c.WireDeps()
 	return pull.Deps{
@@ -300,32 +301,27 @@ func (c *Computer) PullDeps() pull.Deps {
 	}
 }
 
-// JoinDeps are the dependencies of the join of an existing account.
 func (c *Computer) JoinDeps() join.Deps {
 	return join.Deps{Identity: c.Account, Server: c.Sessions}
 }
 
-// SyncDeps are the dependencies of the pass over one vault and of the loop over the vaults.
 func (c *Computer) SyncDeps() syncvault.Deps {
 	return syncvault.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
-		Host: c.Host, Notes: c.Notes, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud, Shop: c.Cloud,
+		Host: c.Host, Notes: c.Notes, State: c.State, Progress: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.getSubscriptions(), Shop: c.Cloud,
 		Pauses: c.State, Restore: syncvault.RestoreDeps{Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State},
 		Shares: c.Cloud, ShareStates: c.State, Box: c.Account, Vaults: c.Vaults, Folders: c.Folders, Forget: c.State, Cloud: c.Cloud, Challenges: c.Sessions, Locker: c.State,
 	}
 }
 
-// NewSyncVault returns the pass over one vault with the use cases of its steps.
 func (c *Computer) NewSyncVault() *syncvault.SyncVault {
 	return syncwire.NewSyncVault(c.WireDeps())
 }
 
-// NewSyncVaultReading is NewSyncVault with another way to read the shares of a vault at the start of a pass.
 func (c *Computer) NewSyncVaultReading(shares syncvault.SharesReader) *syncvault.SyncVault {
 	return syncwire.NewSyncVaultReading(c.WireDeps(), shares)
 }
 
-// Sync runs one pass over the vault.
 func (c *Computer) Sync(ctx context.Context, id domain.VaultID) error {
 	return c.NewSyncVault().Execute(ctx, id)
 }
@@ -339,11 +335,10 @@ func NewPendingComputer(t *testing.T, server *Server, clock *Clock, vault string
 	return c
 }
 
-// RunDeps are the dependencies of the loop over the vaults, with a pass over one vault as SyncDeps makes it.
 func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID) syncvault.RunDeps {
 	return syncvault.RunDeps{
 		Pass: c.NewSyncVault(), Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock,
-		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: c.Cloud, Health: c.NewHealth()}),
+		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: c.getSubscriptions(), Health: c.NewHealth()}),
 		Interval: func() time.Duration { return interval }, Changed: changed,
 		Describe: errorwire.GetText, Report: func(context.Context, domain.VaultID, error) {},
 	}
@@ -352,7 +347,6 @@ func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID
 // RemovalDelay is how long a removed file is watched before its removal is sent, in the passes of the tests.
 const RemovalDelay = time.Second
 
-// Spy makes the host of this computer a host that writes down the calls that move the bytes of files, and returns it.
 func (c *Computer) Spy() *SpyHost {
 	if spy, isSpy := c.Host.(*SpyHost); isSpy {
 		return spy
@@ -362,17 +356,14 @@ func (c *Computer) Spy() *SpyHost {
 	return spy
 }
 
-// DetectDeps are the dependencies of the search for moved and removed files.
 func (c *Computer) DetectDeps() localchanges.DetectDeps {
 	return localchanges.DetectDeps{Host: c.Host, State: c.State, Clock: c.Clock, Delay: func() time.Duration { return RemovalDelay }}
 }
 
-// DeleteDeps are the dependencies of the guard of removals and of the answer to it.
 func (c *Computer) DeleteDeps() deletions.Deps {
 	return deletions.Deps{Pending: c.State, Approvals: c.State, Health: c.NewHealth(), Clock: c.Clock}
 }
 
-// PreviewDeps are the dependencies of the preview of a connection.
 func (c *Computer) PreviewDeps() preview.Deps {
 	return preview.Deps{
 		Heads: heads.New(heads.Deps{Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Crypto: c.Account, Identity: c.Account}),
@@ -380,7 +371,6 @@ func (c *Computer) PreviewDeps() preview.Deps {
 	}
 }
 
-// RestoreDeps are the dependencies of the recovery after the server was restored.
 func (c *Computer) RestoreDeps() restore.Deps {
 	return restore.Deps{
 		Address: c.Server.URL, Epochs: c.Cloud, Mirror: c.State, Catalog: c.Cloud, Chain: c.Cloud, Identity: c.Account, Revisions: c.Cloud,
@@ -398,33 +388,28 @@ func (c *Computer) NewCloud(address string, refresh func(context.Context) error)
 	})
 }
 
-// RotateDeps are the dependencies of the rotation of the vault keys.
 func (c *Computer) RotateDeps() rotatevaultkeys.Deps {
 	return rotatevaultkeys.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Random: rand.Reader,
 	}
 }
 
-// ChainDeps are the dependencies of the couriers of the chain.
 func (c *Computer) ChainDeps() chaincourier.Deps {
 	return chaincourier.Deps{
 		Identity: c.Account, Core: c.Client, Chain: c.Cloud, Health: c.NewHealth(), Clock: c.Clock, Sightings: c.State, IsIdle: nil, Endorse: endorse.NewEndorse(c.EndorseDeps()),
 	}
 }
 
-// EndorseDeps are the dependencies of the endorsement of the heads of a device that is revoked.
 func (c *Computer) EndorseDeps() endorse.Deps {
 	return endorse.Deps{Identity: c.Account, Host: c.Host, State: c.State, Revisions: c.Cloud}
 }
 
-// LinkDeps are the dependencies of the courier of a link over the relay of the server.
 func (c *Computer) LinkDeps() linkcourier.Deps {
 	return linkcourier.Deps{
-		Core: c.Client, Relay: syncclient.NewLinkClient(c.Server.URL, http.DefaultClient), Health: c.NewHealth(), Clock: c.Clock, Server: c.Server.URL,
+		Core: c.Client, Relay: syncclient.NewLinkClient(c.Server.URL, c.Server.NewHTTP()), Health: c.NewHealth(), Clock: c.Clock, Server: c.Server.URL,
 	}
 }
 
-// ShareDeps are the dependencies of the use cases of sharing a folder.
 func (c *Computer) ShareDeps() share.Deps {
 	return share.Deps{
 		Shares: c.Cloud, Revisions: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Links: c.State, States: c.State,
@@ -432,7 +417,6 @@ func (c *Computer) ShareDeps() share.Deps {
 	}
 }
 
-// ReceiveDeps are the dependencies of the use cases of receiving a folder.
 func (c *Computer) ReceiveDeps() receive.Deps {
 	return receive.Deps{
 		Shares: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Box: c.Account, Identity: c.Account, Host: c.Host, Notes: c.Notes, Links: c.State,
@@ -440,7 +424,6 @@ func (c *Computer) ReceiveDeps() receive.Deps {
 	}
 }
 
-// ClearRoots makes this computer trust no root key, as a build without an embedded root does.
 func (c *Computer) ClearRoots() {
 	c.Roots = nil
 	c.Cloud = c.NewCloud(c.Server.URL, c.SignIn)

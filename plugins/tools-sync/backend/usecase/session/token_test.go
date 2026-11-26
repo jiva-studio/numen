@@ -3,8 +3,6 @@ package session_test
 import (
 	"context"
 	"errors"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
@@ -13,19 +11,17 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
-func newTokenKeep(t *testing.T, hasIdentity bool) (*session.Keep, *fakeserver.Server, *healthtest.Host) {
+func newTokenKeep(t *testing.T, hasIdentity bool) (*session.Keep, *synctest.Server, *healthtest.Host) {
 	t.Helper()
-	clock := newManualClock(start())
-	server := fakeserver.New(fakeserver.Config{Now: clock.Now})
-	served := httptest.NewServer(server)
-	t.Cleanup(served.Close)
-	server.SetAudience(served.URL)
+	clock := newManualClock(synctest.GetNow())
+	server := synctest.NewServer(t, synctest.NewClock(synctest.GetNow()))
 	identity := accounttest.NewFake(t, syncprotocol.SignInPluginID)
 	if !hasIdentity {
 		identity.RemoveIdentity()
@@ -41,7 +37,7 @@ func newTokenKeep(t *testing.T, hasIdentity bool) (*session.Keep, *fakeserver.Se
 	}
 	keep := session.NewKeep(session.Deps{
 		Identity: accountadapter.New(account.NewClient(identityEndpoint)),
-		Server:   serveradapter.New(serveradapter.Config{Address: served.URL, HTTP: http.DefaultClient, Now: clock.Now}),
+		Server:   serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: server.NewHTTP(), Now: clock.Now}),
 		Health:   health.NewClient(healthEndpoint),
 		Clock:    clock,
 	})
@@ -62,8 +58,8 @@ func TestKeep_GetsTheTokenOfTheSessionItOpened(t *testing.T) {
 
 	eventually(t, "the token", func() bool { return keep.GetToken() != "" })
 
-	if sessions := server.ListSessions(); len(sessions) != 1 || keep.GetToken() != sessions[0].Token {
-		t.Error("GetToken is not the token of the session the server holds")
+	if _, isLive := server.ReadSession(t, keep.GetToken()); !isLive {
+		t.Error("GetToken is not the token of a session the server holds")
 	}
 }
 
@@ -82,7 +78,7 @@ func TestKeep_GetsNoTokenBeforeItSignedIn(t *testing.T) {
 	if got := keep.GetToken(); got != "" {
 		t.Errorf("GetToken = %q, want none without an identity", got)
 	}
-	if sessions := server.ListSessions(); len(sessions) != 0 {
-		t.Errorf("sessions = %d, want none", len(sessions))
+	if opened := server.CountCalls(syncv1connect.SignInServiceSignInProcedure); opened != 0 {
+		t.Errorf("sign-ins = %d, want none", opened)
 	}
 }

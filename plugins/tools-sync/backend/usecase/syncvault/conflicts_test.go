@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
-const (
-	list     = "Shopping list.md"
-	listCopy = "Shopping list (conflict 2026-11-23).md"
-)
+const list = "Shopping list.md"
+
+func getListCopy() string { return synctest.GetConflictCopy("Shopping list", 1) }
 
 func (p *pair) conflict(t *testing.T, path, first, second string) {
 	t.Helper()
@@ -24,20 +23,20 @@ func (p *pair) conflict(t *testing.T, path, first, second string) {
 }
 
 func TestSyncVault_ANoteChangedOnTwoComputersKeepsTheHeadAndTheOtherTextInACopyOnBoth(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.conflict(t, list, "bread", "eggs")
 
 	sync(t, p.b, target)
 	sync(t, p.a, source)
 
 	wantNote(t, p.b, target, list, "bread")
-	wantNote(t, p.b, target, listCopy, "eggs")
+	wantNote(t, p.b, target, getListCopy(), "eggs")
 	wantNote(t, p.a, source, list, "bread")
-	wantNote(t, p.a, source, listCopy, "eggs")
+	wantNote(t, p.a, source, getListCopy(), "eggs")
 }
 
 func TestSyncVault_TheConflictCopyIsPushedOnceAndNothingElseIs(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.conflict(t, list, "bread", "eggs")
 
 	sync(t, p.b, target)
@@ -50,7 +49,7 @@ func TestSyncVault_TheConflictCopyIsPushedOnceAndNothingElseIs(t *testing.T) {
 }
 
 func TestSyncVault_WarnsOfTheNotesResolvedWithACopyAndClearsTheWarningOnTheNextPass(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.conflict(t, list, "bread", "eggs")
 
 	sync(t, p.b, target)
@@ -65,7 +64,7 @@ func TestSyncVault_WarnsOfTheNotesResolvedWithACopyAndClearsTheWarningOnTheNextP
 }
 
 func TestSyncVault_TheComputerThatReachedTheServerFirstHasNoWarning(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.conflict(t, list, "bread", "eggs")
 
 	sync(t, p.a, source)
@@ -76,7 +75,7 @@ func TestSyncVault_TheComputerThatReachedTheServerFirstHasNoWarning(t *testing.T
 }
 
 func TestSyncVault_CountsOneConflictForEachNoteResolvedWithACopy(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	for _, path := range []string{"One.md", "Two.md"} {
 		p.a.WriteNote(source, path, "milk")
 	}
@@ -96,13 +95,13 @@ func TestSyncVault_CountsOneConflictForEachNoteResolvedWithACopy(t *testing.T) {
 }
 
 func TestSyncVault_TheSameTextOnBothComputersMakesNoCopyAndNoWarning(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.conflict(t, list, "bread", "bread")
 
 	sync(t, p.b, target)
 	sync(t, p.a, source)
 
-	if _, ok := p.b.ReadNote(target, listCopy); ok {
+	if _, ok := p.b.ReadNote(target, getListCopy()); ok {
 		t.Error("a conflict copy of equal notes was made")
 	}
 	if p.b.HasItemKey(healthkey.Create("conflicts", string(target))) || len(p.heads(t)) != 1 {
@@ -111,7 +110,7 @@ func TestSyncVault_TheSameTextOnBothComputersMakesNoCopyAndNoWarning(t *testing.
 }
 
 func TestSyncVault_ANoteChangedOnOneComputerOnlyMakesNoCopy(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, list, "milk")
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -121,13 +120,13 @@ func TestSyncVault_ANoteChangedOnOneComputerOnlyMakesNoCopy(t *testing.T) {
 	sync(t, p.b, target)
 
 	wantNote(t, p.b, target, list, "bread")
-	if _, ok := p.b.ReadNote(target, listCopy); ok || len(p.heads(t)) != 1 {
+	if _, ok := p.b.ReadNote(target, getListCopy()); ok || len(p.heads(t)) != 1 {
 		t.Errorf("copy there: %v with %d files on the server, want no copy", ok, len(p.heads(t)))
 	}
 }
 
 func TestSyncVault_ASecondConflictKeepsTheFirstCopyAndCreatesAnotherWithANumber(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.conflict(t, list, "bread", "eggs")
 	sync(t, p.b, target)
 	sync(t, p.a, source)
@@ -138,12 +137,12 @@ func TestSyncVault_ASecondConflictKeepsTheFirstCopyAndCreatesAnotherWithANumber(
 	sync(t, p.b, target)
 
 	wantNote(t, p.b, target, list, "rice")
-	wantNote(t, p.b, target, listCopy, "eggs")
-	wantNote(t, p.b, target, "Shopping list (conflict 2026-11-23 2).md", "tea")
+	wantNote(t, p.b, target, getListCopy(), "eggs")
+	wantNote(t, p.b, target, synctest.GetConflictCopy("Shopping list", 2), "tea")
 }
 
 func TestSyncVault_AFileChangedOnTwoComputersKeepsTheHeadAndMakesNoCopyAndNoWarning(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.conflict(t, pdf, pdfText+" there", pdfText+" here")
 
 	sync(t, p.b, target)
@@ -157,7 +156,7 @@ func TestSyncVault_AFileChangedOnTwoComputersKeepsTheHeadAndMakesNoCopyAndNoWarn
 }
 
 func TestSyncVault_ANoteMadeOnBothComputersWithTheSameTextAtOnePathIsOneNote(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Daily/Monday.md", "tea")
 	p.b.WriteNote(target, "Daily/Monday.md", "tea")
 	sync(t, p.a, source)
@@ -166,13 +165,13 @@ func TestSyncVault_ANoteMadeOnBothComputersWithTheSameTextAtOnePathIsOneNote(t *
 	sync(t, p.a, source)
 
 	wantNote(t, p.b, target, "Daily/Monday.md", "tea")
-	if _, ok := p.b.ReadNote(target, "Daily/Monday (conflict 2026-11-23).md"); ok || len(p.heads(t)) != 1 {
+	if _, ok := p.b.ReadNote(target, synctest.GetConflictCopy("Daily/Monday", 1)); ok || len(p.heads(t)) != 1 {
 		t.Errorf("copy there: %v with %d files on the server, want one note and no copy", ok, len(p.heads(t)))
 	}
 }
 
 func TestSyncVault_ANoteMadeOnBothComputersWithOtherTextAtOnePathKeepsTheHeadAndACopy(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Daily/Monday.md", "tea")
 	p.b.WriteNote(target, "Daily/Monday.md", "rice")
 	sync(t, p.a, source)
@@ -190,14 +189,14 @@ func TestSyncVault_ANoteMadeOnBothComputersWithOtherTextAtOnePathKeepsTheHeadAnd
 		if text, _ := c.got("Daily/Monday.md"); text != "tea" {
 			t.Errorf("note of the %s = %q, want the head tea", c.name, text)
 		}
-		if text, ok := c.got("Daily/Monday (conflict 2026-11-23).md"); !ok || text != "rice" {
+		if text, ok := c.got(synctest.GetConflictCopy("Daily/Monday", 1)); !ok || text != "rice" {
 			t.Errorf("copy of the %s = %q (there: %v), want rice", c.name, text, ok)
 		}
 	}
 }
 
 func TestSyncVault_ANoteWithAPathUsedBetweenThePullAndThePushIsSettledWithACopy(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.b.WriteNote(target, "Daily/Monday.md", "rice")
 	p.server.RunAfterNext("/GetChanges", func() {
 		p.a.WriteNote(source, "Daily/Monday.md", "tea")
@@ -207,11 +206,11 @@ func TestSyncVault_ANoteWithAPathUsedBetweenThePullAndThePushIsSettledWithACopy(
 	sync(t, p.b, target)
 
 	wantNote(t, p.b, target, "Daily/Monday.md", "tea")
-	wantNote(t, p.b, target, "Daily/Monday (conflict 2026-11-23).md", "rice")
+	wantNote(t, p.b, target, synctest.GetConflictCopy("Daily/Monday", 1), "rice")
 }
 
 func TestSyncVault_ANameThatMatchesAnotherNameInCaseOnlyIsNotSyncedAndRaisesAWarning(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Papers/Report.pdf", pdfText)
 	sync(t, p.a, source)
 	p.b.WriteNote(target, "Papers/report.pdf", "another report")
@@ -231,7 +230,7 @@ func TestSyncVault_ANameThatMatchesAnotherNameInCaseOnlyIsNotSyncedAndRaisesAWar
 }
 
 func TestSyncVault_AWarningOfANameThatMatchesAnotherNameClearsOnceTheFileIsRemoved(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Papers/Report.pdf", pdfText)
 	sync(t, p.a, source)
 	p.b.WriteNote(target, "Papers/report.pdf", "another report")
@@ -246,7 +245,7 @@ func TestSyncVault_AWarningOfANameThatMatchesAnotherNameClearsOnceTheFileIsRemov
 }
 
 func TestSyncVault_ANoteRemovedOnBothComputersIsRemovedAndNothingIsRaised(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, list, "milk")
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -272,7 +271,7 @@ func TestSyncVault_ANoteRemovedOnBothComputersIsRemovedAndNothingIsRaised(t *tes
 }
 
 func TestSyncVault_ANoteChangedOnOneComputerAndRemovedOnTheOtherStaysWithNoCopy(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, list, "milk")
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -286,13 +285,13 @@ func TestSyncVault_ANoteChangedOnOneComputerAndRemovedOnTheOtherStaysWithNoCopy(
 
 	wantNote(t, p.a, source, list, "bread")
 	wantNote(t, p.b, target, list, "bread")
-	if _, ok := p.a.ReadNote(source, listCopy); ok || len(p.getLiveHeads(t)) != 1 {
+	if _, ok := p.a.ReadNote(source, getListCopy()); ok || len(p.getLiveHeads(t)) != 1 {
 		t.Errorf("copy there: %v with %d live files, want the note alone", ok, len(p.getLiveHeads(t)))
 	}
 }
 
 func TestSyncVault_ANoteRemovedOnOneComputerAndChangedOnTheOtherStaysWithNoCopy(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, list, "milk")
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -307,7 +306,7 @@ func TestSyncVault_ANoteRemovedOnOneComputerAndChangedOnTheOtherStaysWithNoCopy(
 
 	wantNote(t, p.b, target, list, "eggs")
 	wantNote(t, p.a, source, list, "eggs")
-	if _, ok := p.b.ReadNote(target, listCopy); ok {
+	if _, ok := p.b.ReadNote(target, getListCopy()); ok {
 		t.Error("a conflict copy was made against a removal")
 	}
 }

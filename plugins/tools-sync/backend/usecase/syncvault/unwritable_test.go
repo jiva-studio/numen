@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/healthkey"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const lockedNote = "Locked/Plan.md"
@@ -27,7 +26,7 @@ func findUnsavedItem(c *synctest.Computer) (health.Item, bool) {
 }
 
 func TestSyncVault_AFileTheHostCannotWriteDoesNotStopTheRestOfThePull(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, lockedNote, "locked")
 	p.a.WriteNote(source, "Other.md", "other")
 	sync(t, p.a, source)
@@ -40,7 +39,7 @@ func TestSyncVault_AFileTheHostCannotWriteDoesNotStopTheRestOfThePull(t *testing
 }
 
 func TestSyncVault_AFileTheHostCannotWriteDoesNotStopThePushOfLocalChanges(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, lockedNote, "locked")
 	sync(t, p.a, source)
 	p.b.Vaults.With(target).RefuseWriting(lockedNote, errDenied)
@@ -53,7 +52,7 @@ func TestSyncVault_AFileTheHostCannotWriteDoesNotStopThePushOfLocalChanges(t *te
 }
 
 func TestSyncVault_AFileTheHostCannotWriteIsNamedInAHealthItem(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, lockedNote, "locked")
 	sync(t, p.a, source)
 	p.b.Vaults.With(target).RefuseWriting(lockedNote, errDenied)
@@ -67,7 +66,7 @@ func TestSyncVault_AFileTheHostCannotWriteIsNamedInAHealthItem(t *testing.T) {
 }
 
 func TestSyncVault_AFileTheHostCannotWriteIsTriedAgainLaterAndTheItemGoes(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, lockedNote, "locked")
 	sync(t, p.a, source)
 	p.b.Vaults.With(target).RefuseWriting(lockedNote, errDenied)

@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/linkcourier"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 type run struct {
@@ -23,12 +23,60 @@ type run struct {
 	finished chan struct{}
 }
 
+// realClock waits in real time: the relay of the server limits channels by the minute, and the courier retries after a refusal.
+type realClock struct{}
+
+func (realClock) Now() time.Time { return time.Now() }
+
+func (realClock) Wait(ctx context.Context, d time.Duration) error {
+	select {
+	case <-time.After(d):
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func createChannel(t *testing.T, relay *syncclient.LinkClient) syncclient.LinkChannel {
+	t.Helper()
+	for {
+		channel, err := relay.CreateChannel(t.Context())
+		if errors.Is(err, syncprotocol.ErrRateLimited) {
+			<-time.After(2 * time.Second)
+			continue
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { closeChannel(t, relay, channel.ID) })
+		return channel
+	}
+}
+
+func closeChannel(t *testing.T, relay *syncclient.LinkClient, id []byte) {
+	t.Helper()
+	if err := relay.CloseChannel(context.WithoutCancel(t.Context()), id); err != nil && !errors.Is(err, syncprotocol.ErrChannelGone) {
+		t.Logf("close a channel of the test: %v", err)
+	}
+}
+
+func waitChannel(t *testing.T, r *run) []byte {
+	t.Helper()
+	id, err := r.computer.Fake.WaitLinkChannel(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeChannel(t, r.relay, id) })
+	return id
+}
+
 func newRun(t *testing.T, serverURLOf func(*synctest.Server) string) *run {
 	t.Helper()
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	computer := synctest.NewFirstComputer(t, server, clock, "Test", synctest.NewWords(t))
 	deps := computer.LinkDeps()
+	deps.Clock = realClock{}
 	relay := syncclient.NewLinkClient(server.URL, http.DefaultClient)
 	if serverURLOf != nil {
 		deps.Relay = syncclient.NewLinkClient(serverURLOf(server), http.DefaultClient)
@@ -53,10 +101,10 @@ func TestExecute_CreatesChannelWhenCoreRequestsOneAndReturnsIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	id, err := r.computer.Fake.WaitLinkChannel(t.Context())
+	id := waitChannel(t, r)
 
-	if err != nil || len(id) != 16 {
-		t.Fatalf("channel = %x, %v, want a 16 byte id from the relay", id, err)
+	if len(id) != 16 {
+		t.Fatalf("channel = %x, want a 16 byte id from the relay", id)
 	}
 	if _, err := r.relay.SendMessage(t.Context(), id, syncclient.LinkSideScanner, []byte("hello")); err != nil {
 		t.Errorf("the channel the core got is not one of the relay: %v", err)
@@ -69,10 +117,7 @@ func TestExecute_PostsCoreOutputToOtherSideOfChannel(t *testing.T) {
 	if err := r.computer.Fake.ShowLink(); err != nil {
 		t.Fatal(err)
 	}
-	id, err := r.computer.Fake.WaitLinkChannel(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
+	id := waitChannel(t, r)
 	if err := r.computer.Fake.QueueLinkOutbound([]byte("sealed blob")); err != nil {
 		t.Fatal(err)
 	}
@@ -90,10 +135,7 @@ func TestExecute_PassesWhatTheOtherSidePostsToTheCore(t *testing.T) {
 	if err := r.computer.Fake.ShowLink(); err != nil {
 		t.Fatal(err)
 	}
-	id, err := r.computer.Fake.WaitLinkChannel(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
+	id := waitChannel(t, r)
 	if _, err := r.relay.SendMessage(t.Context(), id, syncclient.LinkSideDisplayer, []byte("from the scanner")); err != nil {
 		t.Fatal(err)
 	}
@@ -111,10 +153,7 @@ func TestExecute_ClosesTheChannelWhenTheCoreEndsTheLink(t *testing.T) {
 	if err := r.computer.Fake.ShowLink(); err != nil {
 		t.Fatal(err)
 	}
-	id, err := r.computer.Fake.WaitLinkChannel(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
+	id := waitChannel(t, r)
 	if err := r.computer.Fake.CloseLink(); err != nil {
 		t.Fatal(err)
 	}
@@ -167,10 +206,7 @@ func waitHealthKey(t *testing.T, r *run, key string) bool {
 func TestExecute_SendsNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T) {
 	t.Parallel()
 	r := newRun(t, nil)
-	channel, err := r.relay.CreateChannel(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
+	channel := createChannel(t, r.relay)
 	if err := r.computer.Fake.ScanLink(channel.ID, "https://other.example.org"); err != nil {
 		t.Fatal(err)
 	}
@@ -190,10 +226,7 @@ func TestExecute_SendsNothingOfALinkWhoseQRCodeNamesAnotherServer(t *testing.T) 
 func TestExecute_SendsALinkWhoseQRCodeNamesTheServerOfTheDevice(t *testing.T) {
 	t.Parallel()
 	r := newRun(t, nil)
-	channel, err := r.relay.CreateChannel(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
+	channel := createChannel(t, r.relay)
 	if err := r.computer.Fake.ScanLink(channel.ID, r.computer.Server.URL); err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +256,7 @@ func (l lingeringRelay) WaitMessages(ctx context.Context, _ []byte, _ syncclient
 
 func TestExecute_ReturnsOnlyAfterTheWaitForMessagesEnded(t *testing.T) {
 	clock := synctest.NewClock(synctest.GetStart())
-	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	server := synctest.NewServer(t, clock)
 	computer := synctest.NewFirstComputer(t, server, clock, "Test", synctest.NewWords(t))
 	deps := computer.LinkDeps()
 	relay := lingeringRelay{Relay: deps.Relay, waiting: make(chan struct{}), release: make(chan struct{})}

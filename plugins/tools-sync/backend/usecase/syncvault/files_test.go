@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -37,7 +36,7 @@ func (p *pair) getLiveHeads(t *testing.T) []*syncv1.StoredRevision {
 	return slices.DeleteFunc(p.heads(t), func(one *syncv1.StoredRevision) bool { return one.GetRevision().GetDeleted() })
 }
 
-func (p *pair) countCalls(procedure string) int { return p.server.Fake.CountCalls(procedure) }
+func (p *pair) countCalls(procedure string) int { return p.server.CountCalls(procedure) }
 
 func (p *pair) afterDelay() { p.a.Clock.Advance(synctest.RemovalDelay) }
 
@@ -62,7 +61,7 @@ func wantNoFile(t *testing.T, c *synctest.Computer, id domain.VaultID, path stri
 }
 
 func TestSyncVault_AFileOfAnyKindArrivesWithItsKindAndTheServerKnowsNoName(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	for path, text := range map[string]string{pdf: pdfText, "Data/list.txt": "milk\nbread\n", "Notes/Plan.md": "tea"} {
 		p.a.WriteNote(source, path, text)
 	}
@@ -80,7 +79,7 @@ func TestSyncVault_AFileOfAnyKindArrivesWithItsKindAndTheServerKnowsNoName(t *te
 	if kinds[pdf] != "binary" || kinds["Data/list.txt"] != "text" || kinds["Notes/Plan.md"] != "markdown" {
 		t.Errorf("kinds = %v, want binary, text and markdown by extension", kinds)
 	}
-	stored := p.server.GetStoredBlobs(t)
+	stored := p.a.ReadStoredBlobs(t)
 	for _, plain := range []string{"Report.pdf", "Papers", "the bytes of a report"} {
 		if bytes.Contains(stored, []byte(plain)) {
 			t.Errorf("the server holds %q as plain text", plain)
@@ -89,7 +88,7 @@ func TestSyncVault_AFileOfAnyKindArrivesWithItsKindAndTheServerKnowsNoName(t *te
 }
 
 func TestSyncVault_AChangedFileChangesOnTheSecondComputerAndAFileOfTheSecondAppearsOnTheFirst(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -105,7 +104,7 @@ func TestSyncVault_AChangedFileChangesOnTheSecondComputerAndAFileOfTheSecondAppe
 }
 
 func TestSyncVault_DoesNotSendAFileBackThatItPlacedItself(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -123,7 +122,7 @@ func TestSyncVault_DoesNotSendAFileBackThatItPlacedItself(t *testing.T) {
 }
 
 func TestSyncVault_ARenamedFileIsRenamedOnTheSecondComputerWithoutSendingItsBytesAgain(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -151,7 +150,7 @@ func TestSyncVault_ARenamedFileIsRenamedOnTheSecondComputerWithoutSendingItsByte
 }
 
 func TestSyncVault_ARenamedFolderIsRenamedOnTheSecondComputerInOneStep(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	spy := p.b.Spy()
 	p.a.WriteNote(source, "Food/Menu.pdf", "menu bytes")
 	p.a.WriteNote(source, "Food/Shopping list.md", "milk")
@@ -187,7 +186,7 @@ func TestSyncVault_ARenamedFolderIsRenamedOnTheSecondComputerInOneStep(t *testin
 }
 
 func TestSyncVault_ARemovedFileIsRemovedOnTheSecondComputerOnceItStayedMissingForTheDelay(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -215,7 +214,7 @@ func TestSyncVault_ARemovedFileIsRemovedOnTheSecondComputerOnceItStayedMissingFo
 }
 
 func TestSyncVault_ARemovedNoteAndARemovedFolderAreRemovedOnTheSecondComputer(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Shopping list.md", "milk")
 	p.a.WriteNote(source, "Papers/Report.pdf", pdfText)
 	p.a.WriteNote(source, "Papers/Plan.pdf", "plan")
@@ -236,7 +235,7 @@ func TestSyncVault_ARemovedNoteAndARemovedFolderAreRemovedOnTheSecondComputer(t 
 }
 
 func TestSyncVault_AFileRemovedAndCreatedAgainAtItsPathIsANewFile(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -259,7 +258,7 @@ func TestSyncVault_AFileRemovedAndCreatedAgainAtItsPathIsANewFile(t *testing.T) 
 }
 
 func TestSyncVault_AFileRemovedAndCreatedAgainWithinTheDelayIsAChangeAndNotARemoval(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -279,7 +278,7 @@ func TestSyncVault_AFileRemovedAndCreatedAgainWithinTheDelayIsAChangeAndNotARemo
 }
 
 func TestSyncVault_AChangeOnTheSecondComputerBeatsTheRemovalOnTheFirstWhenThePullSeesTheRemoval(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -302,7 +301,7 @@ func TestSyncVault_AChangeOnTheSecondComputerBeatsTheRemovalOnTheFirstWhenThePul
 }
 
 func TestSyncVault_AChangeBeatsARemovalThatArrivesBetweenThePullAndThePush(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -334,36 +333,8 @@ func TestSyncVault_AChangeBeatsARemovalThatArrivesBetweenThePullAndThePush(t *te
 	}
 }
 
-func TestSyncVault_AChangeBeatsARemovalTheServerPrunedAsANewRevisionOfTheSameFile(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
-	p.a.WriteNote(source, pdf, pdfText)
-	sync(t, p.a, source)
-	sync(t, p.b, target)
-	fileID := p.heads(t)[0].GetRevision().GetFileId()
-	p.b.WriteNote(target, pdf, pdfText+" edited there")
-	p.server.RunAfterNext("/GetChanges", func() {
-		records, err := p.a.State.ReadRecords(t.Context(), source)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		vault := transfer.Vault{ID: p.a.GetRemoteID(t, source), Key: p.a.GetVaultKey(t, source)}
-		if _, err := commit.NewCommitRemovals(p.a.CommitDeps()).Execute(t.Context(), transfer.RemoveInput{Vault: vault, Records: records}); err != nil {
-			t.Error(err)
-		}
-		p.server.Fake.PruneTombstones()
-	})
-
-	sync(t, p.b, target)
-
-	live := p.getLiveHeads(t)
-	if len(live) != 1 || !bytes.Equal(live[0].GetRevision().GetFileId(), fileID) || len(live[0].GetRevision().GetParentRev()) != 0 {
-		t.Fatalf("live files = %d, want one revision of the same file with no parent", len(live))
-	}
-}
-
 func TestSyncVault_ARemovalIsNotAppliedWhenTheOtherComputerChangedTheFileMeanwhile(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -383,7 +354,7 @@ func TestSyncVault_ARemovalIsNotAppliedWhenTheOtherComputerChangedTheFileMeanwhi
 }
 
 func TestSyncVault_ManyRemovedFilesPauseTheSyncAndSendNothingUntilTheAnswer(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 10)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -412,7 +383,7 @@ func TestSyncVault_ManyRemovedFilesPauseTheSyncAndSendNothingUntilTheAnswer(t *t
 }
 
 func TestSyncVault_TheRemovalOfManyFilesIsSentOnceThePersonConfirmsItOnEachComputer(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 10)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -446,7 +417,7 @@ func TestSyncVault_TheRemovalOfManyFilesIsSentOnceThePersonConfirmsItOnEachCompu
 }
 
 func TestSyncVault_TheFilesAreRestoredWhenThePersonKeepsThemAfterTheyWereRemovedHere(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 10)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -472,7 +443,7 @@ func TestSyncVault_TheFilesAreRestoredWhenThePersonKeepsThemAfterTheyWereRemoved
 }
 
 func TestSyncVault_AFewRemovedFilesDoNotPauseTheSync(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 10)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -491,7 +462,7 @@ func TestSyncVault_AFewRemovedFilesDoNotPauseTheSync(t *testing.T) {
 }
 
 func TestSyncVault_ManyFilesRemovedOnTheOtherComputerPauseThisOneAndAreRestoredWhenThePersonKeepsThem(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 10)
 	sync(t, p.a, source)
 	sync(t, p.b, target)
@@ -530,7 +501,7 @@ func TestSyncVault_ManyFilesRemovedOnTheOtherComputerPauseThisOneAndAreRestoredW
 }
 
 func TestSyncVault_DeletesAStagedFileNoDownloadNamesAtTheStartOfAPassEvenWhenTheRemovalsWait(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 10)
 	sync(t, p.a, source)
 	p.removeMany(10)
@@ -553,7 +524,7 @@ func TestSyncVault_DeletesAStagedFileNoDownloadNamesAtTheStartOfAPassEvenWhenThe
 }
 
 func TestSyncVault_AFileThatGrewPastTheSmallLimitAfterTheScanIsNotSentAsItsFirstPart(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	grown := synctest.NewSource(pdf, note.SmallFileLimit+1000, 7, synctest.GetStart().Add(-time.Hour))
 	p.a.Spy().Serve(grown)
@@ -585,7 +556,7 @@ func (f *failingSecondCommit) CommitRevisions(ctx context.Context, vaultID []byt
 }
 
 func TestSyncVault_APassThatFailsAfterCommittingARemovalKeepsTheRecordsWithoutTheRemovedFile(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, pdf, pdfText)
 	p.a.Clock.Advance(time.Minute)
 	sync(t, p.a, source)

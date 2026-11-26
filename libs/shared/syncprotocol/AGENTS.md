@@ -1,6 +1,6 @@
 # libs/shared/syncprotocol
 
-The protocol between Numen Sync and the sync server, shared by the plugin and by `numen-cloud`. Where a shared library goes is the skill [`nm-place-library`](../../../.agents/skills/nm-place-library/SKILL.md) and `architecture.md` §11 (e).
+The protocol between Numen Sync and the sync server, shared by the plugin and by the sync server. Where a shared library goes is the skill [`nm-place-library`](../../../.agents/skills/nm-place-library/SKILL.md) and `architecture.md` §11 (e).
 
 ## A leaf
 
@@ -42,4 +42,4 @@ A body above `MaxBlobSize` goes in parts: `ReserveMultipartBlob` (checked by `Ch
 
 `epochtrust` is the trust in a restore announcement: the client builds in public root keys (`epochroots.go`), a root key signs a `Cert` over the epoch key of the server (`GetCertMessage`, label `numen-sync/epoch-cert/v1`, serial from 1, not-before, not-after), and the epoch key signs the announcement. `client.RestoreClient` runs `VerifyCert` then `VerifyAnnouncement` and returns `epochtrust.ErrUntrusted` otherwise; the response fields `epoch_serial`, `epoch_not_before`, `epoch_not_after` and `root_signature` carry the certificate. A root key from a plugin setting counts only for a server that is not `DefaultServer`, and the embedded root counts only for `DefaultServer`. The operator tool is `tools/epochkey`.
 
-The embedded root is a first key generated on a development machine and must be replaced by a key generated offline before release: replace the constant `EmbeddedRootHex` (one line) and re-sign the certificate of the server with `epochkey sign-cert`. The operator signs the epoch certificate of numen-cloud with the matching private root key.
+The embedded root is a first key generated on a development machine and must be replaced by a key generated offline before release: replace the constant `EmbeddedRootHex` (one line) and re-sign the certificate of the server with `epochkey sign-cert`. The operator signs the epoch certificate of the sync server with the matching private root key.

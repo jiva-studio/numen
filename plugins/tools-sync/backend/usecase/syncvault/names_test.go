@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 const (
@@ -13,7 +12,7 @@ const (
 )
 
 func TestSyncVault_ANoteNamedInDecomposedFormIsSentOnceAndNotAgain(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, decomposedName, "one")
 	sync(t, p.a, source)
 	reserved := p.countCalls(syncv1connect.BlobServiceReserveBlobsProcedure)
@@ -34,7 +33,7 @@ func TestSyncVault_ANoteNamedInDecomposedFormIsSentOnceAndNotAgain(t *testing.T)
 }
 
 func TestSyncVault_ADecomposedNoteChangedLaterIsSentAsOneEdit(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, decomposedName, "one")
 	sync(t, p.a, source)
 	p.a.WriteNote(source, decomposedName, "two")
@@ -49,7 +48,7 @@ func TestSyncVault_ADecomposedNoteChangedLaterIsSentAsOneEdit(t *testing.T) {
 }
 
 func TestSyncVault_ANoteReceivedAsComposedLandsOnTheDecomposedFile(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.b.WriteNote(target, decomposedName, "one")
 	sync(t, p.b, target)
 	sync(t, p.a, source)

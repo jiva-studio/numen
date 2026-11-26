@@ -9,13 +9,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
 )
 
-// EpochClaim is a server that puts a restore epoch id of its own choice into every page of changes.
 type EpochClaim struct {
 	ports.Revisions
 	ID []byte
 }
 
-// GetChanges returns the changes of the server with the claimed epoch id. The answer is this call's own and is changed in place.
 func (e EpochClaim) GetChanges(ctx context.Context, vaultID []byte, sinceSeq uint64, limit uint32) (*syncv1.GetChangesResponse, error) {
 	response, err := e.Revisions.GetChanges(ctx, vaultID, sinceSeq, limit)
 	if err != nil {
@@ -25,7 +23,6 @@ func (e EpochClaim) GetChanges(ctx context.Context, vaultID []byte, sinceSeq uin
 	return response, nil
 }
 
-// NewSyncVaultOver returns the pass over one vault with the changes read from revisions instead of the server of this computer.
 func (c *Computer) NewSyncVaultOver(revisions ports.Revisions) *syncvault.SyncVault {
 	wired := c.WireDeps()
 	wired.Revisions = revisions

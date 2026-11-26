@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 type writeLog struct {
@@ -56,7 +55,7 @@ func (s writeSpyStore) Write(ctx context.Context, name string, content []byte) e
 }
 
 func TestSyncVault_APassOverAnUnchangedVaultWritesNothingToTheStore(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.a.WriteNote(source, "Notes/One.md", "one")
 	p.a.Clock.Advance(time.Minute)
 	writes := &writeLog{}
@@ -73,7 +72,7 @@ func TestSyncVault_APassOverAnUnchangedVaultWritesNothingToTheStore(t *testing.T
 }
 
 func TestSyncVault_TwoConcurrentPassesOverOneVaultLoseNoUpdate(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	for i := range 5 {
 		p.a.WriteNote(source, fmt.Sprintf("Notes/N%d.md", i), fmt.Sprintf("text %d", i))
 	}
@@ -96,7 +95,7 @@ func TestSyncVault_TwoConcurrentPassesOverOneVaultLoseNoUpdate(t *testing.T) {
 }
 
 func TestSyncVault_ThePushOfManyNotesCommitsThemInBoundedBatches(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	p.writeMany(t, 450)
 	p.a.Clock.Advance(time.Minute)
 
@@ -121,7 +120,7 @@ func (p *commitProbe) CommitRevisions(ctx context.Context, vaultID []byte, revis
 }
 
 func TestSyncVault_ThePushReadsOnlyTheNotesOfOneBatchBeforeItCommitsThem(t *testing.T) {
-	p := newPair(t, fakeserver.Config{})
+	p := newPair(t)
 	spy := p.a.Spy()
 	p.writeMany(t, 450)
 	p.a.Clock.Advance(time.Minute)

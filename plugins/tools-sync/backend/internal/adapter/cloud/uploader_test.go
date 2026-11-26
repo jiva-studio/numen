@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
-	"github.com/jiva-studio/numen/tools/syncserver/fakeserver"
 )
 
 func startMultipart(t *testing.T, _ *synctest.Computer, uploader *cloud.Uploader, vault []byte) transfer.Upload {
@@ -23,7 +22,7 @@ func startMultipart(t *testing.T, _ *synctest.Computer, uploader *cloud.Uploader
 
 func newMultipartWorld(t *testing.T) (*synctest.Computer, *synctest.Server, *cloud.Uploader, []byte) {
 	t.Helper()
-	c, server := newWorld(t, fakeserver.Config{})
+	c, server := newWorld(t)
 	vault := newVaultID(t)
 	if _, err := c.Cloud.AppendCatalogEntry(t.Context(), c.NewCatalogEntry(t, nil, vault, true, []byte("sealed body"))); err != nil {
 		t.Fatal(err)
@@ -73,7 +72,7 @@ func TestUploader_AsksForPartURLsAgainAfterTheUploadIsAborted(t *testing.T) {
 	if err := uploader.PutPart(t.Context(), up, 1, make([]byte, up.PartSize)); err != nil {
 		t.Fatal(err)
 	}
-	asked := server.Fake.CountCalls(syncv1connect.BlobServiceGetPartUrlsProcedure)
+	asked := server.CountCalls(syncv1connect.BlobServiceGetPartUrlsProcedure)
 
 	if err := uploader.Abort(t.Context(), up); err != nil {
 		t.Fatal(err)
@@ -82,7 +81,7 @@ func TestUploader_AsksForPartURLsAgainAfterTheUploadIsAborted(t *testing.T) {
 		t.Fatal("a part of an aborted upload was stored")
 	}
 
-	if got := server.Fake.CountCalls(syncv1connect.BlobServiceGetPartUrlsProcedure) - asked; got != 1 {
+	if got := server.CountCalls(syncv1connect.BlobServiceGetPartUrlsProcedure) - asked; got != 1 {
 		t.Errorf("part URL requests after the abort = %d, want 1: the cached URLs of the blob must be dropped", got)
 	}
 }

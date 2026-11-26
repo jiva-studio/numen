@@ -72,7 +72,7 @@ func TestProxy_RunsTheHookOnceAfterTheBackendAnswered(t *testing.T) {
 func TestProxy_SendsTheRequestForThePublicAddressToItself(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusAccepted) }))
 	t.Cleanup(backend.Close)
-	server := synctest.NewRealServer(t, &synctest.Stack{URL: backend.URL, Roots: nil})
+	server := synctest.NewRealServer(t, &synctest.Stack{URL: backend.URL, PaymentURL: "", BucketURL: "", Roots: nil})
 
 	computer := synctest.NewPendingComputer(t, server, synctest.NewClock(synctest.GetStart()), "Test", synctest.NewWords(t))
 	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, backend.URL+"/a", nil)
