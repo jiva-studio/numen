@@ -320,8 +320,6 @@ func NewDeclaredModelFile(req DependencyRequirement) (DependencyRequirement, err
 	}
 	metadata := maps.Collect(maps.All(req.Metadata))
 	metadata[metadataTitle] = req.GetTitle()
-	return DependencyRequirement{
-		ID: req.ChecksumSHA256, Kind: DependencyKindModel, SourceURL: req.SourceURL, SourceURLs: slices.Clone(req.SourceURLs),
-		ChecksumSHA256: req.ChecksumSHA256, SizeBytes: req.SizeBytes, Metadata: metadata,
-	}, nil
+	return DependencyRequirement{ID: req.ChecksumSHA256, Kind: DependencyKindModel, SourceURL: req.SourceURL, SourceURLs: slices.Clone(req.SourceURLs),
+		ChecksumSHA256: req.ChecksumSHA256, SizeBytes: req.SizeBytes, Metadata: metadata}, nil
 }
