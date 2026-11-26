@@ -72,6 +72,28 @@ function listShownSections(sections: readonly PluginSection[]): PluginSection[] 
   return sections.filter((one) => one.rows.length > 0)
 }
 
+const listDownloadRows = (plugin: CatalogPlugin): PluginRow[] =>
+  plugin.downloads.map((one) =>
+    createRow(
+      [createPlainText(`${one.id} ${one.version}`)],
+      one.platforms.map((file) => [
+        createPlainText(getPlatformName(file.platform)),
+        file.size === null
+          ? createTranslatedText('plugin_size_unknown', 'size unknown')
+          : createPlainText(formatSize(file.size)),
+      ]),
+    ),
+  )
+
+const listArtifactRows = (plugin: CatalogPlugin): PluginRow[] =>
+  plugin.artifacts.map((one) => ({
+    ...createRow(
+      [createPlainText(one.name)],
+      [[createPlainText(formatSize(one.size)), createCodeText(one.sha256 ?? '')]],
+    ),
+    href: one.url,
+  }))
+
 /** What the plugin adds to Numen and what it may reach, with its downloads. */
 export function listContributionSections(plugin: CatalogPlugin): PluginSection[] {
   const added = new Set(plugin.permissionsAdded)
@@ -140,30 +162,8 @@ export function listContributionSections(plugin: CatalogPlugin): PluginSection[]
         createRow([createCodeText(one.name)], [[createPlainText(one.description)]]),
       ),
     ),
-    createSection(
-      'downloads',
-      plugin.downloads.map((one) =>
-        createRow(
-          [createPlainText(`${one.id} ${one.version}`)],
-          one.platforms.map((file) => [
-            createPlainText(getPlatformName(file.platform)),
-            file.size === null
-              ? createTranslatedText('plugin_size_unknown', 'size unknown')
-              : createPlainText(formatSize(file.size)),
-          ]),
-        ),
-      ),
-    ),
-    createSection(
-      'artifacts',
-      plugin.artifacts.map((one) => ({
-        ...createRow(
-          [createPlainText(one.name)],
-          [[createPlainText(formatSize(one.size)), createCodeText(one.sha256 ?? '')]],
-        ),
-        href: one.url,
-      })),
-    ),
+    createSection('downloads', listDownloadRows(plugin)),
+    createSection('artifacts', listArtifactRows(plugin)),
   ])
 }
 
