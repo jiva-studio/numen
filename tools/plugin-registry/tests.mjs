@@ -10,7 +10,8 @@ const SKIPPED_FOLDERS = new Set(['node_modules', 'dist', 'testdata', '.git'])
 
 const GO_TEST = /^func (?:Test|Fuzz)\w*\(\s*\w+\s+\*testing\.[TF]\s*\)/gm
 
-const TS_TEST = /(?<![\w.$])(?:it|test)(?:\.(?:each|only|skip|todo|concurrent|fails|sequential))*\(/g
+const TS_TEST =
+  /(?<![\w.$])(?:it|test)(?:\.(?:each|only|skip|todo|concurrent|fails|sequential))*\(/g
 
 const STORY = /^export const [A-Z]\w*/gm
 

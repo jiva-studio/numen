@@ -113,10 +113,10 @@ const getTextKinds = (textKinds = []) =>
 
 const getThemes = (themes = []) => themes.map((one) => ({ id: one.id, name: one.name ?? one.id }))
 
-const getSlots = (slots = []) =>
+const getSlots = (slots = [], commands = []) =>
   slots.map((one) => ({
     slot: one.slot,
-    title: one.title ?? '',
+    title: one.title ?? commands.find((command) => command.id === one.command)?.title ?? '',
     target: one.command ?? one.view ?? one.submenu ?? '',
   }))
 
@@ -167,7 +167,7 @@ export const describeManifest = (json) => {
     fileTypes: getFileTypes(contributes.readers, contributes.tabKinds),
     textKinds: getTextKinds(contributes.textKinds),
     themes: getThemes(contributes.themes),
-    slots: getSlots(contributes.slots),
+    slots: getSlots(contributes.slots, contributes.commands),
     connectionTypes: getConnectionTypes(contributes.connectionTypes),
     searchFunctions: getSearchFunctions(contributes.searchFunctions),
   }

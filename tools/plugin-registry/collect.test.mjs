@@ -292,7 +292,11 @@ test('the contributions a person sees are read from the manifest', () => {
         readers: [{ id: 'reader-pdf', contentTypes: ['application/pdf'] }],
         textKinds: [{ kind: 'page-text', title: 'Text layer' }],
         themes: [{ id: 'amber', name: 'Amber', file: 'themes/amber.css' }],
-        slots: [{ slot: 'fileTree.context', command: 'app:file.createText' }],
+        commands: [{ id: 'tree.open', title: 'Open the file tree' }],
+        slots: [
+          { slot: 'fileTree.context', command: 'app:file.createText' },
+          { slot: 'titleBar.commands', command: 'tree.open' },
+        ],
         connectionTypes: [{ id: 'openai', title: 'OpenAI', description: 'Models from OpenAI.' }],
         searchFunctions: { version: 1, functions: [{ name: 'hasOpenTask', description: 'open tasks' }] },
       },
@@ -303,7 +307,10 @@ test('the contributions a person sees are read from the manifest', () => {
   assert.deepEqual(fields.fileTypes, [{ contentType: 'application/pdf', title: 'PDF Reader' }])
   assert.deepEqual(fields.textKinds, [{ kind: 'page-text', title: 'Text layer' }])
   assert.deepEqual(fields.themes, [{ id: 'amber', name: 'Amber' }])
-  assert.deepEqual(fields.slots, [{ slot: 'fileTree.context', title: '', target: 'app:file.createText' }])
+  assert.deepEqual(fields.slots, [
+    { slot: 'fileTree.context', title: '', target: 'app:file.createText' },
+    { slot: 'titleBar.commands', title: 'Open the file tree', target: 'tree.open' },
+  ])
   assert.deepEqual(fields.connectionTypes, [
     { id: 'openai', title: 'OpenAI', description: 'Models from OpenAI.' },
   ])

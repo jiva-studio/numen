@@ -45,7 +45,9 @@ const translated = (key: string, fallback: string): RowText => ({
 
 const row = (name: RowText[], value: RowText[][] = []): PluginRow => ({
   name,
-  value: value.map((line) => line.filter((one) => one.text !== '')).filter((line) => line.length > 0),
+  value: value
+    .map((line) => line.filter((one) => one.text !== ''))
+    .filter((line) => line.length > 0),
   status: null,
   isNew: false,
   href: null,
@@ -168,10 +170,7 @@ export function listQualitySections(plugin: CatalogPlugin): PluginSection[] {
     section(
       'checks',
       plugin.checks.map((one) => ({
-        ...row(
-          [translated(`plugin_check_${one.id}`, one.id)],
-          [[plain(one.detail)]],
-        ),
+        ...row([translated(`plugin_check_${one.id}`, one.id)], [[plain(one.detail)]]),
         status: one.status,
       })),
     ),

@@ -157,7 +157,9 @@ const GITHUB_LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/
 
 /** The GitHub profile of a contributor, or null when they have no valid login. */
 export function getContributorUrl(person: { login: string | null }): string | null {
-  return person.login && GITHUB_LOGIN.test(person.login) ? `https://github.com/${person.login}` : null
+  return person.login && GITHUB_LOGIN.test(person.login)
+    ? `https://github.com/${person.login}`
+    : null
 }
 
 const AVATAR_HOST = 'avatars.githubusercontent.com'
