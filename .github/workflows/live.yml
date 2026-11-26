@@ -62,7 +62,11 @@ jobs:
         if: steps.plan.outputs.run == 'true'
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin <<< "$TOKEN"
+        run: |
+          if ! docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin <<< "$TOKEN"; then
+            echo "::error title=No access to the server images::The login to ghcr.io was denied. Add the repository jiva-studio/numen with Read in the package settings of both numen-sync and numen-sync-devtools (Packages, package settings, Manage Actions access)."
+            exit 1
+          fi
 
       - name: Check the pinned images
         if: steps.plan.outputs.run == 'true'

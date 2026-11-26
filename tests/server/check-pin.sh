@@ -38,6 +38,9 @@ fi
 for ref in "$image" "$devtools"; do
   if ! docker buildx imagetools inspect "$ref" >/dev/null 2>&1; then
     echo "cannot read the pinned image $ref: it is gone from the registry, or the login has no read access; run make sync_stack_bump" >&2
+    if [ "${GITHUB_ACTIONS:-}" = true ]; then
+      echo "::error title=No access to the server images::The pinned image $ref cannot be read. If it exists, add the repository jiva-studio/numen with Read in the package settings of both numen-sync and numen-sync-devtools (Packages, package settings, Manage Actions access); otherwise run make sync_stack_bump."
+    fi
     exit 1
   fi
 done
