@@ -440,7 +440,7 @@
 
 .plugin-shots {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 0.875rem;
   margin-bottom: 2.75rem;
 }
@@ -459,6 +459,10 @@
   height: 100%;
   object-fit: cover;
   object-position: left top;
+}
+
+.plugin-shot:only-child {
+  aspect-ratio: auto;
 }
 
 .plugin-side {
