@@ -29,7 +29,7 @@ func writeBook(t *testing.T, root, content string, modified time.Time) domain.Fi
 	return domain.FileStat{Path: "Book.pdf", Size: info.Size(), ModTime: info.ModTime()}
 }
 
-var bookSavedAt = time.Date(2020, time.January, 1, 12, 0, 0, 0, time.UTC)
+func getBookSavedAt() time.Time { return time.Date(2020, time.January, 1, 12, 0, 0, 0, time.UTC) }
 
 func TestRemoveUnchanged_FileAsDescribed_DeletesIt(t *testing.T) {
 	root := t.TempDir()
@@ -37,7 +37,7 @@ func TestRemoveUnchanged_FileAsDescribed_DeletesIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	was := writeBook(t, root, "pages", bookSavedAt)
+	was := writeBook(t, root, "pages", getBookSavedAt())
 
 	if err := writer.RemoveUnchanged(t.Context(), "Book.pdf", was); err != nil {
 		t.Fatal(err)
@@ -54,8 +54,8 @@ func TestRemoveUnchanged_FileSavedSinceTheStat_KeepsItAndReturnsErrChanged(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	was := writeBook(t, root, "pages", bookSavedAt)
-	writeBook(t, root, "pages, annotated", bookSavedAt.Add(time.Hour))
+	was := writeBook(t, root, "pages", getBookSavedAt())
+	writeBook(t, root, "pages, annotated", getBookSavedAt().Add(time.Hour))
 
 	err = writer.RemoveUnchanged(t.Context(), "Book.pdf", was)
 
