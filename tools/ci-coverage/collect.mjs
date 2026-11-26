@@ -5,11 +5,17 @@
  * by statements, as coverage.json of the badges gist.
  *
  *   node collect.mjs [--quality <file>]
+ *   node collect.mjs --kind go|ts --out <file>
+ *   node collect.mjs --merge <file> <file> [--quality <file>]
  *
  * A Go module is measured with `go test -coverprofile ./...`. A TypeScript package or
  * plugin frontend is measured with `vitest run --coverage` against its projects that
  * do not run in a browser, through the config `tools/ci-mutation/mutate.mjs` writes
  * for Stryker. A module whose tests fail counts no statements.
+ *
+ * `--kind` measures the modules of one kind and writes them with their statements to
+ * `--out`, and leaves the badge as it is. `--merge` reads one such file of each kind
+ * and writes the badge and the quality file from all their modules.
  *
  * `--quality` also writes the coverage of each plugin target as a quality file of
  * `tools/shared/plugin-quality.mjs`.
@@ -30,8 +36,13 @@ import { renderVitestConfig } from '../ci-mutation/mutate.mjs'
 const TMP = '.coverage_tmp'
 const tmpDir = join(root, TMP)
 
-/** The modules coverage measures: every mutation target, as `{ name, kind, at }`. */
-export const listCoverageModules = () => getTargets().map(({ name, kind, at }) => ({ name, kind, at }))
+export const KINDS = ['go', 'ts']
+
+/** The modules coverage measures: every mutation target, or those of one kind, as `{ name, kind, at }`. */
+export const listCoverageModules = (kind = null) =>
+  getTargets()
+    .filter((one) => kind === null || one.kind === kind)
+    .map(({ name, kind, at }) => ({ name, kind, at }))
 
 /**
  * Parses a Go coverprofile file and returns { total, covered } statements.
@@ -142,30 +153,93 @@ const writePluginQuality = (file, measured) => {
   console.log(`[coverage] ${entries.length} plugin coverage entries written to ${file}`)
 }
 
-export const runCollection = async (qualityFile = null) => {
+const measureModules = (kind = null) => {
   rmSync(tmpDir, { recursive: true, force: true })
   mkdirSync(tmpDir, { recursive: true })
-
-  const measured = listCoverageModules().map(measureModule)
+  const measured = listCoverageModules(kind).map(measureModule)
   rmSync(tmpDir, { recursive: true, force: true })
+  return measured
+}
 
+/** The content of the file `--kind` writes: the measured modules of that kind. */
+export const formatMeasuredFile = (kind, measured) =>
+  `${JSON.stringify({ kind, measured: measured.filter((one) => one.kind === kind) }, null, 2)}\n`
+
+/** The measured modules of the files `--kind` writes; the files hold each kind once. */
+export const readMeasuredFiles = (files) => {
+  const results = files.map((file) => JSON.parse(readFileSync(file, 'utf8')))
+  const kinds = results.map((result) => result.kind).sort()
+  if (kinds.join(',') !== [...KINDS].sort().join(',')) {
+    throw new Error(`--merge needs one file of each kind (${KINDS.join(', ')}), got: ${kinds.join(', ')}`)
+  }
+  return results.flatMap((result) => result.measured)
+}
+
+const writeMeasuredFile = (file, kind, measured) => {
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, formatMeasuredFile(kind, measured))
+  console.log(`[coverage] ${kind}: ${formatPercent(sumStatements(measured))} written to ${file}`)
+}
+
+const publishCoverage = async (measured, qualityFile) => {
   const badge = getCoverageBadge(measured)
   console.log(`[coverage] Final Unified Coverage: ${badge.message} (${formatPercent(sumStatements(measured))})`)
-  for (const kind of ['go', 'ts']) {
+  for (const kind of KINDS) {
     const stats = sumStatements(measured.filter((one) => one.kind === kind))
     console.log(`[coverage]   - ${kind}: ${formatPercent(stats)}`)
   }
 
   if (qualityFile) writePluginQuality(qualityFile, measured)
   await updateBadgeBranch('coverage.json', badge)
+  return badge
+}
+
+/** The command line options as `{ kind, out, merge, quality }`; `merge` lists the files after `--merge`. */
+export const readOptions = (args) => {
+  const readValue = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null)
+  const readList = (name) => {
+    if (!args.includes(name)) return null
+    const rest = args.slice(args.indexOf(name) + 1)
+    const end = rest.findIndex((one) => one.startsWith('--'))
+    return end === -1 ? rest : rest.slice(0, end)
+  }
+  const options = {
+    kind: readValue('--kind'),
+    out: readValue('--out'),
+    merge: readList('--merge'),
+    quality: readValue('--quality'),
+  }
+  if (options.kind !== null && !KINDS.includes(options.kind)) {
+    throw new Error(`--kind takes ${KINDS.join(' or ')}, got: ${options.kind}`)
+  }
+  if (options.kind !== null && !options.out) throw new Error('--kind needs --out <file>')
+  if (options.kind !== null && options.merge !== null) throw new Error('--kind and --merge exclude each other')
+  if (options.kind !== null && options.quality !== null) throw new Error('--quality goes with --merge, not --kind')
+  if (options.merge !== null && options.merge.length === 0) throw new Error('--merge needs the files --kind writes')
+  return options
+}
+
+export const runCollection = async (qualityFile = null) => {
+  const measured = measureModules()
+  const badge = await publishCoverage(measured, qualityFile)
   return { badge, measured }
 }
 
+const runCommand = async ({ kind, out, merge, quality }) => {
+  if (kind !== null) {
+    writeMeasuredFile(out, kind, measureModules(kind))
+  } else if (merge !== null) {
+    await publishCoverage(readMeasuredFiles(merge), quality)
+  } else {
+    await runCollection(quality)
+  }
+}
+
 if (process.argv[1] && process.argv[1].endsWith('collect.mjs')) {
-  const args = process.argv.slice(2)
-  const qualityFile = args.includes('--quality') ? args[args.indexOf('--quality') + 1] : null
-  runCollection(qualityFile).catch((err) => {
-    console.error(err)
-    process.exit(1)
-  })
+  Promise.resolve()
+    .then(() => runCommand(readOptions(process.argv.slice(2))))
+    .catch((err) => {
+      console.error(err)
+      process.exit(1)
+    })
 }

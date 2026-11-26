@@ -19,10 +19,11 @@ permissions:
   contents: read
 
 jobs:
-  coverage:
-    name: Code Coverage
+  # 42 Go modules in about 20 minutes, including the window module and the kernel.
+  go:
+    name: Code Coverage (Go)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -33,32 +34,90 @@ jobs:
           go-version-file: libs/core/kernel/go.mod
           cache: false
 
+      # A Go module that links the window needs the system browser's headers.
+      - uses: ./.github/actions/setup-webkit
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      # Go tests compare the plugin index with the manifests it is written from.
+      - uses: ./.github/actions/install-lock-packages
+        with:
+          packages: "@bufbuild/protobuf"
+
+      - name: Write the plugin index
+        run: node tools/build-plugin-index/build.mjs
+
+      - name: Measure the Go coverage
+        run: node tools/ci-coverage/collect.mjs --kind go --out .coverage-kinds/go.json
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-go
+          path: .coverage-kinds/go.json
+          if-no-files-found: error
+          retention-days: 1
+
+  # 35 TypeScript packages and plugin frontends of a few seconds to about 3 minutes each.
+  ts:
+    name: Code Coverage (TypeScript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           cache: npm
           cache-dependency-path: package-lock.json
 
-      # A Go module that links the window needs the system browser's headers.
-      - uses: ./.github/actions/setup-webkit
-
       - name: Install Node dependencies
         uses: ./.github/actions/install-node-modules
-
-      # Go tests compare the plugin index with the manifests it is written from.
-      - name: Write the plugin index
-        run: node tools/build-plugin-index/build.mjs
 
       - name: Build UI components
         uses: ./.github/actions/build-ui
         with:
           shell: "true"
 
-      - name: Measure unified coverage and update badge
+      - name: Measure the TypeScript coverage
+        run: node tools/ci-coverage/collect.mjs --kind ts --out .coverage-kinds/ts.json
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-ts
+          path: .coverage-kinds/ts.json
+          if-no-files-found: error
+          retention-days: 1
+
+  coverage:
+    name: Code Coverage
+    needs: [go, ts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: coverage-*
+          path: .coverage-kinds
+          merge-multiple: true
+
+      - name: Merge the coverage and update badge
         env:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
           GH_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
-        run: node tools/ci-coverage/collect.mjs --quality .coverage-quality/coverage.json
+        run: node tools/ci-coverage/collect.mjs --merge .coverage-kinds/go.json .coverage-kinds/ts.json --quality .coverage-quality/coverage.json
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
