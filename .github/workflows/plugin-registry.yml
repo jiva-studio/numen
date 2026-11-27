@@ -36,8 +36,9 @@ jobs:
         with:
           node-version-file: .node-version
 
-      # Go downloads the modules whose licenses tools/plugin-registry/licenses reads, and
-      # osv-scanner scans the dependencies of each plugin for known vulnerabilities.
+      # Go downloads the modules whose licenses tools/plugin-registry/licenses reads and runs
+      # tools/plugin-registry/gosource on the Go code of each plugin, and osv-scanner scans the
+      # dependencies of each plugin for known vulnerabilities.
       - uses: ./.github/actions/setup-go
         with:
           go-version-file: tools/plugin-registry/licenses/go.mod
@@ -48,7 +49,7 @@ jobs:
 
       - uses: ./.github/actions/install-lock-packages
         with:
-          packages: "@bufbuild/protobuf @lucide/vue"
+          packages: "@bufbuild/protobuf @lucide/vue typescript"
 
       - name: Read the published registry and the quality files
         env:

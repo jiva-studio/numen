@@ -1,45 +1,27 @@
 /**
- * What the source of a plugin shows about its network use, read statically: the network client
- * calls of its Go code and of its frontend code (tests, stories, fixtures and test data left out),
- * the hosts of the URL literals in that code, the origins its manifest frames, the hosts its
- * downloads come from and the `link:open` permission. Only a call that can reach the internet
- * counts: one on a relative path, on a URL the host builds for the plugin or on a loopback address
- * does not. Calls made inside its dependencies are not traced.
+ * What the source of a plugin shows about its network use, read statically from the syntax trees
+ * of its code: the network client calls of its Go code and of its frontend code (tests, stories,
+ * fixtures and test data left out), the hosts of the URL literals in that code, the origins its
+ * manifest frames, the hosts its downloads come from and the `link:open` permission. Only a call
+ * that can reach the internet counts: one on a relative path, on a URL the host builds for the
+ * plugin or on a loopback address does not. Calls made inside its dependencies are not traced.
  */
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+import { readGoFiles } from './gosource.mjs'
+import { listNetworkCalls, listStringTexts, parseSourceFile } from './tssource.mjs'
 
 const SKIPPED_FOLDERS = new Set(['node_modules', 'dist', 'testdata', 'fixtures', '.git'])
 
-const TEST_FILE = /(_test\.go|\.test\.ts|\.stories\.ts|\.d\.ts)$/
+const TEST_SUFFIXES = ['_test.go', '.test.ts', '.stories.ts', '.d.ts']
 
-const GO_CALLS = [
-  { name: 'http.Client', pattern: /\bhttp\.(?:Client|Transport)\s*\{|\bhttp\.Default(?:Client|Transport)\b/ },
-  { name: 'http.Get', pattern: /\bhttp\.(?:Get|Head|Post|PostForm)\(/ },
-  { name: 'http.NewRequest', pattern: /\bhttp\.NewRequest(?:WithContext)?\(/ },
-  { name: 'net.Dial', pattern: /\bnet\.Dial(?:Timeout)?\(|\bnet\.Dialer\s*\{/ },
-  { name: 'tls.Dial', pattern: /\btls\.Dial(?:WithDialer)?\(/ },
-  { name: 'websocket.Dial', pattern: /\bwebsocket\.(?:Dial|DefaultDialer)\b/ },
-  { name: 'grpc.Dial', pattern: /\bgrpc\.(?:Dial|DialContext|NewClient)\(/ },
-]
+const FRONTEND_SUFFIXES = ['.ts', '.vue']
 
-const TS_CALLS = [
-  { name: 'fetch', pattern: /(?<![\w.$])fetch\(/g },
-  { name: 'XMLHttpRequest', pattern: /\bnew XMLHttpRequest\b/g },
-  { name: 'WebSocket', pattern: /\bnew WebSocket\(/g },
-  { name: 'EventSource', pattern: /\bnew EventSource\(/g },
-]
+const WEB_SCHEMES = ['http:', 'https:']
 
-const URL_LITERAL = /["'`]https?:\/\/([^"'`/:?#\s]+)/g
+const SOCKET_SCHEMES = ['ws:', 'wss:']
 
-/** The http(s) and ws(s) literals of Go code, and its bare `host:port` literals of a loopback host. */
-const GO_TARGET_LITERAL =
-  /"(?:(?:https?|wss?):\/\/(\[[^\]"]*\]|[^"/:?#\s]+)|(localhost|127(?:\.\d{1,3}){3}|\[::1\]):\d+")/g
-
-/** Helpers of `@numen/plugin-sdk` that build a URL of the host's own server for the plugin. */
-const HOST_URL_HELPER = /^getAssetUrl\s*\(/
-
-const ABSOLUTE_URL = /^(?:(?:https?|wss?):)?\/\/(\[[^\]]*\]|[^/:?#\s]+)/i
+const HOST_ENDS = new Set(['/', ':', '?', '#', '"', "'", '`'])
 
 const HOST_NAME = /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i
 
@@ -65,30 +47,61 @@ const isLoopbackHost = (host) => {
   )
 }
 
+const isHostEnd = (char) => HOST_ENDS.has(char) || char.trim() === ''
+
 /**
- * The target of a frontend call whose argument starts at `text`: `local` for a relative path, a
- * URL the host builds or a loopback URL, `external` with its host for an absolute URL of another
- * host, `unknown` when the start of the target is not a literal.
+ * The scheme and host of a URL text: `scheme` is `http:`, `https:`, `ws:` or `wss:` in lower case,
+ * or empty for a protocol-relative `//host`. Null when the text is no such URL or names no host.
+ *
+ * @param {string} text
+ * @returns {{ scheme: string, host: string } | null}
  */
-const readFrontendTarget = (text) => {
-  const argument = text.trimStart()
-  if (HOST_URL_HELPER.test(argument)) return { kind: 'local' }
-  const quote = argument[0]
-  if (!["'", '"', '`'].includes(quote)) return { kind: 'unknown' }
-  const rest = argument.slice(1)
-  const end = rest.search(quote === '`' ? /`|\$\{/ : new RegExp(quote))
-  if (end === 0 && rest.startsWith('${')) return { kind: 'unknown' }
-  const literal = end === -1 ? rest : rest.slice(0, end)
-  const host = ABSOLUTE_URL.exec(literal)?.[1]
-  if (host === undefined || isLoopbackHost(host)) return { kind: 'local' }
-  return { kind: 'external', host: host.toLowerCase() }
+const readUrlHost = (text) => {
+  const lower = text.toLowerCase()
+  const scheme = [...WEB_SCHEMES, ...SOCKET_SCHEMES, ''].find((one) => lower.startsWith(`${one}//`))
+  if (scheme === undefined) return null
+  const rest = text.slice(scheme.length + 2)
+  if (rest.startsWith('[')) {
+    const close = rest.indexOf(']')
+    return close === -1 ? null : { scheme, host: rest.slice(0, close + 1) }
+  }
+  let end = 0
+  while (end < rest.length && !isHostEnd(rest[end])) end += 1
+  return end === 0 ? null : { scheme, host: rest.slice(0, end) }
 }
 
-/** Whether Go code has literal targets and every one of them is a loopback host. */
-const isLoopbackOnly = (text) => {
-  const hosts = [...text.matchAll(GO_TARGET_LITERAL)].map((match) => match[1] ?? match[2])
+/** The reachable hosts of the http and https URLs among `texts`, in lower case. */
+const listReachableHosts = (texts) =>
+  texts
+    .map(readUrlHost)
+    .filter((url) => url !== null && WEB_SCHEMES.includes(url.scheme) && isReachableHost(url.host))
+    .map((url) => url.host.toLowerCase())
+
+/**
+ * The target of a frontend call: `local` for a relative path, a URL the host builds or a loopback
+ * URL, `external` with its host for an absolute URL of another host, `unknown` when the start of
+ * the target is not a literal.
+ */
+const readFrontendTarget = (target) => {
+  if (target.kind === 'unknown') return target
+  if (target.kind === 'helper') return { kind: 'local' }
+  const url = readUrlHost(target.text)
+  if (url === null || isLoopbackHost(url.host)) return { kind: 'local' }
+  return { kind: 'external', host: url.host.toLowerCase() }
+}
+
+const getAddressHost = (address) => address.slice(0, address.lastIndexOf(':'))
+
+/** Whether a Go file has literal targets and every one of them is a loopback host. */
+const isLoopbackOnly = (facts) => {
+  const hosts = [
+    ...facts.urls.map(readUrlHost).filter((url) => url !== null && url.scheme !== '').map((url) => url.host),
+    ...facts.addresses.map(getAddressHost).filter(isLoopbackHost),
+  ]
   return hosts.length > 0 && hosts.every(isLoopbackHost)
 }
+
+const isTestFile = (name) => TEST_SUFFIXES.some((suffix) => name.endsWith(suffix))
 
 const listSourceFiles = (dir) => {
   let entries
@@ -100,10 +113,9 @@ const listSourceFiles = (dir) => {
   return entries.flatMap((entry) => {
     const path = join(dir, entry.name)
     if (entry.isDirectory()) return SKIPPED_FOLDERS.has(entry.name) ? [] : listSourceFiles(path)
-    return entry.isFile() && !TEST_FILE.test(entry.name) ? [path] : []
+    return entry.isFile() && !isTestFile(entry.name) ? [path] : []
   })
 }
-
 const getHost = (url) => {
   try {
     return new URL(url).hostname
@@ -150,28 +162,22 @@ export const readNetworkUse = (dir, json) => {
     if (!found.files.includes(path)) found.files.push(path)
     byCall.set(key, found)
   }
-  for (const file of listSourceFiles(dir)) {
-    const isGo = file.endsWith('.go')
-    const path = toPosix(relative(dir, file))
-    const isFrontend = /\.(ts|vue)$/.test(file) && path.startsWith('frontend/')
-    if (!isGo && !isFrontend) continue
-    const text = readFileSync(file, 'utf8')
-    const literalHosts = [...text.matchAll(URL_LITERAL)]
-      .map((match) => match[1])
-      .filter(isReachableHost)
-      .map((host) => host.toLowerCase())
-    hosts.push(...literalHosts)
-    if (isGo) {
-      if (isLoopbackOnly(text)) continue
-      for (const call of GO_CALLS) {
-        if (call.pattern.test(text)) addCall('go', call.name, path)
-      }
-      continue
-    }
-    if (literalHosts.length > 0) isNamingFrontendHosts = true
-    for (const call of TS_CALLS) {
-      for (const match of text.matchAll(call.pattern)) {
-        const target = readFrontendTarget(text.slice(match.index + match[0].length))
+  const toPath = (file) => toPosix(relative(dir, file))
+  const files = listSourceFiles(dir)
+  for (const [file, facts] of readGoFiles(files.filter((one) => one.endsWith('.go')))) {
+    hosts.push(...listReachableHosts(facts.urls))
+    if (isLoopbackOnly(facts)) continue
+    for (const call of facts.calls) addCall('go', call.name, toPath(file))
+  }
+  for (const file of files) {
+    const path = toPath(file)
+    if (!path.startsWith('frontend/') || !FRONTEND_SUFFIXES.some((suffix) => file.endsWith(suffix))) continue
+    for (const sourceFile of parseSourceFile(file, readFileSync(file, 'utf8'))) {
+      const literalHosts = listReachableHosts(listStringTexts(sourceFile))
+      hosts.push(...literalHosts)
+      if (literalHosts.length > 0) isNamingFrontendHosts = true
+      for (const call of listNetworkCalls(sourceFile)) {
+        const target = readFrontendTarget(call.target)
         if (target.kind === 'external') {
           addCall('typescript', call.name, path)
           hosts.push(target.host)

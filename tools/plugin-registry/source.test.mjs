@@ -352,6 +352,34 @@ test('a Go client of loopback addresses only is no network request, one of a giv
   )
 })
 
+test('a Go client call is read from the syntax tree, resolved by its import path', () => {
+  withTree(
+    {
+      'backend/feed/off.go':
+        'package feed\n\nimport "net/http"\n\n// var _, _ = http.Get("https://disabled.numen.md")\nconst sample = `http.Get(address)`\n\nfunc serve(w http.ResponseWriter, r *http.Request) {}\n',
+      'backend/feed/fake.go': 'package feed\n\nimport "example.com/fake/http"\n\nfunc read(address string) { http.Get(address) }\n',
+    },
+    (dir) => {
+      const use = readNetworkUse(dir, { permissions: [] })
+
+      assert.equal(use.isNetworked, false)
+      assert.deepEqual(use.hosts, [])
+    },
+  )
+  withTree(
+    {
+      'backend/feed/alias.go': 'package feed\n\nimport h "net/http"\n\nfunc read(address string) { h.Get(address) }\n',
+      'backend/feed/dot.go': 'package feed\n\nimport . "net"\n\nfunc dial(address string) { Dial("tcp", address) }\n',
+    },
+    (dir) => {
+      assert.deepEqual(readNetworkUse(dir, { permissions: [] }).calls, [
+        { language: 'go', name: 'http.Get', files: ['backend/feed/alias.go'] },
+        { language: 'go', name: 'net.Dial', files: ['backend/feed/dot.go'] },
+      ])
+    },
+  )
+})
+
 test('the network check states the answer and then each kind of evidence on a line', () => {
   const detail = checkNetwork({
     isNetworked: true,

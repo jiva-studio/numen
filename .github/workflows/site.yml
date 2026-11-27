@@ -58,6 +58,12 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
 
+      # The registry reads the Go code of each plugin with tools/plugin-registry/gosource.
+      - uses: ./.github/actions/setup-go
+        with:
+          go-version-file: tools/plugin-registry/gosource/go.mod
+          cache-key: site
+
       # Main and a dispatched run read the published registry (the typecheck
       # loads it too); a pull request collects one from its tree, without the
       # network.
@@ -77,7 +83,9 @@ jobs:
 
       - name: Test the plugin registry
         if: github.event_name != 'workflow_dispatch'
-        run: node --test tools/plugin-registry/*.test.mjs apps/landing/tools/plugin-registry.test.mjs
+        run: |
+          node --test tools/plugin-registry/*.test.mjs apps/landing/tools/plugin-registry.test.mjs
+          (cd tools/plugin-registry/gosource && go test ./...)
 
       # Astro keeps the images it has resized here, keyed by their content.
       - name: Restore the image cache
