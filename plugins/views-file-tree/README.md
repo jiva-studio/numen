@@ -4,6 +4,11 @@ Browse, organize, rename, and manage all the notes, books, documents, and record
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/files-dark.webp">
+  <img alt="The file tree of the window with three folders open and a note chosen" src="screenshots/files-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Organize your library**: Create notes and folders, drag and drop files to reorganize them, and rename or delete items.

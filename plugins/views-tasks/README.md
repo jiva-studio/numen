@@ -4,6 +4,11 @@ Shows the background tasks of the window in the title bar: whether any run, and 
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/status-dark.webp">
+  <img alt="The window with the background tasks opened from the chip in the title bar" src="screenshots/status-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **See what the window is doing**: The title bar says **Idle** while no task runs, or how many tasks are done of how many, with a ring that fills as they progress. A task that failed tints the chip red and changes no text.

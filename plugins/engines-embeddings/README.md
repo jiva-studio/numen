@@ -4,6 +4,11 @@ Provides meaning-based search across your vault so you can find related notes, b
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/search-dark.webp">
+  <img alt="The window with the search open over it, results grouped by name, text and meaning" src="screenshots/search-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Search by meaning, not just keywords**: Find passages that discuss an idea or topic even if they don't contain the exact words you typed.

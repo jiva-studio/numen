@@ -4,6 +4,11 @@ Shows in the title bar how many plugins run, so you can see that Numen starts on
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/plugins-dark.webp">
+  <img alt="The window with the running plugins opened from the title bar" src="screenshots/plugins-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Count the running plugins**: The title bar shows `◈ 3`, the number of plugins whose process runs. A plugin that has only a frontend has no process and is not counted.

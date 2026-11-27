@@ -107,9 +107,35 @@ const DECK_STATE: DeckTabState = {
 
 /** The cards of a deck, under the sections they stand in. */
 export const Deck: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'deck', app: 'docs' },
+      { name: 'window-deck', app: 'landing' },
+    ],
+  },
   render: () => ({
     components: { DeckTab },
     setup: () => ({ state: DECK_STATE }),
     template: '<div style="height: 100vh"><DeckTab :state="state" /></div>',
+  }),
+}
+
+/** The deck open in a tab of the window, its cards under the sections they stand in. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Sanskrit roots', icon: 'deck' },
+      otherTabs: [{ title: 'Entropy', icon: 'note' }],
+      selected: 'Decks/Sanskrit roots.md',
+    },
+    screenshot: [{ name: 'deck' }],
+  },
+  render: () => ({
+    components: { DeckTab },
+    setup: () => ({ state: DECK_STATE }),
+    template: '<div style="height: 100%"><DeckTab :state="state" /></div>',
   }),
 }

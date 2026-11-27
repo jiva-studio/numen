@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Every story the tree declares, and which of a page's shots name none. Depends on nothing, so any machine with node runs it.",
+  "description": "Every story the tree declares and the Storybook that draws it. Depends on nothing, so any machine with node runs it.",
   "scripts": {
     "check": "node --test ./*.test.mjs"
   }

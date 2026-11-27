@@ -175,3 +175,32 @@ export const Unavailable: Story = {
     await expect(canvas.queryByRole('dialog')).toBeNull()
   },
 }
+
+const NAMES = ['Embeddings', 'Claude Code', 'Index stats', 'Transcription', 'Notes']
+
+/** The plugins of the window, by the names they are installed under. */
+const INSTALLED: readonly PluginProcess[] = PLUGINS.map((one, index) => ({
+  ...one,
+  pluginName: NAMES[index]!,
+  healthText: one.healthText && 'The model does not load',
+}))
+
+/** The item in the title bar of the window, with the running plugins listed under it. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-status' },
+    screenshot: [{ name: 'plugins' }],
+  },
+  args: { processes: INSTALLED },
+  render: (args) => ({
+    components: { PluginsIndicator },
+    setup: () => ({ args }),
+    template: '<PluginsIndicator v-bind="args" />',
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: '5 plugins running' }))
+    await expect(await canvas.findByRole('dialog', { name: 'Running plugins' })).toBeVisible()
+  },
+}

@@ -13,7 +13,7 @@
     "manual": "node tools/manual.mjs",
     "manual:check": "node tools/manual.mjs --check",
     "test": "node --test tools/reference.test.mjs tools/cell.test.mjs",
-    "shoot": "node tools/shoot.mjs"
+    "shoot": "node ../../tools/shoot/shoot.mjs --app docs"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.42.11",
@@ -29,7 +29,6 @@
     "eslint": "^10.14.0",
     "eslint-plugin-astro": "^3.1.0",
     "globals": "^17.14.0",
-    "playwright": "^1.64.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.2"
   }

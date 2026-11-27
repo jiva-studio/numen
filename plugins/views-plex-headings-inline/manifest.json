@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.headings.inline",
   "name": "Plex Headings Inline",
-  "version": "2026.11.1",
+  "version": "2026.11.2",
   "protocol": 1,
   "description": "The headings of a note, written under its node in the plex",
   "capabilities": [],

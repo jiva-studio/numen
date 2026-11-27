@@ -1,6 +1,6 @@
 {
   "name": "@numen/views.plex.headings.inline",
-  "version": "2026.11.1",
+  "version": "2026.11.2",
   "private": true,
   "type": "module",
   "description": "The headings of a note, written under its node in the plex",
