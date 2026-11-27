@@ -24,11 +24,15 @@ type Dialog interface {
 // read the file.
 type Saver struct{ dialog Dialog }
 
-// NewSaver returns the saver that asks through dialog.
+// NewSaver returns the saver that asks through dialog. A nil dialog is an installation with no window to show it in.
 func NewSaver(dialog Dialog) *Saver { return &Saver{dialog: dialog} }
 
-// SaveKit asks for the file, then writes the kit there. It returns false when no file was chosen.
+// SaveKit asks for the file, then writes the kit there. It returns false when no file was chosen,
+// and machine.ErrNoFolderDialog when the saver has no dialog.
 func (s *Saver) SaveKit(ctx context.Context, kit identitydomain.Kit) (bool, error) {
+	if s.dialog == nil {
+		return false, machine.ErrNoFolderDialog
+	}
 	path, isChosen, err := s.dialog.ChooseSaveFile(ctx, saveTitle, fileName, []string{".pdf"})
 	if err != nil || !isChosen {
 		return false, err
@@ -41,12 +45,4 @@ func (s *Saver) SaveKit(ctx context.Context, kit identitydomain.Kit) (bool, erro
 		return false, err
 	}
 	return true, nil
-}
-
-// Unavailable is the saver of an installation with no window to show a save dialog in.
-type Unavailable struct{}
-
-// SaveKit answers that this machine shows no dialog.
-func (Unavailable) SaveKit(context.Context, identitydomain.Kit) (bool, error) {
-	return false, machine.ErrNoFolderDialog
 }

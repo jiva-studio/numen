@@ -123,7 +123,7 @@ func TestWatchThemesDoesNotListThePluginThemesWhileNothingChanges(t *testing.T) 
 	watching.await(t, themedomain.BuildPluginName(pluginID, "night"))
 }
 
-func TestWatchThemesReportsNothingWhenAPluginChangeLeavesTheThemesAsTheyWere(t *testing.T) {
+func TestWatchThemesReportsNothingWhenAPluginChangeKeepsTheThemesUnchanged(t *testing.T) {
 	desk := createThemesDesk(t, themedomain.Appearance{})
 	watching := startWatch(t, desk)
 

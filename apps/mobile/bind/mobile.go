@@ -70,7 +70,7 @@ func (c *Core) Start(dir string) (int, error) {
 	cfg := makeConfig(dir)
 	res := makeResources(os.Stderr)
 	if keys := c.getKeyStore(); keys != nil {
-		res.SetKeys(keys)
+		container.SetKeys(res, keys)
 	}
 	execution, preferences, endpoints := container.PreparePluginHost(nil, nil, nil, cfg.SafeMode)
 

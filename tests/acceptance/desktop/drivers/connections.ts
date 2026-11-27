@@ -1,9 +1,9 @@
 /** The person at the connections: the page "Connections", and the rows of connections on the page of a plugin. */
-import { expect, type Locator } from 'playwright/test'
+import { expect, test, type Locator } from 'playwright/test'
 import { ConnectionRows } from './components/ConnectionRows.js'
 import { ConnectionsPage } from './components/ConnectionsPage.js'
 import { Question } from './components/Question.js'
-import { Keys } from './keys.js'
+import { Keys, MissingKeyError } from './keys.js'
 import { escapeRegExp } from './rules.js'
 import type { Scenario } from './scenario.js'
 import type { ServiceDriver } from './services.js'
@@ -65,8 +65,14 @@ export class ConnectionsDriver {
     return new ConnectionRows(this.scenario.page)
   }
 
+  /** A key whose variable is not set on this machine skips the scenario that needs it. */
   declareKeys(table: readonly (readonly string[])[]): void {
-    this.keys.declare(table)
+    try {
+      this.keys.declare(table)
+    } catch (error) {
+      if (error instanceof MissingKeyError) test.skip(true, error.message)
+      throw error
+    }
   }
 
   /** A connection of a type with a fixed address names no service; a type that needs its key at once is given the name of a declared key. */

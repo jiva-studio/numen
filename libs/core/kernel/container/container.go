@@ -96,9 +96,9 @@ type sharedVault struct {
 	watches *vaultwatch.Hub
 }
 
-// SetKeys sets the key store of the installation. The identity record is read from store once and kept until it is
+// SetKeys sets the key store of res. The identity record is read from store once and kept until it is
 // written through Resources.Stores.Keys.
-func (r *Resources) SetKeys(store pluginport.KeyStore) { r.Stores.Keys = identity.CacheKeys(store) }
+func SetKeys(res *Resources, store pluginport.KeyStore) { res.Stores.Keys = identity.CacheKeys(store) }
 
 func NewResources() *Resources {
 	return &Resources{
