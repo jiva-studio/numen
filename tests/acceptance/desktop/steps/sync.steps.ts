@@ -98,8 +98,8 @@ Then('{computer} does not have the file {string} in {owned}', async ({ person },
   await person.computers.expectNoFile(computer, filePath, vault)
 })
 
-When('{computer} is the first to reach the sync server', ({ person }, computer: ComputerName) => {
-  person.computers.connectToServer(computer)
+When('{computer} is the first to reach the sync server', async ({ person }, computer: ComputerName) => {
+  await person.computers.connectToServer(computer)
 })
 
 Then(
@@ -217,12 +217,12 @@ When('the operator restores the sync server from the backup{telling}', async ({ 
   await person.sync.restoreFromBackup(isTold)
 })
 
-When('{computer} goes offline', ({ person }, computer: ComputerName) => {
-  person.computers.setOnline(computer, false)
+When('{computer} goes offline', async ({ person }, computer: ComputerName) => {
+  await person.computers.setOnline(computer, false)
 })
 
-When('{computer} goes online', ({ person }, computer: ComputerName) => {
-  person.computers.setOnline(computer, true)
+When('{computer} goes online', async ({ person }, computer: ComputerName) => {
+  await person.computers.setOnline(computer, true)
 })
 
 Then('the synced vault {string} holds the note {string} with the text {string}', async ({ person }, synced: string, title: string, text: string) => {

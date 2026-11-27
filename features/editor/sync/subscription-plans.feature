@@ -1,4 +1,3 @@
-@live
 Feature: Numen Sync plans
 
   A subscription has a plan. The plan sets how much the cloud holds for the identity.
@@ -15,30 +14,34 @@ Feature: Numen Sync plans
 
   Rule: The page "Identity and licenses" offers plans and shows the one bought
 
+    @live
     Scenario: A new identity is offered every plan with its size
       When the person opens the page "Identity and licenses"
       Then the page offers to buy the plan "Basic" with 10 GB
       And the page offers to buy the plan "Plus" with 100 GB
       And the page offers to buy the plan "Pro" with 250 GB
 
+    @live
     Scenario: The bought plan is shown with its size
       Given the person opens the page "Identity and licenses"
       When the person buys the plan "Plus"
       Then the subscription is active
       And the subscription shows the plan "Plus" with 100 GB
 
+    @live
     Scenario: A plan bought on one computer is shown on the other
       Given a second computer restores the identity from the recovery words
       And the person opens the page "Identity and licenses"
       When the person buys the plan "Plus"
       Then the subscription shows the plan "Plus" with 100 GB on the second computer
 
+    @live
     Scenario: An active subscription is not bought twice
       Given the person opens the page "Identity and licenses"
       When the person buys the plan "Basic"
       Then the page does not offer to buy a plan
 
-    @own-server
+    @stand
     Scenario: An ended subscription still shows its plan
       Given the person opens the page "Identity and licenses"
       And the person buys the plan "Plus"
@@ -49,7 +52,7 @@ Feature: Numen Sync plans
 
   Rule: The page shows how much of the plan is used
 
-    @own-server
+    @stand
     Scenario: The used space is shown against the plan
       Given the person opens the page "Identity and licenses"
       And the person buys the plan "Plus"
@@ -59,7 +62,7 @@ Feature: Numen Sync plans
 
   Rule: A full plan stops new changes
 
-    @own-server
+    @stand
     Scenario: A note stays on this computer when the plan is full
       Given the person opens the page "Identity and licenses"
       And the person buys the plan "Basic"

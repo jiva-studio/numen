@@ -1,16 +1,13 @@
-/**
- * The real sync server a scenario names and what the application does about it: the address and the root key the plugin "Numen Sync" gets,
- * the account of the scenario on that server, and the processes and warnings of plugins that the application lists. The server is the
- * stack of tests/server or the stand of the owner, shared by every scenario; a power over it that a shared server cannot give is
- * the mark of a scenario tagged @own-server.
- */
+/** Configures the sync server for a scenario and drives the server and the sync processes in that scenario. */
 import { execFile } from 'node:child_process'
+import { setTimeout as wait } from 'node:timers/promises'
 import { promisify } from 'node:util'
 import { expect } from 'playwright/test'
 import { removeSeed, makeSeed, type IdentitySeed } from './identity-seed.js'
 import type { IdentityDriver } from './identity.js'
 import { expectTextNotStored, readDevices, readPlans, requireStack, type SyncStack } from './sync-stack.js'
 import type { Scenario } from './scenario.js'
+import { ENV_OWN_STACK, OwnStack } from './own-stack.js'
 
 export const SYNC_PLUGIN = 'md.numen.tools.sync'
 /** The address the plugin signs in to is the one the server names as its own, and the key it trusts for the epochs of that server. */
@@ -24,6 +21,8 @@ const REMOVAL_DELAY_SECONDS = '1'
 const SETTLE_MS = 6_000
 /** A device the plugin added to the chain, or a revoked one, shows on the server within a few passes. */
 const DEVICE_LIST_TIMEOUT_MS = 15_000
+/** How long the lead computer has the server to itself before the held computers go on. */
+const HOLD_MS = 6_000
 
 /** A number and a unit, as a scenario writes an interval. */
 const INTERVAL_PATTERN = /^(\d+) (second|minute|hour)s?$/
@@ -76,9 +75,41 @@ export const findBackendPids = (processes: string, backend: string): number[] =>
     .map((line) => /^\s*(\d+)\s+(\S+)/.exec(line))
     .flatMap((found) => (found?.[1] !== undefined && found[2].endsWith(`/bin/${backend}`) ? [Number(found[1])] : []))
 
+/** Finds the plugin among the descendants of this computer's application process. */
+export const findChildBackendPids = (processes: string, root: number, backend: string): number[] => {
+  const children = new Map<number, number[]>()
+  const programs = new Map<number, string>()
+  for (const line of processes.split('\n')) {
+    const found = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(line)
+    if (found === null) continue
+    const pid = Number(found[1])
+    const parent = Number(found[2])
+    const siblings = children.get(parent) ?? []
+    siblings.push(pid)
+    children.set(parent, siblings)
+    programs.set(pid, pid + ' ' + found[3])
+  }
+  const family = new Set<number>([root])
+  const pending = [root]
+  while (pending.length > 0) {
+    const parent = pending.pop()
+    if (parent === undefined) break
+    for (const pid of children.get(parent) ?? []) {
+      if (family.has(pid)) continue
+      family.add(pid)
+      pending.push(pid)
+    }
+  }
+  family.delete(root)
+  return findBackendPids([...family].map((pid) => programs.get(pid)).join('\n'), backend)
+}
+
 export class SyncDriver {
   private stack: SyncStack | undefined
   private startedAt = new Date()
+  private own: OwnStack | undefined
+  private held: Scenario | undefined
+  private readonly paused = new Map<Scenario, Set<number>>()
   private seeded: { readonly seed: IdentitySeed; readonly folder: string } | undefined
 
   constructor(
@@ -193,11 +224,18 @@ export class SyncDriver {
       .toBe(true)
   }
 
-  /** Removes the files of the account of the scenario. */
-  remove(): void {
-    if (this.seeded === undefined) return
-    removeSeed(this.seeded.folder)
-    this.seeded = undefined
+  /** Returns the stand and the computers to a running state and removes the seed files. */
+  async remove(): Promise<void> {
+    const tasks = await Promise.allSettled([
+      this.own?.startServer(),
+      ...[...this.paused.keys()].map((scenario) => this.resumePlugin(scenario)),
+    ])
+    if (this.seeded !== undefined) {
+      removeSeed(this.seeded.folder)
+      this.seeded = undefined
+    }
+    const failures = tasks.flatMap((task) => (task.status === 'rejected' ? [task.reason as unknown] : []))
+    if (failures.length > 0) throw new AggregateError(failures, 'the sync scenario cleanup failed')
   }
 
   private requireStack(): SyncStack {
@@ -210,75 +248,121 @@ export class SyncDriver {
     return (head['processes'] ?? []) as ProcessRow[]
   }
 
-  private createPowerError(power: string): Error {
-    return new Error(`${power}: the sync server of this run is shared by every scenario and gives no such power; run the scenario on a stack of its own (tag @own-server)`)
+  private requireOwn(power: string): OwnStack {
+    const project = process.env[ENV_OWN_STACK]
+    if (project === undefined || project === '') throw new Error(power + ': set ' + ENV_OWN_STACK + ' to the stand project for @stand')
+    this.own ??= new OwnStack(project)
+    return this.own
+  }
+
+  private async findPluginPids(scenario: Scenario): Promise<number[]> {
+    const root = scenario.getServer().getPid()
+    if (root === undefined) return []
+    const listed = (await run('ps', ['-A', '-o', 'pid=,ppid=,args='])).stdout
+    return findChildBackendPids(listed, root, findPlugin('Numen Sync').backend)
+  }
+
+  private async pausePlugin(scenario: Scenario): Promise<void> {
+    const running = await this.findPluginPids(scenario)
+    if (running.length === 0) throw new Error('the computer has no running Numen Sync backend to pause')
+    const paused = this.paused.get(scenario) ?? new Set<number>()
+    this.paused.set(scenario, paused)
+    for (const pid of running) {
+      process.kill(pid, 'SIGSTOP')
+      paused.add(pid)
+    }
+  }
+
+  private async resumePlugin(scenario: Scenario): Promise<void> {
+    const paused = this.paused.get(scenario)
+    if (paused === undefined) return
+    for (const pid of await this.findPluginPids(scenario)) {
+      if (!paused.has(pid)) continue
+      try {
+        process.kill(pid, 'SIGCONT')
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ESRCH') throw error
+      }
+    }
+    this.paused.delete(scenario)
   }
 
   startTrial(_plan: string): Promise<never> {
-    return Promise.reject(this.createPowerError('start a trial of a plan for one account'))
+    return Promise.reject(new Error('the payment stand-in cannot start a trial'))
   }
 
   cancelTrial(): Promise<never> {
-    return Promise.reject(this.createPowerError('cancel the trial of one account'))
+    return Promise.reject(new Error('the payment stand-in cannot cancel a trial'))
   }
 
   getTrialEnd(): never {
-    throw this.createPowerError('read the end of the trial of one account')
+    throw new Error('the payment stand-in cannot provide the end of a trial')
   }
 
-  holdInCloud(_gigabytes: number): Promise<never> {
-    return Promise.reject(this.createPowerError('make the cloud hold gigabytes of notes'))
+  async holdInCloud(gigabytes: number): Promise<void> {
+    await this.requireOwn('make the cloud hold gigabytes of notes').setUsage(gigabytes)
   }
 
-  deleteFromCloud(_gigabytes: number): Promise<never> {
-    return Promise.reject(this.createPowerError('delete gigabytes of notes from the cloud'))
+  async deleteFromCloud(gigabytes: number): Promise<void> {
+    await this.requireOwn('delete gigabytes of notes from the cloud').addUsage(-gigabytes)
   }
 
-  endSubscription(_daysAgo: number): Promise<never> {
-    return Promise.reject(this.createPowerError('end the subscription of one account some days ago'))
+  async endSubscription(daysAgo: number): Promise<void> {
+    await this.requireOwn('end the subscription of one account some days ago').endSubscriptions(daysAgo)
   }
 
-  holdOthers(_lead: Scenario): never {
-    throw this.createPowerError('cut the other computers off from the server')
+  /** Stops the plugin of every computer but the lead; the server runs again first for the lead, and the others go on after it sent. */
+  async holdOther(other: Scenario): Promise<void> {
+    this.requireOwn('cut the other computers off from the server')
+    await this.pausePlugin(other)
+    this.held = other
   }
 
-  setReachable(_scenario: Scenario, _isReachable: boolean): never {
-    throw this.createPowerError('cut one computer off from the server')
+  async setReachable(scenario: Scenario, isReachable: boolean): Promise<void> {
+    this.requireOwn('cut one computer off from the server')
+    if (isReachable) await this.resumePlugin(scenario)
+    else await this.pausePlugin(scenario)
   }
 
-  makeBackup(): Promise<never> {
-    return Promise.reject(this.createPowerError('make a backup of the whole server'))
+  async makeBackup(): Promise<void> {
+    await this.requireOwn('make a backup of the whole server').makeBackup()
   }
 
-  restoreFromBackup(_isTold: boolean): Promise<never> {
-    return Promise.reject(this.createPowerError('restore the whole server from a backup'))
+  async restoreFromBackup(isTold: boolean): Promise<void> {
+    await this.requireOwn('restore the whole server from a backup').restoreBackup(isTold)
   }
 
-  pause(): Promise<never> {
-    return Promise.reject(this.createPowerError('stop the server'))
+  async pause(): Promise<void> {
+    await this.requireOwn('stop the server').stopServer()
   }
 
-  resume(): Promise<never> {
-    return Promise.reject(this.createPowerError('run the server again'))
+  async resume(): Promise<void> {
+    const own = this.requireOwn('run the server again')
+    await own.startServer()
+    if (this.held !== undefined) {
+      await wait(HOLD_MS)
+      await this.resumePlugin(this.held)
+      this.held = undefined
+    }
   }
 
-  breakAfter(_direction: 'received' | 'sent', _bytes: number): Promise<never> {
-    return Promise.reject(this.createPowerError('break the connection of the server after some bytes'))
+  async breakAfter(direction: 'received' | 'sent', bytes: number): Promise<void> {
+    await this.requireOwn('break the connection of the server after some bytes').breakAfter(direction, bytes)
   }
 
-  forgetRemovals(): Promise<never> {
-    return Promise.reject(this.createPowerError('make the server drop the removals it keeps'))
+  async forgetRemovals(): Promise<void> {
+    await this.requireOwn('make the server drop the removals it keeps').forgetRemovals()
   }
 
   needNewerProtocol(): Promise<never> {
-    return Promise.reject(this.createPowerError('make the server need a newer protocol'))
+    return Promise.reject(new Error('the stand cannot require a newer sync protocol'))
   }
 
-  dropStreams(): Promise<never> {
-    return Promise.reject(this.createPowerError('end every stream of the server'))
+  async dropStreams(): Promise<void> {
+    await this.requireOwn('end every stream of the server').restartServer()
   }
 
-  endSession(): Promise<never> {
-    return Promise.reject(this.createPowerError('end the sessions of the server'))
+  async endSession(): Promise<void> {
+    await this.requireOwn('end the sessions of the server').endSessions()
   }
 }

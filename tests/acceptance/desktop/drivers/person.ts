@@ -133,12 +133,15 @@ export class Person {
   /** Leaves the vault as the scenario found it; a scenario with a world of its own removes the world and its server. */
   async removeNotes(): Promise<void> {
     this.services.stopAll()
-    this.sync.remove()
     try {
-      await this.computers.remove()
-      await this.readers.remove()
+      await this.sync.remove()
     } finally {
-      await this.removeFirstComputer()
+      try {
+        await this.computers.remove()
+        await this.readers.remove()
+      } finally {
+        await this.removeFirstComputer()
+      }
     }
   }
 

@@ -14,8 +14,6 @@ export const ENV_ROOT_KEY = 'NUMEN_SYNC_TEST_ROOT_KEY'
 export const ENV_PAYMENT_URL = 'NUMEN_SYNC_TEST_PAYMENT_URL'
 export const ENV_BUCKET_URL = 'NUMEN_SYNC_TEST_BUCKET_URL'
 export const ENV_REQUIRED = 'NUMEN_SYNC_TEST_REQUIRED'
-/** The tag of a scenario that needs a power over the server that the shared stack does not give: its process, its clock, its data or the network of one computer. */
-export const OWN_SERVER_TAG = '@own-server'
 export const NO_STACK_MESSAGE = `no real sync server: run make sync_stack_up, then eval "$(make -s sync_stack_env)" to set ${ENV_URL} and ${ENV_ROOT_KEY}`
 
 const ROOT_KEY_PATTERN = /^[0-9a-f]{64}$/

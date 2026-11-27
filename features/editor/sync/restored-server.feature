@@ -1,4 +1,3 @@
-@live
 Feature: Numen Sync after the server is restored from a backup
 
   The operator can restore the sync server to an earlier backup. The computers keep their notes and send them again.
@@ -20,7 +19,7 @@ Feature: Numen Sync after the server is restored from a backup
 
   Rule: A restored server gets the notes of the computers back
 
-    @own-server
+    @stand
     Scenario: A note written after the backup returns to the server
       Given the operator makes a backup of the sync server
       And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
@@ -28,7 +27,7 @@ Feature: Numen Sync after the server is restored from a backup
       When the operator restores the sync server from the backup
       Then the synced vault "Test" holds the note "Shopping list" with the text "milk"
 
-    @own-server
+    @stand
     Scenario: A restored server does not bring back an old text
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the operator makes a backup of the sync server
@@ -39,7 +38,7 @@ Feature: Numen Sync after the server is restored from a backup
       And the second computer has the note "Shopping list" with the text "bread" in its vault "Copy"
       And the synced vault "Test" holds the note "Shopping list" with the text "bread"
 
-    @own-server
+    @stand
     Scenario: A note removed after the backup stays removed
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the operator makes a backup of the sync server
@@ -49,7 +48,7 @@ Feature: Numen Sync after the server is restored from a backup
       Then the synced vault "Test" does not hold the note "Shopping list"
       And the second computer does not have the file "Shopping list.md" in its vault "Copy"
 
-    @own-server
+    @stand
     Scenario: A computer that was away sends its note after the restore
       Given the operator makes a backup of the sync server
       And the second computer goes offline
@@ -60,7 +59,7 @@ Feature: Numen Sync after the server is restored from a backup
 
   Rule: The list of synced vaults comes back
 
-    @own-server
+    @stand
     Scenario: A vault connected after the backup is listed again
       Given the empty vault "Work"
       And the operator makes a backup of the sync server
@@ -70,7 +69,7 @@ Feature: Numen Sync after the server is restored from a backup
 
   Rule: The subscription stays after a restore
 
-    @own-server
+    @stand
     Scenario: A subscription bought after the backup is active
       Given the operator makes a backup of the sync server
       And the person opens the page "Identity and licenses"
@@ -80,7 +79,7 @@ Feature: Numen Sync after the server is restored from a backup
 
   Rule: A restore the computers are not told of changes nothing on them
 
-    @own-server
+    @stand
     Scenario: A computer waits until it is told of the restore
       Given the person writes the note "Shopping list" with the text "bread" in the vault "Test"
       And the operator makes a backup of the sync server

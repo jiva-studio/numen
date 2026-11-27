@@ -584,7 +584,7 @@ app_desktop_acceptance: lib_workbench_build app_desktop_editor_build app_desktop
 	cd $(TESTS)/acceptance/desktop && npm run acceptance:test
 
 .PHONY: app_desktop_acceptance_live
-app_desktop_acceptance_live: lib_workbench_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run the @live acceptance scenarios: the real sync server (make sync_stack_up, then eval "$$(make -s sync_stack_env)") and, with NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY set, the real model
+app_desktop_acceptance_live: lib_workbench_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run shared @live scenarios, excluding @stand (set up the sync stack and set NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY for the real model)
 	cd $(DESKTOP) && go build -tags numen_debug -ldflags "-X 'github.com/jiva-studio/numen/apps/desktop/internal/version.version=1.0.0 (build 1000, commit acceptance)'" -o numen-debug ./cmd/numen
 	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
 	cd tools/syncaccount && go build -o bin/syncaccount .

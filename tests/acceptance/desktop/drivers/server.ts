@@ -97,6 +97,11 @@ interface Services {
 
 export class Server {
   private child: ChildProcess | undefined
+
+  getPid(): number | undefined {
+    return this.child?.pid
+  }
+
   private baseURL = ''
   private publicKeyHash = ''
   private readonly programVariables: Record<string, string> = {}
