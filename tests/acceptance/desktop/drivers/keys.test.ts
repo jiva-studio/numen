@@ -34,7 +34,7 @@ describe('Keys', () => {
     expect(() => new Keys().declare(TABLE)).toThrow(VARIABLE)
   })
 
-  it('tells a missing variable from a malformed table', () => {
+  it('separates a missing variable from a malformed table', () => {
     expect(() => new Keys().declare(TABLE)).toThrow(MissingKeyError)
     expect(() => new Keys().declare([['key name'], ['Main']])).not.toThrow(MissingKeyError)
   })

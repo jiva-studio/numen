@@ -18,13 +18,12 @@ const (
 	nightCSS = ":root { --numen-surface: #101010 }"
 )
 
-// fakePlugins is a source of plugin themes held in memory.
+// fakePlugins is a source of plugin themes held in memory; the host calls changed after it enables or disables a plugin.
 type fakePlugins struct {
 	mu     sync.Mutex
 	themes []themedomain.PluginTheme
 	texts  map[string]string
 	lists  int
-	// changed is what the host calls after it enables or disables a plugin.
 	changed func()
 }
 

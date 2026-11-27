@@ -253,8 +253,8 @@ func TestSaver_ReportsADialogThatFails(t *testing.T) {
 	if !errors.Is(err, machine.ErrChoosing) {
 		t.Errorf("error = %v, want the error of the dialog", err)
 	}
-	if _, err := (kitpdf.Unavailable{}).SaveKit(t.Context(), getSampleKit()); !errors.Is(err, machine.ErrNoFolderDialog) {
-		t.Errorf("Unavailable: error = %v, want ErrNoFolderDialog", err)
+	if _, err := kitpdf.NewSaver(nil).SaveKit(t.Context(), getSampleKit()); !errors.Is(err, machine.ErrNoFolderDialog) {
+		t.Errorf("a saver without a dialog: error = %v, want ErrNoFolderDialog", err)
 	}
 }
 

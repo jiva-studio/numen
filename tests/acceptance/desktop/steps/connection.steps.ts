@@ -1,7 +1,5 @@
 import type { DataTable } from 'playwright-bdd'
-import { test } from 'playwright/test'
 import { readConnectionEntries } from '../drivers/connections.js'
-import { MissingKeyError } from '../drivers/keys.js'
 import { Given, Then, When } from '../support/bdd.js'
 
 Given('the service {string} is busy', async ({ person }, name: string) => {
@@ -20,12 +18,7 @@ Given(
 )
 
 Given('the person has the following keys:', ({ person }, keys: DataTable) => {
-  try {
-    person.connections.declareKeys(keys.raw())
-  } catch (error) {
-    if (error instanceof MissingKeyError) test.skip(true, error.message)
-    throw error
-  }
+  person.connections.declareKeys(keys.raw())
 })
 
 Given('the program {string} is installed on this computer', ({ person }, name: string) => {
