@@ -39,7 +39,7 @@ type Scorer struct {
 // Open loads the model of p, fetching its files first where this machine does not hold them. It fails on a
 // graph that takes an input other than the tokens, the mask and the token types, or answers more than one
 // logit for a pair.
-func Open(ctx context.Context, library *onnx.Library, p profile.Profile, fetch onnx.FetchFile, queue host.InferenceQueue) (*Scorer, error) {
+func Open(ctx context.Context, library *onnx.Library, p profile.Profile, fetch Fetch, queue host.InferenceQueue) (*Scorer, error) {
 	paths, err := Locate(ctx, p, fetch)
 	if err != nil {
 		return nil, err

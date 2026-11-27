@@ -118,7 +118,7 @@ func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 	host.Supervision.Dependencies.Replace(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 		"whisper": {ID: "whisper", EnvVars: map[string]string{"NUMEN_DEPENDENCY_WHISPER": "/deps/whisper.bin"}},
 	}})
-	manifest := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
+	manifest := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindDataset}}}
 
 	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a", nil), host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
@@ -189,7 +189,7 @@ func TestALaunchedPluginIsGivenThePlannedPathOfAMissingDependency(t *testing.T) 
 	}}
 	catalog.state = plugindomain.DependencyStateMissing
 	host.Supervision.Dependencies.Replace(catalog)
-	declared := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
+	declared := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindDataset}}}
 
 	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", declared.GetDependencyRequirements("/plugins/a", nil), host.Management.Mode.GetVaultPath(), 5, "t")
 

@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -100,13 +101,14 @@ func TestTheHandlerOfCreateTextFailsBeforeAnyTask(t *testing.T) {
 	}
 }
 
-// Each model the manifest offers is one the engine runs, fetched from the engine's own address.
+// Each model the manifest offers is one the engine runs, fetched by the id its option names.
 func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 	var manifest struct {
 		Settings []struct {
 			Key     string `json:"key"`
 			Options []struct {
-				Value string `json:"value"`
+				Value        string   `json:"value"`
+				Dependencies []string `json:"dependencies"`
 			} `json:"options"`
 		} `json:"settings"`
 	}
@@ -120,15 +122,17 @@ func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 		}
 		for _, option := range setting.Options {
 			count++
-			address, ok := settings.FindRecognizer(option.Value)
+			id, ok := settings.FindRecognizer(option.Value)
 			if !ok {
 				t.Errorf("the manifest offers %s, which the engine does not run", option.Value)
 				continue
 			}
-			if address != "" {
-				if _, ok := settings.FindModelDigest(address); !ok {
-					t.Errorf("%s has no checksum for %s", option.Value, address)
-				}
+			want := []string{id}
+			if id == "" {
+				want = nil
+			}
+			if !slices.Equal(option.Dependencies, want) {
+				t.Errorf("%s names %v, the engine fetches %v", option.Value, option.Dependencies, want)
 			}
 		}
 	}

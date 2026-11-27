@@ -538,7 +538,7 @@ func newDownloadFixture(t *testing.T, data []byte, offline bool) (lazyPlugin, *a
 	}))
 	t.Setenv("NUMEN_DEPENDENCY_SPEECH_MODEL", "")
 	manifest := newModelManifest(fmt.Sprintf(
-		`{"id": "speech-model", "kind": "model", "version": "1", "sourceUrl": %q, "checksumSha256": %q}`,
+		`{"id": "speech-model", "kind": "dataset", "version": "1", "sourceUrl": %q, "checksumSha256": %q}`,
 		server.URL+"/speech.bin", sumHex(data),
 	))
 	return newLazyPluginFrom(t, registry, manifest), &requests, dir
@@ -602,7 +602,7 @@ func TestAModelWithAWrongChecksumFailsAtTheFirstUse(t *testing.T) {
 	}))
 	t.Setenv("NUMEN_DEPENDENCY_SPEECH_MODEL", "")
 	p := newLazyPluginFrom(t, registry, newModelManifest(fmt.Sprintf(
-		`{"id": "speech-model", "kind": "model", "version": "1", "sourceUrl": %q, "checksumSha256": %q}`,
+		`{"id": "speech-model", "kind": "dataset", "version": "1", "sourceUrl": %q, "checksumSha256": %q}`,
 		server.URL+"/speech.bin", sumHex([]byte("the real bytes")),
 	)))
 
@@ -620,7 +620,7 @@ func TestAModelOfAnotherPlatformFailsAtTheFirstUse(t *testing.T) {
 	registry := provision.NewObservedRegistry(nil, provision.NewFileProvisioner(provision.Config{Dir: t.TempDir(), Clock: testsupport.NewClock()}))
 	t.Setenv("NUMEN_DEPENDENCY_SPEECH_MODEL", "")
 	p := newLazyPluginFrom(t, registry, newModelManifest(fmt.Sprintf(
-		`{"id": "speech-model", "kind": "model", "version": "1", "sources": [{"platform": "plan9/mips64", "sourceUrl": "https://models.invalid/speech.bin", "checksumSha256": %q}]}`,
+		`{"id": "speech-model", "kind": "dataset", "version": "1", "sources": [{"platform": "plan9/mips64", "sourceUrl": "https://models.invalid/speech.bin", "checksumSha256": %q}]}`,
 		sumHex([]byte("x")),
 	)))
 

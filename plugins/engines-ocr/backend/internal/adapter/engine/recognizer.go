@@ -33,7 +33,7 @@ type Recognizer struct {
 }
 
 // Open loads the layout and PaddleOCR recognition models through the library.
-func Open(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch FetchModelFile) (*Recognizer, error) {
+func Open(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch FetchDependency) (*Recognizer, error) {
 	engine, pos, found, err := locateModels(ctx, library, cfg, fetch)
 	if err != nil {
 		return nil, err

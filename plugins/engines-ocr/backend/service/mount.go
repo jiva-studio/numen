@@ -49,7 +49,7 @@ func (a *App) Mount(s *server.Server) error {
 	store := host.NewStoreClient(endpoint)
 	texts := host.NewTextClient(endpoint)
 	queue := host.NewQueueClient(endpoint)
-	fetch := host.NewDependencyClient(endpoint).FetchModelFile
+	fetch := host.NewDependencyClient(endpoint).FetchDependency
 	env := process.Process{}
 	holder := engines.NewHolder(env.GetConfig(), newOpener(engine.NewLibrary(), env.IsMockML, fetch), env)
 	feeds := func(id domain.VaultID) feed.Vault { return feed.Vault{Feed: vault.With(id), Store: store.With(id)} }

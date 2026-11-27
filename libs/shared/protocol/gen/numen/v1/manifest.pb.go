@@ -2009,7 +2009,9 @@ type ManifestDependency struct {
 	// skipped.
 	Search []string `protobuf:"bytes,9,rep,name=search,proto3" json:"search,omitempty"`
 	// source_urls holds the primary URL and fallback mirror URLs tried in order.
-	SourceUrls    []string `protobuf:"bytes,10,rep,name=source_urls,json=sourceUrls,proto3" json:"source_urls,omitempty"`
+	SourceUrls []string `protobuf:"bytes,10,rep,name=source_urls,json=sourceUrls,proto3" json:"source_urls,omitempty"`
+	// size_bytes is the size of the file fetched; it is required for a model with a source.
+	SizeBytes     int64 `protobuf:"varint,11,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2112,6 +2114,13 @@ func (x *ManifestDependency) GetSourceUrls() []string {
 		return x.SourceUrls
 	}
 	return nil
+}
+
+func (x *ManifestDependency) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
 }
 
 // ManifestDependencySource is the file a dependency is fetched from on one platform.
@@ -3441,7 +3450,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x12\n" +
 	"\x04when\x18\x04 \x01(\tR\x04when\x12\x12\n" +
 	"\x04rank\x18\x05 \x01(\tR\x04rank\x12$\n" +
-	"\x0eis_note_editor\x18\x06 \x01(\bR\fisNoteEditor\"\xb8\x03\n" +
+	"\x0eis_note_editor\x18\x06 \x01(\bR\fisNoteEditor\"\xd7\x03\n" +
 	"\x12ManifestDependency\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +
@@ -3455,7 +3464,9 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x06search\x18\t \x03(\tR\x06search\x12\x1f\n" +
 	"\vsource_urls\x18\n" +
 	" \x03(\tR\n" +
-	"sourceUrls\x1a;\n" +
+	"sourceUrls\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\v \x01(\x03R\tsizeBytes\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xeb\x01\n" +

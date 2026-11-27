@@ -153,7 +153,13 @@ func (t *Profiles) mergeEntry(entry json.RawMessage) (Profile, error) {
 }
 
 func dropStalePins(p *Profile, base Profile, entry json.RawMessage) {
-	if p.OnnxFile == base.OnnxFile || bytes.Contains(entry, []byte(`"sha256"`)) {
+	if p.OnnxFile == base.OnnxFile {
+		return
+	}
+	if !bytes.Contains(entry, []byte(`"dependencies"`)) {
+		p.Dependencies = nil
+	}
+	if bytes.Contains(entry, []byte(`"sha256"`)) {
 		return
 	}
 	p.SHA256 = nil
@@ -164,6 +170,7 @@ func dropStalePins(p *Profile, base Profile, entry json.RawMessage) {
 
 func cloneProfile(p Profile) Profile {
 	p.Aliases = slices.Clone(p.Aliases)
+	p.Dependencies = maps.Clone(p.Dependencies)
 	if p.SHA256 != nil {
 		sums := make(map[string]string, len(p.SHA256))
 		maps.Copy(sums, p.SHA256)

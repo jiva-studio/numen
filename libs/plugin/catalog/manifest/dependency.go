@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 	"path"
 	"regexp"
 	"runtime"
@@ -37,7 +38,7 @@ var (
 // DependencyRequirement is one dependency a plugin declares. Sources holds the file fetched on each
 // platform, at most one per platform. Environment holds the names of host variables, or prefixes
 // ending in *, passed to the plugin process. Search holds glob patterns of files on this machine
-// that are the dependency.
+// that are the dependency. SizeBytes is the size of the file fetched.
 type DependencyRequirement struct {
 	ID             string
 	Kind           DependencyKind
@@ -49,6 +50,7 @@ type DependencyRequirement struct {
 	Sources        []DependencySource
 	Environment    []string
 	Search         []string
+	SizeBytes      int64
 
 	PluginDir string
 }
@@ -102,8 +104,12 @@ func (req DependencyRequirement) GetSource(goos, goarch string) (DependencySourc
 }
 
 // GetIdentity returns the string that tells one download from another: the kind, id, version, source on this platform and plugin
-// directory. Requirements with the same identity are one download.
+// directory. The checksum alone distinguishes a model file stored by its checksum. Requirements with the same identity are
+// one download.
 func (req DependencyRequirement) GetIdentity() string {
+	if req.Kind == DependencyKindModel && req.ChecksumSHA256 != "" && req.ID == req.ChecksumSHA256 && req.Version == "" && len(req.Sources) == 0 {
+		return string(req.Kind) + "\x00" + req.ChecksumSHA256
+	}
 	source, _ := req.GetSource(runtime.GOOS, runtime.GOARCH)
 	return strings.Join([]string{
 		string(req.Kind), req.ID, req.Version, strings.Join(source.GetURLs(), "\x00"), source.ChecksumSHA256, source.ArchiveMember, source.MemberSHA256, req.PluginDir,
@@ -116,13 +122,13 @@ func GetDependencyKinds() []DependencyKind {
 }
 
 // GetDependencyRequirements is the requirements of the plugin under the settings in force: its
-// dependencies. A dependency an option of a setting provisions is a requirement only while that
-// option is in force.
+// dependencies other than models, which the plugin fetches on request. A dependency an option of a
+// setting provisions is a requirement only while that option is in force.
 func (m Manifest) GetDependencyRequirements(pluginDir string, values map[string]any) []DependencyRequirement {
 	optional, active := m.getOptionalDependencies(values)
 	out := make([]DependencyRequirement, 0, len(m.Dependencies))
 	for _, req := range m.Dependencies {
-		if optional[req.ID] && !active[req.ID] {
+		if req.Kind == DependencyKindModel || (optional[req.ID] && !active[req.ID]) {
 			continue
 		}
 		req.PluginDir = pluginDir
@@ -159,6 +165,7 @@ func (m Manifest) listDependencyIssues() []error {
 		}
 		observed[req.ID] = true
 		issues = append(issues, listDependencySourceIssues(req)...)
+		issues = append(issues, listSizeIssues(req)...)
 		issues = append(issues, listPlatformSourceIssues(req)...)
 		issues = append(issues, listEnvironmentIssues(req)...)
 	}
@@ -179,6 +186,13 @@ func listDependencySourceIssues(req DependencyRequirement) []error {
 		return []error{fmt.Errorf("%w: %s declares both sourceUrl and sources", ErrInvalidDependency, req.ID)}
 	}
 	return listSourceIssues(req.ID, DependencySource{SourceURL: req.SourceURL, SourceURLs: req.SourceURLs, ChecksumSHA256: req.ChecksumSHA256})
+}
+
+func listSizeIssues(req DependencyRequirement) []error {
+	if req.SizeBytes < 0 || (req.Kind == DependencyKindModel && req.SizeBytes == 0 && (req.SourceURL != "" || len(req.SourceURLs) > 0 || len(req.Sources) > 0)) {
+		return []error{fmt.Errorf("%w: %s needs a sizeBytes above 0", ErrInvalidDependency, req.ID)}
+	}
+	return nil
 }
 
 func listPlatformSourceIssues(req DependencyRequirement) []error {
@@ -284,4 +298,28 @@ func getModelTitle(address string) string {
 		}
 	}
 	return host + " model"
+}
+
+// FindModelDependency returns the dependency of kind model that the manifest declares under id.
+func (m Manifest) FindModelDependency(id string) (DependencyRequirement, bool) {
+	i := slices.IndexFunc(m.Dependencies, func(req DependencyRequirement) bool {
+		return id != "" && req.ID == id && req.Kind == DependencyKindModel
+	})
+	if i < 0 {
+		return DependencyRequirement{}, false
+	}
+	return m.Dependencies[i], true
+}
+
+// NewDeclaredModelFile returns the requirement that fetches a model a manifest declares. It is stored
+// by its checksum, as NewModelFile stores a pinned file, so that every declaration of one file and
+// every fetch of it by address share one download. It keeps the sources, the size and the title.
+func NewDeclaredModelFile(req DependencyRequirement) (DependencyRequirement, error) {
+	if req.Kind != DependencyKindModel || !dependencyChecksumPattern.MatchString(req.ChecksumSHA256) {
+		return DependencyRequirement{}, fmt.Errorf("%w: model %s has no checksumSha256", ErrInvalidDependency, req.ID)
+	}
+	metadata := maps.Collect(maps.All(req.Metadata))
+	metadata[metadataTitle] = req.GetTitle()
+	return DependencyRequirement{ID: req.ChecksumSHA256, Kind: DependencyKindModel, SourceURL: req.SourceURL, SourceURLs: slices.Clone(req.SourceURLs),
+		ChecksumSHA256: req.ChecksumSHA256, SizeBytes: req.SizeBytes, Metadata: metadata}, nil
 }

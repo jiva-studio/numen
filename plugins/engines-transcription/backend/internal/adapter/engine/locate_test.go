@@ -96,22 +96,47 @@ func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
 }
 
 func TestResolveSelectedModelThroughHost(t *testing.T) {
-	model, _ := settings.FindModel("parakeet-tdt-0.6b-v2-int8")
-	address := model.Repo
-	ctx := t.Context()
-	fetch := func(call context.Context, url, sha string) (string, error) {
-		if call != ctx || url != address+encoderFile || sha != "a32b12d17bbbc309d0686fbbcc2987b5e9b8333a7da83fa6b089f0a2acd651ab" {
-			t.Fatalf("unexpected model request %s (%s)", url, sha)
+	for name, want := range map[string]paths{
+		"parakeet-tdt-0.6b-v3-int8": {encoder: "parakeet-v3-encoder", decoder: "parakeet-v3-decoder", joiner: "parakeet-v3-joiner", tokens: "parakeet-v3-tokens", segmenter: "silero-vad"},
+		"parakeet-tdt-0.6b-v2-int8": {encoder: "parakeet-v2-encoder", decoder: "parakeet-v2-decoder", joiner: "parakeet-v2-joiner", tokens: "parakeet-v2-tokens", segmenter: "silero-vad"},
+	} {
+		cfg := settings.NewDefaultConfig()
+		cfg.Model, _ = settings.FindModel(name)
+		var requested []string
+		files := modelFiles{dir: t.TempDir(), shouldDownload: true, fetch: func(_ context.Context, id string) (string, error) {
+			requested = append(requested, id)
+			return "/shared/" + id, nil
+		}}
+		got, err := files.resolveAll(t.Context(), cfg)
+		if err != nil {
+			t.Fatal(err)
 		}
-		return "/shared/model", nil
+		if wantPaths := (paths{encoder: "/shared/" + want.encoder, decoder: "/shared/" + want.decoder, joiner: "/shared/" + want.joiner,
+			tokens: "/shared/" + want.tokens, segmenter: "/shared/" + want.segmenter}); got != wantPaths {
+			t.Errorf("%s: paths = %+v, want %+v", name, got, wantPaths)
+		}
+		if len(requested) != 5 {
+			t.Errorf("%s: requested %v, want the five files of the model", name, requested)
+		}
 	}
-	files := modelFiles{dir: t.TempDir(), shouldDownload: true, fetch: fetch}
-	got, err := files.resolve(ctx, "", address, encoderFile)
-	if err != nil || got != "/shared/model" {
-		t.Fatalf("resolve = %q, %v", got, err)
+}
+
+func TestALocalModelRequestsNothingFromTheHost(t *testing.T) {
+	dir := t.TempDir()
+	cfg := settings.NewDefaultConfig()
+	for _, name := range []string{encoderFile, decoderFile, joinerFile, tokensFile, "silero.onnx"} {
+		writeFile(t, filepath.Join(dir, name), []byte(name), 0o644)
 	}
+	files := modelFiles{dir: dir, shouldDownload: true, fetch: func(_ context.Context, id string) (string, error) {
+		t.Errorf("requested %s for a model in the folder", id)
+		return "", errors.New("unexpected request")
+	}}
+	if _, err := files.resolveAll(t.Context(), cfg); err != nil {
+		t.Fatal(err)
+	}
+	files.dir = t.TempDir()
 	files.shouldDownload = false
-	if _, err := files.resolve(ctx, "", address, encoderFile); err == nil {
+	if _, err := files.resolveAll(t.Context(), cfg); err == nil {
 		t.Fatal("downloaded an absent model with downloads disabled")
 	}
 }

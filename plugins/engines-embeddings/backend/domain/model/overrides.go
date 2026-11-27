@@ -36,8 +36,9 @@ func (o Overrides) ApplyToLocal(local *LocalModel) {
 	if o.Dir != "" {
 		local.Dir = o.Dir
 	}
-	if o.File != "" {
+	if o.File != "" && o.File != local.File {
 		local.File = o.File
+		local.Dependencies = nil
 	}
 	if o.Runtime != "" {
 		local.Runtime = o.Runtime

@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/model"
 )
 
-func newOpener(runtime engine.Runtime, isMock bool, fetch engine.FetchModelFile) model.Opener {
+func newOpener(runtime engine.Runtime, isMock bool, fetch engine.FetchDependency) model.Opener {
 	return func(ctx context.Context, cfg settings.Config) (model.Model, error) {
 		if isMock {
 			return engine.NewMockTranscriber(), nil

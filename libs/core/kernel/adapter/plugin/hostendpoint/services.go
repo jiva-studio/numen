@@ -46,19 +46,21 @@ type WorkQueue interface {
 }
 
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
-// plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
+// plugin may do, and what the host lends the plugin to work with. Dependencies fetches a file by its address and
+// DeclaredDependencies a model the manifest of the plugin declares. Lent holds what exists only while a
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file. CallCancels holds the cancels of the calls of connections.
 type Callers struct {
-	Dependencies *plugindependency.Fetch
-	Identity     Identity
-	Leases       Leases
-	Lent         *Services
-	GetTools     func() PluginTools
-	Health       HealthCalls
-	Processes    ProcessRelease
-	Files        FileTypes
-	CallCancels  *searchcancel.Searches
+	Dependencies         *plugindependency.Fetch
+	DeclaredDependencies *plugindependency.FetchDeclaredModel
+	Identity             Identity
+	Leases               Leases
+	Lent                 *Services
+	GetTools             func() PluginTools
+	Health               HealthCalls
+	Processes            ProcessRelease
+	Files                FileTypes
+	CallCancels          *searchcancel.Searches
 }
 
 // LogWriter records a structured log entry reported by a plugin backend.
