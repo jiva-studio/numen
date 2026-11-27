@@ -39,7 +39,7 @@ func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 			opens++
 			got = cfg
 			return quietModel{closed: &closed}, nil
-		})
+		}, &closeErrors{})
 		model.UpdateSettings(tc.values)
 		first, err := model.GetRecognizer(t.Context())
 		if err != nil || first == nil {
@@ -61,7 +61,7 @@ func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 	errOpen := errors.New("open failed")
 	failModels := NewHolder(settings.NewDefaultConfig(), func(context.Context, settings.Config) (Model, error) {
 		return nil, errOpen
-	})
+	}, &closeErrors{})
 	if _, err := failModels.GetRecognizer(t.Context()); !errors.Is(err, errOpen) {
 		t.Fatalf("expected errOpen, got %v", err)
 	}
@@ -75,7 +75,7 @@ func TestTheModelIsNotOpenedBeforeTheFirstRecognizerRequest(t *testing.T) {
 	models := NewHolder(settings.NewDefaultConfig(), func(context.Context, settings.Config) (Model, error) {
 		opens++
 		return quietModel{closed: new(int)}, nil
-	})
+	}, &closeErrors{})
 
 	models.UpdateSettings(map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"})
 
@@ -91,7 +91,7 @@ func TestAnOpenThatFailedForMissingFilesIsTriedAgainAtTheNextRequest(t *testing.
 			return nil, errors.New("model encoder.onnx not found")
 		}
 		return quietModel{closed: new(int)}, nil
-	})
+	}, &closeErrors{})
 	if _, err := models.GetRecognizer(t.Context()); err == nil {
 		t.Fatal("the open succeeded without the files")
 	}
@@ -118,7 +118,7 @@ func (o *openedModels) open(_ context.Context, cfg settings.Config) (Model, erro
 
 func TestAnotherModelInTheSettingsClosesTheOpenModelAndTheNextRequestOpensTheNewOne(t *testing.T) {
 	opened := &openedModels{}
-	models := NewHolder(settings.NewDefaultConfig(), opened.open)
+	models := NewHolder(settings.NewDefaultConfig(), opened.open, &closeErrors{})
 	models.UpdateSettings(map[string]string{"model": "parakeet-tdt-0.6b-v3-int8"})
 	if _, err := models.GetRecognizer(t.Context()); err != nil {
 		t.Fatal(err)
@@ -139,7 +139,7 @@ func TestAnotherModelInTheSettingsClosesTheOpenModelAndTheNextRequestOpensTheNew
 
 func TestTheSameModelInTheSettingsKeepsTheOpenModel(t *testing.T) {
 	opened := &openedModels{}
-	models := NewHolder(settings.NewDefaultConfig(), opened.open)
+	models := NewHolder(settings.NewDefaultConfig(), opened.open, &closeErrors{})
 	models.UpdateSettings(map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"})
 	first, err := models.GetRecognizer(t.Context())
 	if err != nil {
