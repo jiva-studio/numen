@@ -1,0 +1,33 @@
+name: Docs failure
+
+# docs.yml is also called by ci.yml, which grants no issues: write, so the
+# issue for a failed deploy of the manual on main is opened from here.
+on:
+  workflow_run:
+    workflows: [Docs]
+    types: [completed]
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  notify:
+    name: Notify
+    if: ${{ github.event.workflow_run.event == 'push' && (github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'cancelled' || github.event.workflow_run.conclusion == 'timed_out') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -euo pipefail
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'Docs deploy failed in:title' \
+            --json number,title --jq '[.[] | select(.title == "Docs deploy failed")][0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "The docs deploy failed again: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --type Bug --title 'Docs deploy failed' --body "The docs deploy failed: $RUN_URL"
+          fi
