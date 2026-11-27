@@ -41,6 +41,11 @@ type OwnThemeWatch interface {
 	WatchOwnThemes(ctx context.Context, hold time.Duration) (<-chan []string, error)
 }
 
+// PluginChangeSubscriber returns the signals that the plugin host changed which plugins are enabled
+// or what they contribute, and the function that ends the subscription. Signals that pile up while
+// the receiver is busy are one.
+type PluginChangeSubscriber func() (<-chan struct{}, func())
+
 // AppearanceReader reads the stored appearance.
 type AppearanceReader interface {
 	// ReadAppearance returns the appearance the settings hold.

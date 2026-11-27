@@ -223,7 +223,7 @@ func createThemeService(c settingsParts, scales Scales, say func(string)) (*them
 			themeusecase.Bounds(settingsadapter.GetTextScaleBounds())),
 		themeusecase.NewReadTheme(sources),
 		themeusecase.NewWriteAppearance(sources, store, store, sizes),
-		themeusecase.NewWatchThemes(sources, files, 0),
+		themeusecase.NewWatchThemes(sources, files, 0, getPluginChangeSubscriber(c)),
 	), err
 }
 
@@ -258,4 +258,11 @@ func (c Config) openThemes(settingsDeps settingsParts, tasks *run.Tasks) *theme.
 		settingsDeps.HandleError(err)
 	}
 	return service
+}
+
+func getPluginChangeSubscriber(c settingsParts) themeusecase.PluginChangeSubscriber {
+	if c.PluginChanges == nil {
+		return nil
+	}
+	return c.PluginChanges.Subscribe
 }
