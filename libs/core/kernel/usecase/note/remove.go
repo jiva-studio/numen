@@ -52,10 +52,14 @@ type RemoveResult struct {
 // Execute puts the file or the folder in the trash, with everything a folder
 // holds. Destroy takes one note out of the world.
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
-	return writeUnder(ctx, v, u.admission, func() (RemoveResult, error) { return u.moveToTrash(ctx, v, path) })
+	return u.execute(ctx, v, path, nil)
 }
 
-func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+func (u Remove) execute(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (RemoveResult, error) {
+	return writeUnder(ctx, v, u.admission, func() (RemoveResult, error) { return u.moveToTrash(ctx, v, path, baseline) })
+}
+
+func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
 	went, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
@@ -68,7 +72,7 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 		return res, err
 	}
 
-	target, err := u.moveFilesToTrash(ctx, v, path)
+	target, err := u.moveFilesToTrash(ctx, v, path, baseline)
 	if err != nil {
 		return res, err
 	}
@@ -89,13 +93,13 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 	return res, errors.Join(filingErr, indexErr)
 }
 
-func (u Remove) moveFilesToTrash(ctx context.Context, v domain.Vault, path string) (string, error) {
+func (u Remove) moveFilesToTrash(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (string, error) {
 	writer, err := u.writers.OpenFileMover(v)
 	if err != nil {
 		return "", err
 	}
-	target, err := moveToTrash(ctx, writer, path)
-	if err != nil && !errors.Is(err, edit.ErrNoNote) {
+	target, err := moveToTrash(ctx, writer, path, baseline)
+	if err != nil && (baseline != nil || !errors.Is(err, edit.ErrNoNote)) {
 		return "", err
 	}
 	listed, absentErr := u.removeAbsent(ctx, v, path)
@@ -150,10 +154,16 @@ func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources
 	return pointing, nil
 }
 
-func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string) (string, error) {
+func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string, baseline *domain.FileStat) (string, error) {
+	move := writer.Move
+	if baseline != nil {
+		move = func(ctx context.Context, from, to string) error {
+			return writer.MoveFileWithHash(ctx, from, to, baseline.Hash)
+		}
+	}
 	target := pathpkg.Join(TrashDir, path)
 	for attempt := 2; ; attempt++ {
-		err := writer.Move(ctx, path, target)
+		err := move(ctx, path, target)
 		if err == nil {
 			return target, nil
 		}

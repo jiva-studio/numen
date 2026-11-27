@@ -26,6 +26,16 @@ import (
 
 const syncer = "md.numen.syncer"
 
+type fileOpsIndex struct{}
+
+func (fileOpsIndex) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.FileStat, error) {
+	return nil, nil
+}
+
+func (fileOpsIndex) MoveVersions(context.Context, domain.VaultID, string, string) error {
+	return nil
+}
+
 func readDelta(t *testing.T, v domain.Vault) []byte {
 	t.Helper()
 	got, err := os.ReadFile(filepath.Join(v.Path, "Delta.pdf"))
@@ -47,6 +57,7 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 	}
 	scan := file.NewScanFiles(index)
 	stores := derivedfile.PluginStores{}
+	remove := note.NewRemove(writers, nil, fileOpsIndex{}, fileOpsIndex{}, index, nil)
 	return NewAccess(
 		Session{GetCurrent: func() (domain.Vault, bool) { return v, true }},
 		Files{Stat: stat, Bytes: file.NewReadBytes(vaultreader.Readers{}, stat)},
@@ -54,7 +65,7 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 			Index:  scan,
 			Place:  file.NewPlaceStaged(stat, scan, writers),
 			Move:   note.NewMoveChecked(note.MoveFile{}, vaultreader.Readers{}),
-			Remove: note.NewRemoveChecked(note.RemoveFile{}, vaultreader.Readers{}),
+			Remove: note.NewRemoveChecked(note.NewRemoveFile(&remove, nil), vaultreader.Readers{}),
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return stores.Open(v, pluginID)
 			},
@@ -288,6 +299,30 @@ func TestMoveFileAndRemoveFileRefuseAMissingPathAndAChangedFileBeforeTheyChangeA
 		if _, err := os.Stat(filepath.Join(v.Path, name)); err != nil {
 			t.Errorf("a refused call changed %s: %v", name, err)
 		}
+	}
+}
+
+func TestRemoveFileWithAMatchingHashKeepsBothCopiesInTheTrash(t *testing.T) {
+	const path = "Maps/Delta.pdf"
+	access, v, indexed := fileOpsVault(t, map[string]string{path: "current", ".trash/" + path: "earlier"})
+	baseline := domain.FileStat{Path: path, Hash: domain.HashContent([]byte("current"))}
+
+	count, err := access.Ops.RemoveFile(t.Context(), path, &baseline)
+
+	if err != nil || count != 1 {
+		t.Fatalf("remove returned %d, %v, want one file moved", count, err)
+	}
+	for name, want := range map[string]string{".trash/" + path: "earlier", ".trash/Maps/Delta-2.pdf": "current"} {
+		got, err := os.ReadFile(filepath.Join(v.Path, name))
+		if err != nil || string(got) != want {
+			t.Errorf("read %s = %q, %v, want %q", name, got, err, want)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(v.Path, path)); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("stat of the old path = %v, want no file", err)
+	}
+	if count := indexed.Load(); count != 1 {
+		t.Errorf("paths indexed = %d, want one file", count)
 	}
 }
 

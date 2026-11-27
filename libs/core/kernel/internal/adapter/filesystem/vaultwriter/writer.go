@@ -80,7 +80,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	// baseline both pass the comparison.
 	w.lock.write.Lock()
 	defer w.lock.write.Unlock()
-	mode, err := getWriteMode(root, name, path, stat)
+	mode, err := getWriteMode(ctx, root, name, path, stat)
 	if err != nil {
 		return vault.WriteResult{}, err
 	}
@@ -97,7 +97,16 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	return vault.WriteResult{Stat: replaced, Version: version}, nil
 }
 
-func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
+func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
+	return movePath(ctx, w, from, to, nil)
+}
+
+// MoveFileWithHash compares the source hash and renames the file under one vault write lock.
+func (w *VaultWriter) MoveFileWithHash(ctx context.Context, from, to, hash string) error {
+	return movePath(ctx, w, from, to, &hash)
+}
+
+func movePath(ctx context.Context, w *VaultWriter, from, to string, hash *string) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -131,12 +140,25 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 		return err
 	}
 
+	if hash != nil {
+		if err := checkMoveHash(ctx, root, leaves, from, *hash); err != nil {
+			return err
+		}
+	}
 	if err := checkMoveTarget(root, leaves, arrives, from, to); err != nil {
 		return err
 	}
+	return renameToTarget(ctx, root, leaves, arrives, to, hash != nil)
+}
 
+func renameToTarget(ctx context.Context, root *os.Root, leaves, arrives, to string, hasBaseline bool) error {
 	if err := createParents(root, filepath.Dir(arrives), to); err != nil {
 		return err
+	}
+	if hasBaseline {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 	}
 	return atomicfile.Rename(ctx, root, leaves, arrives)
 }

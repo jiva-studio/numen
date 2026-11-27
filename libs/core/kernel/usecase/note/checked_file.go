@@ -105,8 +105,8 @@ func (u MoveCheckedFile) Execute(ctx context.Context, v domain.Vault, from, to s
 	return count, nil
 }
 
-// RemoveCheckedFile moves a file, or a folder with everything under it, to the trash once the file matches the
-// baseline the caller read, and counts the files that went.
+// RemoveCheckedFile moves a file matching the baseline to the trash. A nil baseline allows folders and returns
+// the count of files removed.
 type RemoveCheckedFile struct {
 	remove  RemoveFile
 	readers vaultport.VaultReaders
@@ -119,11 +119,18 @@ func NewRemoveChecked(remove RemoveFile, readers vaultport.VaultReaders) RemoveC
 // Execute returns edit.ErrStale for a file that changed since the baseline, and edit.ErrNotExist for a path with
 // no file.
 func (u RemoveCheckedFile) Execute(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (int, error) {
-	count, err := countMatchingFiles(ctx, u.readers, v, path, baseline)
-	if err != nil {
-		return 0, err
+	count := 1
+	if baseline == nil {
+		var err error
+		count, err = countMatchingFiles(ctx, u.readers, v, path, nil)
+		if err != nil {
+			return 0, err
+		}
 	}
-	if _, _, err = u.remove.Execute(ctx, v, path); err != nil {
+	if _, _, err := u.remove.execute(ctx, v, path, baseline); err != nil {
+		if errors.Is(err, edit.ErrNoNote) {
+			return 0, fmt.Errorf("%s: %w", path, edit.ErrNotExist)
+		}
 		return 0, err
 	}
 	return count, nil

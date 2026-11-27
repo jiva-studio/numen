@@ -77,9 +77,6 @@ func (w *VaultWriter) isWritableFile(path string) bool {
 	return true
 }
 
-// Root is where this vault is on disk.
-func (w *VaultWriter) Root() string { return w.root }
-
 // VaultWriters opens vaults for writing. Writers that must exclude each other share Locks.
 type VaultWriters struct {
 	Options vaultconfig.Options
@@ -251,7 +248,7 @@ func (w *VaultWriter) Replace(ctx context.Context, path string, content io.Reade
 	_, err = atomicfile.ReplaceUnder(ctx, root, name, content, info.Mode().Perm(), func(rename func() error) error {
 		w.lock.write.Lock()
 		defer w.lock.write.Unlock()
-		if err := checkReplaceBaseline(root, name, path, baseline); err != nil {
+		if err := checkReplaceBaseline(ctx, root, name, path, baseline); err != nil {
 			return err
 		}
 		return rename()
@@ -259,11 +256,11 @@ func (w *VaultWriter) Replace(ctx context.Context, path string, content io.Reade
 	return err
 }
 
-func checkReplaceBaseline(root *os.Root, name, path string, baseline domain.FileStat) error {
+func checkReplaceBaseline(ctx context.Context, root *os.Root, name, path string, baseline domain.FileStat) error {
 	if baseline.IsZero() {
 		return nil
 	}
-	stale, err := isStale(root, name, baseline)
+	stale, err := isStale(ctx, root, name, baseline)
 	if errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("replace %s: %w", path, edit.ErrStale)
 	}
@@ -276,14 +273,14 @@ func checkReplaceBaseline(root *os.Root, name, path string, baseline domain.File
 	return nil
 }
 
-func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.FileMode, error) {
+func getWriteMode(ctx context.Context, root *os.Root, name, path string, stat domain.FileStat) (fs.FileMode, error) {
 	info, err := root.Stat(name)
 	switch {
 	case err == nil:
 		if info.IsDir() {
 			return 0, fmt.Errorf("write %s: it is a directory", path)
 		}
-		stale, err := isStale(root, name, stat)
+		stale, err := isStale(ctx, root, name, stat)
 		if err != nil {
 			return 0, err
 		}
@@ -301,6 +298,24 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 	default:
 		return 0, err
 	}
+}
+
+func checkMoveHash(ctx context.Context, root *os.Root, name, path, hash string) error {
+	info, err := root.Stat(name)
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() || hash == "" {
+		return fmt.Errorf("move %s: %w", path, edit.ErrStale)
+	}
+	stale, err := isStale(ctx, root, name, domain.FileStat{Hash: hash})
+	if err != nil {
+		return err
+	}
+	if stale {
+		return fmt.Errorf("move %s: %w", path, edit.ErrStale)
+	}
+	return nil
 }
 
 func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
@@ -331,7 +346,11 @@ func createParents(root *os.Root, dir, path string) error {
 	return err
 }
 
-func isStale(root *os.Root, name string, baseline domain.FileStat) (_ bool, err error) {
+type readFunc func([]byte) (int, error)
+
+func (read readFunc) Read(buffer []byte) (int, error) { return read(buffer) }
+
+func isStale(ctx context.Context, root *os.Root, name string, baseline domain.FileStat) (_ bool, err error) {
 	if baseline.IsZero() {
 		return false, nil
 	}
@@ -340,7 +359,12 @@ func isStale(root *os.Root, name string, baseline domain.FileStat) (_ bool, err 
 		return false, err
 	}
 	defer closeAndJoin(&err, file)
-	hash, err := domain.HashReader(file)
+	hash, err := domain.HashReader(readFunc(func(buffer []byte) (int, error) {
+		if err := ctx.Err(); err != nil {
+			return 0, err
+		}
+		return file.Read(buffer)
+	}))
 	if err != nil {
 		return false, err
 	}

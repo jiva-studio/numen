@@ -138,8 +138,38 @@ func (r *run) adopt(ctx context.Context, stored *syncv1.StoredRevision, meta not
 	if err != nil {
 		return err
 	}
+	return r.setContentRecord(ctx, record, previous, isKnown)
+}
+
+func (r *run) setContentRecord(ctx context.Context, record, previous transfer.FileRecord, isKnown bool) error {
+	if isKnown && previous.Path != record.Path &&
+		(previous.BaseHash != record.BaseHash || !bytes.Equal(previous.BlobID, record.BlobID)) {
+		if err := r.removePreviousPath(ctx, previous); err != nil {
+			return err
+		}
+	}
 	r.setRecord(record)
 	return nil
+}
+
+func (r *run) removePreviousPath(ctx context.Context, previous transfer.FileRecord) error {
+	for _, record := range r.records {
+		if record.Path == previous.Path && !bytes.Equal(record.FileID, previous.FileID) {
+			return nil
+		}
+	}
+	hash, stat, isListed, err := r.readLocal(ctx, previous.Path)
+	if errors.Is(err, host.ErrNotANote) {
+		return nil
+	}
+	if err != nil || isListed || hash == "" || hash != previous.BaseHash {
+		return err
+	}
+	_, err = r.moves.RemoveFile(ctx, previous.Path, &stat)
+	if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrNotANote) || errors.Is(err, host.ErrStale) {
+		return nil
+	}
+	return err
 }
 
 func isMetadataOnly(rev *syncv1.Revision, record transfer.FileRecord, meta note.Meta) bool {
@@ -285,7 +315,9 @@ func (r *run) download(ctx context.Context, stored *syncv1.StoredRevision, meta 
 	if err := write(ctx, baseline); err != nil {
 		return r.settleWrite(ctx, stored, meta, err)
 	}
-	r.setRecord(record)
+	if err := r.setContentRecord(ctx, record, previous, isKnown); err != nil {
+		return errors.Join(err, r.deps.Downloads.Forget(ctx, r.in.VaultID, rev.GetFileId()))
+	}
 	r.result.Applied = append(r.result.Applied, meta.Path)
 	return r.deps.Downloads.Forget(ctx, r.in.VaultID, rev.GetFileId())
 }

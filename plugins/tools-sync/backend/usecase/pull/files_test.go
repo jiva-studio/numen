@@ -374,6 +374,77 @@ func TestPullChanges_MovesAFileToItsNewPathWithTheStatItReadAndDownloadsNothing(
 	}
 }
 
+func TestPullChanges_KeepsAnEditAtTheOldPathWhenItPlacesARenamedAndChangedFile(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, pdf, pdfText, nil)
+	p.pull(t, trustAll)
+	p.b.WriteNote(target, pdf, pdfText+" edited here")
+	moved := p.move(t, transfer.Move{Record: first.Record, To: "Papers/Old report.pdf"})[0]
+	p.push(t, "Papers/Old report.pdf", pdfText+" edited there", &moved)
+
+	p.pull(t, trustAll)
+
+	if got := p.readNote(t, pdf); got != pdfText+" edited here" {
+		t.Errorf("file at the old path = %q, want the local edit", got)
+	}
+	if got := p.readNote(t, "Papers/Old report.pdf"); got != pdfText+" edited there" {
+		t.Errorf("file at the new path = %q, want the remote edit", got)
+	}
+}
+
+func TestPullChanges_KeepsASecondFileAtTheOldPathOfARenamedAndChangedFile(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, pdf, pdfText, nil)
+	p.pull(t, trustAll)
+	moved := p.move(t, transfer.Move{Record: first.Record, To: "Papers/Old report.pdf"})[0]
+	second := p.push(t, pdf, pdfText, nil)
+	p.push(t, "Papers/Old report.pdf", pdfText+" edited", &moved)
+
+	p.pull(t, trustAll)
+
+	if got := p.readNote(t, pdf); got != pdfText {
+		t.Errorf("second file at the old path = %q, want the original bytes", got)
+	}
+	fileID, err := json.Marshal(second.FileID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if row, ok := p.b.GetFileRow(t, target, pdf); !ok || !slices.Equal([]byte(row.FileID), fileID) {
+		t.Errorf("row at the old path = %+v (there: %v), want the second file", row, ok)
+	}
+}
+
+func TestPullChanges_KeepsTheOldPathUntilItPlacesARenamedAndChangedFile(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, pdf, pdfText, nil)
+	p.pull(t, trustAll)
+	moved := p.move(t, transfer.Move{Record: first.Record, To: "Papers/Old report.pdf"})[0]
+	p.push(t, "Papers/Old report.pdf", pdfText+" edited", &moved)
+	spy := p.b.Spy()
+	spy.RunBeforePlace(func(call synctest.PlaceCall) {
+		p.b.Vaults.Store().With(target).WriteFile(call.Name, []byte("tampered"))
+	})
+
+	p.pull(t, trustAll)
+
+	if got := p.readNote(t, pdf); got != pdfText {
+		t.Errorf("file at the old path = %q, want the original bytes", got)
+	}
+	if _, ok := p.b.GetFileRow(t, target, pdf); !ok {
+		t.Error("the record of the old path was dropped after the failed placement")
+	}
+
+	spy.RunBeforePlace(nil)
+	p.pull(t, trustAll)
+
+	if _, ok := p.b.ReadNote(target, pdf); ok {
+		t.Error("the file is still at its old path after placement succeeded")
+	}
+	if got := p.readNote(t, "Papers/Old report.pdf"); got != pdfText+" edited" {
+		t.Errorf("file at the new path = %q, want the new bytes", got)
+	}
+}
+
 func TestPullChanges_MovesAFolderWholeWhenTheBatchMovesEveryFileInsideIt(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
@@ -502,5 +573,42 @@ func TestPullChanges_PlacesABigFileOnceAndShowsNoFileAtItsPathUntilItIsWhole(t *
 	}
 	if names := p.getStagedNames(t); len(names) != 0 {
 		t.Errorf("staged files left = %v, want none", names)
+	}
+}
+
+func TestPullChanges_PlacesAFileRenamedAndChangedOnAnotherComputerAtItsNewPathWithItsNewText(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, pdf, pdfText, nil)
+	p.pull(t, trustAll)
+	moved := p.move(t, transfer.Move{Record: first.Record, To: "Papers/Old report.pdf"})[0]
+	p.push(t, "Papers/Old report.pdf", "%PDF-1.7 the new bytes of a report", &moved)
+
+	p.pull(t, trustAll)
+
+	if got := p.readNote(t, "Papers/Old report.pdf"); got != "%PDF-1.7 the new bytes of a report" {
+		t.Errorf("file at the new path = %q, want the new bytes", got)
+	}
+	if _, ok := p.b.ReadNote(target, pdf); ok {
+		t.Error("the file is still at its old path")
+	}
+	if _, ok := p.b.GetFileRow(t, target, pdf); ok {
+		t.Error("the record of the old path is still kept")
+	}
+
+	p.b.Vaults.With(target).Reindex()
+	reserved := p.server.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure)
+	committed := p.server.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure)
+	if err := p.b.Sync(t.Context(), target); err != nil {
+		t.Fatal(err)
+	}
+	p.b.Clock.Advance(time.Minute)
+	if err := p.b.Sync(t.Context(), target); err != nil {
+		t.Fatal(err)
+	}
+	if got := p.server.CountCalls(syncv1connect.BlobServiceReserveBlobsProcedure); got != reserved {
+		t.Errorf("reservations grew from %d to %d after the rename", reserved, got)
+	}
+	if got := p.server.CountCalls(syncv1connect.RevisionServiceCommitRevisionsProcedure); got != committed {
+		t.Errorf("commits grew from %d to %d after the rename", committed, got)
 	}
 }

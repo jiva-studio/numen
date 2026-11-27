@@ -1,9 +1,12 @@
 package vaultwriter_test
 
 import (
+	"context"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
@@ -11,6 +14,54 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
+
+type cancelAfterChecks struct {
+	context.Context
+	cancel        context.CancelFunc
+	cancelOnCheck int
+	checks        int
+}
+
+func (c *cancelAfterChecks) Err() error {
+	c.checks++
+	if c.checks == c.cancelOnCheck {
+		c.cancel()
+	}
+	return c.Context.Err()
+}
+
+func TestMoveFileWithHashKeepsTheSourceWhenCanceled(t *testing.T) {
+	for _, example := range []struct {
+		name          string
+		content       string
+		cancelOnCheck int
+	}{
+		{name: "between reads", content: strings.Repeat("text", 32*1024), cancelOnCheck: 3},
+		{name: "before rename", content: "text", cancelOnCheck: 4},
+	} {
+		t.Run(example.name, func(t *testing.T) {
+			writer, root := openWriter(t)
+			if err := writer.Create(t.Context(), "n.md", []byte(example.content)); err != nil {
+				t.Fatal(err)
+			}
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+			canceling := &cancelAfterChecks{Context: ctx, cancel: cancel, cancelOnCheck: example.cancelOnCheck}
+
+			err := writer.MoveFileWithHash(canceling, "n.md", "next.md", domain.HashContent([]byte(example.content)))
+
+			if !errors.Is(err, context.Canceled) {
+				t.Errorf("move returned %v, want context.Canceled", err)
+			}
+			if got, err := os.ReadFile(filepath.Join(root, "n.md")); err != nil || string(got) != example.content {
+				t.Errorf("source read returned %d bytes, %v, want %d bytes", len(got), err, len(example.content))
+			}
+			if _, err := os.Stat(filepath.Join(root, "next.md")); !errors.Is(err, fs.ErrNotExist) {
+				t.Errorf("target stat returned %v, want no file", err)
+			}
+		})
+	}
+}
 
 func TestAWriteOverTheHashOfTheContentReturnsTheHashOfTheNewContent(t *testing.T) {
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
