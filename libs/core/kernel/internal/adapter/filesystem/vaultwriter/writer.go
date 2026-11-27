@@ -97,7 +97,16 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	return vault.WriteResult{Stat: replaced, Version: version}, nil
 }
 
-func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
+func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
+	return movePath(ctx, w, from, to, nil)
+}
+
+// MoveFileWithHash compares the source hash and renames the file under one vault write lock.
+func (w *VaultWriter) MoveFileWithHash(ctx context.Context, from, to, hash string) error {
+	return movePath(ctx, w, from, to, &hash)
+}
+
+func movePath(ctx context.Context, w *VaultWriter, from, to string, hash *string) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -131,6 +140,11 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 		return err
 	}
 
+	if hash != nil {
+		if err := checkMoveHash(root, leaves, from, *hash); err != nil {
+			return err
+		}
+	}
 	if err := checkMoveTarget(root, leaves, arrives, from, to); err != nil {
 		return err
 	}

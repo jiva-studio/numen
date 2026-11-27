@@ -24,6 +24,8 @@ type FolderWriter interface {
 
 type FileMover interface {
 	Move(ctx context.Context, from, to string) error
+	// MoveFileWithHash moves a regular file when its hash matches, under the vault write lock.
+	MoveFileWithHash(ctx context.Context, from, to, hash string) error
 	// CheckMoveTarget returns vault.ErrAlreadyExists when a file other than the one at from is at to. On
 	// a filesystem that ignores case or Unicode normalization, a path that differs from from only in
 	// case or normalization is the same file.

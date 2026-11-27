@@ -77,9 +77,6 @@ func (w *VaultWriter) isWritableFile(path string) bool {
 	return true
 }
 
-// Root is where this vault is on disk.
-func (w *VaultWriter) Root() string { return w.root }
-
 // VaultWriters opens vaults for writing. Writers that must exclude each other share Locks.
 type VaultWriters struct {
 	Options vaultconfig.Options
@@ -301,6 +298,24 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 	default:
 		return 0, err
 	}
+}
+
+func checkMoveHash(root *os.Root, name, path, hash string) error {
+	info, err := root.Stat(name)
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() || hash == "" {
+		return fmt.Errorf("move %s: %w", path, edit.ErrStale)
+	}
+	stale, err := isStale(root, name, domain.FileStat{Hash: hash})
+	if err != nil {
+		return err
+	}
+	if stale {
+		return fmt.Errorf("move %s: %w", path, edit.ErrStale)
+	}
+	return nil
 }
 
 func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
