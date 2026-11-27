@@ -4,6 +4,7 @@ import { setTimeout as wait } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { BucketTransfer, type ComposeCommand, type ComposeOptions } from './bucketTransfer.js'
+import { isRemoteId, type RemovalTarget } from './syncRemoval.js'
 
 const run = promisify(execFile)
 
@@ -14,6 +15,12 @@ const OWNER = 'numen_sync_owner'
 const DUMP = '/tmp/numen-acceptance.dump'
 const GIB = 1024 ** 3
 const START_LIMIT_MS = 90_000
+const REMOVAL_LIMIT_MS = 20_000
+
+const buildRemovalFilter = ({ vaultId, fileId }: RemovalTarget): string => {
+  if (!isRemoteId(vaultId) || !isRemoteId(fileId)) throw new Error('a removal target has an invalid vault or file id')
+  return "(vault_id = decode('" + vaultId + "', 'hex') AND file_id = decode('" + fileId + "', 'hex'))"
+}
 
 const createCompose = (project: string): ComposeCommand =>
   async (args: readonly string[], stdin?: string, options: ComposeOptions = {}): Promise<string> => {
@@ -33,8 +40,8 @@ export class OwnStack {
     this.bucketTransfer = new BucketTransfer(compose)
   }
 
-  private async runSQL(statements: string, database = DATABASE): Promise<string> {
-    return this.compose(['exec', '-T', 'postgres', 'psql', '-U', 'postgres', '--set', 'ON_ERROR_STOP=1', '--quiet', '-At', '--dbname', database], statements)
+  private async runSQL(statements: string, database = DATABASE, options?: ComposeOptions): Promise<string> {
+    return this.compose(['exec', '-T', 'postgres', 'psql', '-U', 'postgres', '--set', 'ON_ERROR_STOP=1', '--quiet', '-At', '--dbname', database], statements, options)
   }
 
   private async waitHealthy(): Promise<void> {
@@ -101,10 +108,36 @@ export class OwnStack {
     await this.runSQL(`UPDATE account_usage SET used_bytes = greatest(used_bytes + ${Math.round(gigabytes * GIB)}, 0)`)
   }
 
-  /** Ages every deletion record past its life and has the server prune them. */
-  async forgetRemovals(): Promise<void> {
-    await this.runSQL("UPDATE files SET committed_at = now() - interval '91 days' WHERE deleted")
+  /** Waits for the specified removals to reach the server and checks that pruning has retired them. */
+  async forgetRemovals(targets: readonly RemovalTarget[]): Promise<void> {
+    const filters = [...new Set(targets.map(buildRemovalFilter))]
+    if (filters.length === 0) return
+    const scope = '(' + filters.join(' OR ') + ')'
+    await this.waitForRemovals(scope, filters.length)
+    const aged = await this.runSQL(
+      "WITH aged AS (UPDATE files SET committed_at = now() - interval '91 days' WHERE deleted AND " + scope +
+        ' RETURNING 1) SELECT count(*) FROM aged;',
+    )
+    if (aged.trim() !== String(filters.length)) throw new Error('the scenario removal records changed before they were aged')
     await this.compose(['exec', '-T', 'sync', '/numen-sync', 'admin', 'prune-tombstones'])
+    const verification = await this.runSQL(
+      "SELECT (SELECT count(*) FROM files WHERE " + scope + ") || ':' || (SELECT count(*) FROM file_floors WHERE " + scope + ');',
+    )
+    if (verification.trim() !== '0:' + filters.length) throw new Error('the server did not prune the scenario removal records')
+  }
+
+  private async waitForRemovals(scope: string, count: number): Promise<void> {
+    const deadline = Date.now() + REMOVAL_LIMIT_MS
+    for (;;) {
+      const result = await this.runSQL(
+        'SELECT count(*) FROM files WHERE deleted AND ' + scope + ';',
+        DATABASE,
+        { timeout: Math.max(1, deadline - Date.now()) },
+      )
+      if (result.trim() === String(count)) return
+      if (Date.now() >= deadline) throw new Error('the scenario removals did not reach the server')
+      await wait(200)
+    }
   }
 
   async makeBackup(): Promise<void> {

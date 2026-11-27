@@ -384,8 +384,11 @@ export class ComputerDriver {
     await subscription.expectActive()
   }
 
-  removeNote(computer: ComputerName, title: string, vault: string): void {
-    this.getScenario(computer).getWorld().removeFile(this.resolveVault(computer, vault), getNotePath(title))
+  async removeNote(computer: ComputerName, title: string, vault: string): Promise<void> {
+    const { world, vault: name } = this.getPlace(computer, vault)
+    const filePath = getNotePath(title)
+    await this.owner.sync.recordRemoval(world.getFolder(name), filePath)
+    world.removeFile(name, filePath)
   }
 
   async expectNoNote(holder: Holder, title: string, vault: string | undefined): Promise<void> {

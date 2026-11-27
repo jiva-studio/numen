@@ -156,3 +156,45 @@ describe('stand recovery', () => {
     expect(commands).toEqual(['start bucket sync', 'exec -T sync /numen-sync healthcheck'])
   })
 })
+
+describe('stand removal expiry', () => {
+  const target = { vaultId: '1'.repeat(32), fileId: '2'.repeat(32) }
+
+  it('waits for the exact removal, ages it and verifies its floor after pruning', async () => {
+    const commands: string[] = []
+    const answers = ['0', '1', '1', '0:1']
+    const stack = new OwnStack('test', async (args, stdin) => {
+      commands.push(stdin ?? args.join(' '))
+      return stdin === undefined ? '' : (answers.shift() ?? '')
+    })
+
+    await stack.forgetRemovals([target])
+
+    expect(commands).toHaveLength(5)
+    expect(commands[0]).toContain('FROM files WHERE deleted AND')
+    expect(commands[1]).toBe(commands[0])
+    expect(commands[2]).toContain('UPDATE files SET committed_at')
+    expect(commands[3]).toBe('exec -T sync /numen-sync admin prune-tombstones')
+    expect(commands[4]).toContain('FROM file_floors WHERE')
+    for (const index of [0, 1, 2, 4]) {
+      expect(commands[index]).toContain(target.vaultId)
+      expect(commands[index]).toContain(target.fileId)
+    }
+  })
+
+  it.each(['1:1', '0:0'])('fails when the server reports removal state %s after pruning', async (state) => {
+    const answers = ['1', '1', state]
+    const stack = new OwnStack('test', async (_args, stdin) => (stdin === undefined ? '' : (answers.shift() ?? '')))
+
+    await expect(stack.forgetRemovals([target])).rejects.toThrow('the server did not prune the scenario removal records')
+  })
+
+  it('leaves the server alone when the scenario has no removal', async () => {
+    const compose = vi.fn<() => Promise<string>>().mockResolvedValue('')
+    const stack = new OwnStack('test', compose)
+
+    await stack.forgetRemovals([])
+
+    expect(compose).not.toHaveBeenCalled()
+  })
+})

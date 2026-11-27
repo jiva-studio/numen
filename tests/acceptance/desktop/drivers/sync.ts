@@ -1,5 +1,6 @@
 /** Configures the sync server for a scenario and drives the server and the sync processes in that scenario. */
 import { execFile } from 'node:child_process'
+import path from 'node:path'
 import { setTimeout as wait } from 'node:timers/promises'
 import { promisify } from 'node:util'
 import { expect } from 'playwright/test'
@@ -7,6 +8,7 @@ import { removeSeed, makeSeed, type IdentitySeed } from './identity-seed.js'
 import type { IdentityDriver } from './identity.js'
 import { expectTextNotStored, readDevices, readPlans, requireStack, type SyncStack } from './sync-stack.js'
 import type { Scenario } from './scenario.js'
+import { readRemovalTarget, type RemovalTarget } from './syncRemoval.js'
 import { ENV_OWN_STACK, OwnStack } from './own-stack.js'
 
 export const SYNC_PLUGIN = 'md.numen.tools.sync'
@@ -110,6 +112,7 @@ export class SyncDriver {
   private own: OwnStack | undefined
   private deferredScenario: Scenario | undefined
   private readonly paused = new Map<Scenario, Set<number>>()
+  private readonly removalTargets: RemovalTarget[] = []
   private seeded: { readonly seed: IdentitySeed; readonly folder: string } | undefined
 
   constructor(
@@ -348,8 +351,17 @@ export class SyncDriver {
     await this.own?.bucketTransfer.waitForInterruption()
   }
 
+  async recordRemoval(vaultFolder: string, filePath: string): Promise<void> {
+    if (this.paused.size === 0) return
+    const store = path.join(vaultFolder, '.numen', SYNC_PLUGIN)
+    await expect(() => {
+      this.removalTargets.push(readRemovalTarget(store, filePath))
+    }).toPass({ timeout: 20_000 })
+  }
+
   async forgetRemovals(): Promise<void> {
-    await this.requireOwn('make the server drop the removals it keeps').forgetRemovals()
+    await this.requireOwn('make the server drop the removals it keeps').forgetRemovals(this.removalTargets)
+    this.removalTargets.length = 0
   }
 
   async dropStreams(): Promise<void> {
