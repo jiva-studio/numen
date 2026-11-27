@@ -8,14 +8,12 @@ export const SR: Record<string, string> = {
   hero_eyebrow: 'Vaš drugi mozak koji zaista pamti',
   hero_title: 'Vaše beleške, povezane <em>onako kako mislite.</em>',
   hero_lead:
-    'Markdown beleške, usmerena mapa pojmova, PDF i EPUB čitač uz lokalni OCR, oflajn transkripcija zvuka, AI asistent i ponavljanje sa razmakom.',
+    'Markdown beleške, usmerena mapa pojmova, PDF i EPUB čitač uz lokalni OCR, oflajn transkripcija zvuka, AI asistent i ponavljanje sa razmakom. Privatnost i lokalni rad na prvom mestu: bez naloga, bez telemetrije — samo obične Markdown datoteke na vašem disku.',
   suite_head: 'Izgradite znanje i sačuvajte ga',
   app1_desc:
     'Gradite znanje: povezane beleške, usmerena mapa, PDF/EPUB uz OCR, transkripcija zvuka i AI asistent.',
   app2_desc:
     'Zadržite u pamćenju: posebna aplikacija za dnevno ponavljanje, FSRS raspored i prognozu opterećenja.',
-  demo_try_title: 'Interaktivni demo',
-  demo_try_sub: 'Kliknite da isprobate',
   tab_files: 'Datoteke',
   tab_editor: 'Pisanje',
   tab_graph: 'Mapa',
@@ -27,7 +25,7 @@ export const SR: Record<string, string> = {
   yours_eyebrow: 'Privatnost i lokalni rad',
   yours_title: 'Vaše misli pripadaju vama.',
   yours_lede:
-    'Bez naloga, oblaka i zaključanih baza. Vaša baza je obična fascikla sa otvorenim Markdown datotekama na disku — uz lokalne AI modele na vašem računaru.',
+    'Bez naloga, bez e-pošte, bez telemetrije, bez vezivanja za dobavljača i bez zatvorenih baza. Vaša baza je obična fascikla sa Markdown datotekama na disku — uz AI modele koji rade na vašem uređaju.',
   yours_f1_t: 'Otvorene Markdown datoteke',
   yours_f1_p:
     'Čiste .md datoteke u vašim fasciklama. Otvorite ih u bilo kom uređivaču, pratite kroz Git i čuvajte decenijama bez zaključavanja.',
@@ -85,6 +83,23 @@ export const SR: Record<string, string> = {
   review_f3_t: 'Trenutni uvid u izvor',
   review_f3_p:
     'Otvorite izvornu belešku ili stranicu knjige pored kartice, ili pitajte AI asistenta tokom ponavljanja.',
+  sync_eyebrow: 'Numen Sync — uskoro',
+  sync_title: 'Vaše baze na svim uređajima.',
+  sync_lede:
+    'Numen Sync sinhronizuje vaše baze između uređaja, računara i telefona, preko našeg oblaka. Nije obavezan: bez njega sve radi lokalno, a fasciklu i dalje možete sinhronizovati preko Git-a, iCloud-a, Dropbox-a ili Syncthing-a.',
+  sync_f1_t: 'Šifrovanje s kraja na kraj',
+  sync_f1_p:
+    'Podaci se šifruju na uređaju pre nego što ga napuste. Server vidi samo nasumične identifikatore, veličine i vremena, a datoteke na disku ostaju obične.',
+  sync_f2_t: 'Bez e-pošte i lozinke',
+  sync_f2_p:
+    'Nalog je ključ napravljen od 12 reči za oporavak. Reči se nigde ne čuvaju — ni na vašim uređajima ni kod nas.',
+  sync_f3_t: 'Jedna pretplata za sve baze',
+  sync_f3_p:
+    'Bez ograničenja broja uređaja: jedna pretplata pokriva sve vaše baze. Pretplata je potrebna za pisanje; čitanje onoga što je podeljeno sa vama je besplatno. Kupuje se u aplikaciji.',
   close_title: 'Preuzmite Numen.',
   close_lede: 'Besplatno tokom alfe za macOS, Windows i Linux. Uključuje Numen i Numen Flashcards.',
+  footer_product: 'Proizvod',
+  footer_resources: 'Resursi',
+  footer_issues: 'Prijavi problem',
+  footer_code: 'Izvorni kod',
 }
