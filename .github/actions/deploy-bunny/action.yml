@@ -142,8 +142,8 @@ runs:
         done
 
     # A file is purged when its checksum differs from the last purged
-    # deployment or it is gone from the build. A page is also served without
-    # its .html and a folder's index.html at the folder.
+    # deployment or it is gone from the build. A folder's index.html is also
+    # served at the folder, with and without the slash.
     - name: Purge changed URLs from Bunny CDN
       shell: bash
       env:
@@ -160,8 +160,10 @@ runs:
           echo "$SERVED_FROM/$path"
           case "$path" in
             index.html) echo "$SERVED_FROM/" ;;
-            */index.html) echo "$SERVED_FROM/${path%index.html}" ;;
-            *.html) echo "$SERVED_FROM/${path%.html}" ;;
+            */index.html)
+              echo "$SERVED_FROM/${path%index.html}"
+              echo "$SERVED_FROM/${path%/index.html}"
+              ;;
           esac
         }
 
