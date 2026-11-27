@@ -27,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -94,6 +95,10 @@ type sharedVault struct {
 	locks   *vaultwriter.Locks
 	watches *vaultwatch.Hub
 }
+
+// SetKeys sets the key store of the installation. The identity record is read from store once and kept until it is
+// written through Resources.Stores.Keys.
+func (r *Resources) SetKeys(store pluginport.KeyStore) { r.Stores.Keys = identity.CacheKeys(store) }
 
 func NewResources() *Resources {
 	return &Resources{
