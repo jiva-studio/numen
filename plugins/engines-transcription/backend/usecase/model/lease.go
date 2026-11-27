@@ -10,7 +10,8 @@ import (
 
 // lease is the open model as the transcription use case holds it. It counts the recordings open on
 // the model and the transcriptions running on it, so a model the holder retired closes once the last
-// of them ends, and a recording requested after the retirement opens on the current model.
+// of them ends. A recording requested after the retirement opens on the current model, and a
+// transcription runs on the retired model until it closes.
 type lease struct {
 	holder    *Holder
 	model     Model
@@ -52,8 +53,6 @@ func (l *lease) openOnCurrent(ctx context.Context, raw []byte) (ports.Recording,
 	return current.Open(ctx, raw)
 }
 
-// acquire counts one more use of the model. A retired model takes no new recording but still
-// takes the transcriptions of the recordings open on it until it closes.
 func (l *lease) acquire(isRetiredAllowed bool) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
