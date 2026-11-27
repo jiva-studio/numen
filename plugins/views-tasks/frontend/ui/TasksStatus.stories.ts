@@ -93,7 +93,7 @@ const INDEXING = [
 export const InTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'title-status' },
+    frame: { place: 'title-status', notePath: "Physics/Szilard's engine.md" },
     screenshot: [{ name: 'status' }],
   },
   args: { tasks: INDEXING },

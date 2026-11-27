@@ -49,7 +49,7 @@ The values are literals: the check reads the story sources with the TypeScript p
 
 ## A plugin inside the window
 
-A plugin's picture shows the plugin in the window. A story in the plugins' Storybook that sets `parameters.frame` is drawn inside a stand-in of the window: the title bar, the file tree of an invented vault of physics notes, the panes with their tabs, and the status bar. The frame is `libs/plugin/sdk-ts/stories/.storybook/frame/`; a plugin imports nothing of it, since a plugin reaches only `@numen/plugin-sdk` and `@numen/ui`.
+A plugin's picture shows the plugin in the window. A story in the plugins' Storybook that sets `parameters.frame` is drawn inside a stand-in of the window: the title bar, the file tree of an invented vault of physics notes, and the panes with their tabs. The frame is `libs/plugin/sdk-ts/stories/.storybook/frame/`; a plugin imports nothing of it, since a plugin reaches only `@numen/plugin-sdk` and `@numen/ui`.
 
 ```ts
 export const InTheWindow: Story = {
@@ -65,10 +65,11 @@ export const InTheWindow: Story = {
 | --- | --- |
 | `tab` | In the pane of the tab `tab`, in front of the tabs `otherTabs`, with a note in a pane `before` or `after` it taking `1 - share` of the width. |
 | `files` | In place of the file tree. |
-| `title-bar`, `status-bar` | In place of the bar. |
+| `title-bar` | In place of the bar. |
+| `status-bar` | Below the panes, where the window has no bar of its own. |
 | `title-status` | In the status slot at the end of the title bar; a popover it opens is drawn over the window. |
 
-`selected` chooses a row of the file tree by its path, `files: false` draws the window without it, and `title` names the vault in the title bar. The window shots of `@numen/workbench` draw the same bars with `hasBars` of `Window.stories.ts`.
+`notePath` names the note of `vault.ts` the note pane shows, Entropy when not given. `selected` chooses a row of the file tree by its path, the shown note when not given, `files: false` draws the window without it, and `title` names the vault in the title bar. The window shots of `@numen/workbench` draw the same title bar with `hasBars` of `Window.stories.ts`.
 
 ## Taking them
 

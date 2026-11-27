@@ -176,6 +176,7 @@ export const InTheWindow: Story = {
       otherTabs: [{ title: 'Shannon 1948', icon: 'book' }],
       note: 'after',
       share: 0.55,
+      notePath: 'Physics/The second law.md',
       selected: 'Reading/Boltzmann 1877.pdf',
     },
     screenshot: [{ name: 'reader' }],

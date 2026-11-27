@@ -169,7 +169,7 @@ const FOLDER_ICON =
 export const InTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'files' },
+    frame: { place: 'files', notePath: 'Physics/Free energy.md' },
     screenshot: [{ name: 'file-tags' }],
   },
   render: () => ({
@@ -182,7 +182,7 @@ export const InTheWindow: Story = {
     }),
     template: `
       <div class="numen h-full bg-surface">
-        <Tree :rows="rows" :open="open" :selected="['Physics/Entropy.md']" name="Vault files">
+        <Tree :rows="rows" :open="open" :selected="['Physics/Free energy.md']" name="Vault files">
           <template #icon="{ hasChildren }"><span style="display:flex" v-html="getIcon(hasChildren)" /></template>
           <template #end="{ id }"><FileTags :tags="getTags(id)" /></template>
         </Tree>

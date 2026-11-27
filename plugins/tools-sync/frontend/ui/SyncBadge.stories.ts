@@ -63,7 +63,7 @@ export const InTheWindow: Story = {
   ...Syncing,
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'title-status' },
+    frame: { place: 'title-status', notePath: 'Computation/Shannon entropy.md' },
     screenshot: [{ name: 'sync' }],
   },
   render: (args) => ({

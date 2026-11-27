@@ -189,7 +189,7 @@ const INSTALLED: readonly PluginProcess[] = PLUGINS.map((one, index) => ({
 export const InTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'title-status' },
+    frame: { place: 'title-status', notePath: 'Physics/Fluctuation theorem.md' },
     screenshot: [{ name: 'plugins' }],
   },
   args: { processes: INSTALLED },

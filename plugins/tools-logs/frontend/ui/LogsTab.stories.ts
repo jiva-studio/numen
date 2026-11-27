@@ -119,6 +119,7 @@ export const InTheWindow: Story = {
       tab: { title: 'Logs', icon: 'logs' },
       note: 'before',
       share: 0.62,
+      notePath: 'Computation/Error-correcting codes.md',
     },
     screenshot: [{ name: 'logs' }],
   },
