@@ -7,6 +7,7 @@ import (
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 )
 
@@ -108,13 +109,13 @@ func TestCacheKeys_SeesAReplacedRecord(t *testing.T) {
 	if err := cached.SetKey(t.Context(), keyName, "one"); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := cached.GetKey(t.Context(), keyName); got != "one" {
+	if got := mustGetKey(t, cached, keyName); got != "one" {
 		t.Fatalf("first read = %q", got)
 	}
 	if err := cached.SetKey(t.Context(), keyName, "two"); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := cached.GetKey(t.Context(), keyName); got != "two" {
+	if got := mustGetKey(t, cached, keyName); got != "two" {
 		t.Errorf("read after replace = %q, want two", got)
 	}
 }
@@ -123,15 +124,17 @@ func TestCacheKeys_ForgetsTheRecordWhenAWriteFails(t *testing.T) {
 	t.Parallel()
 	keys := newFakeKeyStore()
 	cached := identity.CacheKeys(keys)
-	_ = cached.SetKey(t.Context(), keyName, "one")
-	_, _ = cached.GetKey(t.Context(), keyName)
+	mustSetKey(t, cached, keyName, "one")
+	_ = mustGetKey(t, cached, keyName)
 	keys.mu.Lock()
 	keys.keys[keyName] = "changed behind"
 	keys.mu.Unlock()
 	keys.setFails = errBroken
-	_ = cached.SetKey(t.Context(), keyName, "two")
+	if err := cached.SetKey(t.Context(), keyName, "two"); err == nil {
+		t.Fatal("write with a failing key store: error = nil")
+	}
 
-	if got, _ := cached.GetKey(t.Context(), keyName); got != "changed behind" {
+	if got := mustGetKey(t, cached, keyName); got != "changed behind" {
 		t.Errorf("read after a failed write = %q, want what the store holds", got)
 	}
 }
@@ -140,7 +143,7 @@ func TestCacheKeys_PassesOtherKeysThrough(t *testing.T) {
 	t.Parallel()
 	keys := newFakeKeyStore()
 	cached := identity.CacheKeys(keys)
-	_ = cached.SetKey(t.Context(), "api", "a")
+	mustSetKey(t, cached, "api", "a")
 	for range 3 {
 		if _, err := cached.GetKey(t.Context(), "api"); err != nil {
 			t.Fatal(err)
@@ -154,17 +157,38 @@ func TestCacheKeys_PassesOtherKeysThrough(t *testing.T) {
 func TestCacheKeys_IsSafeForConcurrentUse(t *testing.T) {
 	t.Parallel()
 	cached := identity.CacheKeys(newFakeKeyStore())
+	mustSetKey(t, cached, keyName, "v")
 	var wg sync.WaitGroup
 	for i := range 8 {
 		wg.Go(func() {
 			for range 50 {
 				if i%2 == 0 {
-					_ = cached.SetKey(t.Context(), keyName, "v")
+					if err := cached.SetKey(t.Context(), keyName, "v"); err != nil {
+						t.Error(err)
+					}
 				} else {
-					_, _ = cached.GetKey(t.Context(), keyName)
+					if _, err := cached.GetKey(t.Context(), keyName); err != nil {
+						t.Error(err)
+					}
 				}
 			}
 		})
 	}
 	wg.Wait()
+}
+
+func mustGetKey(tb testing.TB, store pluginport.KeyStore, name string) string {
+	tb.Helper()
+	value, err := store.GetKey(tb.Context(), name)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return value
+}
+
+func mustSetKey(tb testing.TB, store pluginport.KeyStore, name, value string) {
+	tb.Helper()
+	if err := store.SetKey(tb.Context(), name, value); err != nil {
+		tb.Fatal(err)
+	}
 }
