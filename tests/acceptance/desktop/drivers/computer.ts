@@ -345,8 +345,8 @@ export class ComputerDriver {
   }
 
   /** Makes the other computer reach the sync server only after this one sent its changes. */
-  connectToServer(computer: ComputerName): void {
-    this.owner.sync.holdOthers(this.getScenario(computer))
+  async connectToServer(computer: ComputerName): Promise<void> {
+    await this.owner.sync.holdOthers(this.getScenario(computer))
   }
 
   async expectNoFile(computer: ComputerName, filePath: string, vault: string): Promise<void> {
@@ -394,8 +394,8 @@ export class ComputerDriver {
   }
 
   /** Makes the computer unable to reach the sync server, or able again. */
-  setOnline(computer: ComputerName, isOnline: boolean): void {
-    this.owner.sync.setReachable(this.getScenario(computer), isOnline)
+  async setOnline(computer: ComputerName, isOnline: boolean): Promise<void> {
+    await this.owner.sync.setReachable(this.getScenario(computer), isOnline)
   }
 
   async answerConfirmation(computer: ComputerName, answer: 'Connect' | 'Cancel'): Promise<void> {

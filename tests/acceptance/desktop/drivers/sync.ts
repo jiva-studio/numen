@@ -4,13 +4,14 @@
  * stack of tests/server or the stand of the owner, shared by every scenario; a power over it that a shared server cannot give is
  * the mark of a scenario tagged @own-server.
  */
-import { execFile } from 'node:child_process'
+import { execFile, execFileSync } from 'node:child_process'
 import { promisify } from 'node:util'
 import { expect } from 'playwright/test'
 import { removeSeed, makeSeed, type IdentitySeed } from './identity-seed.js'
 import type { IdentityDriver } from './identity.js'
 import { expectTextNotStored, readDevices, readPlans, requireStack, type SyncStack } from './sync-stack.js'
 import type { Scenario } from './scenario.js'
+import { ENV_OWN_STACK, OwnStack } from './own-stack.js'
 
 export const SYNC_PLUGIN = 'md.numen.tools.sync'
 /** The address the plugin signs in to is the one the server names as its own, and the key it trusts for the epochs of that server. */
@@ -24,6 +25,8 @@ const REMOVAL_DELAY_SECONDS = '1'
 const SETTLE_MS = 6_000
 /** A device the plugin added to the chain, or a revoked one, shows on the server within a few passes. */
 const DEVICE_LIST_TIMEOUT_MS = 15_000
+/** How long the lead computer has the server to itself before the held computers go on. */
+const HOLD_MS = 6_000
 
 /** A number and a unit, as a scenario writes an interval. */
 const INTERVAL_PATTERN = /^(\d+) (second|minute|hour)s?$/
@@ -79,6 +82,8 @@ export const findBackendPids = (processes: string, backend: string): number[] =>
 export class SyncDriver {
   private stack: SyncStack | undefined
   private startedAt = new Date()
+  private own: OwnStack | undefined
+  private held: Scenario[] = []
   private seeded: { readonly seed: IdentitySeed; readonly folder: string } | undefined
 
   constructor(
@@ -195,6 +200,8 @@ export class SyncDriver {
 
   /** Removes the files of the account of the scenario. */
   remove(): void {
+    this.own?.stopWatching()
+    if (this.own !== undefined) execFileSync('docker', ['compose', '-p', this.own.project, 'start', 'bucket', 'sync'], { timeout: 120_000 })
     if (this.seeded === undefined) return
     removeSeed(this.seeded.folder)
     this.seeded = undefined
@@ -214,6 +221,39 @@ export class SyncDriver {
     return new Error(`${power}: the sync server of this run is shared by every scenario and gives no such power; run the scenario on a stack of its own (tag @own-server)`)
   }
 
+  private requireOwn(power: string): OwnStack {
+    const project = process.env[ENV_OWN_STACK]
+    if (project === undefined || project === '') throw this.createPowerError(power)
+    this.own ??= new OwnStack(project)
+    return this.own
+  }
+
+  /** The processes of the backend of Numen Sync that the application of a scenario started. */
+  private async findPluginPids(scenario: Scenario): Promise<number[]> {
+    const root = scenario.getServer().getPid()
+    if (root === undefined) return []
+    const listed = (await run('ps', ['-A', '-o', 'pid=,ppid=,args='])).stdout
+    const rows = listed.split('\n').flatMap((line) => {
+      const found = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(line)
+      return found === null ? [] : [{ pid: Number(found[1]), parent: Number(found[2]), args: found[3] }]
+    })
+    const family = new Set<number>([root])
+    for (let grew = true; grew; ) {
+      grew = false
+      for (const row of rows) if (family.has(row.parent) && !family.has(row.pid)) (family.add(row.pid), (grew = true))
+    }
+    return rows.filter((row) => family.has(row.pid) && row.args.split(' ')[0].endsWith('/bin/tools-sync')).map((row) => row.pid)
+  }
+
+  private async signalPlugin(scenario: Scenario, signal: 'SIGSTOP' | 'SIGCONT'): Promise<void> {
+    for (const pid of await this.findPluginPids(scenario)) process.kill(pid, signal)
+  }
+
+  private releaseHeld(): Promise<unknown> {
+    const held = this.held.splice(0)
+    return Promise.all(held.map((scenario) => this.signalPlugin(scenario, 'SIGCONT')))
+  }
+
   startTrial(_plan: string): Promise<never> {
     return Promise.reject(this.createPowerError('start a trial of a plan for one account'))
   }
@@ -226,59 +266,69 @@ export class SyncDriver {
     throw this.createPowerError('read the end of the trial of one account')
   }
 
-  holdInCloud(_gigabytes: number): Promise<never> {
-    return Promise.reject(this.createPowerError('make the cloud hold gigabytes of notes'))
+  async holdInCloud(gigabytes: number): Promise<void> {
+    await this.requireOwn('make the cloud hold gigabytes of notes').setUsage(gigabytes)
   }
 
-  deleteFromCloud(_gigabytes: number): Promise<never> {
-    return Promise.reject(this.createPowerError('delete gigabytes of notes from the cloud'))
+  async deleteFromCloud(gigabytes: number): Promise<void> {
+    await this.requireOwn('delete gigabytes of notes from the cloud').addUsage(-gigabytes)
   }
 
-  endSubscription(_daysAgo: number): Promise<never> {
-    return Promise.reject(this.createPowerError('end the subscription of one account some days ago'))
+  async endSubscription(daysAgo: number): Promise<void> {
+    await this.requireOwn('end the subscription of one account some days ago').endSubscriptions(daysAgo)
   }
 
-  holdOthers(_lead: Scenario): never {
-    throw this.createPowerError('cut the other computers off from the server')
+  /** Stops the plugin of every computer but the lead; the server runs again first for the lead, and the others go on after it sent. */
+  async holdOthers(lead: Scenario): Promise<void> {
+    this.requireOwn('cut the other computers off from the server')
+    const others = [this.scenario].filter((one) => one !== lead)
+    for (const one of others) await this.signalPlugin(one, 'SIGSTOP')
+    this.held.push(...others)
   }
 
-  setReachable(_scenario: Scenario, _isReachable: boolean): never {
-    throw this.createPowerError('cut one computer off from the server')
+  async setReachable(scenario: Scenario, isReachable: boolean): Promise<void> {
+    this.requireOwn('cut one computer off from the server')
+    await this.signalPlugin(scenario, isReachable ? 'SIGCONT' : 'SIGSTOP')
   }
 
-  makeBackup(): Promise<never> {
-    return Promise.reject(this.createPowerError('make a backup of the whole server'))
+  async makeBackup(): Promise<void> {
+    await this.requireOwn('make a backup of the whole server').makeBackup()
   }
 
-  restoreFromBackup(_isTold: boolean): Promise<never> {
-    return Promise.reject(this.createPowerError('restore the whole server from a backup'))
+  async restoreFromBackup(isTold: boolean): Promise<void> {
+    await this.requireOwn('restore the whole server from a backup').restoreBackup(isTold)
   }
 
-  pause(): Promise<never> {
-    return Promise.reject(this.createPowerError('stop the server'))
+  async pause(): Promise<void> {
+    await this.requireOwn('stop the server').stopServer()
   }
 
-  resume(): Promise<never> {
-    return Promise.reject(this.createPowerError('run the server again'))
+  async resume(): Promise<void> {
+    const own = this.requireOwn('run the server again')
+    await own.startServer()
+    if (this.held.length > 0) {
+      await new Promise((resolve) => setTimeout(resolve, HOLD_MS))
+      await this.releaseHeld()
+    }
   }
 
-  breakAfter(_direction: 'received' | 'sent', _bytes: number): Promise<never> {
-    return Promise.reject(this.createPowerError('break the connection of the server after some bytes'))
+  async breakAfter(direction: 'received' | 'sent', bytes: number): Promise<void> {
+    await this.requireOwn('break the connection of the server after some bytes').breakAfter(direction, bytes)
   }
 
-  forgetRemovals(): Promise<never> {
-    return Promise.reject(this.createPowerError('make the server drop the removals it keeps'))
+  async forgetRemovals(): Promise<void> {
+    await this.requireOwn('make the server drop the removals it keeps').forgetRemovals()
   }
 
   needNewerProtocol(): Promise<never> {
     return Promise.reject(this.createPowerError('make the server need a newer protocol'))
   }
 
-  dropStreams(): Promise<never> {
-    return Promise.reject(this.createPowerError('end every stream of the server'))
+  async dropStreams(): Promise<void> {
+    await this.requireOwn('end every stream of the server').restartServer()
   }
 
-  endSession(): Promise<never> {
-    return Promise.reject(this.createPowerError('end the sessions of the server'))
+  async endSession(): Promise<void> {
+    await this.requireOwn('end the sessions of the server').endSessions()
   }
 }
