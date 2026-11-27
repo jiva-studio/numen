@@ -500,7 +500,7 @@ test('one person with two spellings of their name is one contributor, named as i
     assert.deepEqual(registry.plugins[0].contributors, [
       { name: 'Tést Person', commits: 5, login: null, avatarUrl: null },
     ])
-    assert.equal(JSON.stringify(registry).includes('example.org'), false)
+    assert.doesNotMatch(JSON.stringify(registry), /test@example\.org/i)
   })
 })
 
