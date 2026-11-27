@@ -77,7 +77,9 @@ func (r *run) list(ctx context.Context, item listEntry) error {
 	if err != nil {
 		return err
 	}
-	r.setRecord(record)
+	if err := r.setContentRecord(ctx, record, previous, isKnown); err != nil {
+		return err
+	}
 	r.result.Applied = append(r.result.Applied, meta.Path)
 	return nil
 }

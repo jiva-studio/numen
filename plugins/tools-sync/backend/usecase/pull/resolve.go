@@ -33,7 +33,9 @@ func (r *run) resolve(ctx context.Context, stored *syncv1.StoredRevision, meta n
 	if err != nil {
 		return err
 	}
-	r.setRecord(record)
+	if err := r.setContentRecord(ctx, record, previous, isKnown); err != nil {
+		return errors.Join(err, r.deps.Downloads.Forget(ctx, r.in.VaultID, stored.GetRevision().GetFileId()))
+	}
 	if err := r.deps.State.WriteRecords(ctx, r.in.VaultID, r.records); err != nil {
 		return err
 	}
