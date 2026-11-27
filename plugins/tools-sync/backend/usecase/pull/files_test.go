@@ -504,3 +504,23 @@ func TestPullChanges_PlacesABigFileOnceAndShowsNoFileAtItsPathUntilItIsWhole(t *
 		t.Errorf("staged files left = %v, want none", names)
 	}
 }
+
+func TestPullChanges_PlacesAFileRenamedAndChangedOnAnotherComputerAtItsNewPathWithItsNewText(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, pdf, pdfText, nil)
+	p.pull(t, trustAll)
+	moved := p.move(t, transfer.Move{Record: first.Record, To: "Papers/Old report.pdf"})[0]
+	p.push(t, "Papers/Old report.pdf", "%PDF-1.7 the new bytes of a report", &moved)
+
+	p.pull(t, trustAll)
+
+	if got := p.readNote(t, "Papers/Old report.pdf"); got != "%PDF-1.7 the new bytes of a report" {
+		t.Errorf("file at the new path = %q, want the new bytes", got)
+	}
+	if _, ok := p.b.ReadNote(target, pdf); ok {
+		t.Error("the file is still at its old path")
+	}
+	if _, ok := p.b.GetFileRow(t, target, pdf); ok {
+		t.Error("the record of the old path is still kept")
+	}
+}
