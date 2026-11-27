@@ -69,7 +69,7 @@ func (l *lease) release() {
 	l.uses--
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Stderr logging of close failure does not affect model state."
 	if err := l.closeUnusedLocked(); err != nil {
-		l.holder.reportCloseError(err)
+		l.holder.reporter.ReportCloseError(err)
 	}
 }
 

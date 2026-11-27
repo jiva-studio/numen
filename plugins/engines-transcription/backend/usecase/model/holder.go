@@ -26,17 +26,17 @@ type Reporter interface {
 
 // Holder keeps the open model.
 type Holder struct {
-	mu        sync.Mutex
-	cfg       settings.Config
-	open      Opener
-	reporters []Reporter
-	current   *lease
+	mu       sync.Mutex
+	cfg      settings.Config
+	open     Opener
+	reporter Reporter
+	current  *lease
 }
 
 // NewHolder returns a holder that opens its model with open for cfg. The failures to close a model
-// go to the reporters.
-func NewHolder(cfg settings.Config, open Opener, reporters ...Reporter) *Holder {
-	return &Holder{mu: sync.Mutex{}, cfg: cfg, open: open, reporters: reporters, current: nil}
+// go to reporter.
+func NewHolder(cfg settings.Config, open Opener, reporter Reporter) *Holder {
+	return &Holder{mu: sync.Mutex{}, cfg: cfg, open: open, reporter: reporter, current: nil}
 }
 
 // GetRecognizer returns the open model for the transcription use case and opens it first when there is none.
@@ -66,7 +66,7 @@ func (h *Holder) UpdateSettings(values map[string]string) {
 	h.cfg.Model = model
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Stderr logging of close failure does not affect model state."
 	if err := h.retireLocked(); err != nil {
-		h.reportCloseError(err)
+		h.reporter.ReportCloseError(err)
 	}
 }
 
@@ -84,10 +84,4 @@ func (h *Holder) retireLocked() error {
 	err := h.current.retire()
 	h.current = nil
 	return err
-}
-
-func (h *Holder) reportCloseError(err error) {
-	for _, reporter := range h.reporters {
-		reporter.ReportCloseError(err)
-	}
 }
