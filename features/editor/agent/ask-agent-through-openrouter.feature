@@ -1,4 +1,4 @@
-@live @model
+@live
 Feature: Ask agent through OpenRouter
   A person asks the agent a question and a real model answers it through a connection to OpenRouter.
 

@@ -284,6 +284,6 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 			themeusecase.Bounds{Min: textBounds.Min, Max: textBounds.Max}),
 		themeusecase.NewReadTheme(sources),
 		themeusecase.NewWriteAppearance(sources, appearance, appearance, scales),
-		themeusecase.NewWatchThemes(sources, files, 0),
+		themeusecase.NewWatchThemes(sources, files, 0, nil),
 	), err
 }

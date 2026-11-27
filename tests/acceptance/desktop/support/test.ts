@@ -5,16 +5,12 @@
  */
 import { test as bdd } from 'playwright-bdd'
 import { Person } from '../drivers/person.js'
-import { MODEL_TAG, readSkipReason } from '../drivers/live.js'
 import { createVideoRecorder, isVideoOn } from './video.js'
 
 export const test = bdd.extend<{ person: Person }>({
   person: async ({ page, viewport }, use, testInfo) => {
-    const needsModel = testInfo.tags.includes(MODEL_TAG)
-    const skipReason = readSkipReason(testInfo.tags)
-    if (skipReason !== undefined) testInfo.skip(true, skipReason)
     const recorder = isVideoOn() ? createVideoRecorder(testInfo, viewport) : undefined
-    const person = new Person(page, viewport, recorder?.videoRecording, needsModel)
+    const person = new Person(page, viewport, recorder?.videoRecording, testInfo.tags.includes('@live'))
     try {
       await use(person)
       const log = person.readServerLog()

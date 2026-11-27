@@ -167,7 +167,7 @@ jobs:
           go build -C tools/syncaccount -o bin/syncaccount .
           if ldd apps/desktop/numen-debug | grep 'not found'; then exit 1; fi
 
-      # The scenarios tagged @live, not those tagged @own-server; the model scenario skips without its key. PLAYWRIGHT_VIDEO records every
+      # The scenarios tagged @live, not those tagged @own-server. PLAYWRIGHT_VIDEO records every
       # scenario. The blob report holds all the videos for the merged report of reports.yml; the failed ones are also
       # collected below for a run started by hand.
       - name: Run the acceptance scenarios

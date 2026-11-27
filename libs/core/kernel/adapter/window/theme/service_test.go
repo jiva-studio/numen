@@ -54,7 +54,7 @@ func createService(t *testing.T, stored themedomain.Appearance) (*theme.Service,
 			themeusecase.Bounds{Min: 0.8, Max: 2}, themeusecase.Bounds{Min: 0.8, Max: 1.75}),
 		themeusecase.NewReadTheme(sources),
 		themeusecase.NewWriteAppearance(sources, settings, settings, scales),
-		themeusecase.NewWatchThemes(sources, files, 0),
+		themeusecase.NewWatchThemes(sources, files, 0, nil),
 	)
 	return service, settings, files
 }

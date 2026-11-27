@@ -13,25 +13,25 @@ import (
 // ErrWatchUnavailable is the failure to start watching the user's folder.
 var ErrWatchUnavailable = errors.New("the themes cannot be watched")
 
-// pluginPollInterval is the interval at which the set of plugin themes is compared with the last one.
-const pluginPollInterval = time.Second
-
 // WatchThemes reports when the user's folder or the set of plugin themes changes.
 type WatchThemes struct {
 	catalog catalog
 	watch   OwnThemeWatch
 	hold    time.Duration
+	plugins PluginChangeSubscriber
 }
 
 // NewWatchThemes makes the watch over the sources. The hold is how long changes are kept before
-// they are reported; zero takes the default of the watch.
-func NewWatchThemes(sources Sources, watch OwnThemeWatch, hold time.Duration) *WatchThemes {
-	return &WatchThemes{catalog: catalog{sources: sources}, watch: watch, hold: hold}
+// they are reported; zero takes the default of the watch. The plugins subscription tells when the
+// plugin host changed, and may be nil for a build that never changes it.
+func NewWatchThemes(sources Sources, watch OwnThemeWatch, hold time.Duration, plugins PluginChangeSubscriber) *WatchThemes {
+	return &WatchThemes{catalog: catalog{sources: sources}, watch: watch, hold: hold, plugins: plugins}
 }
 
 // Execute sends the names of the themes that changed until ctx ends or send fails. The plugin set is
-// compared on each poll, and the names added or removed are sent. Where the user's folder cannot be watched, a build with plugin themes watches them alone;
-// any other failure to watch wraps ErrWatchUnavailable.
+// listed again on each signal of the plugin host, and the names added or removed are sent. Where the
+// user's folder cannot be watched, a build with plugin themes watches them alone; any other failure
+// to watch wraps ErrWatchUnavailable.
 func (u *WatchThemes) Execute(ctx context.Context, send func(names []string) error) error {
 	// The folder watch ends with this call, whichever way it ends.
 	watching, stop := context.WithCancel(ctx)
@@ -42,16 +42,20 @@ func (u *WatchThemes) Execute(ctx context.Context, send func(names []string) err
 		return err
 	}
 
+	// Subscribing comes before the first listing, so a change in between is not lost.
+	var pluginChanges <-chan struct{}
+	if u.plugins != nil {
+		signals, unsubscribe := u.plugins()
+		defer unsubscribe()
+		pluginChanges = signals
+	}
 	previous := u.catalog.listPluginThemeNames()
-
-	repeat := time.NewTicker(pluginPollInterval)
-	defer repeat.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-repeat.C:
+		case <-pluginChanges:
 			if err := u.sendPluginChanges(&previous, send); err != nil {
 				return err
 			}

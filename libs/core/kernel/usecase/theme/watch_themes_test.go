@@ -24,7 +24,7 @@ func startWatch(t *testing.T, desk *themesDesk) *reported {
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
 	go func() {
-		watching.stopped <- themeusecase.NewWatchThemes(desk.sources, desk.files, 20*time.Millisecond).
+		watching.stopped <- themeusecase.NewWatchThemes(desk.sources, desk.files, 20*time.Millisecond, desk.changes.Subscribe).
 			Execute(ctx, func(names []string) error {
 				watching.names <- names
 				return nil
@@ -101,9 +101,39 @@ func TestWatchThemesOfABuildWithoutAFolderStillWatchesPlugins(t *testing.T) {
 func TestWatchThemesOfABuildWithoutAFolderOrPluginsIsRefused(t *testing.T) {
 	desk := createThemesDesk(t, themedomain.Appearance{})
 	desk.sources.Plugins = nil
-	err := themeusecase.NewWatchThemes(desk.sources, themefiles.Files{}, 0).
+	err := themeusecase.NewWatchThemes(desk.sources, themefiles.Files{}, 0, nil).
 		Execute(t.Context(), func([]string) error { return nil })
 	if !errors.Is(err, themeusecase.ErrWatchUnavailable) {
 		t.Errorf("error = %v, want ErrWatchUnavailable", err)
+	}
+}
+
+func TestWatchThemesDoesNotListThePluginThemesWhileNothingChanges(t *testing.T) {
+	desk := createThemesDesk(t, themedomain.Appearance{})
+	watching := startWatch(t, desk)
+	listed := desk.plugins.countLists()
+
+	time.Sleep(1500 * time.Millisecond)
+
+	if got := desk.plugins.countLists(); got != listed {
+		t.Errorf("the plugin themes were listed %d more times with no change", got-listed)
+	}
+
+	desk.plugins.disable()
+	watching.await(t, themedomain.BuildPluginName(pluginID, "night"))
+}
+
+func TestWatchThemesReportsNothingWhenAPluginChangeLeavesTheThemesAsTheyWere(t *testing.T) {
+	desk := createThemesDesk(t, themedomain.Appearance{})
+	watching := startWatch(t, desk)
+
+	desk.changes.Signal()
+	desk.plugins.disable()
+
+	watching.await(t, themedomain.BuildPluginName(pluginID, "night"))
+	select {
+	case names := <-watching.names:
+		t.Errorf("reported %v after a change that left the themes as they were", names)
+	case <-time.After(200 * time.Millisecond):
 	}
 }
