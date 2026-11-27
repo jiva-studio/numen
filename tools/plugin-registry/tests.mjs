@@ -1,24 +1,100 @@
 /**
  * The tests a plugin folder holds, counted from its source without running them: Go test and fuzz
  * functions in `*_test.go`, TypeScript test cases in `*.test.ts` and stories in `*.stories.ts`,
- * which run as browser tests; and the Vue components no story shows.
+ * which run as browser tests; and the Vue components no story shows. TypeScript is read from its
+ * syntax tree; Go, which has no parser here, with its comments and literals blanked first.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
+import ts from 'typescript'
 
 const SKIPPED_FOLDERS = new Set(['node_modules', 'dist', 'testdata', '.git'])
 
 const GO_TEST = /^func (?:Test|Fuzz)\w*\(\s*\w+\s+\*testing\.[TF]\s*\)/gm
 
-const TS_TEST =
-  /(?<![\w.$])(?:it|test)(?:\.(?:each|only|skip|todo|concurrent|fails|sequential))*\(/g
+const TS_TEST_NAMES = new Set(['it', 'test'])
 
-const STORY = /^export const [A-Z]\w*/gm
+const TS_TEST_MODIFIERS = new Set(['each', 'only', 'skip', 'todo', 'concurrent', 'fails', 'sequential'])
+
+const findAfter = (text, token, from) => {
+  const found = text.indexOf(token, from)
+  return found === -1 ? text.length : found + token.length
+}
+
+const findQuoteEnd = (text, quote, from) => {
+  let end = from
+  while (end < text.length && text[end] !== quote && text[end] !== '\n') {
+    end += text[end] === '\\' ? 2 : 1
+  }
+  return Math.min(end + 1, text.length)
+}
+
+const findGoTokenEnd = (text, at) => {
+  const pair = text.slice(at, at + 2)
+  if (pair === '//') {
+    const newline = text.indexOf('\n', at)
+    return newline === -1 ? text.length : newline
+  }
+  if (pair === '/*') return findAfter(text, '*/', at + 2)
+  if (text[at] === '`') return findAfter(text, '`', at + 1)
+  if (text[at] === '"' || text[at] === "'") return findQuoteEnd(text, text[at], at + 1)
+  return null
+}
+
+const blankGoCommentsAndLiterals = (text) => {
+  let out = ''
+  let at = 0
+  while (at < text.length) {
+    const end = findGoTokenEnd(text, at)
+    if (end === null) {
+      out += text[at]
+      at += 1
+      continue
+    }
+    out += text.slice(at, end).replace(/[^\n]/g, ' ')
+    at = end
+  }
+  return out
+}
+
+const countGoTests = (text) => blankGoCommentsAndLiterals(text).match(GO_TEST)?.length ?? 0
+
+const parseTypeScript = (text) =>
+  ts.createSourceFile('file.ts', text, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS)
+
+const isTestCallee = (callee) => {
+  let node = callee
+  while (ts.isPropertyAccessExpression(node)) {
+    if (!TS_TEST_MODIFIERS.has(node.name.text)) return false
+    node = node.expression
+  }
+  return ts.isIdentifier(node) && TS_TEST_NAMES.has(node.text)
+}
+
+const countTypeScriptTests = (text) => {
+  let count = 0
+  const visit = (node) => {
+    if (ts.isCallExpression(node) && isTestCallee(node.expression)) count += 1
+    ts.forEachChild(node, visit)
+  }
+  visit(parseTypeScript(text))
+  return count
+}
+
+const isExported = (statement) =>
+  statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false
+
+const countStories = (text) =>
+  parseTypeScript(text)
+    .statements.filter((statement) => ts.isVariableStatement(statement) && isExported(statement))
+    .flatMap((statement) => statement.declarationList.declarations)
+    .filter((declaration) => ts.isIdentifier(declaration.name) && /^[A-Z]/.test(declaration.name.text))
+    .length
 
 const COUNTERS = [
-  { suffix: '_test.go', kind: 'go', pattern: GO_TEST },
-  { suffix: '.test.ts', kind: 'typescript', pattern: TS_TEST },
-  { suffix: '.stories.ts', kind: 'stories', pattern: STORY },
+  { suffix: '_test.go', kind: 'go', count: countGoTests },
+  { suffix: '.test.ts', kind: 'typescript', count: countTypeScriptTests },
+  { suffix: '.stories.ts', kind: 'stories', count: countStories },
 ]
 
 const listFiles = (dir) =>
@@ -41,7 +117,7 @@ export const countTests = (dir) => {
   for (const file of listFiles(dir)) {
     const counter = COUNTERS.find((one) => file.endsWith(one.suffix))
     if (!counter) continue
-    counts[counter.kind] += readFileSync(file, 'utf8').match(counter.pattern)?.length ?? 0
+    counts[counter.kind] += counter.count(readFileSync(file, 'utf8'))
   }
   return counts
 }

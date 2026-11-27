@@ -254,6 +254,57 @@ test('the tests of a plugin folder are counted from its sources', () => {
   }
 })
 
+const COMMENTED_GO_TESTS = `package notes
+
+import "testing"
+
+func TestSave(t *testing.T) {}
+
+/*
+func TestRemoved(t *testing.T) {}
+*/
+
+// func TestDisabled(t *testing.T) {}
+
+const sample = \`
+func TestQuoted(t *testing.T) {}
+\`
+`
+
+const COMMENTED_TS_TESTS = `import { it } from 'vitest'
+
+it('saves', () => {})
+/*
+it('was removed', () => {})
+*/
+// it.skip('is disabled', () => {})
+const sample = "it('is quoted', () => {})"
+`
+
+const COMMENTED_STORIES = `export const Filled = {}
+/*
+export const Removed = {}
+*/
+// export const Disabled = {}
+`
+
+test('a commented-out test or story is not counted', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugin-tests-'))
+  try {
+    const write = (path, text) => {
+      mkdirSync(join(dir, path, '..'), { recursive: true })
+      writeFileSync(join(dir, path), text)
+    }
+    write('backend/notes_test.go', COMMENTED_GO_TESTS)
+    write('frontend/model/notes.test.ts', COMMENTED_TS_TESTS)
+    write('frontend/ui/Notes.stories.ts', COMMENTED_STORIES)
+
+    assert.deepEqual(countTests(dir), { go: 1, typescript: 1, stories: 1 })
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('an internal plugin with tests and no measurement lists its test counts', async () => {
   await withRepository(async (root) => {
     writeFileSync(join(root, 'plugins/notes/notes_test.go'), GO_TESTS)
