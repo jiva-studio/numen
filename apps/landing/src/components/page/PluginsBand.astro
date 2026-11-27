@@ -1,0 +1,63 @@
+---
+/** The plugins band of the home page: six plugins as cards and a link to the catalog. */
+import { getCollection } from 'astro:content'
+import IconCards from './IconCards.astro'
+
+const count = (await getCollection('plugins')).length
+
+const CARDS = [
+  {
+    icon: 'waypoints',
+    title: 'Plex Graph',
+    key: 'pcard_graph',
+    text: 'Interactive visual map of connected notes and topics.',
+  },
+  {
+    icon: 'file-text',
+    title: 'PDF Reader',
+    key: 'pcard_pdf',
+    text: 'PDF document reader with highlights and passage links.',
+  },
+  {
+    icon: 'audio-lines',
+    title: 'Audio/Video Transcription',
+    key: 'pcard_transcription',
+    text: 'Offline speech-to-text for audio and video recordings.',
+  },
+  {
+    icon: 'sparkles',
+    title: 'Vector Embeddings',
+    key: 'pcard_embeddings',
+    text: 'Meaning-based search across your notes, books and recordings.',
+  },
+  {
+    icon: 'bot',
+    title: 'Numen Agent',
+    key: 'pcard_agent',
+    text: 'The built-in AI assistant, with local models or a service you connect.',
+  },
+  {
+    icon: 'palette',
+    title: 'Preset Themes',
+    key: 'pcard_themes',
+    text: 'Forty-four color themes for the editor and the flashcards window.',
+  },
+]
+---
+
+<section class="band band--cream" id="plugins">
+  <div class="container">
+    <div class="section-head">
+      <p class="section-kicker" data-i18n="nav_plugins">Plugins</p>
+      <h2 data-i18n="plugins_band_title">Make it yours.</h2>
+      <p data-i18n="plugins_band_lede">
+        Everything in Numen is a plugin, from the editor to the map. Turn off what you do not need,
+        and add what you do.
+      </p>
+    </div>
+    <IconCards cards={CARDS} />
+    <a class="band-more" href="/plugins" data-i18n="plugins_browse" data-i18n-count={count}>
+      Browse all {count} plugins →
+    </a>
+  </div>
+</section>

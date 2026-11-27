@@ -187,8 +187,9 @@ const cut = async (art, name, rasters) => {
   )
 }
 
-// The page on the web: the drawing itself, and the one raster iOS asks for.
+// The page on the web: the drawings themselves, and the one raster iOS asks for.
 write(join(LANDING, 'favicon.svg'), drawing)
+write(join(LANDING, 'flashcards.svg'), flashcards)
 write(join(LANDING, 'apple-touch-icon.png'), await flat(drawing, 180))
 
 await cut(drawing, 'numen', join(BUILD, 'linux', 'icons'))

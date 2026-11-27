@@ -1,0 +1,95 @@
+---
+/** The Numen Sync plans, which differ only in storage, and what every plan includes. */
+import LucideIcon from './LucideIcon.astro'
+
+const PLANS = [
+  {
+    name: 'Basic',
+    gigabytes: 10,
+    price: '$4',
+    key: 'plan_fits_basic',
+    fits: '≈ 1,000 PDF books, 170 hours of lectures or 7 hours of video',
+    isPicked: false,
+  },
+  {
+    name: 'Plus',
+    gigabytes: 100,
+    price: '$8',
+    key: 'plan_fits_plus',
+    fits: '≈ 10,000 PDF books, 1,700 hours of lectures or 70 hours of video',
+    isPicked: true,
+  },
+  {
+    name: 'Pro',
+    gigabytes: 250,
+    price: '$12',
+    key: 'plan_fits_pro',
+    fits: '≈ 25,000 PDF books, 4,300 hours of lectures or 170 hours of video',
+    isPicked: false,
+  },
+]
+
+const INCLUDED = [
+  { icon: 'zap', title: 'Changes in seconds', text: 'An edit on one device shows up on the others within seconds.' },
+  { icon: 'git-merge', title: 'No lost edits', text: 'Edit the same note on two devices; both changes are kept.' },
+  { icon: 'files', title: 'Any file', text: 'Notes, books, recordings and video, not just Markdown.' },
+  { icon: 'share-2', title: 'Share a folder', text: 'Give someone read-only access. Reading is free for them.' },
+  { icon: 'qr-code', title: 'Add a device by QR', text: 'Scan a code to bring a new device in, revoke it any time.' },
+  { icon: 'lock', title: 'End-to-end encrypted', text: 'Unlimited devices, and the server never sees your files.' },
+]
+---
+
+<section class="band band--cream" id="pricing">
+  <div class="container">
+    <div class="section-head">
+      <p class="section-kicker" data-i18n="pricing_kicker">Pricing</p>
+      <h2 data-i18n="pricing_title">One subscription, every vault.</h2>
+      <p data-i18n="pricing_lede">Plans differ only in storage. You buy Numen Sync inside the app.</p>
+    </div>
+
+    <div class="plans">
+      {
+        PLANS.map((plan) => (
+          <article class:list={['plan', { 'plan--pick': plan.isPicked }]}>
+            <p class="plan__name">{plan.name}</p>
+            <p class="plan__size">
+              {plan.gigabytes}
+              <span>GB</span>
+            </p>
+            <p class="plan__fits" data-i18n={plan.key}>
+              {plan.fits}
+            </p>
+            <div class="plan__foot">
+              <p class="plan__price">
+                <b>{plan.price}</b>
+                <span data-i18n="plan_month">/ month</span>
+              </p>
+              <a
+                class:list={[plan.isPicked ? 'button' : 'button-secondary', 'plan__cta']}
+                href="#get"
+                data-i18n="plan_cta"
+              >
+                Get Numen
+              </a>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+    <p class="plans-common__label" data-i18n="plans_included">Every plan includes</p>
+    <div class="plans-common">
+      {
+        INCLUDED.map((item, index) => (
+          <div class="plans-common__item">
+            <LucideIcon name={item.icon} />
+            <div>
+              <h3 data-i18n={`included_${index + 1}_t`}>{item.title}</h3>
+              <p data-i18n={`included_${index + 1}_p`}>{item.text}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

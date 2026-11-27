@@ -1,0 +1,30 @@
+---
+/** Questions and answers as disclosure rows; the first is open. */
+interface Props {
+  tone: 'paper' | 'cream'
+  items: { key: string; question: string; answer: string }[]
+}
+
+const { tone, items } = Astro.props
+---
+
+<section class={`band band--${tone}`} id="faq">
+  <div class="container">
+    <div class="faq">
+      <div class="section-head">
+        <p class="section-kicker" data-i18n="faq_kicker">FAQ</p>
+        <h2 data-i18n="faq_title">Questions, answered.</h2>
+      </div>
+      <div class="faq__list">
+        {
+          items.map((item, index) => (
+            <details open={index === 0}>
+              <summary data-i18n={`${item.key}_q`}>{item.question}</summary>
+              <p data-i18n={`${item.key}_a`}>{item.answer}</p>
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

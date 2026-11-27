@@ -1,25 +1,42 @@
 ---
-import { DOCS, DOWNLOAD, FORUM, GITHUB } from './site'
+/**
+ * The header of every page: the product the page is about, the Products panel, the links, the
+ * theme and language controls and the Download button. A page without a product (the plugin
+ * catalog) shows Numen and downloads from the home page.
+ */
+import ProductsMenu from './ProductsMenu.astro'
+import { getProduct, type ProductId } from './products'
+import { DOCS, DOWNLOAD, FORUM, GITHUB, GITHUB_ICON } from './site'
+
+interface Props {
+  product?: ProductId
+}
+
+const { product: current } = Astro.props
+const product = getProduct(current ?? 'numen')
+const download = current ? '#get' : DOWNLOAD
 ---
 
 <header class="site-header">
-  <a class="brand" href="/">
-    <img class="brand-logo" src="/favicon.svg" width="42" height="42" alt="" />
+  <a class="brand" href={product.href}>
+    <img class="brand-logo" src={product.icon} width="42" height="42" alt="" />
     <span class="brand-copy">
       <span class="brand-name">numen</span>
-      <span class="brand-sub">The Second Brain</span>
+      <span class="brand-sub">{product.sub}</span>
     </span>
   </a>
 
   <nav aria-label="Primary navigation" data-i18n-aria="aria_nav">
-    <a href={DOCS} data-i18n="nav_docs">Docs</a>
+    <ProductsMenu current={current} />
     <a href="/plugins" data-i18n="nav_plugins">Plugins</a>
+    <a href={DOCS} data-i18n="nav_docs">Docs</a>
     <a href={FORUM} data-i18n="nav_forum">Forum</a>
-    <a href={DOWNLOAD} data-i18n="nav_download">Download</a>
-    <a href={GITHUB} target="_blank" rel="noopener">GitHub</a>
   </nav>
 
   <div class="header-right">
+    <a class="icon-link" href={GITHUB} target="_blank" rel="noopener" aria-label="GitHub">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d={GITHUB_ICON}></path></svg>
+    </a>
     <button
       type="button"
       class="theme-toggle"
@@ -97,6 +114,6 @@ import { DOCS, DOWNLOAD, FORUM, GITHUB } from './site'
       </div>
     </div>
 
-    <a class="button button-small" href={DOWNLOAD} data-i18n="nav_download">Download</a>
+    <a class="button button-small" href={download} data-i18n="nav_download">Download</a>
   </div>
 </header>
