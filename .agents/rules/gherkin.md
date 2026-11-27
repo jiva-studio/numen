@@ -59,7 +59,7 @@ A tag on a Feature or a Scenario selects it for a run. Only these exist; do not 
 
 - `@smoke`: a main journey of the product. A pull request runs the `@smoke` scenarios and the `@smoke` specs of `tests/e2e/desktop/` in Chromium alone. A push to main and the nightly run every test (only the nightly publishes the report), in both engines, so a test that must gate pull requests needs the tag.
 - `@live`: uses the shared real sync server (`NUMEN_SYNC_TEST_URL`, from `make sync_stack_up`) or a real model. The scenario skips if the server is unavailable and fails if `NUMEN_SYNC_TEST_REQUIRED=1`. A model scenario skips if its key is missing. The nightly shared run uses `npm run acceptance:live`.
-- `@stand`: controls its own sync server, payment stand-in, storage and database. The nightly stand runs these scenarios one at a time with `npm run acceptance:stand`.
+- `@stand`: controls its own sync server, payment stand-in, storage and database. `npm run acceptance:stand` runs these scenarios one at a time. Stage C2 connects this command to the nightly workflow.
 
 Every scenario belongs to one group. The offline run skips `@live` and `@stand`. The shared run selects `@live` and skips `@stand`. The stand run selects `@stand`. Apply shared or stand tags to individual scenarios in a mixed feature. A scenario, including tags inherited from its feature or rule, carries at most one of `@smoke`, `@live` and `@stand`.
 

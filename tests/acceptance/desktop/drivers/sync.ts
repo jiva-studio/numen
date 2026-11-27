@@ -227,7 +227,7 @@ export class SyncDriver {
   /** Returns the stand and the computers to a running state and removes the seed files. */
   async remove(): Promise<void> {
     const tasks = await Promise.allSettled([
-      this.own?.startServer(),
+      this.own?.resetServer(),
       ...[...this.paused.keys()].map((scenario) => this.resumePlugin(scenario)),
     ])
     if (this.seeded !== undefined) {
@@ -348,6 +348,10 @@ export class SyncDriver {
 
   async breakAfter(direction: 'received' | 'sent', bytes: number): Promise<void> {
     await this.requireOwn('break the connection of the server after some bytes').breakAfter(direction, bytes)
+  }
+
+  async waitForInterruption(): Promise<void> {
+    await this.own?.waitForInterruption()
   }
 
   async forgetRemovals(): Promise<void> {

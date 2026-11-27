@@ -249,8 +249,8 @@ When('{computer} adds {int} files to the folder {string} in {owned}', ({ person 
   person.files.addFiles(computer, count, folder, vault)
 })
 
-When('{computer} replaces the file {string} with a new version in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
-  person.files.changeFile(computer, filePath, vault)
+When('{computer} replaces the file {string} with a new version in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+  await person.files.changeFile(computer, filePath, vault)
 })
 
 When('{computer} moves the file {string} to {string} in {owned}', async ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {

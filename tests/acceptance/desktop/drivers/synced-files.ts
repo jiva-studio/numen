@@ -40,7 +40,8 @@ export class SyncedFilesDriver {
     }
   }
 
-  changeFile(computer: ComputerName, filePath: string, vault: string): void {
+  async changeFile(computer: ComputerName, filePath: string, vault: string): Promise<void> {
+    await this.sync.waitForInterruption()
     const { world, vault: name } = this.computers.getPlace(computer, vault)
     const content = world.readBytes(name, filePath)
     if (content === undefined) throw new Error(`the vault "${name}" has no file "${filePath}" to change`)

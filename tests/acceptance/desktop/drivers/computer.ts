@@ -350,6 +350,7 @@ export class ComputerDriver {
   }
 
   async expectNoFile(computer: ComputerName, filePath: string, vault: string): Promise<void> {
+    await this.owner.sync.waitForInterruption()
     const world = this.getScenario(computer).getWorld()
     const name = this.resolveVault(computer, vault)
     await expect.poll(() => world.getEntryKind(name, filePath), { timeout: ARRIVAL_LIMIT_MS }).toBeUndefined()
