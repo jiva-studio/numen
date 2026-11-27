@@ -16,7 +16,7 @@ const TS_TEST_NAMES = new Set(['it', 'test'])
 
 const TS_TEST_MODIFIERS = new Set(['each', 'only', 'skip', 'todo', 'concurrent', 'fails', 'sequential'])
 
-const findAfter = (text, token, from) => {
+const findTokenEnd = (text, token, from) => {
   const found = text.indexOf(token, from)
   return found === -1 ? text.length : found + token.length
 }
@@ -35,8 +35,8 @@ const findGoTokenEnd = (text, at) => {
     const newline = text.indexOf('\n', at)
     return newline === -1 ? text.length : newline
   }
-  if (pair === '/*') return findAfter(text, '*/', at + 2)
-  if (text[at] === '`') return findAfter(text, '`', at + 1)
+  if (pair === '/*') return findTokenEnd(text, '*/', at + 2)
+  if (text[at] === '`') return findTokenEnd(text, '`', at + 1)
   if (text[at] === '"' || text[at] === "'") return findQuoteEnd(text, text[at], at + 1)
   return null
 }
