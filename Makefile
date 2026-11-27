@@ -560,12 +560,12 @@ app_desktop_e2e: lib_workbench_build app_desktop_editor_build app_desktop_flashc
 	cd $(TESTS)/e2e/desktop && npm run test:flashcards
 
 .PHONY: sync_stack_up
-sync_stack_up: ## start the real sync server of the tests (tests/server)
-	bash $(TESTS)/server/stack.sh up
+sync_stack_up: ## start the real sync server of the tests (tests/server), optionally with PROJECT=name
+	bash $(TESTS)/server/stack.sh up "$(PROJECT)"
 
 .PHONY: sync_stack_down
-sync_stack_down: ## stop the real sync server of the tests and drop its data
-	bash $(TESTS)/server/stack.sh down
+sync_stack_down: ## stop the real sync server of the tests and drop its data, optionally with PROJECT=name
+	bash $(TESTS)/server/stack.sh down "$(PROJECT)"
 
 .PHONY: sync_stack_fresh
 sync_stack_fresh: ## recreate a stand empty after a full run: make sync_stack_fresh PROJECT=name [COMPOSE=file]
@@ -573,8 +573,8 @@ sync_stack_fresh: ## recreate a stand empty after a full run: make sync_stack_fr
 	bash $(TESTS)/server/stack.sh fresh "$(PROJECT)" $(COMPOSE)
 
 .PHONY: sync_stack_env
-sync_stack_env: ## print the settings of the running stack: eval "$$(make -s sync_stack_env)"
-	@bash $(TESTS)/server/stack.sh env
+sync_stack_env: ## print the settings of the running stack: eval "$$(make -s sync_stack_env)", optionally with PROJECT=name
+	@bash $(TESTS)/server/stack.sh env "$(PROJECT)"
 
 .PHONY: app_desktop_acceptance
 app_desktop_acceptance: lib_workbench_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run the acceptance scenarios
