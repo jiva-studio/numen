@@ -1,0 +1,38 @@
+---
+/** The head of a plugin page: icon, name, description, who makes it, and the download button. */
+import PluginIcon from './PluginIcon.astro'
+import { type CatalogPlugin } from './catalog'
+import { DOWNLOAD } from '../page/site'
+
+interface Props {
+  plugin: CatalogPlugin
+}
+
+const { plugin } = Astro.props
+const isInternal = plugin.source.kind === 'internal'
+---
+
+<header class="plugin-head">
+  <span class="plugin-tile plugin-tile--large"><PluginIcon name={plugin.icon} /></span>
+  <div class="plugin-head__text">
+    <h1>{plugin.name}</h1>
+    <p class="plugin-head__lede">{plugin.description}</p>
+    <p class="plugin-head__meta">
+      <span class="plugin-head__author">
+        {isInternal && <img src="/favicon.svg" width="22" height="22" alt="" />}
+        {plugin.author}
+      </span>
+      <span class="plugin-head__rule" aria-hidden="true"></span>
+      {
+        isInternal ? (
+          <span data-i18n="plugin_built_in">Built into Numen</span>
+        ) : (
+          <a href={plugin.source.url} target="_blank" rel="noopener">
+            {plugin.source.repo}
+          </a>
+        )
+      }
+    </p>
+  </div>
+  <a class="button" href={DOWNLOAD} data-i18n="plugin_download">Download Numen</a>
+</header>

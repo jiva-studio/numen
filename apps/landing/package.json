@@ -16,9 +16,12 @@
     "shoot": "node ../../tools/shoot/shoot.mjs --app landing"
   },
   "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.10",
     "@fontsource-variable/nunito-sans": "^5.3.0",
+    "@lucide/vue": "^1.72.0",
     "@numen/ui": "*",
     "astro": "^7.4.12",
+    "rehype-sanitize": "^6.0.0",
     "sharp": "^0.35.5"
   },
   "devDependencies": {

@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'astro/config'
+import rehypeSanitize from 'rehype-sanitize'
 
 const root = resolve(import.meta.dirname, '../..')
 
@@ -9,10 +10,14 @@ const root = resolve(import.meta.dirname, '../..')
  *
  * `site` is where those files are published, and canonical URLs are built
  * from it.
+ *
+ * Markdown is sanitized because the plugin catalog renders the READMEs and
+ * release notes of plugins published outside this repository.
  */
 export default defineConfig({
   site: 'https://numen.md',
   build: { format: 'file' },
+  markdown: { rehypePlugins: [rehypeSanitize] },
   vite: {
     resolve: {
       alias: {
