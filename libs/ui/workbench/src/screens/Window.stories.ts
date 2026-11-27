@@ -404,7 +404,7 @@ interface Screen {
 
 /** The bars of the window drawn as stand-ins, with the lengths the bar plugins give them. */
 const BARS = {
-  root: 'height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto',
+  root: 'height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr)',
   title:
     'display: grid; grid-template-columns: auto auto 1fr 7rem; align-items: center; ' +
     'block-size: calc(2 * var(--numen-chrome-unit)); background: var(--numen-titlebar); ' +
@@ -416,12 +416,6 @@ const BARS = {
   circle: 'inline-size: 12px; block-size: 12px; border-radius: 50%',
   commands:
     'display: flex; gap: var(--numen-chrome-unit); padding-inline: calc(0.5 * var(--numen-chrome-unit))',
-  status:
-    'display: flex; align-items: center; gap: var(--numen-chrome-unit); ' +
-    'block-size: calc(1.375 * var(--numen-chrome-unit)); ' +
-    'padding-inline: calc(0.5 * var(--numen-chrome-unit)); background: var(--numen-surface); ' +
-    'border-block-start: 1px solid var(--numen-rule); color: var(--numen-hushed); ' +
-    'font-size: var(--numen-chrome-text-1)',
   colors: ['var(--numen-alarm)', 'var(--numen-caution-fg)', 'var(--numen-positive)'],
 }
 
@@ -505,7 +499,6 @@ const screen = ({
           </Tree>
         </template>
       </WorkspaceLayout>
-      <footer v-if="hasBars" :style="BARS.status" />
       <Palette
         v-if="panel"
         v-model="typed"
@@ -777,7 +770,7 @@ export const Filing: Story = {
   },
 }
 
-/** The search over everything the window holds, with the bars of the window above and below it. */
+/** The search over everything the window holds, with the title bar of the window above it. */
 export const SearchingInTheWindow: Story = {
   ...Searching,
   tags: ['screenshot'],
@@ -800,7 +793,7 @@ export const SearchingInTheWindow: Story = {
     }),
 }
 
-/** The commands over a scanned book, with the bars of the window above and below it. */
+/** The commands over a scanned book, with the title bar of the window above it. */
 export const RecognisingInTheWindow: Story = {
   ...Recognising,
   tags: ['screenshot'],

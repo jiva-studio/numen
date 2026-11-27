@@ -95,10 +95,8 @@ export const PicksAnItem: Story = {
 
 /** The bar at the foot of the window, the items of a command opened above it. */
 export const InTheWindow: Story = {
-  tags: ['screenshot'],
   parameters: {
     frame: { place: 'status-bar', notePath: 'Inbox.md' },
-    screenshot: [{ name: 'status-bar' }],
   },
   render: (args) => ({
     components: { StatusBar },

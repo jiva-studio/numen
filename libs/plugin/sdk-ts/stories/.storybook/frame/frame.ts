@@ -16,7 +16,8 @@ export interface FrameTab {
  *
  * - `tab`: in the tab `tab`, in front of the tabs `otherTabs`, with the note in a pane `before` or `after` it;
  * - `files`: in place of the file tree;
- * - `title-bar`, `status-bar`: in place of the bar;
+ * - `title-bar`: in place of the bar;
+ * - `status-bar`: below the panes, where the window has no bar of its own;
  * - `title-status`: in the status slot at the end of the title bar.
  *
  * The window around it holds the file tree of the Physics vault, with the row `selected` chosen, unless

@@ -162,7 +162,6 @@ const getRowIcon = (id: string, isOpen: boolean) => {
     </div>
 
     <slot v-if="frame.place === 'status-bar'" />
-    <footer v-else class="window-frame__status-bar" />
   </div>
 </template>
 
@@ -318,18 +317,5 @@ const getRowIcon = (id: string, isOpen: boolean) => {
 .window-frame__note {
   overflow: hidden;
   padding: 1.5rem 2rem;
-}
-
-.window-frame__status-bar {
-  display: flex;
-  align-items: center;
-  flex: none;
-  gap: calc(1 * var(--numen-chrome-unit));
-  block-size: calc(1.375 * var(--numen-chrome-unit));
-  padding-inline: calc(0.5 * var(--numen-chrome-unit));
-  background: var(--numen-surface);
-  border-block-start: 1px solid var(--numen-rule);
-  color: var(--numen-hushed);
-  font-size: var(--numen-chrome-text-1);
 }
 </style>
