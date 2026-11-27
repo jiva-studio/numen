@@ -20,10 +20,10 @@ const (
 
 // fakePlugins is a source of plugin themes held in memory; the host calls changed after it enables or disables a plugin.
 type fakePlugins struct {
-	mu     sync.Mutex
-	themes []themedomain.PluginTheme
-	texts  map[string]string
-	lists  int
+	mu      sync.Mutex
+	themes  []themedomain.PluginTheme
+	texts   map[string]string
+	lists   int
 	changed func()
 }
 
