@@ -6,10 +6,6 @@ Given('a sync server runs', ({ person }) => {
   person.sync.start()
 })
 
-Given('the sync server needs a newer Numen', async ({ person }) => {
-  await person.sync.needNewerProtocol()
-})
-
 Then('this device is {signed} to the sync server', async ({ person }, isSignedIn: boolean) => {
   if (isSignedIn) await person.sync.expectSignedIn()
   else await person.sync.expectNotSignedIn()

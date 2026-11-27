@@ -346,10 +346,6 @@ export class SyncDriver {
     await this.requireOwn('make the server drop the removals it keeps').forgetRemovals()
   }
 
-  needNewerProtocol(): Promise<never> {
-    return Promise.reject(new Error('the stand cannot require a newer sync protocol'))
-  }
-
   async dropStreams(): Promise<void> {
     await this.requireOwn('end every stream of the server').restartServer()
   }

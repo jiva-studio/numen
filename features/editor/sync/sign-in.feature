@@ -30,16 +30,6 @@ Feature: Numen Sync signs in
       When the person creates an identity
       Then this device is signed in to the sync server
 
-  Rule: Numen Sync asks for an update when the server needs a newer Numen
-
-    @stand
-    Scenario: An old Numen is asked to update
-      Given the person creates an identity
-      And the sync server needs a newer Numen
-      When the application "editor" starts
-      Then the person is told "Update Numen"
-      And this device is not signed in to the sync server
-
   Rule: Numen Sync signs in again when the server signs it out
 
     @stand
