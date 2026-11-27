@@ -341,7 +341,6 @@ Compare the numbers at 31:15 with Landauer's principle.
 `,
 } as const satisfies Readonly<Record<string, string>>
 
-/** A path of a note in `NOTES`. */
 export type NotePath = keyof typeof NOTES
 
 /** The note a pane of the window shows when a frame names none. */
