@@ -18,6 +18,7 @@ type fakeKeyStore struct {
 	getFails  error
 	setFails  error
 	setCalled int
+	getCalls  map[string]int
 	onGet     func()
 }
 
@@ -29,6 +30,10 @@ func (s *fakeKeyStore) GetKey(_ context.Context, name string) (string, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.getCalls == nil {
+		s.getCalls = make(map[string]int)
+	}
+	s.getCalls[name]++
 	if s.getFails != nil {
 		return "", s.getFails
 	}
@@ -115,4 +120,10 @@ func (s *fakeKeyStore) failSets(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.setFails = err
+}
+
+func (s *fakeKeyStore) countGets(name string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.getCalls[name]
 }
