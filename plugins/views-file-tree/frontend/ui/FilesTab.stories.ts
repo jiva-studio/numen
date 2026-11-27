@@ -315,7 +315,9 @@ export const InTheWindow: Story = {
   }),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(17))
-    await userEvent.click(within(canvasElement).getByRole('treeitem', { name: /^Entropy of mixing\.md/ }))
+    await userEvent.click(
+      within(canvasElement).getByRole('treeitem', { name: /^Entropy of mixing\.md/ }),
+    )
   },
 }
 
