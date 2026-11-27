@@ -132,6 +132,54 @@ test('the tree yields the core module and the components package, with what thei
   assert.equal(new Set(found.map((one) => one.name)).size, found.length)
 })
 
+test('a plugin whose code is all frontend is a TypeScript target named by its folder', () => {
+  const graph = getTargets().find((one) => one.name === 'plugins-views-plex-graph')
+  assert.equal(graph?.kind, 'ts')
+  assert.equal(graph.at, 'plugins/views-plex-graph')
+})
+
+test('a plugin holding a Go module and a frontend names both by kind', () => {
+  const todos = getTargets().filter((one) => one.at === 'plugins/todos')
+  assert.deepEqual(
+    todos.map((one) => [one.name, one.kind]).sort(),
+    [
+      ['plugins-todos-go', 'go'],
+      ['plugins-todos-ts', 'ts'],
+    ],
+  )
+})
+
+test('packages with source under src stay TypeScript targets', () => {
+  const names = getTargets()
+    .filter((one) => one.kind === 'ts')
+    .map((one) => one.name)
+  for (const name of ['apps-desktop-editor', 'apps-mobile-ts', 'libs-ui-components', 'libs-core-client']) {
+    assert.ok(names.includes(name), name)
+  }
+})
+
+test('a plugin frontend file is mutated with its own plugin target and no other', () => {
+  const targets = getTargets()
+  const file = 'plugins/views-plex-graph/frontend/lib/picture.ts'
+  const holding = targets.filter((one) => one.kind === 'ts' && file.startsWith(`${one.at}/`))
+  assert.deepEqual(
+    holding.map((one) => one.name),
+    ['plugins-views-plex-graph'],
+  )
+  assert.equal(findTarget(targets, 'plugins/todos/frontend/api/todos.ts').name, 'plugins-todos-ts')
+})
+
+test('plugin frontend source is told apart from tests, stories, barrels and test support', () => {
+  assert.equal(isMutatedSource('plugins/views-plex-graph/frontend/lib/picture.ts'), true)
+  assert.equal(isMutatedSource('plugins/views-plex-graph/frontend/lib/picture.test.ts'), false)
+  assert.equal(isMutatedSource('plugins/notes/frontend/editor/ui/Editor.stories.ts'), false)
+  assert.equal(isMutatedSource('plugins/views-plex-graph/frontend/index.ts'), false)
+  assert.equal(isMutatedSource('plugins/views-plex-graph/frontend/fixtures/clock.ts'), false)
+  assert.equal(isMutatedSource('plugins/notes/frontend/testing/noLayout.ts'), false)
+  assert.equal(isMutatedSource('plugins/notes/frontend/editor/ui/Editor.vue'), false)
+  assert.equal(isMutatedSource('plugins/views-plex-graph/vite.config.ts'), false)
+})
+
 test('the generated Vitest config keeps the projects that do not run in a browser', () => {
   const config = renderVitestConfig('apps/desktop/editor')
   assert.match(config, /from '\.\.\/\.\.\/apps\/desktop\/editor\/vitest\.config\.ts'/)

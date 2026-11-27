@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** User-facing strings of the Logs plugin. */
 export const WORDS = {
   title: 'Logs',

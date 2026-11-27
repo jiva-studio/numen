@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** Words used across the taxonomy frontend. */
 
 /** The count of the tags a row of the file tree does not draw a dot for. */

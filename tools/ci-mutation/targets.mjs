@@ -3,7 +3,8 @@
  *
  * A `go` target is every tracked Go module with a test of its own,
  * run with gomutants. A `ts` target is every workspace package with a
- * `vitest.config.ts` and source under `src/`, run with Stryker against its
+ * `vitest.config.ts` and source under `src/`, and every plugin with a
+ * `vitest.config.ts` and source under `frontend/`, run with Stryker against its
  * projects that do not run in a browser. Each target is split into shards by
  * the size of its source.
  */
@@ -33,7 +34,7 @@ export const isMutatedSource = (path) =>
   !isTestSupport(path) &&
   !/\.(test|stories|d)\.ts$/.test(path) &&
   !/(^|\/)(index|types|main)\.ts$/.test(path) &&
-  /\/src\//.test(path)
+  /\/(src|frontend)\//.test(path)
 
 /** Whether a repository path is Go source gomutants mutates. */
 export const isMutatedGo = (path) =>
@@ -148,17 +149,27 @@ const listFolders = (tracked) => {
   return folders
 }
 
+/** The folder under `at` that holds the source of a `ts` target, or null where `at` is no `ts` target. */
+const getSourceFolder = (at, tracked, workspaces) => {
+  if (workspaces.some((pattern) => pattern.test(at)) && tracked.includes(`${at}/package.json`)) {
+    return 'src'
+  }
+  return /^plugins\/[^/]+$/.test(at) ? 'frontend' : null
+}
+
 const findTsTargets = (tracked) => {
   const workspaces = readWorkspaces()
   const folders = listFolders(tracked)
   return tracked
-    .filter((path) => path.endsWith('/package.json'))
+    .filter((path) => path.endsWith('/vitest.config.ts'))
     .map(dirname)
-    .filter((at) => workspaces.some((pattern) => pattern.test(at)))
-    .filter((at) => tracked.includes(`${at}/vitest.config.ts`))
-    .map((at) => {
+    .map((at) => ({ at, source: getSourceFolder(at, tracked, workspaces) }))
+    .filter((one) => one.source !== null)
+    .map(({ at, source }) => {
       const config = `${at}/vitest.config.ts`
-      const sources = tracked.filter((path) => isUnder(path, `${at}/src`) && isMutatedSource(path))
+      const sources = tracked.filter(
+        (path) => isUnder(path, `${at}/${source}`) && isMutatedSource(path),
+      )
       const tests = tracked
         .filter(
           (path) =>
@@ -175,6 +186,7 @@ const findTsTargets = (tracked) => {
       return {
         kind: 'ts',
         at,
+        source,
         lines: countLines(sources),
         testdata: findTestdata(at, tests, folders),
       }
@@ -184,7 +196,10 @@ const findTsTargets = (tracked) => {
 
 let found = null
 
-/** Every target, with `name`, `kind`, `at`, `shards` and the `testdata` folders its tests read. */
+/**
+ * Every target, with `name`, `kind`, `at`, `shards`, the `testdata` folders its
+ * tests read and, for a `ts` target, the `source` folder under `at`.
+ */
 export const getTargets = () => {
   if (found) return found
   const tracked = listTrackedFiles()

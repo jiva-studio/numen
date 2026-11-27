@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 import type { PlexRelation } from './types'
 
 /** What a plex tab is called, on its own and after the note it relies on. */

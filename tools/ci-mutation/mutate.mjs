@@ -119,8 +119,8 @@ const runGo = (target, shard, { report, cache, result }, file) => {
 /* ------------------------------- TypeScript ------------------------------- */
 
 const listSources = (target) =>
-  readdirSync(join(root, target.at, 'src'), { recursive: true })
-    .map((file) => join(target.at, 'src', file))
+  readdirSync(join(root, target.at, target.source), { recursive: true })
+    .map((file) => join(target.at, target.source, file))
     .filter(isMutatedSource)
     .sort()
 

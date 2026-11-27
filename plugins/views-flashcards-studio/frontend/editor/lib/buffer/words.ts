@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 import type { NoteErrorCode, State } from './types'
 
 export const STALE_CONFLICT = {
