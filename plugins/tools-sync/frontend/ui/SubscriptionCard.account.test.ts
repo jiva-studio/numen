@@ -9,7 +9,6 @@ import SubscriptionCard from './SubscriptionCard.vue'
 type SubscriptionResponse = Awaited<ReturnType<SubscriptionClient['getSubscription']>>
 
 const ACCOUNT = '0123456789abcdef0123456789abcdef'
-const DELETE_AT = '2026-11-30T12:00:00Z'
 const EXPORT_DOCUMENT = '{"account":"0123456789abcdef0123456789abcdef","vaults":[]}'
 
 const PLANS = [
@@ -32,8 +31,7 @@ type AccountStateResponse = Awaited<ReturnType<AccountClient['getAccountState']>
 const createState = (patch: Partial<AccountStateResponse> = {}): AccountStateResponse => ({
   hasIdentity: true,
   account: ACCOUNT,
-  isDeleting: false,
-  deleteAt: '',
+  isDeleted: false,
   ...patch,
 })
 
@@ -42,13 +40,7 @@ const createAccountClient = (state: AccountStateResponse) => {
   return {
     getAccountState: vi.fn<AccountClient['getAccountState']>(() => Promise.resolve({ ...current })),
     deleteCloudData: vi.fn<AccountClient['deleteCloudData']>(() => {
-      current.isDeleting = true
-      current.deleteAt = DELETE_AT
-      return Promise.resolve(DELETE_AT)
-    }),
-    restoreAccount: vi.fn<AccountClient['restoreAccount']>(() => {
-      current.isDeleting = false
-      current.deleteAt = ''
+      current.isDeleted = true
       return Promise.resolve()
     }),
     exportAccountData: vi.fn<AccountClient['exportAccountData']>(() =>
@@ -154,14 +146,14 @@ describe('SubscriptionCard account actions', () => {
     expect(findButton('Delete cloud data')).toBeUndefined()
   })
 
-  it('asks about the seven days, that notes stay and that the subscription is cancelled', async () => {
+  it('says that the deletion cannot be undone, that notes stay and that the subscription is cancelled', async () => {
     await render(createState())
 
     await pressMenu('Delete cloud data')
 
     const text = getDialogText()
     expect(text).toContain('Delete cloud data')
-    expect(text).toContain('7 days')
+    expect(text).toContain('They cannot be restored')
     expect(text).toContain('Your notes stay on your devices')
     expect(text).toContain('Your subscription is cancelled now')
   })
@@ -174,7 +166,7 @@ describe('SubscriptionCard account actions', () => {
     expect(getDialogText()).not.toContain('Your subscription is cancelled now')
   })
 
-  it('deletes the cloud data when the person confirms and shows the deleting state with the date', async () => {
+  it('deletes the cloud data when the person confirms and shows that it is deleted', async () => {
     const { wrapper, accountClient } = await render(createState())
     await pressMenu('Delete cloud data')
 
@@ -182,9 +174,9 @@ describe('SubscriptionCard account actions', () => {
 
     expect(accountClient.deleteCloudData).toHaveBeenCalledOnce()
     expect(document.body.querySelector('[role="alertdialog"]')).toBeNull()
-    expect(wrapper.get('.subscription__badge').text()).toBe('Deleting')
-    expect(wrapper.text()).toContain('deleted on November 30, 2026')
-    expect(wrapper.text()).toContain('Restore cloud data')
+    expect(wrapper.get('.subscription__badge').text()).toBe('Deleted')
+    expect(wrapper.text()).toContain('The cloud data of this identity is deleted')
+    expect(wrapper.text()).not.toContain('Restore')
   })
 
   it('does not delete when the person cancels the question', async () => {
@@ -197,23 +189,12 @@ describe('SubscriptionCard account actions', () => {
     expect(document.body.querySelector('[role="alertdialog"]')).toBeNull()
   })
 
-  it('shows the deleting state of an account that is already deleting and stops reading the subscription', async () => {
-    const { wrapper, client } = await render(createState({ isDeleting: true, deleteAt: DELETE_AT }))
+  it('shows the deleted state of an identity whose cloud data this device deleted and stops reading the subscription', async () => {
+    const { wrapper, client } = await render(createState({ isDeleted: true }))
 
-    expect(wrapper.text()).toContain('Restore cloud data')
+    expect(wrapper.text()).toContain('The cloud data of this identity is deleted')
     expect(wrapper.text()).not.toContain('Delete cloud data')
     expect(client.getSubscription).not.toHaveBeenCalled()
-  })
-
-  it('restores the cloud data and brings the card back', async () => {
-    const { wrapper, accountClient } = await render(
-      createState({ isDeleting: true, deleteAt: DELETE_AT }),
-    )
-
-    await press('Restore cloud data')
-
-    expect(accountClient.restoreAccount).toHaveBeenCalledOnce()
-    expect(wrapper.text()).not.toContain('Restore cloud data')
   })
 
   it('saves the document the server sent under the name of the file', async () => {

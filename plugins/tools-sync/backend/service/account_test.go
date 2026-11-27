@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
@@ -15,8 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
 )
 
-const deletionGrace = 7 * 24 * time.Hour
-
 func newAccountBackend(t *testing.T) (*service.Backend, *world) {
 	t.Helper()
 	w := newWorld(t)
@@ -25,20 +22,15 @@ func newAccountBackend(t *testing.T) (*service.Backend, *world) {
 	return service.NewBackend(w.c.SyncDeps()).WithAccountData(deps), w
 }
 
-func TestDeleteCloudData_StartsTheDeletionAndTheServerRefusesTheNextSignIn(t *testing.T) {
+func TestDeleteCloudData_DeletesTheAccountAndTheServerRefusesTheNextSignIn(t *testing.T) {
 	backend, w := newAccountBackend(t)
 
-	answer, err := backend.DeleteCloudData(t.Context(), api.DeleteCloudDataRequest{})
-
-	if err != nil {
+	if _, err := backend.DeleteCloudData(t.Context(), api.DeleteCloudDataRequest{}); err != nil {
 		t.Fatal(err)
 	}
-	deleteAt, parseErr := time.Parse(time.RFC3339, answer.DeleteAt)
-	if parseErr != nil || deleteAt.Sub(w.clock.Now().Add(deletionGrace)).Abs() > 5*time.Second {
-		t.Errorf("deleteAt = %q, want seven days from now (within the seconds the call takes)", answer.DeleteAt)
-	}
-	if !errors.Is(w.c.SignIn(t.Context()), sessiondomain.AccountDeletingError{}) {
-		t.Error("the sign-in of a device of a deleting account was not refused as deleting")
+
+	if err := w.c.SignIn(t.Context()); !errors.Is(err, sessiondomain.ErrUnauthenticated) {
+		t.Errorf("sign-in after the deletion = %v, want ErrUnauthenticated", err)
 	}
 }
 
@@ -70,21 +62,20 @@ func TestDeleteCloudData_AsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T) {
 	}
 }
 
-func TestGetAccountState_ReturnsDeletingWithTheDateOnceTheDeletionStarted(t *testing.T) {
+func TestGetAccountState_ReturnsDeletedOnceThisDeviceDeletedTheCloudData(t *testing.T) {
 	backend, _ := newAccountBackend(t)
 	before, err := backend.GetAccountState(t.Context(), api.GetAccountStateRequest{})
-	if err != nil || !before.HasIdentity || before.IsDeleting || before.Account == "" {
-		t.Fatalf("state before = %+v, %v, want an identity that is not deleting", before, err)
+	if err != nil || !before.HasIdentity || before.IsDeleted || before.Account == "" {
+		t.Fatalf("state before = %+v, %v, want an identity whose cloud data is not deleted", before, err)
 	}
-	deleted, err := backend.DeleteCloudData(t.Context(), api.DeleteCloudDataRequest{})
-	if err != nil {
+	if _, err := backend.DeleteCloudData(t.Context(), api.DeleteCloudDataRequest{}); err != nil {
 		t.Fatal(err)
 	}
 
 	after, err := backend.GetAccountState(t.Context(), api.GetAccountStateRequest{})
 
-	if err != nil || !after.IsDeleting || after.DeleteAt != deleted.DeleteAt {
-		t.Errorf("state after = %+v, %v, want deleting at %s", after, err, deleted.DeleteAt)
+	if err != nil || !after.IsDeleted || after.Account != before.Account {
+		t.Errorf("state after = %+v, %v, want the cloud data of %s deleted", after, err, before.Account)
 	}
 }
 
@@ -96,25 +87,6 @@ func TestGetAccountState_ReportsNoIdentityWithoutAnError(t *testing.T) {
 
 	if err != nil || got != (api.GetAccountStateResponse{}) {
 		t.Errorf("state = %+v, %v, want an empty answer", got, err)
-	}
-}
-
-func TestRestoreAccount_CancelsTheDeletionSoSignInWorksAgain(t *testing.T) {
-	backend, w := newAccountBackend(t)
-	if _, err := backend.DeleteCloudData(t.Context(), api.DeleteCloudDataRequest{}); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := backend.RestoreAccount(t.Context(), api.RestoreAccountRequest{}); err != nil {
-		t.Fatalf("restore: %v", err)
-	}
-
-	if err := w.c.SignIn(t.Context()); err != nil {
-		t.Errorf("sign-in after the restore: %v", err)
-	}
-	state, err := backend.GetAccountState(t.Context(), api.GetAccountStateRequest{})
-	if err != nil || state.IsDeleting {
-		t.Errorf("state = %+v, %v, want not deleting", state, err)
 	}
 }
 
@@ -155,7 +127,7 @@ func TestExportAccountData_AsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T)
 	}
 }
 
-func TestGetSubscription_FailsAsDeletingForADeletingAccount(t *testing.T) {
+func TestGetSubscription_FailsForADeletedAccount(t *testing.T) {
 	backend, _ := newAccountBackend(t)
 	if _, err := backend.DeleteCloudData(t.Context(), api.DeleteCloudDataRequest{}); err != nil {
 		t.Fatal(err)
@@ -163,7 +135,7 @@ func TestGetSubscription_FailsAsDeletingForADeletingAccount(t *testing.T) {
 
 	_, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
 
-	if !errors.Is(err, sessiondomain.AccountDeletingError{}) && !errors.Is(err, syncprotocol.ErrUnauthenticated) {
-		t.Errorf("error = %v, want the refusal of a deleting account", err)
+	if !errors.Is(err, sessiondomain.ErrUnauthenticated) && !errors.Is(err, syncprotocol.ErrUnauthenticated) {
+		t.Errorf("error = %v, want the refusal of a deleted account", err)
 	}
 }

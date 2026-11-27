@@ -578,8 +578,8 @@ type GetChangesResponse struct {
 	HasMore bool   `protobuf:"varint,3,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
 	// head_seq is the vault seq when the page was read.
 	HeadSeq uint64 `protobuf:"varint,4,opt,name=head_seq,json=headSeq,proto3" json:"head_seq,omitempty"`
-	// reset is true when since_seq is older than the deletion records the server keeps; changes is empty and the client lists
-	// the vault again from since_seq 0.
+	// reset is true when since_seq is older than the deletion records the server keeps; the client lists the vault again
+	// from since_seq 0. A reset page carries changes, next_seq and has_more like any other page.
 	Reset_ bool `protobuf:"varint,5,opt,name=reset,proto3" json:"reset,omitempty"`
 	// restore_epoch_id is the id of the current restore epoch, 16 bytes, or empty before the first restore.
 	RestoreEpochId []byte `protobuf:"bytes,6,opt,name=restore_epoch_id,json=restoreEpochId,proto3" json:"restore_epoch_id,omitempty"`

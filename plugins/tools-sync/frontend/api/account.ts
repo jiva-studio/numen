@@ -7,18 +7,13 @@ import { ReportedError, type Api, type ApiError } from '@numen/plugin-sdk'
 import { REQUIREMENT_UNMET } from './call'
 
 /**
- * The identity fingerprint is the name of the identity, which the person types to confirm a deletion. The time is
- * RFC 3339 and empty unless the account is being deleted. A device with no identity has neither.
+ * The identity fingerprint is the name of the identity, which the person types to confirm a deletion. `isDeleted` is
+ * true once this device deleted the cloud data, until a sign-in succeeds again. A device with no identity has neither.
  */
 interface AccountStateResponse {
   readonly hasIdentity: boolean
   readonly account: string
-  readonly isDeleting: boolean
-  readonly deleteAt: string
-}
-
-interface DeleteCloudDataResponse {
-  readonly deleteAt: string
+  readonly isDeleted: boolean
 }
 
 interface ExportAccountDataResponse {
@@ -27,9 +22,7 @@ interface ExportAccountDataResponse {
 
 export interface AccountClient {
   getAccountState(): Promise<AccountStateResponse>
-  /** When the server deletes the account for good, an RFC 3339 time. */
-  deleteCloudData(): Promise<string>
-  restoreAccount(): Promise<void>
+  deleteCloudData(): Promise<void>
   /** The JSON document of what the server holds of the identity. */
   exportAccountData(): Promise<string>
 }
@@ -37,8 +30,7 @@ export interface AccountClient {
 const NO_IDENTITY: AccountStateResponse = {
   hasIdentity: false,
   account: '',
-  isDeleting: false,
-  deleteAt: '',
+  isDeleted: false,
 }
 
 const createFailure = (error: ApiError): Error =>
@@ -61,10 +53,8 @@ export function createAccountClient(api: Api): AccountClient {
   return {
     getAccountState: () =>
       call<Record<string, never>, AccountStateResponse>('GetAccountState', {}, NO_IDENTITY),
-    deleteCloudData: async () =>
-      (await call<Record<string, never>, DeleteCloudDataResponse>('DeleteCloudData', {})).deleteAt,
-    restoreAccount: async () => {
-      await call<Record<string, never>, Record<string, never>>('RestoreAccount', {})
+    deleteCloudData: async () => {
+      await call<Record<string, never>, Record<string, never>>('DeleteCloudData', {})
     },
     exportAccountData: async () =>
       (await call<Record<string, never>, ExportAccountDataResponse>('ExportAccountData', {}))

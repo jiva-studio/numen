@@ -148,12 +148,9 @@ type SignInRequest struct {
 	Signature []byte `protobuf:"bytes,3,opt,name=signature,proto3" json:"signature,omitempty"`
 	// chain is the signed device chain of the account. It lets the server open the account and check that
 	// the device is in it.
-	Chain []byte `protobuf:"bytes,4,opt,name=chain,proto3" json:"chain,omitempty"`
-	// restore_account asks to cancel the deletion of an account that is deleting. Without it a sign-in to a deleting
-	// account is refused with an AccountDeleting detail, so a device that syncs in the background cannot undo a deletion.
-	RestoreAccount bool `protobuf:"varint,5,opt,name=restore_account,json=restoreAccount,proto3" json:"restore_account,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	Chain         []byte `protobuf:"bytes,4,opt,name=chain,proto3" json:"chain,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SignInRequest) Reset() {
@@ -212,13 +209,6 @@ func (x *SignInRequest) GetChain() []byte {
 		return x.Chain
 	}
 	return nil
-}
-
-func (x *SignInRequest) GetRestoreAccount() bool {
-	if x != nil {
-		return x.RestoreAccount
-	}
-	return false
 }
 
 type SignInResponse struct {
@@ -328,52 +318,6 @@ func (x *UpdateRequired) GetServerVersion() uint32 {
 	return 0
 }
 
-// AccountDeleting is the detail of the UNAUTHENTICATED answer to a sign-in of an account that is deleting.
-type AccountDeleting struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// delete_at is the Unix time in seconds after which the server deletes the account for good.
-	DeleteAt      int64 `protobuf:"varint,1,opt,name=delete_at,json=deleteAt,proto3" json:"delete_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AccountDeleting) Reset() {
-	*x = AccountDeleting{}
-	mi := &file_numen_sync_v1_signin_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AccountDeleting) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AccountDeleting) ProtoMessage() {}
-
-func (x *AccountDeleting) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_sync_v1_signin_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AccountDeleting.ProtoReflect.Descriptor instead.
-func (*AccountDeleting) Descriptor() ([]byte, []int) {
-	return file_numen_sync_v1_signin_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *AccountDeleting) GetDeleteAt() int64 {
-	if x != nil {
-		return x.DeleteAt
-	}
-	return 0
-}
-
 var File_numen_sync_v1_signin_proto protoreflect.FileDescriptor
 
 const file_numen_sync_v1_signin_proto_rawDesc = "" +
@@ -386,22 +330,19 @@ const file_numen_sync_v1_signin_proto_rawDesc = "" +
 	"\x05nonce\x18\x02 \x01(\fR\x05nonce\x12\x1d\n" +
 	"\n" +
 	"expires_at\x18\x03 \x01(\x03R\texpiresAt\x12\x1a\n" +
-	"\baudience\x18\x04 \x01(\tR\baudience\"\xb7\x01\n" +
+	"\baudience\x18\x04 \x01(\tR\baudience\"\xa5\x01\n" +
 	"\rSignInRequest\x12!\n" +
 	"\fchallenge_id\x18\x01 \x01(\fR\vchallengeId\x12&\n" +
 	"\x0fdevice_sign_key\x18\x02 \x01(\fR\rdeviceSignKey\x12\x1c\n" +
 	"\tsignature\x18\x03 \x01(\fR\tsignature\x12\x14\n" +
-	"\x05chain\x18\x04 \x01(\fR\x05chain\x12'\n" +
-	"\x0frestore_account\x18\x05 \x01(\bR\x0erestoreAccount\"\x85\x01\n" +
+	"\x05chain\x18\x04 \x01(\fR\x05chainJ\x04\b\x05\x10\x06R\x0frestore_account\"\x85\x01\n" +
 	"\x0eSignInResponse\x12#\n" +
 	"\rsession_token\x18\x01 \x01(\tR\fsessionToken\x12\x1d\n" +
 	"\n" +
 	"expires_at\x18\x02 \x01(\x03R\texpiresAt\x12/\n" +
 	"\x13account_fingerprint\x18\x03 \x01(\tR\x12accountFingerprint\"7\n" +
 	"\x0eUpdateRequired\x12%\n" +
-	"\x0eserver_version\x18\x01 \x01(\rR\rserverVersion\".\n" +
-	"\x0fAccountDeleting\x12\x1b\n" +
-	"\tdelete_at\x18\x01 \x01(\x03R\bdeleteAt2\xaf\x01\n" +
+	"\x0eserver_version\x18\x01 \x01(\rR\rserverVersion2\xaf\x01\n" +
 	"\rSignInService\x12W\n" +
 	"\fGetChallenge\x12\".numen.sync.v1.GetChallengeRequest\x1a#.numen.sync.v1.GetChallengeResponse\x12E\n" +
 	"\x06SignIn\x12\x1c.numen.sync.v1.SignInRequest\x1a\x1d.numen.sync.v1.SignInResponseBPZNgithub.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1b\x06proto3"
@@ -418,14 +359,13 @@ func file_numen_sync_v1_signin_proto_rawDescGZIP() []byte {
 	return file_numen_sync_v1_signin_proto_rawDescData
 }
 
-var file_numen_sync_v1_signin_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_numen_sync_v1_signin_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_numen_sync_v1_signin_proto_goTypes = []any{
 	(*GetChallengeRequest)(nil),  // 0: numen.sync.v1.GetChallengeRequest
 	(*GetChallengeResponse)(nil), // 1: numen.sync.v1.GetChallengeResponse
 	(*SignInRequest)(nil),        // 2: numen.sync.v1.SignInRequest
 	(*SignInResponse)(nil),       // 3: numen.sync.v1.SignInResponse
 	(*UpdateRequired)(nil),       // 4: numen.sync.v1.UpdateRequired
-	(*AccountDeleting)(nil),      // 5: numen.sync.v1.AccountDeleting
 }
 var file_numen_sync_v1_signin_proto_depIdxs = []int32{
 	0, // 0: numen.sync.v1.SignInService.GetChallenge:input_type -> numen.sync.v1.GetChallengeRequest
@@ -450,7 +390,7 @@ func file_numen_sync_v1_signin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_sync_v1_signin_proto_rawDesc), len(file_numen_sync_v1_signin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

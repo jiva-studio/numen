@@ -22,9 +22,6 @@ func ReadError(err error) error {
 	if revoked, ok := readDeviceRevoked(err); ok {
 		return revoked
 	}
-	if deleting, ok := readAccountDeleting(err); ok {
-		return deleting
-	}
 	switch {
 	case errors.Is(err, ErrUpdateRequired):
 		return ErrUpdateRequired
@@ -159,19 +156,4 @@ func ReadShareError(err error) error {
 		return refusalError{sentinel: ErrShareExists, cause: failure}
 	}
 	return ReadCallError(err)
-}
-
-func readAccountDeleting(err error) (error, bool) {
-	failure, ok := errors.AsType[*connect.Error](err)
-	if !ok {
-		return nil, false
-	}
-	for _, detail := range failure.Details() {
-		if value, valueErr := detail.Value(); valueErr == nil {
-			if deleting, isDeleting := value.(*syncv1.AccountDeleting); isDeleting {
-				return refusalError{sentinel: AccountDeletingError{DeleteAt: time.Unix(deleting.GetDeleteAt(), 0)}, cause: failure}, true
-			}
-		}
-	}
-	return nil, false
 }

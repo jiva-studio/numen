@@ -194,7 +194,7 @@ func (c stubCalls) callAll(ctx context.Context) map[string]error {
 	_, errs["GetBlobUrls"] = c.blob.GetBlobUrls(ctx, vault, [][]byte{bytes.Repeat([]byte{4}, 16)})
 	_, errs["GetAccountChain"] = c.account.GetAccountChain(ctx)
 	_, _, errs["GetAccountChainByRoot"] = c.account.GetAccountChainByRoot(ctx, bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{3}, 32), bytes.Repeat([]byte{8}, 64))
-	_, errs["DeleteAccount"] = c.account.DeleteAccount(ctx, bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{8}, 64))
+	errs["DeleteAccount"] = c.account.DeleteAccount(ctx, bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{8}, 64))
 	_, errs["ExportAccount"] = c.account.ExportAccount(ctx)
 	return errs
 }
@@ -486,34 +486,16 @@ func TestEveryClientSendsNoBearerOverPlainHTTPToAnotherHost(t *testing.T) {
 	}
 }
 
-func TestDeleteAccountReturnsTheTimeTheServerDeletesTheAccountAndExportAccountTheDocument(t *testing.T) {
+func TestDeleteAccountSucceedsAndExportAccountReturnsTheDocument(t *testing.T) {
 	t.Parallel()
 	_, address := serveStub(t, syncprotocol.Version)
 	account := syncclient.NewAccountClient(address, http.DefaultClient, func() string { return "token" })
 
-	deleteAt, err := account.DeleteAccount(t.Context(), bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{8}, 64))
-	if err != nil || deleteAt.Unix() != 1_800_000_000 {
-		t.Errorf("delete at = %v, error = %v, want 1800000000", deleteAt, err)
+	if err := account.DeleteAccount(t.Context(), bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{8}, 64)); err != nil {
+		t.Errorf("delete account: %v", err)
 	}
 	document, err := account.ExportAccount(t.Context())
 	if err != nil || string(document) != `{"vaults":[]}` {
 		t.Errorf("document = %q, error = %v, want the JSON of the server", document, err)
-	}
-}
-
-func TestSignInOfADeletingAccountIsAnAccountDeletingErrorWithTheDate(t *testing.T) {
-	t.Parallel()
-	failure := connect.NewError(connect.CodeUnauthenticated, errors.New("sign-in failed"))
-	detail, err := connect.NewErrorDetail(&syncv1.AccountDeleting{DeleteAt: 1_800_000_000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	failure.AddDetail(detail)
-
-	got := syncprotocol.ReadError(failure)
-
-	deleting, ok := errors.AsType[syncprotocol.AccountDeletingError](got)
-	if !ok || deleting.DeleteAt.Unix() != 1_800_000_000 {
-		t.Errorf("error = %v, want AccountDeletingError at 1800000000", got)
 	}
 }

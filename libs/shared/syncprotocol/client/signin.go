@@ -23,11 +23,10 @@ type Challenge struct {
 // Proof is what answers a challenge: the signature over its message, with the key and the chain that
 // vouch for the device.
 type Proof struct {
-	ChallengeID    []byte
-	DeviceSignKey  []byte
-	Signature      []byte
-	Chain          []byte
-	RestoreAccount bool
+	ChallengeID   []byte
+	DeviceSignKey []byte
+	Signature     []byte
+	Chain         []byte
 }
 
 // Session is the session the server opened for a sign-in.
@@ -93,7 +92,7 @@ func (c *SignInClient) getChallenge(ctx context.Context, deviceSignKey []byte, g
 // SignIn sends the proof and returns the session the server opens. A refusal is ErrUnauthenticated.
 func (c *SignInClient) SignIn(ctx context.Context, proof Proof) (Session, error) {
 	response, err := c.rpc.SignIn(ctx, connect.NewRequest(&syncv1.SignInRequest{
-		ChallengeId: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain, RestoreAccount: proof.RestoreAccount,
+		ChallengeId: proof.ChallengeID, DeviceSignKey: proof.DeviceSignKey, Signature: proof.Signature, Chain: proof.Chain,
 	}))
 	if err != nil {
 		return Session{}, syncprotocol.ReadError(err)

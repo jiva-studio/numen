@@ -20,12 +20,13 @@ service AccountService {
   // sessions of the revoked device in the same step. It needs the session bearer.
   rpc AppendChain(AppendChainRequest) returns (AppendChainResponse);
 
-  // DeleteAccount starts the deletion of the account of the session. The device of the session proves it holds its
-  // key by signing a challenge asked with that key as device_sign_key, under syncprotocol.GetAccountDeleteMessage;
-  // the bearer alone does not delete. The server cancels the subscription of the account first, then marks the
-  // account as deleting, ends its sessions and stops its sync. After the grace period of seven days it deletes every
-  // row and every stored object of the account. A repeated call for a deleting account answers the same delete_at.
-  // A subscription that cannot be cancelled leaves the account as it was. It needs the session bearer.
+  // DeleteAccount deletes the account of the session. The device of the session proves it holds its key by signing a
+  // challenge asked with that key as device_sign_key, under syncprotocol.GetAccountDeleteMessage; the bearer alone does
+  // not delete. The server cancels the subscription of the account first, then marks the account as deleted, ends its
+  // sessions and stops its sync; the next run of its deletion job deletes every row and every stored object of the
+  // account. Nothing restores a deleted account, and a sign-in to it is refused until that run. A repeated call before
+  // that run answers the same delete_at. A subscription that cannot be cancelled leaves the account as it was. It
+  // needs the session bearer.
   rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
 
   // ExportAccount streams what the server holds of the account of the session, as one JSON document cut into
@@ -88,7 +89,7 @@ message DeleteAccountRequest {
 }
 
 message DeleteAccountResponse {
-  // delete_at is the Unix time in seconds after which the server deletes the account for good.
+  // delete_at is the Unix time in seconds at which the server marked the account as deleted.
   int64 delete_at = 1;
 }
 

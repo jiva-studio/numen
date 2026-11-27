@@ -90,8 +90,8 @@ func newRevokedConcern() concern {
 	return concern{"device-revoked", "This device was revoked", retryAfterFailure}
 }
 
-func newAccountDeletingConcern() concern {
-	return concern{"account-deleting", "Your cloud data is being deleted", retryAfterFailure}
+func newAccountDeletedConcern() concern {
+	return concern{"account-deleted", "Your cloud data was deleted", retryAfterFailure}
 }
 
 func newSignInFailedConcern() concern {
@@ -109,15 +109,14 @@ type Keep struct {
 
 	failures int
 
-	mu         sync.Mutex
-	token      string
-	deleteAt   time.Time
-	isDeleting bool
+	mu        sync.Mutex
+	token     string
+	isDeleted bool
 }
 
 // NewKeep returns the use case over the dependencies.
 func NewKeep(deps Deps) *Keep {
-	return &Keep{deps: deps, reportMu: sync.Mutex{}, raised: "", isClean: false, failures: 0, mu: sync.Mutex{}, token: "", deleteAt: time.Time{}, isDeleting: false}
+	return &Keep{deps: deps, reportMu: sync.Mutex{}, raised: "", isClean: false, failures: 0, mu: sync.Mutex{}, token: "", isDeleted: false}
 }
 
 // Execute runs until ctx ends and returns its error.
@@ -135,7 +134,7 @@ func (u *Keep) Execute(ctx context.Context) error {
 }
 
 func (u *Keep) signIn(ctx context.Context) (time.Duration, bool) {
-	current, err := u.open(ctx, false)
+	current, err := u.open(ctx)
 	if err != nil {
 		return u.raise(ctx, err), true
 	}
@@ -160,31 +159,23 @@ func (u *Keep) backOff(wait time.Duration, isFailed bool) time.Duration {
 
 // Refresh signs in once more and returns why it could not.
 func (u *Keep) Refresh(ctx context.Context) error {
-	_, err := u.open(ctx, false)
+	_, err := u.open(ctx)
 	return err
 }
 
-// Restore signs in with the request to cancel the deletion of the account, and clears the warning of the deletion.
-func (u *Keep) Restore(ctx context.Context) error {
-	if _, err := u.open(ctx, true); err != nil {
-		return err
-	}
-	u.clearItems(ctx)
-	return nil
-}
-
-// GetDeletion returns when the server deletes the account for good, and false when the last sign-in found it not deleting.
-func (u *Keep) GetDeletion() (time.Time, bool) {
+// IsDeleted reports whether this device deleted the cloud data of the account since the last sign-in that succeeded.
+func (u *Keep) IsDeleted() bool {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	return u.deleteAt, u.isDeleting
+	return u.isDeleted
 }
 
-// SetDeletion records that the account is deleting, for the person who just asked for it.
-func (u *Keep) SetDeletion(deleteAt time.Time) {
+// SetDeleted records that this device deleted the cloud data of the account, and drops the token of the session the
+// server ended.
+func (u *Keep) SetDeleted() {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	u.deleteAt, u.isDeleting, u.token = deleteAt, true, ""
+	u.isDeleted, u.token = true, ""
 }
 
 // GetToken returns the token of the session, empty before the first sign-in.
@@ -194,7 +185,7 @@ func (u *Keep) GetToken() string {
 	return u.token
 }
 
-func (u *Keep) open(ctx context.Context, restore bool) (domain.Session, error) {
+func (u *Keep) open(ctx context.Context) (domain.Session, error) {
 	identityCtx, cancelIdentity := context.WithTimeout(ctx, hostCallTimeout)
 	public, err := u.deps.Identity.GetPublicIdentity(identityCtx)
 	cancelIdentity()
@@ -212,17 +203,14 @@ func (u *Keep) open(ctx context.Context, restore bool) (domain.Session, error) {
 		return domain.Session{}, err
 	}
 	current, err := u.deps.Server.SignIn(ctx, domain.Proof{
-		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain, RestoreAccount: restore,
+		ChallengeID: challenge.ID, DeviceSignKey: public.DeviceSignKey, Signature: signature, Chain: public.Chain,
 	})
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	if deleting, isDeleting := errors.AsType[domain.AccountDeletingError](err); isDeleting {
-		u.deleteAt, u.isDeleting, u.token = deleting.DeleteAt, true, ""
-	}
 	if err != nil {
 		return domain.Session{}, err
 	}
-	u.deleteAt, u.isDeleting = time.Time{}, false
+	u.isDeleted = false
 	u.token = current.Token
 	return current, nil
 }
@@ -235,15 +223,15 @@ func (u *Keep) raise(ctx context.Context, cause error) time.Duration {
 	defer u.reportMu.Unlock()
 	what := newSignInFailedConcern()
 	revoked, isRevoked := errors.AsType[domain.DeviceRevokedError](cause)
-	isDeleting := errors.Is(cause, domain.AccountDeletingError{DeleteAt: time.Time{}})
+	isDeleted := u.IsDeleted() && errors.Is(cause, domain.ErrUnauthenticated)
 	switch {
 	case isRevoked:
 		what = newRevokedConcern()
 		if u.adopt(ctx, revoked) != nil {
 			what = newSignInFailedConcern()
 		}
-	case isDeleting:
-		what = newAccountDeletingConcern()
+	case isDeleted:
+		what = newAccountDeletedConcern()
 	case errors.Is(cause, domain.ErrNoIdentity):
 		what = newNoIdentityConcern()
 	case errors.Is(cause, domain.ErrUpdateRequired):
@@ -296,7 +284,7 @@ func (u *Keep) clearLeft(ctx context.Context) {
 	}
 	clearCtx, cancel := context.WithTimeout(ctx, hostCallTimeout)
 	defer cancel()
-	for _, what := range []concern{newNoIdentityConcern(), newServerUnreachableConcern(), newUpdateRequiredConcern(), newRevokedConcern(), newAccountDeletingConcern(), newSignInFailedConcern()} {
+	for _, what := range []concern{newNoIdentityConcern(), newServerUnreachableConcern(), newUpdateRequiredConcern(), newRevokedConcern(), newAccountDeletedConcern(), newSignInFailedConcern()} {
 		if u.deps.Health.Clear(clearCtx, what.key) != nil {
 			return
 		}

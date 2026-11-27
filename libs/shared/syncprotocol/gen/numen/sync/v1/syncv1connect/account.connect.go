@@ -63,12 +63,13 @@ type AccountServiceClient interface {
 	// does not extend the stored one the answer is FAILED_PRECONDITION with a ChainStale detail. A revoke ends the
 	// sessions of the revoked device in the same step. It needs the session bearer.
 	AppendChain(context.Context, *connect.Request[v1.AppendChainRequest]) (*connect.Response[v1.AppendChainResponse], error)
-	// DeleteAccount starts the deletion of the account of the session. The device of the session proves it holds its
-	// key by signing a challenge asked with that key as device_sign_key, under syncprotocol.GetAccountDeleteMessage;
-	// the bearer alone does not delete. The server cancels the subscription of the account first, then marks the
-	// account as deleting, ends its sessions and stops its sync. After the grace period of seven days it deletes every
-	// row and every stored object of the account. A repeated call for a deleting account answers the same delete_at.
-	// A subscription that cannot be cancelled leaves the account as it was. It needs the session bearer.
+	// DeleteAccount deletes the account of the session. The device of the session proves it holds its key by signing a
+	// challenge asked with that key as device_sign_key, under syncprotocol.GetAccountDeleteMessage; the bearer alone does
+	// not delete. The server cancels the subscription of the account first, then marks the account as deleted, ends its
+	// sessions and stops its sync; the next run of its deletion job deletes every row and every stored object of the
+	// account. Nothing restores a deleted account, and a sign-in to it is refused until that run. A repeated call before
+	// that run answers the same delete_at. A subscription that cannot be cancelled leaves the account as it was. It
+	// needs the session bearer.
 	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
 	// ExportAccount streams what the server holds of the account of the session, as one JSON document cut into
 	// chunks. The chunks in the order of the stream concatenate to the document. It needs the session bearer.
@@ -166,12 +167,13 @@ type AccountServiceHandler interface {
 	// does not extend the stored one the answer is FAILED_PRECONDITION with a ChainStale detail. A revoke ends the
 	// sessions of the revoked device in the same step. It needs the session bearer.
 	AppendChain(context.Context, *connect.Request[v1.AppendChainRequest]) (*connect.Response[v1.AppendChainResponse], error)
-	// DeleteAccount starts the deletion of the account of the session. The device of the session proves it holds its
-	// key by signing a challenge asked with that key as device_sign_key, under syncprotocol.GetAccountDeleteMessage;
-	// the bearer alone does not delete. The server cancels the subscription of the account first, then marks the
-	// account as deleting, ends its sessions and stops its sync. After the grace period of seven days it deletes every
-	// row and every stored object of the account. A repeated call for a deleting account answers the same delete_at.
-	// A subscription that cannot be cancelled leaves the account as it was. It needs the session bearer.
+	// DeleteAccount deletes the account of the session. The device of the session proves it holds its key by signing a
+	// challenge asked with that key as device_sign_key, under syncprotocol.GetAccountDeleteMessage; the bearer alone does
+	// not delete. The server cancels the subscription of the account first, then marks the account as deleted, ends its
+	// sessions and stops its sync; the next run of its deletion job deletes every row and every stored object of the
+	// account. Nothing restores a deleted account, and a sign-in to it is refused until that run. A repeated call before
+	// that run answers the same delete_at. A subscription that cannot be cancelled leaves the account as it was. It
+	// needs the session bearer.
 	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
 	// ExportAccount streams what the server holds of the account of the session, as one JSON document cut into
 	// chunks. The chunks in the order of the stream concatenate to the document. It needs the session bearer.
