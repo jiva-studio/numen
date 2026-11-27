@@ -666,7 +666,7 @@ export const BookInTheWindow: Story = {
     frame: {
       place: 'tab',
       tab: { title: 'On Heat and Order', icon: 'book' },
-      behind: [{ title: 'Entropy', icon: 'note' }],
+      otherTabs: [{ title: 'Entropy', icon: 'note' }],
       selected: 'Reading/On Heat and Order.epub',
     },
     screenshot: [{ name: 'book' }],

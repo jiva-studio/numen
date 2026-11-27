@@ -128,7 +128,7 @@ export const InTheWindow: Story = {
     frame: {
       place: 'tab',
       tab: { title: 'Sanskrit roots', icon: 'deck' },
-      behind: [{ title: 'Entropy', icon: 'note' }],
+      otherTabs: [{ title: 'Entropy', icon: 'note' }],
       selected: 'Decks/Sanskrit roots.md',
     },
     screenshot: [{ name: 'deck' }],

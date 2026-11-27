@@ -63,7 +63,7 @@ export const InTheWindow: Story = {
 
 | `place` | Where the story is drawn |
 | --- | --- |
-| `tab` | In the pane of the tab `tab`, in front of the tabs `behind`, with a note in a pane `before` or `after` it taking `1 - share` of the width. |
+| `tab` | In the pane of the tab `tab`, in front of the tabs `otherTabs`, with a note in a pane `before` or `after` it taking `1 - share` of the width. |
 | `files` | In place of the file tree. |
 | `title-bar`, `status-bar` | In place of the bar. |
 | `title-status` | In the status slot at the end of the title bar; a popover it opens is drawn over the window. |

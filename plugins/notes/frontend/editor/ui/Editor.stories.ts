@@ -944,7 +944,7 @@ export const InTheWindow: Story = {
     frame: {
       place: 'tab',
       tab: { title: 'Entropy', icon: 'note' },
-      behind: [
+      otherTabs: [
         { title: "Maxwell's demon", icon: 'note' },
         { title: 'Boltzmann 1877', icon: 'book' },
       ],

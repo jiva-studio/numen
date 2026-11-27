@@ -173,7 +173,7 @@ export const InTheWindow: Story = {
     frame: {
       place: 'tab',
       tab: { title: 'Boltzmann 1877', icon: 'book' },
-      behind: [{ title: 'Shannon 1948', icon: 'book' }],
+      otherTabs: [{ title: 'Shannon 1948', icon: 'book' }],
       note: 'after',
       share: 0.55,
       selected: 'Reading/Boltzmann 1877.pdf',

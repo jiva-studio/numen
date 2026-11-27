@@ -13,7 +13,7 @@ export interface FrameTab {
 /**
  * Where a story is drawn in a stand-in of the application window, as `parameters.frame`:
  *
- * - `tab`: in the tab `tab`, in front of the tabs `behind`, with the note in a pane `before` or `after` it;
+ * - `tab`: in the tab `tab`, in front of the tabs `otherTabs`, with the note in a pane `before` or `after` it;
  * - `files`: in place of the file tree;
  * - `title-bar`, `status-bar`: in place of the bar;
  * - `title-status`: in the status slot at the end of the title bar.
@@ -24,7 +24,7 @@ export interface FrameTab {
 export interface Frame {
   readonly place: 'tab' | 'files' | 'title-bar' | 'title-status' | 'status-bar'
   readonly tab?: FrameTab
-  readonly behind?: readonly FrameTab[]
+  readonly otherTabs?: readonly FrameTab[]
   readonly note?: 'before' | 'after'
   readonly share?: number
   readonly selected?: string

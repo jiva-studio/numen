@@ -152,7 +152,7 @@ export const TranscriptInTheWindow: Story = {
     frame: {
       place: 'tab',
       tab: LECTURE,
-      behind: [{ title: 'Lecture 5', icon: 'audio' }],
+      otherTabs: [{ title: 'Lecture 5', icon: 'audio' }],
       selected: 'Lectures/Lecture 4.mp3',
     },
     screenshot: [{ name: 'transcript', plugin: 'engines-transcription' }],

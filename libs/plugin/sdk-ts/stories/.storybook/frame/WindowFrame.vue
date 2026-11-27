@@ -40,7 +40,7 @@ const hasFiles = computed(() => props.frame.files !== false)
 const isTab = computed(() => props.frame.place === 'tab')
 const storyTabs = computed(() => [
   props.frame.tab ?? { title: 'Untitled', icon: 'note' },
-  ...(props.frame.behind ?? []),
+  ...(props.frame.otherTabs ?? []),
 ])
 const share = computed(() => props.frame.share ?? 0.6)
 const title = computed(() => `numen — ${props.frame.title ?? VAULT_NAME}`)
