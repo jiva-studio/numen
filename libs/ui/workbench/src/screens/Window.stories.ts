@@ -505,7 +505,7 @@ const screen = ({
           </Tree>
         </template>
       </WorkspaceLayout>
-      <footer v-if="hasBars" :style="BARS.status"><span>Ln 14, Col 6</span><span>412 words</span></footer>
+      <footer v-if="hasBars" :style="BARS.status" />
       <Palette
         v-if="panel"
         v-model="typed"
@@ -789,7 +789,7 @@ export const SearchingInTheWindow: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [createPane('main', [FILES]), createPane('middle', [NOTE, BOOK], NOTE)],
+          [createPane('main', [FILES]), createPane('middle', [NOTE, BOOK], BOOK)],
           [0.3, 0.7],
         ),
         axis: 'horizontal',

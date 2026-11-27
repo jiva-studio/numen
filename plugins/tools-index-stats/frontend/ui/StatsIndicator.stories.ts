@@ -122,7 +122,7 @@ export const InTheWindow: Story = {
   ...Open,
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'title-status' },
+    frame: { place: 'title-status', notePath: 'Computation/Algorithmic entropy.md' },
     screenshot: [{ name: 'index' }],
   },
   render: (args) => ({

@@ -237,7 +237,7 @@ export const InTheWindow: Story = {
       tab: { title: 'Agent', icon: 'agent' },
       note: 'before',
       share: 0.45,
-      selected: 'Physics/Entropy.md',
+      notePath: "Computation/Landauer's principle.md",
     },
     screenshot: [{ name: 'agent' }],
   },

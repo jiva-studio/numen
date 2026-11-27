@@ -404,7 +404,7 @@ const PHYSICS: VaultSummary = { id: 'physics', name: 'Physics' }
 export const InTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'title-bar' },
+    frame: { place: 'title-bar', notePath: 'Physics/Carnot cycle.md' },
     screenshot: [{ name: 'title-bar' }],
   },
   args: {

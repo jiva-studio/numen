@@ -68,7 +68,7 @@ export const InTheWindow: Story = {
 | `title-bar`, `status-bar` | In place of the bar. |
 | `title-status` | In the status slot at the end of the title bar; a popover it opens is drawn over the window. |
 
-`selected` chooses a row of the file tree by its path, `files: false` draws the window without it, and `title` names the vault in the title bar. The window shots of `@numen/workbench` draw the same bars with `hasBars` of `Window.stories.ts`.
+`notePath` names the note of `vault.ts` the note pane shows, Entropy when not given. `selected` chooses a row of the file tree by its path, the shown note when not given, `files: false` draws the window without it, and `title` names the vault in the title bar. The window shots of `@numen/workbench` draw the same bars with `hasBars` of `Window.stories.ts`.
 
 ## Taking them
 

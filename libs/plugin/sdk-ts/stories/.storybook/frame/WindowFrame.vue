@@ -17,8 +17,8 @@ import {
   Waypoints,
 } from '@lucide/vue'
 import { Prose, Tree } from '@numen/ui'
-import type { Frame, FrameTab, TabIcon } from './frame'
-import { NOTE, OPEN, ROWS, VAULT_NAME } from './vault'
+import type { Frame, TabIcon } from './frame'
+import { DEFAULT_NOTE, getNoteTitle, NOTES, OPEN, ROWS, VAULT_NAME } from './vault'
 
 const props = defineProps<{ frame: Frame }>()
 
@@ -34,10 +34,19 @@ const TAB_ICONS: Record<TabIcon, typeof FileText> = {
   deck: Layers,
 }
 
-const NOTE_TAB: FrameTab = { title: NOTE.title, icon: 'note' }
-
 const hasFiles = computed(() => props.frame.files !== false)
 const isTab = computed(() => props.frame.place === 'tab')
+const hasNote = computed(() => !isTab.value || props.frame.note !== undefined)
+const notePath = computed(() => props.frame.notePath ?? DEFAULT_NOTE)
+const noteTitle = computed(() => getNoteTitle(notePath.value))
+const noteText = computed(() => NOTES[notePath.value])
+const selected = computed(
+  () => props.frame.selected ?? (hasNote.value ? notePath.value : undefined),
+)
+const open = computed(() => {
+  const folder = selected.value?.split('/').slice(0, -1).join('/')
+  return folder && !OPEN.includes(folder) ? [...OPEN, folder] : OPEN
+})
 const storyTabs = computed(() => [
   props.frame.tab ?? { title: 'Untitled', icon: 'note' },
   ...(props.frame.otherTabs ?? []),
@@ -87,8 +96,8 @@ const getRowIcon = (id: string, isOpen: boolean) => {
           <div v-else class="window-frame__fill">
             <Tree
               :rows="ROWS"
-              :open="OPEN"
-              :selected="frame.selected ? [frame.selected] : []"
+              :open="open"
+              :selected="selected ? [selected] : []"
               name="Vault files"
             >
               <template #icon="{ id, isOpen }">
@@ -107,11 +116,11 @@ const getRowIcon = (id: string, isOpen: boolean) => {
         <div class="window-frame__strip">
           <span class="window-frame__tab" data-showing>
             <FileText class="window-frame__tab-icon" />
-            {{ NOTE_TAB.title }}
+            {{ noteTitle }}
             <b>×</b>
           </span>
         </div>
-        <div class="window-frame__content window-frame__note"><Prose :text="NOTE.text" /></div>
+        <div class="window-frame__content window-frame__note"><Prose :text="noteText" /></div>
       </section>
 
       <section
@@ -144,19 +153,16 @@ const getRowIcon = (id: string, isOpen: boolean) => {
         <div class="window-frame__strip">
           <span class="window-frame__tab" data-showing>
             <FileText class="window-frame__tab-icon" />
-            {{ NOTE_TAB.title }}
+            {{ noteTitle }}
             <b>×</b>
           </span>
         </div>
-        <div class="window-frame__content window-frame__note"><Prose :text="NOTE.text" /></div>
+        <div class="window-frame__content window-frame__note"><Prose :text="noteText" /></div>
       </section>
     </div>
 
     <slot v-if="frame.place === 'status-bar'" />
-    <footer v-else class="window-frame__status-bar">
-      <span>Ln 14, Col 6</span>
-      <span>412 words</span>
-    </footer>
+    <footer v-else class="window-frame__status-bar" />
   </div>
 </template>
 
