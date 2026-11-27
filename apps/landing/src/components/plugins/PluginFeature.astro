@@ -1,0 +1,36 @@
+---
+/** A featured plugin as a card: a crop of its first screenshot, then its icon, name and description. */
+import PluginIcon from './PluginIcon.astro'
+import { type CatalogPlugin, getPluginPath } from './catalog'
+import { listShots } from './screenshots'
+
+interface Props {
+  plugin: CatalogPlugin
+}
+
+const { plugin } = Astro.props
+const [shot] = await listShots(plugin, 1)
+const alt = shot ? `${plugin.name}: ${shot.name}` : ''
+---
+
+<a class="plugin-feature" href={getPluginPath(plugin.id)}>
+  <span class="plugin-feature__shot">
+    {
+      shot?.light && (
+        <img class={shot.dark ? 'img-light' : undefined} src={shot.light.src} alt={alt} loading="lazy" />
+      )
+    }
+    {
+      shot?.dark && (
+        <img class={shot.light ? 'img-dark' : undefined} src={shot.dark.src} alt={alt} loading="lazy" />
+      )
+    }
+  </span>
+  <span class="plugin-feature__body">
+    <span class="plugin-tile plugin-tile--filled"><PluginIcon name={plugin.icon} /></span>
+    <span class="plugin-feature__text">
+      <span class="plugin-feature__name">{plugin.name}</span>
+      <span class="plugin-feature__description">{plugin.description}</span>
+    </span>
+  </span>
+</a>

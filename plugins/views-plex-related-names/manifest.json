@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.related.names",
   "name": "Plex Related Names",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "protocol": 1,
   "description": "Names of the notes related to the notes of the plex",
   "capabilities": [],

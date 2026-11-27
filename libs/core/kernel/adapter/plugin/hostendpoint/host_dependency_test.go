@@ -19,7 +19,7 @@ import (
 func TestDependencyClientRequiresAnAuthenticatedRequest(t *testing.T) {
 	registry := provision.NewObservedRegistry(nil, provision.NewPlaceholderProvisioner(t.TempDir()))
 	callers := newCallers().asCallers()
-	callers.Dependencies = plugindependency.NewFetch(func() pluginport.DependencyRegistry { return registry })
+	callers.Dependencies = DependencyUseCases{Model: plugindependency.NewFetch(func() pluginport.DependencyRegistry { return registry })}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostDependencyServiceHandler(&dependencyEndpoint{endpoint: &Endpoint{callers: callers}}))
 	server := httptest.NewServer(mux)

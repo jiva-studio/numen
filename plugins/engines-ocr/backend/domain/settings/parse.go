@@ -9,9 +9,9 @@ func ParseRecognizerSettings(current RecognizerModel, values map[string]string) 
 	if dpi, err := strconv.Atoi(values["dpi"]); err == nil && dpi > 0 {
 		next.DPI = dpi
 	}
-	if address, ok := FindRecognizer(values["model"]); ok {
-		next.Name = address
-		if address == "" {
+	if id, ok := FindRecognizer(values["model"]); ok {
+		next.Name = id
+		if id == "" {
 			next.Name = RecognizerCustom
 		}
 	}

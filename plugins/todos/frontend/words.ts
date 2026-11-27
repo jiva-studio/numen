@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** Every text the plugin shows. */
 export const WORDS = {
   groupOverdue: 'Overdue',

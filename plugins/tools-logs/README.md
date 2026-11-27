@@ -4,6 +4,11 @@ Structured application log viewer for Numen. Open it to see what the application
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/logs-dark.webp">
+  <img alt="The logs open in the window beside a note, a failed request opened to its properties" src="screenshots/logs-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Follow the live stream and recent history**: Follows `host.work.logs.watch`, displaying recent entries from today's daily JSONL log file (`logs/numen-YYYY-MM-DD.jsonl`) and incoming entries from the core, SQLite pools (`sql`), ConnectRPC handlers (`rpc`), windows (`window`), and plugins.

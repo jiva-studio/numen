@@ -1,0 +1,23 @@
+---
+/** A plugin's lucide icon as inline SVG; its size and colour come from the surrounding tile. */
+import { getIconMarkup } from './icons'
+
+interface Props {
+  name: string
+}
+
+const { name } = Astro.props
+const markup = await getIconMarkup(name)
+---
+
+<svg
+  class="plugin-icon"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  set:html={markup}
+/>

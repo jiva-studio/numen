@@ -40,6 +40,4 @@ npm run manual:check  # fail where a page is out of date
 npm run shoot  # every screenshot in src/assets/, light and dark
 ```
 
-Each screenshot is a story, rendered at its real size in the Storybook that declares it: the components' Storybook in `libs/ui/components`, the shell's in `libs/ui/workbench` (which also renders the windows' screens), or the plugins' in `plugins/`. The run starts each Storybook a shot names and stops it afterwards. `STORYBOOK_PORT`, `STORYBOOK_SHELL_PORT` and `STORYBOOK_PLUGINS_PORT` name Storybooks that are already running. The shell's and the plugins' Storybooks use `@numen/ui` through its build, so run `npm run build` in `libs/ui/components` first. A screen of the desktop imports `@numen/protocol`, so that module needs its dependencies installed as well. A story that fails to render stops the run.
-
-A screenshot whose pixels are unchanged is not rewritten: the encoder writes different bytes for the same image, so the run compares pixels. A run over an unchanged manual leaves the folder untouched.
+The pictures are declared in the stories that draw them, with `app: 'docs'`, and taken by `tools/shoot/`, whose README says how a story declares a screenshot and how the run starts the Storybooks. A picture whose pixels are unchanged is not rewritten. CI checks that every declared picture has its files.

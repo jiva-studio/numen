@@ -49,6 +49,8 @@ use (
 	./tools/checks/structure/go
 	./tools/checks/style/comments
 	./tools/epochkey
+	./tools/plugin-registry/gosource
+	./tools/plugin-registry/licenses
 	./tools/syncaccount
 )
 

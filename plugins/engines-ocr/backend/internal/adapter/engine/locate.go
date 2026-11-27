@@ -45,31 +45,27 @@ func locateModel(explicitPath, fileName, dir string) (string, error) {
 	return "", fmt.Errorf("model %s not found", fileName)
 }
 
-// FetchModelFile resolves a pinned model through the host.
-type FetchModelFile func(context.Context, string, string) (string, error)
+// FetchDependency resolves a model that the manifest declares under an id through the host.
+type FetchDependency func(ctx context.Context, id string) (string, error)
 
 type modelFiles struct {
 	dir            string
 	shouldDownload bool
-	fetch          FetchModelFile
+	fetch          FetchDependency
 }
 
-func (files modelFiles) resolve(ctx context.Context, path, address, name string) (string, error) {
-	if address == settings.RecognizerCustom && path == "" {
+func (files modelFiles) resolve(ctx context.Context, path, id, name string) (string, error) {
+	if id == settings.RecognizerCustom && path == "" {
 		return "", fmt.Errorf("a custom recognizer needs a model path")
 	}
 	local, err := locateModel(path, name, files.dir)
 	if err == nil || path != "" || !files.shouldDownload {
 		return local, err
 	}
-	digest, ok := settings.FindModelDigest(address)
-	if !ok {
-		return "", fmt.Errorf("no SHA-256 pinned for model %q", address)
-	}
-	return files.fetch(ctx, address, digest)
+	return files.fetch(ctx, id)
 }
 
-func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch FetchModelFile) (*ort.Engine, string, paths, error) {
+func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch FetchDependency) (*ort.Engine, string, paths, error) {
 	opened, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, "", paths{}, err
@@ -113,8 +109,8 @@ func getCacheRoot() string {
 	return root
 }
 
-func newModelError(role, address, path string, err error) error {
-	where := address
+func newModelError(role, id, path string, err error) error {
+	where := id
 	if path != "" {
 		where = path
 	}

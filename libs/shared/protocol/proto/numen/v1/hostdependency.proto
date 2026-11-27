@@ -10,6 +10,9 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 service HostDependencyService {
   // FetchModelFile returns the cached path of the selected file.
   rpc FetchModelFile(FetchModelFileRequest) returns (FetchModelFileResponse);
+  // FetchDependency returns the path of the model that the manifest of the calling plugin declares
+  // under id, fetching it first when it is not on this machine.
+  rpc FetchDependency(FetchDependencyRequest) returns (FetchDependencyResponse);
 }
 
 message FetchModelFileRequest {
@@ -22,5 +25,16 @@ message FetchModelFileResponse {
   string path = 1;
   // Error text preserved on wire tag 2 for compatibility with protocol v1 plugin binaries.
   string detail = 2;
+  ErrorCode error = 3;
+}
+
+message FetchDependencyRequest {
+  string id = 1;
+}
+
+message FetchDependencyResponse {
+  string path = 1;
+  string detail = 2;
+  // error is ERROR_CODE_NOT_FOUND for an id that the manifest does not declare as a model.
   ErrorCode error = 3;
 }

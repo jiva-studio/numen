@@ -4,6 +4,11 @@ Turns your audio and video recordings into interactive, time-stamped transcripts
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/transcript-dark.webp">
+  <img alt="A lecture open in the window, its transcript with a time against each paragraph" src="screenshots/transcript-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Transcribe lectures, interviews, and voice notes**: Click **Transcribe** inside the Media Viewer or right-click any audio or video file in the sidebar to generate a full transcript offline.

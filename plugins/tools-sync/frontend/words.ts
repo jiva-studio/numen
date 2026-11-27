@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 export const WORDS = {
   syncingLabel: 'Syncing…',
   statusSyncing: 'Syncing',

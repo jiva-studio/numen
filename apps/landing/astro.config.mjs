@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'astro/config'
-import vue from '@vitejs/plugin-vue'
+import rehypeSanitize from 'rehype-sanitize'
 
 const root = resolve(import.meta.dirname, '../..')
 
@@ -10,21 +10,18 @@ const root = resolve(import.meta.dirname, '../..')
  *
  * `site` is where those files are published, and canonical URLs are built
  * from it.
+ *
+ * Markdown is sanitized because the plugin catalog renders the READMEs and
+ * release notes of plugins published outside this repository.
  */
 export default defineConfig({
   site: 'https://numen.md',
   build: { format: 'file' },
+  markdown: { rehypePlugins: [rehypeSanitize] },
   vite: {
-    plugins: [vue()],
     resolve: {
-      dedupe: ['vue'],
       alias: {
-        vue: resolve(root, 'node_modules/vue/dist/vue.runtime.esm-bundler.js'),
-        '@demo-window': resolve(import.meta.dirname, 'src/components/demo/ui/DemoWindow.vue'),
         '@numen/ui/styles.css': resolve(root, 'libs/ui/components/dist/numen-ui.css'),
-        '@numen/ui': resolve(root, 'libs/ui/components/dist/index.js'),
-        '@numen/workbench/styles.css': resolve(root, 'libs/ui/workbench/dist/numen-shell.css'),
-        '@numen/workbench': resolve(root, 'libs/ui/workbench/dist/index.js'),
       },
     },
   },

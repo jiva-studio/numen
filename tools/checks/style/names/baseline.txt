@@ -1,4 +1,3 @@
-apps/landing/src/components/demo/lib/frame.ts	postMessage
 libs/core/kernel/adapter/window/editor/file/files.go	EmptyTrash
 libs/plugin/loader/src/hosting/guards/registrations.ts	slotView
 libs/plugin/loader/src/hosting/tabKinds.ts	identity

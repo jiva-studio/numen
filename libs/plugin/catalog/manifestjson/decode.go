@@ -163,6 +163,7 @@ func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequire
 			Sources:        newDependencySources(one.GetSources()),
 			Environment:    one.GetEnvironment(),
 			Search:         one.GetSearch(),
+			SizeBytes:      one.GetSizeBytes(),
 			PluginDir:      "",
 		})
 	}

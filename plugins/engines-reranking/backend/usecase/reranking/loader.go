@@ -45,11 +45,15 @@ func newLoader(open ports.OpenScorer, report func(what string, err error)) *load
 }
 
 func getKey(p profile.Profile) string {
-	sums := make([]string, 0, len(p.SHA256))
-	for _, name := range slices.Sorted(maps.Keys(p.SHA256)) {
-		sums = append(sums, name+"="+p.SHA256[name])
+	return strings.Join([]string{p.ID, p.OnnxFile, p.Revision, joinFiles(p.SHA256), joinFiles(p.Dependencies), fmt.Sprint(p.MaxTokens)}, "\x00")
+}
+
+func joinFiles(files map[string]string) string {
+	entries := make([]string, 0, len(files))
+	for _, name := range slices.Sorted(maps.Keys(files)) {
+		entries = append(entries, name+"="+files[name])
 	}
-	return strings.Join([]string{p.ID, p.OnnxFile, p.Revision, strings.Join(sums, ","), fmt.Sprint(p.MaxTokens)}, "\x00")
+	return strings.Join(entries, ",")
 }
 
 func (l *loader) acquire(ctx context.Context, p profile.Profile) (*loadedModel, error) {

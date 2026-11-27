@@ -661,7 +661,7 @@ app_landing_compile: ## typecheck landing site
 app_landing_lint: ## lint landing site
 	cd $(LANDING) && npm run lint
 	cd $(LANDING) && npm run typecheck
-	cd $(LANDING) && npm run stories:check
+	node tools/shoot/check.mjs
 
 # -------------------------------- Tools & Meta --------------------------------
 .PHONY: tool_icon_build

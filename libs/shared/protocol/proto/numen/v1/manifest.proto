@@ -386,6 +386,8 @@ message ManifestDependency {
   repeated string search = 9;
   // source_urls holds the primary URL and fallback mirror URLs tried in order.
   repeated string source_urls = 10;
+  // size_bytes is the size of the file fetched; it is required for a model with a source.
+  int64 size_bytes = 11;
 }
 
 // ManifestDependencySource is the file a dependency is fetched from on one platform.

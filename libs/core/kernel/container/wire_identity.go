@@ -23,7 +23,7 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultParts, res *Reso
 			StartRestore:  identity.NewStartRestore(deps),
 		},
 		Kit: windowidentity.KitUseCases{
-			Save:    identity.NewSaveRecoveryKit(deps, openKitSaver(dialog)),
+			Save:    identity.NewSaveRecoveryKit(deps, kitpdf.NewSaver(dialog)),
 			Restore: identity.NewStartRestoreFromKit(deps),
 		},
 		Link: windowidentity.LinkUseCases{
@@ -42,11 +42,4 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultParts, res *Reso
 
 func openAccount(res *Resources) *identity.Account {
 	return identity.NewAccount(func() pluginport.KeyStore { return res.Stores.Keys }, licensingadapter.NewAdapter(nil), GetClock(res), res.progress, res.Stores.Chains)
-}
-
-func openKitSaver(dialog editor.PathDialog) identity.KitSaver {
-	if dialog == nil {
-		return kitpdf.Unavailable{}
-	}
-	return kitpdf.NewSaver(dialog)
 }

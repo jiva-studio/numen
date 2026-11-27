@@ -3,12 +3,24 @@
  * Collects statement coverage across all Go modules and TypeScript packages,
  * calculates the unified weighted coverage percentage, and updates coverage.json
  * on branch `badges`.
+ *
+ *   node collect.mjs [--quality <file>]
+ *
+ * `--quality` also writes the coverage of each plugin module as a quality file of
+ * `tools/shared/plugin-quality.mjs`.
  */
 import { execTool } from '../shared/tools.mjs'
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { updateBadgeBranch } from '../shared/badge.mjs'
+import {
+  formatQualityFile,
+  isPluginTarget,
+  mergeQualityFile,
+  roundScore,
+} from '../shared/plugin-quality.mjs'
+import { getTargets } from '../ci-mutation/targets.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..')
 const tmpDir = join(root, '.coverage_tmp')
@@ -74,9 +86,14 @@ export const parseGoProfile = (profilePath) => {
   return { total, covered }
 }
 
+/** The mutation target name of a Go module, which names its quality entry. */
+const getGoTargetName = (mod) =>
+  getTargets().find((one) => one.kind === 'go' && one.at === mod)?.name ?? mod.replaceAll('/', '-')
+
 const collectGo = () => {
   let totalGo = 0
   let coveredGo = 0
+  const modules = []
 
   for (const mod of GO_MODULES) {
     const modDir = join(root, mod)
@@ -93,6 +110,7 @@ const collectGo = () => {
       const stats = parseGoProfile(outPath)
       totalGo += stats.total
       coveredGo += stats.covered
+      modules.push({ mod, ...stats })
       const pct = stats.total > 0 ? ((100 * stats.covered) / stats.total).toFixed(1) : '0'
       console.log(`[coverage] ${mod}: ${pct}% (${stats.covered}/${stats.total} stmts)`)
     } catch (err) {
@@ -100,7 +118,27 @@ const collectGo = () => {
     }
   }
 
-  return { total: totalGo, covered: coveredGo }
+  return { total: totalGo, covered: coveredGo, modules }
+}
+
+/** The coverage entry of each plugin module that has statements. */
+export const listPluginCoverage = (modules, getName, measuredAt) =>
+  modules
+    .filter((one) => one.total > 0)
+    .map((one) => ({ name: getName(one.mod), ...one }))
+    .filter((one) => isPluginTarget(one.name))
+    .map((one) => ({
+      target: one.name,
+      coverage: roundScore((100 * one.covered) / one.total),
+      measuredAt,
+    }))
+
+const writePluginQuality = (file, modules) => {
+  const measuredAt = new Date().toISOString()
+  const entries = listPluginCoverage(modules, getGoTargetName, measuredAt)
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, formatQualityFile(mergeQualityFile(null, entries, measuredAt)))
+  console.log(`[coverage] ${entries.length} plugin coverage entries written to ${file}`)
 }
 
 const collectTs = () => {
@@ -141,7 +179,7 @@ const collectTs = () => {
   return { total: totalTs, covered: coveredTs }
 }
 
-export const runCollection = async () => {
+export const runCollection = async (qualityFile = null) => {
   rmSync(tmpDir, { recursive: true, force: true })
   mkdirSync(tmpDir, { recursive: true })
 
@@ -161,6 +199,7 @@ export const runCollection = async () => {
   )
 
   rmSync(tmpDir, { recursive: true, force: true })
+  if (qualityFile) writePluginQuality(qualityFile, go.modules)
 
   const color = pct >= 85 ? 'brightgreen' : pct >= 70 ? 'yellow' : 'red'
   const payload = {
@@ -175,7 +214,9 @@ export const runCollection = async () => {
 }
 
 if (process.argv[1] && process.argv[1].endsWith('collect.mjs')) {
-  runCollection().catch((err) => {
+  const args = process.argv.slice(2)
+  const qualityFile = args.includes('--quality') ? args[args.indexOf('--quality') + 1] : null
+  runCollection(qualityFile).catch((err) => {
     console.error(err)
     process.exit(1)
   })

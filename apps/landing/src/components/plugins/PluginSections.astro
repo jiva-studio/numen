@@ -1,0 +1,86 @@
+---
+import type { PluginSection, RowText } from './sections'
+import { EN } from '../../scripts/i18n-en'
+
+interface Props {
+  sections: PluginSection[]
+}
+
+const { sections } = Astro.props
+
+const STATUS_MARKS: Readonly<Record<string, string>> = {
+  pass: 'M5 12.5 9.5 17 19 7.5',
+  warn: 'M12 6.5v7M12 17.5v.5',
+  fail: 'M7 7l10 10M17 7 7 17',
+  info: 'M12 11v6.5M12 6.5v.5',
+  skipped: 'M7 12h10',
+}
+
+const getI18n = (text: RowText) => (text.key ? { 'data-i18n': text.key } : {})
+---
+
+{
+  sections.map((section) => (
+    <section class="plugin-section" aria-labelledby={`plugin-${section.id}`}>
+      <h2 id={`plugin-${section.id}`} data-i18n={section.key}>
+        {section.title}
+      </h2>
+      <ul class="plugin-rows">
+        {section.rows.map((row) => (
+          <li class="plugin-row" data-status={row.status}>
+            <span class="plugin-row__name">
+              {row.status && (
+                <span class="plugin-status">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={STATUS_MARKS[row.status] ?? STATUS_MARKS.info} />
+                  </svg>
+                  <span class="plugin-sr" data-i18n={`plugin_status_${row.status}`}>
+                    {EN[`plugin_status_${row.status}`] ?? row.status}
+                  </span>
+                </span>
+              )}
+              <span>
+                {row.name.map((text, index) => (
+                  <>
+                    {index > 0 && ' '}
+                    {text.isCode ? (
+                      <code>{text.text}</code>
+                    ) : row.href ? (
+                      <a href={row.href} {...getI18n(text)}>
+                        {text.text}
+                      </a>
+                    ) : (
+                      <span {...getI18n(text)}>{text.text}</span>
+                    )}
+                  </>
+                ))}
+                {row.isNew && (
+                  <span class="plugin-new" data-i18n="plugin_permission_added">
+                    New in this version
+                  </span>
+                )}
+              </span>
+            </span>
+            <span class="plugin-row__value">
+              {row.value.map((line) => (
+                <span class="plugin-row__line">
+                  {line.map((text, index) => (
+                    <>
+                      {index > 0 && ' '}
+                      {text.isCode ? <code>{text.text}</code> : <span {...getI18n(text)}>{text.text}</span>}
+                    </>
+                  ))}
+                </span>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {section.note && (
+        <p class="plugin-muted plugin-section__note" {...getI18n(section.note)}>
+          {section.note.text}
+        </p>
+      )}
+    </section>
+  ))
+}

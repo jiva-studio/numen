@@ -4,6 +4,11 @@ Cleans up spelling, punctuation, and recognition errors in audio transcripts and
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/proofread-dark.webp">
+  <img alt="The window with a scanned book open and the commands offering to proofread its text" src="screenshots/proofread-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Fix transcription and OCR mistakes**: Click **Proofread** in the Media Viewer or right-click a transcribed recording or recognized PDF in the sidebar to produce a clean, readable version.

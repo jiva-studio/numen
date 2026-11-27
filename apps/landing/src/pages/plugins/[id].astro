@@ -1,0 +1,129 @@
+---
+/**
+ * The page of one plugin: its head, then Overview (screenshots and README), Contributions
+ * (permissions, settings, commands, what it adds to Numen, downloads), Quality (checks and tests)
+ * and Version history as tabs, beside a side column of contributors, compatibility, source, issue
+ * links and related plugins.
+ */
+import { getCollection, render, type CollectionEntry } from 'astro:content'
+import Page from '../../layouts/Page.astro'
+import SiteHeader from '../../components/page/SiteHeader.astro'
+import SiteFooter from '../../components/page/SiteFooter.astro'
+import PluginScreenshots from '../../components/plugins/PluginScreenshots.astro'
+import PluginSections from '../../components/plugins/PluginSections.astro'
+import PluginChangelog from '../../components/plugins/PluginChangelog.astro'
+import PluginHeader from '../../components/plugins/PluginHeader.astro'
+import PluginSidebar from '../../components/plugins/PluginSidebar.astro'
+import { type CatalogPlugin, listRelatedPlugins } from '../../components/plugins/catalog'
+import { listContributionSections, listQualitySections } from '../../components/plugins/sections'
+import '../../styles/plugins.css'
+
+export async function getStaticPaths() {
+  const entries = await getCollection('plugins')
+  return entries.map((entry) => ({ params: { id: entry.id }, props: { entry } }))
+}
+
+interface Props {
+  entry: CollectionEntry<'plugins'>
+}
+
+const { entry } = Astro.props
+const plugin = entry.data as CatalogPlugin
+const { Content } = entry.rendered ? await render(entry) : { Content: null }
+const plugins = (await getCollection('plugins')).map((one) => one.data as CatalogPlugin)
+const related = listRelatedPlugins(plugin, plugins)
+
+const title = `${plugin.name} — numen plugins`
+const description = plugin.readme?.intro || plugin.description
+const tabs = [
+  { id: 'overview', key: 'plugin_tab_overview', text: 'Overview' },
+  { id: 'contributions', key: 'plugin_tab_contributions', text: 'Contributions' },
+  { id: 'quality', key: 'plugin_tab_quality', text: 'Quality' },
+  { id: 'history', key: 'plugin_tab_history', text: 'Version history' },
+]
+---
+
+<Page title={title} description={description}>
+  <SiteHeader />
+
+  <main class="plugin-page">
+    <PluginHeader plugin={plugin} />
+
+    <div class="plugin-tabs" role="tablist">
+      {
+        tabs.map((tab, index) => (
+          <button
+            type="button"
+            role="tab"
+            id={`tab-${tab.id}`}
+            aria-controls={`panel-${tab.id}`}
+            aria-selected={index === 0 ? 'true' : 'false'}
+            tabindex={index === 0 ? 0 : -1}
+            data-plugin-tab
+            data-i18n={tab.key}
+          >
+            {tab.text}
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="plugin-body">
+      <div class="plugin-panels">
+        <section class="plugin-panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+          {
+            plugin.isPaid && (
+              <p class="plugin-muted" data-i18n="plugin_paid_note">
+                This plugin is paid. You buy it in the Numen app.
+              </p>
+            )
+          }
+          <PluginScreenshots plugin={plugin} />
+          {
+            Content ? (
+              <div class="plugin-prose plugin-readme">
+                <h2>{plugin.name}</h2>
+                <Content />
+              </div>
+            ) : (
+              <p class="plugin-muted" data-i18n="plugin_no_readme">
+                This plugin has no README.
+              </p>
+            )
+          }
+        </section>
+
+        <section
+          class="plugin-panel"
+          id="panel-contributions"
+          role="tabpanel"
+          aria-labelledby="tab-contributions"
+        >
+          <PluginSections sections={listContributionSections(plugin)} />
+        </section>
+
+        <section class="plugin-panel" id="panel-quality" role="tabpanel" aria-labelledby="tab-quality">
+          <PluginSections sections={listQualitySections(plugin)} />
+        </section>
+
+        <section class="plugin-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
+          <PluginChangelog plugin={plugin} />
+        </section>
+      </div>
+
+      <PluginSidebar plugin={plugin} related={related} />
+    </div>
+  </main>
+
+  <SiteFooter />
+
+  <script>
+    import { initSiteControls } from '../../scripts/site-controls'
+    import { initPluginTabs } from '../../scripts/plugin-tabs'
+    import { initPluginLightbox } from '../../scripts/plugin-lightbox'
+
+    initSiteControls()
+    initPluginTabs()
+    initPluginLightbox()
+  </script>
+</Page>

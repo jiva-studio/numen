@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** The words the task status writes. */
 export const WORDS = {
   idle: 'Idle',

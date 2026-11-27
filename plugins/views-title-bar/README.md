@@ -4,6 +4,11 @@ Draws the bar at the top of each window: the buttons of the commands the plugins
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/title-bar-dark.webp">
+  <img alt="The window with its title bar, the list of vaults opened from the title" src="screenshots/title-bar-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Run a command from the bar**: Each command a plugin places in the title bar is a button, and a submenu is a button that opens its commands. Hover over one for its name and shortcut. When the bar is too narrow, the buttons go into the menu at the end of the commands, and then the indicators at the right are hidden from the end.

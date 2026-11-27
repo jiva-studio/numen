@@ -1,0 +1,117 @@
+---
+/**
+ * The plugin catalog: the featured plugins as icons and as cards, then every plugin of the registry
+ * as a row, with the search and the category links over the rows.
+ */
+import { getCollection } from 'astro:content'
+import Page from '../../layouts/Page.astro'
+import SiteHeader from '../../components/page/SiteHeader.astro'
+import SiteFooter from '../../components/page/SiteFooter.astro'
+import PluginEntry from '../../components/plugins/PluginEntry.astro'
+import PluginFeature from '../../components/plugins/PluginFeature.astro'
+import PluginIcon from '../../components/plugins/PluginIcon.astro'
+import {
+  type CatalogPlugin,
+  FEATURED_CARDS,
+  HERO_ICONS,
+  getCategoryName,
+  listCategories,
+  listFeaturedPlugins,
+} from '../../components/plugins/catalog'
+import '../../styles/plugins.css'
+
+const plugins = (await getCollection('plugins'))
+  .map((entry) => entry.data as CatalogPlugin)
+  .sort((a, b) => a.name.localeCompare(b.name))
+const featured = listFeaturedPlugins(plugins)
+const categories = listCategories(plugins).map((id) => ({ id, text: getCategoryName(id) }))
+
+const title = 'Plugins — numen'
+const description =
+  'Plugins for Numen and Numen Flashcards: what each one does, what it can access, and how it is tested.'
+---
+
+<Page title={title} description={description}>
+  <SiteHeader />
+
+  <section class="plugin-hero">
+    <div class="plugin-hero__icons" aria-hidden="true">
+      {
+        featured.slice(0, HERO_ICONS).map((plugin) => (
+          <span class="plugin-tile plugin-hero__tile">
+            <PluginIcon name={plugin.icon} />
+          </span>
+        ))
+      }
+    </div>
+    <h1 data-i18n="plugins_title">Plugins</h1>
+    <p class="plugin-hero__lede" data-i18n="plugins_lede">
+      Everything Numen does is a plugin. See what each one does, what it can reach, and how well it is
+      tested.
+    </p>
+    <label class="plugin-search" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m21 21-4.34-4.34" />
+        <circle cx="11" cy="11" r="8" />
+      </svg>
+      <input
+        type="search"
+        autocomplete="off"
+        placeholder="Search plugins"
+        aria-label="Search plugins"
+        data-plugin-search
+        data-i18n-placeholder="plugins_search"
+        data-i18n-aria="plugins_search"
+      />
+    </label>
+  </section>
+
+  <main class="plugin-catalog">
+    {
+      featured.length > 0 && (
+        <section aria-labelledby="plugins-featured" data-plugin-featured>
+          <h2 class="plugin-heading" id="plugins-featured" data-i18n="plugins_featured">
+            Featured
+          </h2>
+          <div class="plugin-featured">
+            {featured.slice(0, FEATURED_CARDS).map((plugin) => (
+              <PluginFeature plugin={plugin} />
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    <section class="plugin-all" aria-labelledby="plugins-all">
+      <div class="plugin-all__head">
+        <h2 class="plugin-heading" id="plugins-all" data-i18n="plugins_all">All plugins</h2>
+        <nav class="plugin-categories" aria-label="Categories" data-i18n-aria="plugins_categories">
+          <button type="button" data-plugin-category="" aria-pressed="true" data-i18n="plugins_category_all">
+            All
+          </button>
+          {
+            categories.map((category) => (
+              <button type="button" data-plugin-category={category.id} aria-pressed="false">
+                {category.text}
+              </button>
+            ))
+          }
+        </nav>
+      </div>
+      <ul class="plugin-list">
+        {plugins.map((plugin) => <PluginEntry plugin={plugin} />)}
+      </ul>
+      <p class="plugin-muted" data-plugin-empty data-i18n="plugins_none" hidden>No plugin matches.</p>
+    </section>
+  </main>
+
+  <SiteFooter />
+
+  <script>
+    import { initSiteControls } from '../../scripts/site-controls'
+    import { initPluginCatalog } from '../../scripts/plugin-catalog'
+
+    initSiteControls()
+    initPluginCatalog()
+  </script>
+</Page>

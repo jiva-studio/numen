@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
@@ -103,12 +104,44 @@ type Activation interface {
 	Leases
 }
 
+// DependencyCalls is what a plugin may ask of the files the host provisions. A host without them answers that it
+// has no dependency service.
+type DependencyCalls interface {
+	// FetchModelFile returns the path of the model file at an address, fetching it when it is not on this machine.
+	FetchModelFile(ctx context.Context, address, digest string) (string, error)
+	// FetchDeclaredModel returns the path of the model that the manifest of pluginID declares under id.
+	FetchDeclaredModel(ctx context.Context, pluginID, id string) (string, error)
+}
+
+// errNoDependencyUseCase is a dependency call whose use case the host did not wire.
+var errNoDependencyUseCase = errors.New("the host has no dependency service")
+
+// DependencyUseCases serves DependencyCalls with the use cases that fetch a model file and a declared model.
+type DependencyUseCases struct {
+	Model    *plugindependency.Fetch
+	Declared *plugindependency.FetchDeclaredModel
+}
+
+func (d DependencyUseCases) FetchModelFile(ctx context.Context, address, digest string) (string, error) {
+	if d.Model == nil {
+		return "", errNoDependencyUseCase
+	}
+	return d.Model.Execute(ctx, address, digest)
+}
+
+func (d DependencyUseCases) FetchDeclaredModel(ctx context.Context, pluginID, id string) (string, error) {
+	if d.Declared == nil {
+		return "", errNoDependencyUseCase
+	}
+	return d.Declared.Execute(ctx, pluginID, id)
+}
+
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
-// plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
+// plugin may do, and what the host lends the plugin to work with. Dependencies fetches the files the plugin asks for. Lent holds what exists only while a
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file. CallCancels holds the cancels of the calls of connections.
 type Callers struct {
-	Dependencies *plugindependency.Fetch
+	Dependencies DependencyCalls
 	Activation   Activation
 	Lent         *Services
 	GetTools     func() PluginTools

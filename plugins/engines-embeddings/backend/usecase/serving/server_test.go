@@ -104,7 +104,7 @@ func TestModelDimensionResolutionAcrossLocalModels(t *testing.T) {
 func TestEmbeddingServerCustomRepositoryIsNotPinned(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_REPO", "owner/repo")
 	srv := newEmbeddingServer()
-	if srv.localModel.Name != "owner/repo" || srv.localModel.Revision != "" || srv.localModel.Sums != nil {
+	if srv.localModel.Name != "owner/repo" || srv.localModel.Revision != "" || srv.localModel.Sums != nil || srv.localModel.Dependencies != nil {
 		t.Errorf("localModel = %+v", srv.localModel)
 	}
 }
@@ -124,7 +124,7 @@ func TestEmbeddingServerWithoutAProfileFailsAndNamesWhereToAddOne(t *testing.T) 
 func TestEmbeddingServerDefaultModelIsPinned(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_MODEL", "bge-m3-int8")
 	srv := newEmbeddingServer()
-	if srv.localModel.Name != "Xenova/bge-m3" || srv.localModel.Sums == nil {
+	if srv.localModel.Name != "Xenova/bge-m3" || srv.localModel.Dependencies == nil {
 		t.Errorf("localModel = %+v", srv.localModel)
 	}
 }

@@ -19,6 +19,7 @@ import {
   WARNING,
 } from '../fixtures/responses'
 import { getDot, renderTab, TAB_ARGS, type Knobs } from '../fixtures/tabStory'
+import type { GetResultsResponse } from '../api/types'
 
 const meta: Meta<Knobs> = {
   title: 'Saved search/Tab',
@@ -314,5 +315,81 @@ export const ShowsAFailedLastRun: Story = {
     await expect(tooltip).toHaveTextContent(FAILURE_REASON)
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
     await expect(canvas.getByRole('button', { name: /Pier plan/ })).toBeVisible()
+  },
+}
+
+const result = (path: string, kind: string, text: string, score: number, page?: number) => ({
+  path,
+  title: path
+    .split('/')
+    .pop()!
+    .replace(/\.\w+$/, ''),
+  kind,
+  ...(page ? { place: { page } } : {}),
+  text,
+  start: 0,
+  length: text.length,
+  line: 1,
+  uri: `numen:${encodeURI(path)}`,
+  score,
+})
+
+/** A saved search of a vault of physics notes: what erasing a memory costs. */
+const ERASING: GetResultsResponse = {
+  ...FUSED,
+  path: 'Physics/What erasing costs.md',
+  title: 'What erasing costs',
+  query: 'kind in ["note", "pdf"]\n&& meaning("what it costs to erase a bit of memory")\n.top(30)',
+  order: 'reranked',
+  warnings: [],
+  results: [
+    result(
+      "Computation/Landauer's principle.md",
+      'note',
+      'Clearing one bit of memory costs at least kT ln 2 of heat, whatever the memory is made of.',
+      0.93,
+    ),
+    result(
+      'Reading/Boltzmann 1877.pdf',
+      'pdf',
+      '…the clearing is the payment. It is exacted not at the door but at the moment the record of a molecule is destroyed…',
+      0.88,
+      374,
+    ),
+    result(
+      "Physics/Maxwell's demon.md",
+      'note',
+      'The memory fills, and clearing it costs what Landauer says a bit costs.',
+      0.84,
+    ),
+    result(
+      'Reading/Shannon 1948.pdf',
+      'pdf',
+      '…the entropy of the source is the logarithm of the number of messages it could have sent…',
+      0.71,
+      11,
+    ),
+  ],
+}
+
+/** The tab of a saved search in the window, its results under the query. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'What erasing costs', icon: 'search' },
+      note: 'after',
+      share: 0.58,
+    },
+    screenshot: [{ name: 'results' }],
+  },
+  args: { response: ERASING },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(
+        within(canvasElement).getByRole('button', { name: /^Landauer's principle/ }),
+      ).toBeVisible(),
+    )
   },
 }

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.notes",
   "name": "Notes",
-  "version": "2026.11.22",
+  "version": "2026.11.23",
   "protocol": 1,
   "description": "Markdown note editor with live formatting and wikilinks",
   "capabilities": [],
@@ -28,6 +28,7 @@
       {
         "slot": "titleBar.commands",
         "command": "app:note.create",
+        "title": "Create note",
         "group": "new",
         "order": 10,
         "when": "window.isVaultOpen"

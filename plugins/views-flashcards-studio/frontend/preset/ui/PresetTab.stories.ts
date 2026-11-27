@@ -155,7 +155,15 @@ export default meta
 type Story = StoryObj<Knobs>
 
 /** The tab with a curve response already rendered. */
-export const APreset: Story = {}
+export const APreset: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'preset', app: 'docs' },
+      { name: 'window-preset', app: 'landing' },
+    ],
+  },
+}
 
 const getImage = (canvas: HTMLElement): SVGSVGElement =>
   within(canvas).getByRole('slider', { name: words.knob }) as unknown as SVGSVGElement

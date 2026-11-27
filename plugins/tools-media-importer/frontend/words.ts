@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** Words used across the media importer frontend. */
 export const WORDS = {
   video: 'Video',

@@ -48,3 +48,18 @@ export const Available: Story = {
     )
   },
 }
+
+/** The chip in the title bar of the window while an update waits, its tooltip shown. */
+export const InTheWindow: Story = {
+  ...Available,
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-status' },
+    screenshot: [{ name: 'update' }],
+  },
+  render: (args) => ({
+    components: { UpdateIndicator },
+    setup: () => ({ args }),
+    template: '<UpdateIndicator v-bind="args" />',
+  }),
+}
