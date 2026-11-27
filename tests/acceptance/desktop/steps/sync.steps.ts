@@ -86,8 +86,8 @@ When(
   },
 )
 
-When('{computer} adds the file {string} to {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
-  person.files.addFile(computer, filePath, undefined, vault)
+When('{computer} adds the file {string} to {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+  await person.files.addFile(computer, filePath, undefined, vault)
 })
 
 Then('{computer} does not have the file {string} in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
@@ -225,8 +225,8 @@ Then('the vault {string} has the same file {string} as the second computer', asy
   await person.files.expectSameFileAsSecond(vault, filePath)
 })
 
-When('{computer} adds the file {string} of {int} MB to {owned}', ({ person }, computer: ComputerName, filePath: string, megabytes: number, vault: string) => {
-  person.files.addFile(computer, filePath, megabytes, vault)
+When('{computer} adds the file {string} of {int} MB to {owned}', async ({ person }, computer: ComputerName, filePath: string, megabytes: number, vault: string) => {
+  await person.files.addFile(computer, filePath, megabytes, vault)
 })
 
 When('{computer} adds {int} files to the folder {string} in {owned}', ({ person }, computer: ComputerName, count: number, folder: string, vault: string) => {
@@ -264,12 +264,12 @@ Then('{holder} has 1 file in its folder {string}{inside}', async ({ person }, ho
   await person.files.expectFileCount(holder, 1, folder, vault)
 })
 
-Given('the connection breaks while the file {string} is sent', async ({ person }, filePath: string) => {
-  await person.files.breakConnectionWhileSending(filePath)
+Given('the connection breaks while the file {string} is sent', ({ person }, filePath: string) => {
+  person.files.breakConnectionWhileSending(filePath)
 })
 
-Given('the connection breaks while the second computer receives the file {string}', async ({ person }, filePath: string) => {
-  await person.files.breakConnectionWhileReceiving(filePath)
+Given('the connection breaks while the second computer receives the file {string}', ({ person }, filePath: string) => {
+  person.files.breakConnectionWhileReceiving(filePath)
 })
 
 When('the person chooses {string}', async ({ person }, action: string) => {

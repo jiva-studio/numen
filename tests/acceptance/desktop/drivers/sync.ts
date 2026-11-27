@@ -334,12 +334,18 @@ export class SyncDriver {
     }
   }
 
-  async breakAfter(direction: 'received' | 'sent', bytes: number): Promise<void> {
-    await this.requireOwn('break the connection of the server after some bytes').breakAfter(direction, bytes)
+  async recordFileTransfer(filePath: string, fileBytes: number): Promise<void> {
+    const project = process.env[ENV_OWN_STACK]
+    if (project === undefined || project === '') return
+    await this.requireOwn('measure the file transfer').bucketTransfer.recordFile(filePath, fileBytes)
+  }
+
+  breakAfter(filePath: string, direction: 'received' | 'sent', bytes: number): void {
+    this.requireOwn('break the connection of the server after some bytes').bucketTransfer.breakAfter(filePath, direction, bytes)
   }
 
   async waitForInterruption(): Promise<void> {
-    await this.own?.waitForInterruption()
+    await this.own?.bucketTransfer.waitForInterruption()
   }
 
   async forgetRemovals(): Promise<void> {

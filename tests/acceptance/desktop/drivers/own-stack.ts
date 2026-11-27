@@ -3,6 +3,7 @@ import { execFile } from 'node:child_process'
 import { setTimeout as wait } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
+import { BucketTransfer, type ComposeCommand, type ComposeOptions } from './bucketTransfer.js'
 
 const run = promisify(execFile)
 
@@ -13,24 +14,8 @@ const OWNER = 'numen_sync_owner'
 const DUMP = '/tmp/numen-acceptance.dump'
 const GIB = 1024 ** 3
 const START_LIMIT_MS = 90_000
-const BREAK_LIMIT_MS = 30_000
 
-interface TrafficWatch {
-  readonly controller: AbortController
-  readonly result: Promise<Error | undefined>
-}
-
-interface Traffic {
-  readonly received: number
-  readonly sent: number
-}
-
-interface ComposeOptions {
-  readonly timeout?: number
-  readonly signal?: AbortSignal
-}
-
-const createCompose = (project: string) =>
+const createCompose = (project: string): ComposeCommand =>
   async (args: readonly string[], stdin?: string, options: ComposeOptions = {}): Promise<string> => {
     const child = run('docker', ['compose', '-f', COMPOSE_FILE, '-p', project, ...args], {
       timeout: options.timeout ?? 120_000,
@@ -42,9 +27,11 @@ const createCompose = (project: string) =>
   }
 
 export class OwnStack {
-  private watcher: TrafficWatch | undefined
+  readonly bucketTransfer: BucketTransfer
 
-  constructor(project: string, private readonly compose = createCompose(project)) {}
+  constructor(project: string, private readonly compose = createCompose(project)) {
+    this.bucketTransfer = new BucketTransfer(compose)
+  }
 
   private async runSQL(statements: string, database = DATABASE): Promise<string> {
     return this.compose(['exec', '-T', 'postgres', 'psql', '-U', 'postgres', '--set', 'ON_ERROR_STOP=1', '--quiet', '-At', '--dbname', database], statements)
@@ -70,14 +57,13 @@ export class OwnStack {
 
   /** Starts the server, and the bucket when a break stopped it, and waits until the server is healthy. */
   async startServer(): Promise<void> {
-    await this.waitForInterruption()
-    this.watcher = undefined
+    await this.bucketTransfer.finish()
     await this.startServices()
   }
 
   /** Returns the stand to a running state after a scenario. */
   async resetServer(): Promise<void> {
-    await this.stopTrafficWatch()
+    await this.bucketTransfer.reset()
     await this.startServices()
   }
 
@@ -127,8 +113,7 @@ export class OwnStack {
 
   /** Replaces the database with the backup, as an operator does, and tells the computers by a restore epoch when the step says so. */
   async restoreBackup(isTold: boolean): Promise<void> {
-    await this.waitForInterruption()
-    this.watcher = undefined
+    await this.bucketTransfer.finish()
     await this.compose(['stop', '--timeout', '2', 'sync'])
     await this.runSQL(`DROP DATABASE IF EXISTS ${DATABASE} WITH (FORCE)`, 'postgres')
     await this.runSQL(`CREATE DATABASE ${DATABASE} OWNER ${OWNER}`, 'postgres')
@@ -136,56 +121,5 @@ export class OwnStack {
     await this.compose(['start', 'sync'])
     await this.waitHealthy()
     if (isTold) await this.compose(['exec', '-T', 'sync', '/numen-sync', 'admin', 'issue-restore-epoch'])
-  }
-
-  private async readTraffic(signal?: AbortSignal): Promise<Traffic> {
-    const text = await this.compose(['exec', '-T', 'bucket', 'cat', '/proc/net/dev'], undefined, { signal, timeout: 10_000 })
-    const line = text.split('\n').find((one) => one.trim().startsWith('eth0:'))
-    const fields = line?.split(':')[1]?.trim().split(/\s+/).map(Number)
-    const received = fields?.[0]
-    const sent = fields?.[8]
-    if (received === undefined || sent === undefined || !Number.isFinite(received) || !Number.isFinite(sent)) {
-      throw new Error('the bucket container shows no eth0 traffic')
-    }
-    return { received, sent }
-  }
-
-  /** Stops the bucket once the bytes of a direction passed the limit, as seen from the bucket: received is what went up, sent what went down. */
-  async breakAfter(direction: 'received' | 'sent', bytes: number): Promise<void> {
-    if (this.watcher !== undefined) throw new Error('the stand already waits for a transfer interruption')
-    const before = await this.readTraffic()
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(new Error('the transfer did not break within 30 seconds')), BREAK_LIMIT_MS)
-    const result = this.watchTraffic(direction, before[direction] + bytes, controller.signal)
-      .catch((cause: unknown) => {
-        const reason: unknown = controller.signal.reason
-        return reason instanceof Error ? reason : new Error('the bucket traffic could not be interrupted', { cause })
-      })
-      .finally(() => clearTimeout(timeout))
-    this.watcher = { controller, result }
-  }
-
-  async waitForInterruption(): Promise<void> {
-    const error = await this.watcher?.result
-    if (error !== undefined) throw error
-  }
-
-  private async watchTraffic(direction: keyof Traffic, limit: number, signal: AbortSignal): Promise<undefined> {
-    for (;;) {
-      const traffic = await this.readTraffic(signal)
-      signal.throwIfAborted()
-      if (traffic[direction] >= limit) {
-        await this.compose(['kill', 'bucket'], undefined, { signal })
-        return
-      }
-    }
-  }
-
-  private async stopTrafficWatch(): Promise<void> {
-    const watcher = this.watcher
-    if (watcher === undefined) return
-    this.watcher = undefined
-    watcher.controller.abort(new Error('the scenario ended before the transfer broke'))
-    await watcher.result
   }
 }
