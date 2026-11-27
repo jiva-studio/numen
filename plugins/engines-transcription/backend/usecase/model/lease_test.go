@@ -260,3 +260,31 @@ func TestClosingTheHolderClosesTheOpenModelAndTheReplacedOneWhenItsLastRecording
 		t.Errorf("parakeet-tdt-0.6b-v3-int8 was closed %d times after its recording closed, want 1", got)
 	}
 }
+
+func TestARecordingClosedTwiceEndsItsUseOfTheModelOnce(t *testing.T) {
+	opened := &usedModels{}
+	models := NewHolder(settings.NewDefaultConfig(), opened.open, &closeErrors{})
+	recognizer, err := models.GetRecognizer(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := recognizer.Open(t.Context(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := recognizer.Open(t.Context(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	models.UpdateSettings(map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"})
+
+	if got := opened.models[0].closes; got != 0 {
+		t.Errorf("parakeet-tdt-0.6b-v3-int8 was closed %d times while its second recording was open, want 0", got)
+	}
+}
