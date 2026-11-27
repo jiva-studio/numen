@@ -54,7 +54,7 @@ export const InTheWindow: Story = {
   ...Available,
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'title-status' },
+    frame: { place: 'title-status', notePath: 'Physics/Heat death.md' },
     screenshot: [{ name: 'update' }],
   },
   render: (args) => ({

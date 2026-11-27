@@ -11,7 +11,7 @@ import {
   type PathRename,
   type TabKindRegistration,
 } from '@numen/plugin-sdk'
-import { getMarkOf } from '../../lib/buffer/words'
+import { getMarkOf } from '../../lib/buffer/state'
 import { openNotes } from '../buffer/notes'
 import { WORDS as words } from '../../../words'
 import {

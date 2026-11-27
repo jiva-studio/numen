@@ -119,10 +119,10 @@ jobs:
           .github/scripts/check-staged-plugins.sh plugins "$RUNNER_TEMP/staged"
           test -f "$RUNNER_TEMP/staged/plugins-index.json"
 
-      # The tool behind the nightly mutation workflow; it reads files and nothing else.
+      # The tools behind the nightly mutation and coverage workflows; they read files and nothing else.
       - name: Test the mutation tool
         if: ${{ !cancelled() && inputs.mutation_tool }}
-        run: node --test tools/ci-mutation/*.test.mjs
+        run: node --test tools/ci-mutation/*.test.mjs tools/ci-coverage/*.test.mjs
 
       # The manual's generated pages, and the screenshots the stories declare held against their files.
       - if: ${{ !cancelled() && inputs.references }}

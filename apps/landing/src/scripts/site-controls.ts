@@ -5,18 +5,16 @@ import { readStorageValue, writeStorageValue } from './storage'
 
 const I18N: Readonly<Record<string, Readonly<Record<string, string>>>> = { en: EN, ru: RU, sr: SR }
 
-const ARROW_STEP: Readonly<Record<string, number>> = {
-  ArrowRight: 1,
-  ArrowDown: 1,
-  ArrowLeft: -1,
-  ArrowUp: -1,
-}
-
 function toggleTheme(): void {
   const current = document.documentElement.getAttribute('data-theme') || 'light'
   const next = current === 'light' ? 'dark' : 'light'
   document.documentElement.setAttribute('data-theme', next)
   writeStorageValue('numen-theme', next)
+}
+
+function setProductsMenuOpen(isOpen: boolean): void {
+  document.getElementById('products-menu')?.toggleAttribute('hidden', !isOpen)
+  document.getElementById('products-btn')?.setAttribute('aria-expanded', String(isOpen))
 }
 
 function closeLanguageMenu(): void {
@@ -33,7 +31,9 @@ function translate(
     const key = el.getAttribute(attribute)
     const text = key ? dict[key] : undefined
     if (!text) continue
-    if (selector === 'html') el.innerHTML = text
+    const count = el.dataset.i18nCount
+    if (selector === 'text' && count) el.textContent = text.replace('{count}', count)
+    else if (selector === 'html') el.innerHTML = text
     else if (selector === 'aria') el.setAttribute('aria-label', text)
     else if (selector === 'placeholder') el.setAttribute('placeholder', text)
     else el.textContent = text
@@ -57,21 +57,9 @@ function setLanguage(lang: string): void {
   writeStorageValue('numen-lang', lang)
 }
 
-function selectApplication(app: string): void {
-  document.documentElement.setAttribute('data-app', app)
-  const isNumen = app === 'numen'
-  for (const el of document.querySelectorAll<HTMLElement>('.app-switch-numen')) {
-    el.setAttribute('aria-selected', String(isNumen))
-    el.setAttribute('tabindex', isNumen ? '0' : '-1')
-  }
-  for (const el of document.querySelectorAll<HTMLElement>('.app-switch-flashcards')) {
-    el.setAttribute('aria-selected', String(!isNumen))
-    el.setAttribute('tabindex', !isNumen ? '0' : '-1')
-  }
-}
-
 function toggleLanguageMenu(event: Event): void {
   event.stopPropagation()
+  setProductsMenuOpen(false)
   const menu = document.getElementById('lang-menu')
   if (!menu) return
   const willOpen = menu.hasAttribute('hidden')
@@ -95,32 +83,30 @@ function bindLanguageMenu(): void {
   }
 }
 
-function bindApplicationSwitch(): void {
-  const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-select-app]')]
-  for (const [idx, btn] of buttons.entries()) {
-    btn.addEventListener('click', () => {
-      const app = btn.getAttribute('data-select-app')
-      if (app) selectApplication(app)
-    })
-    btn.addEventListener('keydown', (event) => {
-      const step = ARROW_STEP[event.key]
-      if (step === undefined) return
-      event.preventDefault()
-      const next = buttons[(idx + step + buttons.length) % buttons.length]
-      const app = next?.getAttribute('data-select-app')
-      if (next && app) {
-        selectApplication(app)
-        next.focus()
-      }
-    })
-  }
+function bindProductsMenu(): void {
+  const button = document.getElementById('products-btn')
+  const menu = document.getElementById('products-menu')
+  if (!button || !menu) return
+  button.addEventListener('click', (event) => {
+    event.stopPropagation()
+    closeLanguageMenu()
+    setProductsMenuOpen(menu.hasAttribute('hidden'))
+  })
+  document.addEventListener('click', (event) => {
+    if (event.target instanceof Node && !menu.contains(event.target)) setProductsMenuOpen(false)
+  })
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || menu.hasAttribute('hidden')) return
+    setProductsMenuOpen(false)
+    button.focus()
+  })
 }
 
-/** Wires the theme toggle, the language menu and the application switch, and applies the saved language. */
+/** Wires the theme toggle, the language menu and the products menu, and applies the saved language. */
 export function initSiteControls(): void {
   document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme)
   bindLanguageMenu()
-  bindApplicationSwitch()
+  bindProductsMenu()
   const saved = readStorageValue('numen-lang')
   if (saved && I18N[saved]) setLanguage(saved)
 }

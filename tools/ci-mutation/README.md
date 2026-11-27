@@ -45,7 +45,7 @@ When no test can kill a survivor, the mutant is equivalent or the code is dead:
 
 Production code does not change in a test pull request. CI fails a pull request of type `test` that changes a file other than tests, test support, `testdata`, `tests/`, `features/` and the Stryker config; a diff that only adds directives, or only changes the `"version"` of a `manifest.json` or `package.json`, passes (`tools/git-hooks/check-test-files.mjs`).
 
-Interface copy is not mutated: each `words.ts` file opens with `// Stryker disable StringLiteral: interface copy`.
+Interface copy is not mutated: each `words.ts` file opens with `// Stryker disable StringLiteral: interface copy`. Code that decides on strings lives outside `words.ts`; a string in a `words.ts` that code compares or passes on, such as a `case` label or an identifier, has `// Stryker restore next-line StringLiteral` on the line above it.
 
 Test support is not mutated: files under `testing/`, `testsupport/` and `fixtures/` folders, `*_test.go`, `*.test.ts`, `*.stories.ts` and `testdata/`.
 

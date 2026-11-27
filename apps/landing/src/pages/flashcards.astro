@@ -1,0 +1,167 @@
+---
+/**
+ * The page of Numen Flashcards: daily spaced repetition over cards written in the notes.
+ */
+import Page from '../layouts/Page.astro'
+import SiteHeader from '../components/page/SiteHeader.astro'
+import HeroSection from '../components/page/HeroSection.astro'
+import WindowShot from '../components/page/WindowShot.astro'
+import FeatureRows from '../components/page/FeatureRows.astro'
+import FaqBand from '../components/page/FaqBand.astro'
+import DownloadBand from '../components/page/DownloadBand.astro'
+import SiteFooter from '../components/page/SiteFooter.astro'
+import type { Feature } from '../components/page/features'
+import cardsDueLight from '../assets/window-cards-due-light.webp'
+import cardsDueDark from '../assets/window-cards-due-dark.webp'
+import reviewLight from '../assets/window-review-light.webp'
+import reviewDark from '../assets/window-review-dark.webp'
+import presetLight from '../assets/window-preset-light.webp'
+import presetDark from '../assets/window-preset-dark.webp'
+import cardModelLight from '../assets/window-card-model-light.webp'
+import cardModelDark from '../assets/window-card-model-dark.webp'
+
+const title = 'Numen Flashcards — numen'
+const description =
+  'Numen Flashcards: a desktop app for daily spaced repetition with FSRS scheduling, a daily time budget and a workload forecast. Cards are plain Markdown in your vault: no account, no telemetry.'
+
+const FACTS = [
+  { icon: 'monitor', text: 'macOS, Windows, Linux' },
+  { icon: 'badge-check', key: 'fact_free', text: 'Free and open source' },
+  { icon: 'user-x', key: 'fact_account', text: 'No account, no telemetry' },
+  { icon: 'lock-open', key: 'fact_lockin', text: 'No vendor lock-in' },
+]
+
+const HERO_SHOTS = [
+  { title: 'Due Today', alt: 'What is due today', light: cardsDueLight, dark: cardsDueDark },
+  { title: 'Review Session', alt: 'Review session', light: reviewLight, dark: reviewDark },
+]
+
+const FEATURES: Feature[] = [
+  {
+    key: 'decks',
+    kicker: 'Decks',
+    title: 'Cards live in your notes.',
+    plugin: 'plugins/views-flashcards-studio/screenshots/deck',
+    text: 'Write a card in Markdown the moment you read something worth keeping. Cards stay plain Markdown in your vault.',
+    points: [
+      'Plain Markdown, no proprietary database.',
+      'Group cards into decks by topic.',
+      'Write cards while you read.',
+    ],
+  },
+  {
+    key: 'schedule',
+    kicker: 'Schedule',
+    title: 'A daily time budget, not a pile of reviews.',
+    window: { app: 'numen-flashcards', title: 'Schedule', light: presetLight, dark: presetDark },
+    text: 'Set a daily time target, a retention goal or an exam date, and the FSRS scheduler builds your queue. Preview how many cards each pace needs per day before you commit.',
+    points: [
+      'Minutes per day, retention or a target date.',
+      'A workload forecast for every pace.',
+      'See when your backlog clears.',
+    ],
+  },
+  {
+    key: 'templates',
+    kicker: 'Templates',
+    title: 'Design the card you want to see.',
+    window: {
+      app: 'numen-flashcards',
+      title: 'Card template',
+      light: cardModelLight,
+      dark: cardModelDark,
+    },
+    text: 'Choose the fields of a card and how they are shown: a word, its reading, its meaning, an example sentence. During review, open the source note or book page right beside the card.',
+    points: [
+      'Your own fields and card layouts.',
+      'The source note or page one click away.',
+      'Ask the AI assistant to explain an answer.',
+    ],
+  },
+]
+
+const FAQ = [
+  {
+    key: 'faq_fc_get',
+    question: 'How do I get Numen Flashcards?',
+    answer: 'It comes in the same download as Numen, free on macOS, Windows and Linux.',
+  },
+  {
+    key: 'faq_fc_cards',
+    question: 'Where do the cards come from?',
+    answer: 'You write them in Markdown in your notes while you read. They stay plain files in your vault.',
+  },
+  {
+    key: 'faq_fc_schedule',
+    question: 'How is the review scheduled?',
+    answer: 'With FSRS. Set a daily time target, a retention goal or an exam date, and the scheduler builds your queue.',
+  },
+  {
+    key: 'faq_fc_source',
+    question: 'Can I see where a card came from?',
+    answer: 'Yes. Open the source note or book page beside the card, or ask the AI assistant to explain the answer.',
+  },
+]
+---
+
+<Page title={title} description={description}>
+  <SiteHeader product="flashcards" />
+
+  <main>
+    <HeroSection
+      eyebrow={{ text: 'Numen Flashcards' }}
+      title={{ key: 'fc_title', html: 'Retain what <em>matters.</em>' }}
+      lede={{
+        key: 'fc_lede',
+        text: 'A dedicated desktop app for daily spaced repetition: FSRS scheduling, a daily time budget and a workload forecast. Cards are plain Markdown in your vault: no account, no telemetry.',
+      }}
+      facts={FACTS}
+    >
+      <div class="flashcards-pair">
+        {
+          HERO_SHOTS.map((shot) => (
+            <WindowShot
+              app="numen-flashcards"
+              title={shot.title}
+              light={shot.light}
+              dark={shot.dark}
+              alt={shot.alt}
+              eager
+            />
+          ))
+        }
+      </div>
+    </HeroSection>
+    <FeatureRows
+      id="review"
+      tone="paper"
+      head={{
+        kicker: { key: 'how_kicker', text: 'How it works' },
+        title: { key: 'cards_title', text: 'Turn notes into long-term memory.' },
+        lede: {
+          key: 'cards_lede',
+          text: 'Build flashcards in Markdown while you read, then review them in Numen Flashcards, a dedicated desktop app for focused daily sessions.',
+        },
+      }}
+      rows={FEATURES}
+    />
+    <FaqBand tone="cream" items={FAQ} />
+    <DownloadBand
+      title={{ key: 'close_title_fc', text: 'Download Numen Flashcards.' }}
+      lede={{
+        key: 'close_lede',
+        text: 'Free for macOS, Windows, and Linux. Includes both Numen and Numen Flashcards.',
+      }}
+    />
+  </main>
+
+  <SiteFooter product="flashcards" />
+
+  <script>
+    import { initSiteControls } from '../scripts/site-controls'
+    import { initReleaseLinks } from '../scripts/release-links'
+
+    initSiteControls()
+    await initReleaseLinks()
+  </script>
+</Page>

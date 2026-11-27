@@ -140,3 +140,42 @@ jobs:
           storage-key: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
           api-key: ${{ secrets.BUNNY_API_KEY }}
           dist-path: dist
+
+      # The deploy has just purged the CDN, so a page may answer only after a while.
+      - name: Check the live site
+        env:
+          SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          plugin=$(find dist/plugins -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort | head -n 1)
+          [ -n "$plugin" ] || { echo "::error::the built site has no plugin page"; exit 1; }
+          failed=0
+          for url in "$SERVED_FROM/" "$SERVED_FROM/plugins" "$SERVED_FROM/plugins/$plugin"; do
+            code=$(curl -sS -o /dev/null -L -f --retry 6 --retry-delay 10 --retry-all-errors \
+              -w '%{http_code}' "$url" || true)
+            echo "${code:-—}  $url"
+            [ "$code" = 200 ] || { echo "::error::$url did not answer 200"; failed=1; }
+          done
+          exit "$failed"
+
+  notify:
+    name: Notify
+    needs: [build, deploy]
+    if: ${{ always() && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'Site deploy failed in:title' \
+            --json number,title --jq '[.[] | select(.title == "Site deploy failed")][0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "The site deploy failed again: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --type Bug --title 'Site deploy failed' --body "The site deploy failed: $RUN_URL"
+          fi

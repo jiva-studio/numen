@@ -144,7 +144,7 @@ const PHYSICS = {
 export const InTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'title-status' },
+    frame: { place: 'title-status', notePath: 'Reading list.md' },
     screenshot: [{ name: 'tasks-due' }],
   },
   args: { api: createFakeApi({ tasks: PHYSICS }).api },

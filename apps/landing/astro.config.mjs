@@ -16,7 +16,6 @@ const root = resolve(import.meta.dirname, '../..')
  */
 export default defineConfig({
   site: 'https://numen.md',
-  build: { format: 'file' },
   markdown: { rehypePlugins: [rehypeSanitize] },
   vite: {
     resolve: {

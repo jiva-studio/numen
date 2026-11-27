@@ -109,3 +109,20 @@ jobs:
           storage-key: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
           api-key: ${{ secrets.BUNNY_API_KEY }}
           dist-path: dist
+
+      # The deploy has just purged the CDN, so a page may answer only after a while.
+      - name: Check the live manual
+        env:
+          SERVED_FROM: ${{ vars.BUNNY_DOCS_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          page=$(find dist -mindepth 2 -maxdepth 2 -name index.html -printf '%h\n' | sed 's|^dist/||' | sort | head -n 1)
+          [ -n "$page" ] || { echo "::error::the built manual has no page"; exit 1; }
+          failed=0
+          for url in "$SERVED_FROM/" "$SERVED_FROM/$page"; do
+            code=$(curl -sS -o /dev/null -L -f --retry 6 --retry-delay 10 --retry-all-errors \
+              -w '%{http_code}' "$url" || true)
+            echo "${code:-—}  $url"
+            [ "$code" = 200 ] || { echo "::error::$url did not answer 200"; failed=1; }
+          done
+          exit "$failed"

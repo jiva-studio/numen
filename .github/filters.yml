@@ -343,7 +343,10 @@ mutation_tool:
   - *ci_router
   - .github/workflows/checks.yml
   - tools/ci-mutation/**
+  - tools/ci-coverage/**
+  - tools/shared/plugin-quality.mjs
   - .github/workflows/mutation.yml
+  - .github/workflows/coverage.yml
 
 # Every changed file, for the end-to-end selection.
 files:

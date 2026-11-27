@@ -13,7 +13,8 @@ import type {
   OpenNotesOptions,
   State,
 } from '../../lib/buffer/types'
-import { convertErrorCode, STALE_CONFLICT } from '../../lib/buffer/words'
+import { convertErrorCode } from '../../lib/buffer/state'
+import { STALE_CONFLICT } from '../../lib/buffer/words'
 
 /** The write errors that the next edit retries, as in the notes editor. */
 const RETRYABLE_ERRORS: readonly NoteErrorCode[] = ['tooLarge', 'bodyUnwritable', 'unreachable']

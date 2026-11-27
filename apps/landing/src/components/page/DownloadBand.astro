@@ -1,18 +1,23 @@
 ---
 import { BUILDS, SHELF } from './site'
+
+type Text = { key: string; text: string }
+
+interface Props {
+  title: Text
+  lede: Text
+}
+
+const { title, lede } = Astro.props
 ---
 
-<!-- Band 6: Deep Dark Download Band (#get) -->
 <section class="evidence band" id="get">
   <div class="container">
     <div class="evidence-grid">
       <div class="evidence-copy">
         <p class="section-kicker" data-i18n="nav_download">Download</p>
-        <h2 data-i18n="close_title">Download Numen.</h2>
-        <p data-i18n="close_lede">
-          Free during the alpha for macOS, Windows, and Linux. Includes both Numen and Numen
-          Flashcards.
-        </p>
+        <h2 data-i18n={title.key}>{title.text}</h2>
+        <p data-i18n={lede.key}>{lede.text}</p>
       </div>
 
       <div class="resource-action">

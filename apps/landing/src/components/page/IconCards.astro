@@ -1,0 +1,24 @@
+---
+/** A three-column grid of bordered cards, each with an icon, a title and a line of text. */
+import LucideIcon from './LucideIcon.astro'
+
+interface Props {
+  cards: { icon: string; title: string; text: string; titleKey?: string; key: string }[]
+}
+
+const { cards } = Astro.props
+---
+
+<div class="icon-cards">
+  {
+    cards.map((card) => (
+      <article class="icon-card">
+        <span class="icon-card__icon">
+          <LucideIcon name={card.icon} />
+        </span>
+        <h3 data-i18n={card.titleKey}>{card.title}</h3>
+        <p data-i18n={card.key}>{card.text}</p>
+      </article>
+    ))
+  }
+</div>

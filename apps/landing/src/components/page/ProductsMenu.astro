@@ -1,0 +1,95 @@
+---
+/**
+ * The Products button of the header and the panel it opens: the products as cards, the announced
+ * ones disabled, and a few plugins with a link to the catalog.
+ */
+import { getCollection } from 'astro:content'
+import LucideIcon from './LucideIcon.astro'
+import { ANNOUNCED_PRODUCTS, MENU_PLUGINS, PRODUCTS, type ProductId } from './products'
+
+interface Props {
+  current?: ProductId | undefined
+}
+
+const { current } = Astro.props
+const plugins = await getCollection('plugins')
+const ids = new Set(plugins.map((entry) => entry.id))
+const menuPlugins = MENU_PLUGINS.map((plugin) => ({
+  ...plugin,
+  href: ids.has(plugin.id) ? `/plugins/${plugin.id}` : '/plugins',
+}))
+---
+
+<div class="products">
+  <button
+    type="button"
+    class="products__btn"
+    id="products-btn"
+    aria-expanded="false"
+    aria-controls="products-menu"
+  >
+    <span data-i18n="nav_products">Products</span>
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"></path></svg>
+  </button>
+
+  <div class="mega" id="products-menu" hidden>
+    <div class="mega__inner">
+      <div class="mega__grid">
+        {
+          PRODUCTS.map((product) => (
+            <a
+              class="mega-card"
+              href={product.href}
+              aria-current={product.id === current ? 'page' : undefined}
+            >
+              <img class="mega-card__icon" src={product.icon} width="48" height="48" alt="" />
+              <span class="mega-card__copy">
+                <span class="mega-card__name">{product.name}</span>
+                <span class="mega-card__text" data-i18n={product.key}>
+                  {product.text}
+                </span>
+              </span>
+            </a>
+          ))
+        }
+        {
+          ANNOUNCED_PRODUCTS.map((product) => (
+            <span class="mega-card mega-card--soon" aria-disabled="true">
+              <span class="mega-card__icon mega-card__icon--soon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" set:html={product.glyph} />
+              </span>
+              <span class="mega-card__copy">
+                <span class="mega-card__name">
+                  {product.name}
+                  <span class="mega-soon" data-i18n="product_soon">Soon</span>
+                </span>
+                <span class="mega-card__text" data-i18n={product.key}>
+                  {product.text}
+                </span>
+              </span>
+            </span>
+          ))
+        }
+      </div>
+
+      <div class="mega__side">
+        {
+          menuPlugins.map((plugin) => (
+            <a class="mega-plugin" href={plugin.href}>
+              <span class="mega-plugin__icon">
+                <LucideIcon name={plugin.icon} />
+              </span>
+              <span class="mega-plugin__copy">
+                <b>{plugin.name}</b>
+                <span data-i18n={plugin.key}>{plugin.text}</span>
+              </span>
+            </a>
+          ))
+        }
+        <a class="mega__more" href="/plugins" data-i18n="plugins_browse" data-i18n-count={plugins.length}>
+          Browse all {plugins.length} plugins →
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

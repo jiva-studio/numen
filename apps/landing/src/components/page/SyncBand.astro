@@ -1,38 +1,42 @@
-<!-- Band 5: Numen Sync -->
-<section class="sync band" id="sync">
+---
+/** How Numen Sync works, as three cards. */
+import IconCards from './IconCards.astro'
+
+const CARDS = [
+  {
+    icon: 'lock',
+    titleKey: 'sync_f1_t',
+    title: 'End-to-end encrypted',
+    key: 'sync_f1_p',
+    text: 'Data is encrypted on your device before it leaves. The server sees only random ids, sizes and times, and the files on your disk stay plain.',
+  },
+  {
+    icon: 'key-round',
+    titleKey: 'sync_f2_t',
+    title: 'No email, no password',
+    key: 'sync_f2_p',
+    text: 'Your account is a key made from 12 recovery words. The words are stored nowhere: not on your devices and not with us.',
+  },
+  {
+    icon: 'infinity',
+    titleKey: 'sync_f3_t',
+    title: 'One subscription, every vault',
+    key: 'sync_f3_p',
+    text: 'No device limit, and one subscription covers all your vaults. Reading what is shared with you is free. You buy it inside the app.',
+  },
+]
+---
+
+<section class="band band--paper" id="sync">
   <div class="container">
     <div class="section-head">
-      <p class="section-kicker" data-i18n="sync_eyebrow">Numen Sync — Coming soon</p>
-      <h2 data-i18n="sync_title">Your vaults on every device.</h2>
-      <p data-i18n="sync_lede">
-        Numen Sync keeps your vaults in step across your devices, desktop and phone, through our
-        cloud. It is optional: without it everything works locally, and you can still sync the
-        folder with Git, iCloud, Dropbox, or Syncthing.
+      <p class="section-kicker" data-i18n="how_kicker">How it works</p>
+      <h2 data-i18n="sync_how_title">Private by design.</h2>
+      <p data-i18n="sync_how_lede">
+        It is optional: without it everything works locally, and you can still sync the folder with
+        Git, iCloud, Dropbox or Syncthing.
       </p>
     </div>
-
-    <div class="cards-grid-3">
-      <article class="u-card">
-        <h3 data-i18n="sync_f1_t">End-to-end encrypted</h3>
-        <p data-i18n="sync_f1_p">
-          Data is encrypted on your device before it leaves. The server sees only random ids,
-          sizes, and times, and the files on your disk stay plain.
-        </p>
-      </article>
-      <article class="u-card">
-        <h3 data-i18n="sync_f2_t">No email, no password</h3>
-        <p data-i18n="sync_f2_p">
-          Your account is a key made from 12 recovery words. The words are stored nowhere — not
-          on your devices and not with us.
-        </p>
-      </article>
-      <article class="u-card">
-        <h3 data-i18n="sync_f3_t">One subscription, every vault</h3>
-        <p data-i18n="sync_f3_p">
-          No device limit, and one subscription covers all your vaults. A subscription is needed
-          to write; reading what is shared with you is free. You buy it inside the app.
-        </p>
-      </article>
-    </div>
+    <IconCards cards={CARDS} />
   </div>
 </section>

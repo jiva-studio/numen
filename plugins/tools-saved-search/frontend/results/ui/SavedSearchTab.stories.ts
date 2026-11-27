@@ -381,6 +381,7 @@ export const InTheWindow: Story = {
       tab: { title: 'What erasing costs', icon: 'search' },
       note: 'after',
       share: 0.58,
+      notePath: 'Computation/Reversible computing.md',
     },
     screenshot: [{ name: 'results' }],
   },

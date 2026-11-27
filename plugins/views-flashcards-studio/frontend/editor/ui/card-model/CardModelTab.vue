@@ -5,7 +5,7 @@
 import { computed } from 'vue'
 import { type InsertionPoint, type Half } from '../../../lib/cards'
 import { CardModelEditor } from '../cards/card-model-editor'
-import { parseFileConflict } from '../../lib/buffer/words'
+import { parseFileConflict } from '../../lib/buffer/state'
 import FileConflictPrompt from '../FileConflictPrompt.vue'
 import { WORDS as words } from '../../../words'
 import type { CardModelTabState } from '../../model/card-model/types'

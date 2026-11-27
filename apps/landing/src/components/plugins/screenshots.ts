@@ -48,3 +48,11 @@ export async function listShots(plugin: CatalogPlugin, count: number): Promise<S
   )
   return shots.filter((one) => one.light !== null || one.dark !== null).slice(0, count)
 }
+
+/** A screenshot of this repository by its path from the repository root; an unknown path fails the build. */
+export async function getRepositoryShot(path: string): Promise<ShotImage> {
+  const image = repositoryImages.get(path)
+  if (!image) throw new Error(`no screenshot ${path}`)
+  const { src } = await getImage({ src: image, ...SHOWN })
+  return { src, width: image.width / 2, height: image.height / 2 }
+}

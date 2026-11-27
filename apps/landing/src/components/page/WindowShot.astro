@@ -1,0 +1,29 @@
+---
+/** A window screenshot in light and dark, in a window frame with its title bar. */
+import type { ImageMetadata } from 'astro'
+
+interface Props {
+  app: string
+  title: string
+  light: ImageMetadata
+  dark: ImageMetadata
+  alt: string
+  class?: string
+  eager?: boolean
+}
+
+const { app, title, light, dark, alt, class: className, eager = false } = Astro.props
+const width = light.width / 2
+const height = light.height / 2
+const loading = eager ? 'eager' : 'lazy'
+---
+
+<figure class:list={['window-artifact', className]}>
+  <div class="window-titlebar">
+    <div class="window-lights"><span></span><span></span><span></span></div>
+    <div class="window-titlebar__title"><strong>{app}</strong> — {title}</div>
+    <span></span>
+  </div>
+  <img class="img-light" src={light.src} width={width} height={height} alt={alt} loading={loading} fetchpriority={eager ? 'high' : undefined} />
+  <img class="img-dark" src={dark.src} width={width} height={height} alt={alt} loading={loading} fetchpriority={eager ? 'high' : undefined} />
+</figure>

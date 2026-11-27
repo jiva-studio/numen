@@ -305,7 +305,7 @@ const getPhysicsIcon = (entry: Entry | null, isOpen: boolean): Component => {
 export const InTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'files' },
+    frame: { place: 'files', notePath: 'Physics/Entropy of mixing.md' },
     screenshot: [{ name: 'files' }],
   },
   render: pane(['Physics', 'Computation', 'Reading'], {
@@ -315,7 +315,9 @@ export const InTheWindow: Story = {
   }),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(17))
-    await userEvent.click(within(canvasElement).getByRole('treeitem', { name: /^Entropy\.md/ }))
+    await userEvent.click(
+      within(canvasElement).getByRole('treeitem', { name: /^Entropy of mixing\.md/ }),
+    )
   },
 }
 
@@ -337,7 +339,7 @@ const PHYSICS_TEMPLATES: Room = {
 export const TemplatesInTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'files' },
+    frame: { place: 'files', notePath: 'Templates/Lecture notes.md' },
     screenshot: [{ name: 'new-from-template', plugin: 'tools-templates' }],
   },
   render: pane(['Physics'], PHYSICS_TEMPLATES),
@@ -368,7 +370,7 @@ const PHYSICS_LINKS: Room = {
 export const MediaInTheWindow: Story = {
   tags: ['screenshot'],
   parameters: {
-    frame: { place: 'files' },
+    frame: { place: 'files', notePath: 'Information is physical.md' },
     screenshot: [{ name: 'download-media', plugin: 'tools-media-importer' }],
   },
   render: pane(['Physics', 'Lectures'], PHYSICS_LINKS),

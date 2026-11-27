@@ -1,0 +1,71 @@
+---
+/** A band of feature rows: text with three points on one side and a screenshot on the other, alternating. */
+import LucideIcon from './LucideIcon.astro'
+import PluginShot from './PluginShot.astro'
+import WindowShot from './WindowShot.astro'
+import type { Feature } from './features'
+
+type Text = { key: string; text: string }
+
+interface Props {
+  id: string
+  tone: 'paper' | 'cream'
+  head?: { kicker: Text; title: Text; lede: Text }
+  rows: Feature[]
+}
+
+const { id, tone, head, rows } = Astro.props
+---
+
+<section class={`band band--${tone} features`} id={id}>
+  <div class="container">
+    {
+      head && (
+        <div class="section-head">
+          <p class="section-kicker" data-i18n={head.kicker.key}>
+            {head.kicker.text}
+          </p>
+          <h2 data-i18n={head.title.key}>{head.title.text}</h2>
+          <p data-i18n={head.lede.key}>{head.lede.text}</p>
+        </div>
+      )
+    }
+    {
+      rows.map((row, index) => (
+        <div class:list={['feature', { 'feature--flip': index % 2 === 1 }]}>
+          <div class="feature__copy">
+            <p class="section-kicker" data-i18n={`${row.key}_kicker`}>
+              {row.kicker}
+            </p>
+            <h3 data-i18n={`${row.key}_title`}>{row.title}</h3>
+            <p data-i18n={`${row.key}_text`}>{row.text}</p>
+            <ul class="feature__list">
+              {row.points.map((point, at) => (
+                <li>
+                  <LucideIcon name="check" />
+                  <span data-i18n={`${row.key}_p${at + 1}`}>{point}</span>
+                </li>
+              ))}
+            </ul>
+            {row.more && (
+              <a class="band-more" href={row.more.href} data-i18n={row.more.key}>
+                {row.more.text}
+              </a>
+            )}
+          </div>
+          {row.plugin && <PluginShot path={row.plugin} alt={row.title} />}
+          {row.window && (
+            <WindowShot
+              class="feature__media"
+              app={row.window.app}
+              title={row.window.title}
+              light={row.window.light}
+              dark={row.window.dark}
+              alt={row.title}
+            />
+          )}
+        </div>
+      ))
+    }
+  </div>
+</section>
