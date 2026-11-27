@@ -58,8 +58,8 @@ func TestAClientSendsTheProtocolVersionOfItsPackageInTheHeaderOfEveryRequest(t *
 		t.Fatal(err)
 	}
 
-	if got := service.calls(); len(got) != 1 || got[0] != "2" {
-		t.Errorf("headers the service saw = %q, want [2]", got)
+	if got := service.calls(); len(got) != 1 || got[0] != "1" {
+		t.Errorf("headers the service saw = %q, want [1]", got)
 	}
 }
 

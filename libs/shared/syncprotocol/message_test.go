@@ -74,10 +74,10 @@ func withChallenge(change func(*syncv1.GetChallengeResponse)) *syncv1.GetChallen
 	return challenge
 }
 
-func TestVersion_IsTwo(t *testing.T) {
+func TestVersion_IsOne(t *testing.T) {
 	t.Parallel()
-	if syncprotocol.Version != 2 {
-		t.Errorf("Version = %d, want 2", syncprotocol.Version)
+	if syncprotocol.Version != 1 {
+		t.Errorf("Version = %d, want 1", syncprotocol.Version)
 	}
 	if syncprotocol.HeaderVersion != "Numen-Sync-Protocol" {
 		t.Errorf("HeaderVersion = %q", syncprotocol.HeaderVersion)
