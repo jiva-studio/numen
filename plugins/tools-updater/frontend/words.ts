@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** Words used across the updater frontend. */
 export const WORDS = {
   title: 'Update available',

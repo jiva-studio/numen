@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** Words of the saved search tab. */
 export const WORDS = {
   computing: 'Computing',

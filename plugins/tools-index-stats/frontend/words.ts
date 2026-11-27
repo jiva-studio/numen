@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** Words used across the index stats frontend. */
 export const WORDS = {
   title: 'Index stats',

@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** The strings of a recording tab: the player, the text, and the actions available on it. */
 export const WORDS = {
   player: 'Recording',
