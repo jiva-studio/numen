@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** Words used across the running plugins frontend. */
 export const WORDS = {
   title: 'Running plugins',
