@@ -17,7 +17,7 @@ name: Mutation
 #
 # The targets and their shards are found in the tree by
 # `tools/ci-mutation/shards.mjs`: every Go module with tests and every
-# workspace package with a Vitest config.
+# workspace package and plugin with a Vitest config.
 on:
   schedule:
     - cron: '23 1 * * 1-6'

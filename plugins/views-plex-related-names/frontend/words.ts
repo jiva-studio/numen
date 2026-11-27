@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 import type { LinkDirection } from '@numen/plugin-sdk'
 import type { NameRelation } from './types'
 
