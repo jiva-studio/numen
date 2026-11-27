@@ -29,6 +29,7 @@ export const WORDS = {
   formatQueryHint: 'Format (Shift+Alt+F)',
   textMethods: [
     {
+      // Stryker restore next-line StringLiteral
       name: 'startsWith',
       summary: 'begins with this text',
       description:
