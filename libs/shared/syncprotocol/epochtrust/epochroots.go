@@ -12,7 +12,7 @@ import (
 const DefaultServer = "https://sync.numen.md"
 
 // EmbeddedRootHex is the public root key of the default server, Ed25519 in hex.
-const EmbeddedRootHex = "9eecd55a6ae5b10e7ec349adac737207155fb5e8970a4b565590bd80d1b17dac"
+const EmbeddedRootHex = "c523734f2902e9957cd62900849c0d7803b81d930601fad2117fb64d6ecba405"
 
 func getEmbeddedRoots() []ed25519.PublicKey {
 	key, err := hex.DecodeString(EmbeddedRootHex)
