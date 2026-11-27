@@ -7,21 +7,23 @@
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
+import { parse as parseVue } from '@vue/compiler-sfc'
 
-const OPENING_TAG = /<([a-z][a-z0-9]*)((?:\s+(?:"[^"]*"|'[^']*'|[^>"'])*)?)>/g
-const TITLE_ATTRIBUTE = /(?:^|\s)(?::|v-bind:)?title(?=[\s=/]|$)/
+/** Whether a template attribute node sets `title`: `title="..."`, `:title="..."` or `v-bind:title="..."`, with any modifier. */
+const isTitleAttribute = (prop) =>
+  (prop.type === 6 && prop.name === 'title') ||
+  (prop.type === 7 && prop.name === 'bind' && prop.arg?.content === 'title')
 
 /** The 1-based lines of the native elements in a Vue file that carry a title attribute. */
 export function findNativeTitles(text) {
-  const template = text.match(/<template[\s>][\s\S]*<\/template>/)
-  if (!template) return []
-  const offset = template.index
+  const { descriptor } = parseVue(text)
+  if (!descriptor.template?.ast) return []
   const lines = []
-  for (const tag of template[0].matchAll(OPENING_TAG)) {
-    if (!TITLE_ATTRIBUTE.test(tag[2])) continue
-    const position = offset + tag.index
-    lines.push(text.slice(0, position).split('\n').length)
+  const visit = (node) => {
+    if (node.type === 1 && node.tagType === 0 && node.props.some(isTitleAttribute)) lines.push(node.loc.start.line)
+    for (const child of node.children ?? []) visit(child)
   }
+  visit(descriptor.template.ast)
   return lines
 }
 
