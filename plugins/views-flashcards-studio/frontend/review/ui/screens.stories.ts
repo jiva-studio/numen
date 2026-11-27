@@ -218,7 +218,7 @@ const frame = (screen: VNode) => ({
         style: {
           display: 'flex',
           flexDirection: 'column',
-          blockSize: '100vh',
+          blockSize: '100%',
           padding: 'var(--numen-inset-wide)',
           gap: 'var(--numen-inset)',
           fontFamily: 'var(--numen-font-sans)',
@@ -240,6 +240,13 @@ type Story = StoryObj
 
 /** What the vault has due today: the goals, the days answered, and the decks. */
 export const CardsDue: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'decks', app: 'docs', width: 760, height: 540 },
+      { name: 'window-cards-due', app: 'landing', width: 760, height: 940 },
+    ],
+  },
   render: () =>
     frame(
       h(Decks, {
@@ -256,6 +263,13 @@ export const CardsDue: Story = {
 
 /** One card, answered: the four ways of saying it, and where each leaves it. */
 export const Reviewing: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'session', app: 'docs', width: 760, height: 540 },
+      { name: 'window-review', app: 'landing', width: 760, height: 940 },
+    ],
+  },
   render: () =>
     frame(
       h(Session, {
@@ -266,4 +280,19 @@ export const Reviewing: Story = {
         at: 'here',
       }),
     ),
+}
+
+/** The card answered in the flash cards window, the four ways of saying it under it. */
+export const ReviewingInTheWindow: Story = {
+  ...Reviewing,
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Review', icon: 'deck' },
+      files: false,
+      title: 'Flash Cards',
+    },
+    screenshot: [{ name: 'review' }],
+  },
 }

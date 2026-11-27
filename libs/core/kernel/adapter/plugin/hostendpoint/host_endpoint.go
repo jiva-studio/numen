@@ -41,7 +41,6 @@ type Endpoint struct {
 	callers     Callers
 	tasks       taskLeases
 	server      *http.Server
-	port        int
 	serveResult chan error
 	callCount   atomic.Int64
 }
@@ -60,7 +59,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	if !ok {
 		return nil, errors.Join(fmt.Errorf("%w: %s", errNotTCP, listener.Addr()), listener.Close())
 	}
-	endpoint := &Endpoint{callers: callers, port: linked.Port, serveResult: make(chan error, 1)}
+	endpoint := &Endpoint{callers: callers, serveResult: make(chan error, 1)}
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
@@ -85,7 +84,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 		}
 		mux.ServeHTTP(w, r)
 	})
-	endpoint.server = &http.Server{Handler: countingHandler, ReadHeaderTimeout: hostEndpointHeaderTimeout}
+	endpoint.server = &http.Server{Addr: linked.String(), Handler: countingHandler, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
 		defer close(endpoint.serveResult)
 		// Serve returns http.ErrServerClosed after Close.
@@ -98,7 +97,11 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 
 // GetPort returns the loopback port the endpoint serves on.
 func (e *Endpoint) GetPort() int {
-	return e.port
+	address, err := netip.ParseAddrPort(e.server.Addr)
+	if err != nil {
+		return 0
+	}
+	return int(address.Port())
 }
 
 // Close stops the endpoint and waits for the calls being served to end, up to

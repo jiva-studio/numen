@@ -72,6 +72,15 @@ func (r *Registry) GetPlugin(id string) (manifest.DiscoveredPlugin, bool) {
 	return p, true
 }
 
+// FindModelDependency returns the model that the manifest of an enabled plugin declares under id.
+func (r *Registry) FindModelDependency(pluginID, id string) (manifest.DependencyRequirement, bool) {
+	p, ok := r.GetPlugin(pluginID)
+	if !ok {
+		return manifest.DependencyRequirement{}, false
+	}
+	return p.Manifest.FindModelDependency(id)
+}
+
 // IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 func (r *Registry) IsPluginEnabled(pluginID string) bool {
 	v, release := r.set.getView()

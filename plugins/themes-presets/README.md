@@ -4,6 +4,16 @@ Forty-four ready-made color themes for the editor and the flashcards window.
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/dracula-dark.webp">
+  <img alt="The window with a note open, in the Dracula theme" src="screenshots/dracula-light.webp">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/solarized-dark.webp">
+  <img alt="The window with a note open, in the Solarized theme" src="screenshots/solarized-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Change the look of the window**: Pick any of the forty-four themes, most of them with a light and a dark half, from the appearance settings or the command palette.

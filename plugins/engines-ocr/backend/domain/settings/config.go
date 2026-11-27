@@ -59,7 +59,8 @@ type RegionKinds struct {
 	Head []string `json:"head"`
 }
 
-// NewDefaultConfig returns default recognition configuration using remote models.
+// NewDefaultConfig returns the default recognition configuration. Each model is named by the id under
+// which the manifest declares it.
 func NewDefaultConfig() Config {
 	return Config{
 		Runtime:        "",

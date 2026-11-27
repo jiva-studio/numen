@@ -4,6 +4,11 @@ Leave the pointer on a note in the plex and the headings of that note appear und
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/headings-dark.webp">
+  <img alt="The plex in the window, the headings of the note in focus hung under its node" src="screenshots/headings-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **See what is inside a note**: The headings of the note under the pointer come out under its node, indented by depth. They are read for that note alone, when the pointer rests on it.

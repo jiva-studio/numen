@@ -160,6 +160,13 @@ type Story = StoryObj<typeof meta>
 
 /** The map with the menu open on a node. */
 export const Mapping: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [
+      { name: 'plex', app: 'docs' },
+      { name: 'window-graph', app: 'landing', over: '[aria-label="The second law, child"]' },
+    ],
+  },
   render: () =>
     map({
       creatable: RELATION_NAMES,
@@ -244,5 +251,32 @@ export const EveryLine: Story = {
     const start = one.path.getPointAtLength(0)
     const end = two.path.getPointAtLength(two.path.getTotalLength())
     await expect(Math.hypot(start.x - end.x, start.y - end.y)).toBeLessThan(0.5)
+  },
+}
+
+/** The plex of the note in a tab of the window, beside the note itself. */
+export const InTheWindow: Story = {
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Entropy', icon: 'plex' },
+      note: 'after',
+      share: 0.6,
+      selected: 'Physics/Entropy.md',
+    },
+    screenshot: [{ name: 'map', over: '[aria-label="The second law, child"]' }],
+  },
+  render: () => ({
+    components: { Plex },
+    setup: () => ({ graph: ref<PlexGraph>(WIDE), creatable: RELATION_NAMES }),
+    template: `
+      <div style="height: 100%">
+        <Plex :graph="graph" :creatable="creatable" :duration="420" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1))
   },
 }

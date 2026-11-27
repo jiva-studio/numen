@@ -4,6 +4,11 @@ Use Google Antigravity (`agy`) installed on your computer to chat with your vaul
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/models-dark.webp">
+  <img alt="The agent beside a note, its model picker open on the models of Antigravity" src="screenshots/models-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **Chat in the Agent Chat panel**: When Antigravity is installed on this computer, the connection Antigravity is on the Connections page, marked Discovered, with no setup, and the assistant answers in Agent Chat as it writes. A row of the Agents setting of Agent Chat chooses its model and level of reasoning; with no model, the program uses its own default.

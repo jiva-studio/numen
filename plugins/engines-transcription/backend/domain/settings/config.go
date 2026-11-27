@@ -30,6 +30,16 @@ type ParakeetModel struct {
 	Decoder string `json:"decoder"`
 	Joiner  string `json:"joiner"`
 	Tokens  string `json:"tokens"`
+
+	Dependencies ParakeetFiles `json:"-"`
+}
+
+// ParakeetFiles are the ids under which the manifest declares the files of a speech model.
+type ParakeetFiles struct {
+	Encoder string
+	Decoder string
+	Joiner  string
+	Tokens  string
 }
 
 // NewDefaultConfig listen with parakeet-tdt-0.6b-v3 and find the speech with
@@ -43,15 +53,16 @@ func NewDefaultConfig() Config {
 		ReportProgress: nil,
 		Model:          GetModels()[0],
 		Segmenter: SegmenterModel{
-			Name:      "silero-vad",
-			Repo:      segmenterDefault,
-			Path:      "",
-			Threshold: 0,
-			Silence:   0,
-			Pad:       0,
-			Longest:   0,
-			Shortest:  0,
-			Least:     0,
+			Name:       "silero-vad",
+			Repo:       "",
+			Dependency: "silero-vad",
+			Path:       "",
+			Threshold:  0,
+			Silence:    0,
+			Pad:        0,
+			Longest:    0,
+			Shortest:   0,
+			Least:      0,
 		},
 
 		// What a transcription needs is fetched when it is wanted.

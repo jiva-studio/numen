@@ -8,14 +8,12 @@ export const EN: Record<string, string> = {
   hero_eyebrow: 'Your second brain that actually remembers',
   hero_title: 'Your notes, joined <em>the way you think.</em>',
   hero_lead:
-    'Markdown notes, a directional concept map, PDF & EPUB reader with local OCR, offline audio transcription, AI assistant, and spaced repetition.',
+    'Markdown notes, a directional concept map, PDF & EPUB reader with local OCR, offline audio transcription, AI assistant, and spaced repetition. Privacy-first and local-first: no account, no telemetry, just plain Markdown files on your disk.',
   suite_head: 'Build knowledge, then keep it',
   app1_desc:
     'Build your knowledge: linked notes, directional map, PDF/EPUB with OCR, audio transcription, and AI assistant.',
   app2_desc:
     'Retain what matters: a dedicated desktop app for daily spaced repetition, FSRS scheduling, and workload forecasting.',
-  demo_try_title: 'Try interactive demo',
-  demo_try_sub: 'Click to try',
   tab_files: 'Files',
   tab_editor: 'Writing',
   tab_graph: 'The map',
@@ -27,7 +25,7 @@ export const EN: Record<string, string> = {
   yours_eyebrow: 'Privacy-First & Local-First',
   yours_title: 'Your thoughts are yours.',
   yours_lede:
-    'No account, no cloud lock-in, and no proprietary database. Your vault is an ordinary folder of open Markdown files on your disk — backed by local AI models that run on your own hardware.',
+    'No account, no email, no telemetry, no vendor lock-in, and no proprietary database. Your vault is an ordinary folder of plain Markdown files on your disk — backed by on-device AI models that run on your own hardware.',
   yours_f1_t: 'Open Markdown files',
   yours_f1_p:
     'Plain .md files in your own folders. Open them in any editor, track them in Git, and keep them for decades without lock-in.',
@@ -86,7 +84,24 @@ export const EN: Record<string, string> = {
   review_f3_t: 'Instant source context',
   review_f3_p:
     'Open the source note or book page right beside the card, or ask the AI assistant to explain an answer during review.',
+  sync_eyebrow: 'Numen Sync — Coming soon',
+  sync_title: 'Your vaults on every device.',
+  sync_lede:
+    'Numen Sync keeps your vaults in step across your devices, desktop and phone, through our cloud. It is optional: without it everything works locally, and you can still sync the folder with Git, iCloud, Dropbox, or Syncthing.',
+  sync_f1_t: 'End-to-end encrypted',
+  sync_f1_p:
+    'Data is encrypted on your device before it leaves. The server sees only random ids, sizes, and times, and the files on your disk stay plain.',
+  sync_f2_t: 'No email, no password',
+  sync_f2_p:
+    'Your account is a key made from 12 recovery words. The words are stored nowhere — not on your devices and not with us.',
+  sync_f3_t: 'One subscription, every vault',
+  sync_f3_p:
+    'No device limit, and one subscription covers all your vaults. A subscription is needed to write; reading what is shared with you is free. You buy it inside the app.',
   close_title: 'Download Numen.',
   close_lede:
     'Free during the alpha for macOS, Windows, and Linux. Includes both Numen and Numen Flashcards.',
+  footer_product: 'Product',
+  footer_resources: 'Resources',
+  footer_issues: 'Report an issue',
+  footer_code: 'Source code',
 }

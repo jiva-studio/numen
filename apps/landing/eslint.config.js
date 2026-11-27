@@ -1,5 +1,5 @@
-// Correctness checks for the site on the shared base: the frontmatter of each page, the demo
-// window and the node scripts that name the stories and take the screenshots.
+// Correctness checks for the site on the shared base: the frontmatter of each page
+// and the node scripts that name the stories and take the screenshots.
 // Formatting is not checked: it is applied manually, and a formatting rule
 // would rewrite files.
 

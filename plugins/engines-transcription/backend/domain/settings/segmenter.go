@@ -2,11 +2,14 @@
 package settings
 
 // SegmenterModel finds the speech segments in a recording. Its cuts are the transcriber's
-// input, so where it cuts is part of the resulting words.
+// input, so where it cuts is part of the resulting words. Dependency is the id under which the
+// manifest declares its file.
 type SegmenterModel struct {
 	Name string `json:"name"`
 	Repo string `json:"from"`
 	Path string `json:"path"`
+
+	Dependency string `json:"-"`
 
 	Threshold float32 `json:"threshold"`
 	Silence   int     `json:"silence"`

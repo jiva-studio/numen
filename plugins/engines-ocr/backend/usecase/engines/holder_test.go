@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"image"
-	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/scan"
@@ -114,16 +113,16 @@ func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 		model      string
 		path, dict string
 	}{
-		{map[string]string{"model": "pp-ocrv5-eslav"}, "eslav_PP-OCRv5_rec_mobile.onnx", "", ""},
+		{map[string]string{"model": "pp-ocrv5-eslav"}, "rec-pp-ocrv5-eslav", "", ""},
 		{map[string]string{"model": "custom", "customModelPath": "/m/rec.onnx", "customDictPath": "/m/dict.txt"}, settings.RecognizerCustom, "/m/rec.onnx", "/m/dict.txt"},
-		{map[string]string{"model": "pp-ocrv6-tiny"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
-		{map[string]string{"model": "tesseract"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
+		{map[string]string{"model": "pp-ocrv6-tiny"}, "rec-pp-ocrv6-tiny", "", ""},
+		{map[string]string{"model": "tesseract"}, "rec-pp-ocrv6-tiny", "", ""},
 	} {
 		models.UpdateSettings(tc.values)
 		if _, err := models.GetEngine(t.Context()); err != nil {
 			t.Fatal(err)
 		}
-		if !strings.HasSuffix(got.Recognize.Name, tc.model) || got.Recognize.Path != tc.path || got.Recognize.Dict != tc.dict {
+		if got.Recognize.Name != tc.model || got.Recognize.Path != tc.path || got.Recognize.Dict != tc.dict {
 			t.Errorf("settings %v: opened %+v", tc.values, got.Recognize)
 		}
 	}

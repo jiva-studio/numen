@@ -90,10 +90,13 @@ func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
 
 func TestResolveSelectedModelThroughHost(t *testing.T) {
 	address, _ := settings.FindRecognizer("pp-ocrv5-greek")
+	if address != "rec-pp-ocrv5-greek" {
+		t.Fatalf("pp-ocrv5-greek is fetched as %q", address)
+	}
 	ctx := t.Context()
-	fetch := func(call context.Context, url, sha string) (string, error) {
-		if call != ctx || url != address || sha != "b4368bccd557123c702b7549fee6cd1e94b581337d1c9b65310f109131542b7f" {
-			t.Fatalf("unexpected model request %s (%s)", url, sha)
+	fetch := func(call context.Context, id string) (string, error) {
+		if call != ctx || id != address {
+			t.Fatalf("unexpected model request %s", id)
 		}
 		return "/shared/model", nil
 	}
@@ -108,10 +111,10 @@ func TestResolveSelectedModelThroughHost(t *testing.T) {
 	}
 }
 
-func TestMissingModelIsNamedWithItsAddress(t *testing.T) {
+func TestMissingModelIsNamedWithItsID(t *testing.T) {
 	address, _ := settings.FindRecognizer("pp-ocrv5-cyrillic")
 	refused := errors.New("connection refused")
-	fetch := func(context.Context, string, string) (string, error) { return "", refused }
+	fetch := func(context.Context, string) (string, error) { return "", refused }
 	files := modelFiles{dir: t.TempDir(), shouldDownload: true, fetch: fetch}
 	_, err := files.resolve(t.Context(), "", address, "pp-ocr-rec.onnx")
 	got := newModelError("recognize", address, "", err)

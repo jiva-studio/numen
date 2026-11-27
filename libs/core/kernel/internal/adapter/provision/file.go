@@ -109,7 +109,7 @@ func (p *FileProvisioner) Provision(
 		return resolved, nil
 	}
 	if p.cfg.Offline {
-		return plugin.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.ID, ErrOffline)
+		return plugin.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.GetTitle(), ErrOffline)
 	}
 	return p.store(ctx, req, source, dir, onProgress)
 }
@@ -155,6 +155,7 @@ func (p *FileProvisioner) fetch(
 	}
 	primary := filepath.Join(dir, name)
 	title := "Downloading " + req.GetTitle()
+	onProgress(plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateProvisioning, BytesTotal: req.SizeBytes, Message: title})
 	var actual string
 	var errs []error
 	for _, address := range source.GetURLs() {
@@ -162,6 +163,9 @@ func (p *FileProvisioner) fetch(
 			handleDigest: func(sum string) { actual = sum },
 			client:       p.cfg.Client, address: address, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
 			handleProgress: func(done, total int64) {
+				if total <= 0 {
+					total = req.SizeBytes
+				}
 				onProgress(plugin.DependencyStatus{
 					ID: req.ID, State: plugin.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
 					ProgressPercent: getPercent(done, total), Message: title,

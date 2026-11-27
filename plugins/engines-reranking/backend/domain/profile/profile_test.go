@@ -2,6 +2,7 @@ package profile_test
 
 import (
 	"errors"
+	"maps"
 	"math"
 	"slices"
 	"strings"
@@ -49,36 +50,20 @@ func TestTheShippedTableListsBGEFirstAndGTESecond(t *testing.T) {
 	}
 }
 
-func TestShippedProfilesPinTheReviewedRevisionsAndSums(t *testing.T) {
-	want := map[string]profile.Profile{
-		gteID: {
-			OnnxFile: "onnx/model_quantized.onnx",
-			Revision: "ee64367e35a2db0da46bb6497e13a18f8bd585cb",
-			SHA256: map[string]string{
-				"onnx/model_quantized.onnx": "ccf51dba7f8aa9205753761cfaa68c55f741792501463a3bf25d7e5bcdac7c35",
-				"tokenizer.json":            "3ffb37461c391f096759f4a9bbbc329da0f36952f88bab061fcf84940c022e98",
-			},
-		},
-		bgeID: {
-			OnnxFile: "onnx/model_quantized.onnx",
-			Revision: "6f5ff65298512715a1e669753bc754d2bc8f367b",
-			SHA256: map[string]string{
-				"onnx/model_quantized.onnx": "912fc1215c2dbff6499700534bd8d31253af01573861abbfc43afd1fab6cce5d",
-				"tokenizer.json":            "8bf8afbfd11306bd872018c53bfdf2e160a56f8edbcf49933324404791c148d3",
-			},
-		},
+func TestShippedProfilesNameTheFilesTheManifestDeclares(t *testing.T) {
+	want := map[string]map[string]string{
+		gteID: {"onnx/model_quantized.onnx": "gte-reranker-graph", "tokenizer.json": "gte-reranker-tokenizer"},
+		bgeID: {"onnx/model_quantized.onnx": "bge-reranker-v2-m3-graph", "tokenizer.json": "bge-reranker-v2-m3-tokenizer"},
 	}
 	table := getShippedProfiles(t)
 
-	for id, pins := range want {
+	for id, files := range want {
 		p := getLocal(t, table, id)
 		if err := p.Validate(); err != nil {
 			t.Errorf("%s: %v", id, err)
 		}
-		if p.OnnxFile != pins.OnnxFile || p.Revision != pins.Revision || len(p.SHA256) != 2 ||
-			p.SHA256["onnx/model_quantized.onnx"] != pins.SHA256["onnx/model_quantized.onnx"] ||
-			p.SHA256["tokenizer.json"] != pins.SHA256["tokenizer.json"] {
-			t.Errorf("%s pins %q at %q with %v, want %q at %q with %v", id, p.OnnxFile, p.Revision, p.SHA256, pins.OnnxFile, pins.Revision, pins.SHA256)
+		if p.OnnxFile != "onnx/model_quantized.onnx" || p.Revision != "" || p.SHA256 != nil || !maps.Equal(p.Dependencies, files) {
+			t.Errorf("%s fetches %q at %q with %v and %v, want %v", id, p.OnnxFile, p.Revision, p.SHA256, p.Dependencies, files)
 		}
 		if p.MaxTokens != 512 {
 			t.Errorf("%s reads %d tokens, want 512", id, p.MaxTokens)
@@ -194,7 +179,7 @@ func TestUserProfileMergesOverTheShippedOneByAlias(t *testing.T) {
 	if p.MaxTokens != 256 {
 		t.Errorf("maxTokens = %d, want the 256 of the file", p.MaxTokens)
 	}
-	if p.Title != "BGE reranker v2 M3" || p.Tier != "default" || p.Revision == "" || len(p.SHA256) != 2 {
+	if p.Title != "BGE reranker v2 M3" || p.Tier != "default" || len(p.Dependencies) != 2 {
 		t.Errorf("a field the file leaves out was lost: %+v", p)
 	}
 	if n := len(table.GetCurated()); n != 2 {
@@ -231,7 +216,7 @@ func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
 
 	p := getLocal(t, table, gteID)
 
-	if p.OnnxFile != "onnx/model_fp16.onnx" || p.Revision != "" || p.SHA256 != nil {
+	if p.OnnxFile != "onnx/model_fp16.onnx" || p.Revision != "" || p.SHA256 != nil || p.Dependencies != nil {
 		t.Errorf("the pins of the shipped file stay: %+v", p)
 	}
 }

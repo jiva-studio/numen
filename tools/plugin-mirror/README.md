@@ -1,6 +1,6 @@
 # Plugin asset mirror
 
-Plugin manifests download runtime assets (today the ONNX Runtime archives of the engine plugins) from upstream hosts. This tool lists every such asset, builds a local copy of all of them, and checks a copy against the manifests. The copy is the fallback source of a manifest and the recovery set when an upstream host drops a release.
+Plugin manifests download runtime assets (the ONNX Runtime archives and the model files of the engine plugins) from upstream hosts. This tool lists every such asset, builds a local copy of all of them, and checks a copy against the manifests. The copy is the fallback source of a manifest and the recovery set when an upstream host drops a release.
 
 ## Files
 
@@ -59,5 +59,4 @@ Binaries stay out of Git: only `inventory.json` is committed.
 
 - Where the mirror is hosted (object storage bucket, release assets, internal host) and who holds its credentials. The tool only writes a directory; nothing uploads it.
 - Whether a scheduled job runs `fetch` and `verify` against the hosted copy.
-- Models that plugins pin in Go code (`plugins/engines-ocr/backend/domain/settings/pins.go` and the transcription plugin) are not manifest dependencies, so the inventory does not list them. Mirroring them needs their pins in a manifest or a second source of the inventory.
 - An upstream artifact that is no longer available is reported by `fetch` as `unavailable`; its correct source is chosen by a person before the manifest URL changes.

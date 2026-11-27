@@ -51,7 +51,8 @@ const framedFlashcards = await Promise.all(
         <h1 data-i18n-html="hero_title">Your notes, joined <em>the way you think.</em></h1>
         <p class="hero-lede" data-i18n="hero_lead">
           Markdown notes, a directional concept map, PDF &amp; EPUB reader with local OCR,
-          offline audio transcription, AI assistant, and spaced repetition.
+          offline audio transcription, AI assistant, and spaced repetition. Privacy-first and
+          local-first: no account, no telemetry, just plain Markdown files on your disk.
         </p>
         <div class="hero-actions">
           <a class="button" href={DOWNLOAD}>
@@ -136,9 +137,9 @@ const framedFlashcards = await Promise.all(
           <span></span>
         </div>
 
-        <div id="hero-live-demo">
+        <div class="hero-shot">
           <img
-            class="img-light hero-live-demo__placeholder"
+            class="img-light hero-shot__image"
             src={demoWindowLight.src}
             width={demoWindowLight.width / 2}
             height={demoWindowLight.height / 2}
@@ -146,26 +147,13 @@ const framedFlashcards = await Promise.all(
             fetchpriority="high"
           />
           <img
-            class="img-dark hero-live-demo__placeholder"
+            class="img-dark hero-shot__image"
             src={demoWindowDark.src}
             width={demoWindowDark.width / 2}
             height={demoWindowDark.height / 2}
             alt="Numen workspace"
             fetchpriority="high"
           />
-          <button type="button" class="demo-launch" id="demo-launch">
-            <span class="demo-launch__pill">
-              <span class="demo-launch__badge">
-                <svg viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M5 3.5v9l7-4.5-7-4.5Z" />
-                </svg>
-              </span>
-              <span class="demo-launch__copy">
-                <strong data-i18n="demo_try_title">Try interactive demo</strong>
-                <small data-i18n="demo_try_sub">Click to try</small>
-              </span>
-            </span>
-          </button>
         </div>
       </div>
     </div>

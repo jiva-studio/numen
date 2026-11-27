@@ -22,7 +22,7 @@ func newLinkedHost(t *testing.T) *pluginhost.Host {
 	}
 	manifest := `{
 		"id": "md.numen.sample", "name": "Sample", "version": "1.0.0", "targets": ["desktop.editor"],
-		"dependencies": [{"id": "small-weights", "kind": "model"}, {"id": "large-weights", "kind": "model"}],
+		"dependencies": [{"id": "small-weights", "kind": "dataset"}, {"id": "large-weights", "kind": "dataset"}],
 		"settings": [
 			{"key": "model", "type": "enum", "title": "Model", "default": "large", "options": [
 				{"value": "large", "dependencies": ["large-weights"]},

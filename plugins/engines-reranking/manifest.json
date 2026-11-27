@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.reranking",
   "name": "Local Reranking",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Reranks search results with a model on this machine",
   "targets": ["desktop.editor"],
@@ -118,6 +118,50 @@
       "metadata": {
         "envVar": "NUMEN_ONNX_RUNTIME_LIB"
       }
+    },
+    {
+      "id": "bge-reranker-v2-m3-graph",
+      "kind": "model",
+      "version": "6f5ff65298512715a1e669753bc754d2bc8f367b",
+      "sourceUrls": [
+        "https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/6f5ff65298512715a1e669753bc754d2bc8f367b/onnx/model_quantized.onnx"
+      ],
+      "checksumSha256": "912fc1215c2dbff6499700534bd8d31253af01573861abbfc43afd1fab6cce5d",
+      "sizeBytes": 570727094,
+      "metadata": { "title": "BGE reranker v2 M3 model" }
+    },
+    {
+      "id": "bge-reranker-v2-m3-tokenizer",
+      "kind": "model",
+      "version": "6f5ff65298512715a1e669753bc754d2bc8f367b",
+      "sourceUrls": [
+        "https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/6f5ff65298512715a1e669753bc754d2bc8f367b/tokenizer.json"
+      ],
+      "checksumSha256": "8bf8afbfd11306bd872018c53bfdf2e160a56f8edbcf49933324404791c148d3",
+      "sizeBytes": 17082900,
+      "metadata": { "title": "BGE reranker v2 M3 tokenizer" }
+    },
+    {
+      "id": "gte-reranker-graph",
+      "kind": "model",
+      "version": "ee64367e35a2db0da46bb6497e13a18f8bd585cb",
+      "sourceUrls": [
+        "https://huggingface.co/onnx-community/gte-multilingual-reranker-base/resolve/ee64367e35a2db0da46bb6497e13a18f8bd585cb/onnx/model_quantized.onnx"
+      ],
+      "checksumSha256": "ccf51dba7f8aa9205753761cfaa68c55f741792501463a3bf25d7e5bcdac7c35",
+      "sizeBytes": 340858200,
+      "metadata": { "title": "GTE multilingual reranker model" }
+    },
+    {
+      "id": "gte-reranker-tokenizer",
+      "kind": "model",
+      "version": "ee64367e35a2db0da46bb6497e13a18f8bd585cb",
+      "sourceUrls": [
+        "https://huggingface.co/onnx-community/gte-multilingual-reranker-base/resolve/ee64367e35a2db0da46bb6497e13a18f8bd585cb/tokenizer.json"
+      ],
+      "checksumSha256": "3ffb37461c391f096759f4a9bbbc329da0f36952f88bab061fcf84940c022e98",
+      "sizeBytes": 17082999,
+      "metadata": { "title": "GTE multilingual reranker tokenizer" }
     }
   ],
   "backend": {

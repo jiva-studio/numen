@@ -8,8 +8,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/model"
 )
 
+// closeErrors keeps the failures to close a model the holder reports.
+type closeErrors struct{ errs []error }
+
+func (c *closeErrors) ReportCloseError(err error) { c.errs = append(c.errs, err) }
+
 func TestTheRecognizerTranscribesThroughTheEngine(t *testing.T) {
-	holder := model.NewHolder(settings.NewDefaultConfig(), newOpener(engine.NewRuntime(), true, nil))
+	reported := &closeErrors{}
+	holder := model.NewHolder(settings.NewDefaultConfig(), newOpener(engine.NewRuntime(), true, nil), reported)
 
 	recognizer, err := holder.GetRecognizer(t.Context())
 	if err != nil {
@@ -30,7 +36,7 @@ func TestTheRecognizerTranscribesThroughTheEngine(t *testing.T) {
 	if err := heard.Close(); err != nil {
 		t.Error(err)
 	}
-	if err := holder.Close(); err != nil {
-		t.Error(err)
+	if err := holder.Close(); err != nil || len(reported.errs) != 0 {
+		t.Errorf("Close() = %v with reported %v", err, reported.errs)
 	}
 }
