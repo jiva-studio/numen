@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findBackendPids, getIntervalSeconds, parsePlans } from './sync.js'
+import { findBackendPids, findChildBackendPids, getIntervalSeconds, parsePlans } from './sync.js'
 
 const LISTING = [
   '    1 /sbin/init',
@@ -17,6 +17,23 @@ describe('findBackendPids', () => {
   it('finds none where no process runs the file', () => {
     expect(findBackendPids(LISTING, 'tools-other')).toStrictEqual([])
     expect(findBackendPids('', 'tools-sync')).toStrictEqual([])
+  })
+})
+
+describe('findChildBackendPids', () => {
+  it('finds only the sync backend started by the selected computer', () => {
+    const processes = [
+      ' 105 102 /tmp/first/plugins/tools-sync/bin/tools-sync --flag',
+      ' 102 101 /tmp/first/numen-debug',
+      ' 110 107 /tmp/second/plugins/tools-sync/bin/tools-sync',
+      ' 107 1 /tmp/second/numen-debug',
+      ' 109 101 /tmp/first/plugins/tools-logs/bin/tools-logs',
+      ' 101 1 /tmp/first/numen-debug',
+    ].join('\n')
+
+    expect(findChildBackendPids(processes, 101, 'tools-sync')).toEqual([105])
+    expect(findChildBackendPids(processes, 107, 'tools-sync')).toEqual([110])
+    expect(findChildBackendPids(processes, 200, 'tools-sync')).toEqual([])
   })
 })
 
