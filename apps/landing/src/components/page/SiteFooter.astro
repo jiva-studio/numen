@@ -1,6 +1,13 @@
 ---
+import { PRODUCTS, type ProductId } from './products'
 import { DOCS, DOWNLOAD, FORUM, GITHUB, STUDIO } from './site'
 
+interface Props {
+  product?: ProductId
+}
+
+const { product } = Astro.props
+const download = product ? '#get' : DOWNLOAD
 const LICENSE = `${GITHUB}blob/main/LICENSE`
 const ISSUES = `${GITHUB}issues`
 ---
@@ -17,10 +24,13 @@ const ISSUES = `${GITHUB}issues`
 
     <nav class="footer-links" aria-label="Footer">
       <div>
-        <h2 data-i18n="footer_product">Product</h2>
-        <a href={DOWNLOAD} data-i18n="nav_download">Download</a>
+        <h2 data-i18n="footer_products">Products</h2>
+        {PRODUCTS.map((one) => <a href={one.href}>{one.name}</a>)}
+      </div>
+      <div>
+        <h2>Numen</h2>
+        <a href={download} data-i18n="nav_download">Download</a>
         <a href="/plugins" data-i18n="nav_plugins">Plugins</a>
-        <a href="/#sync">Numen Sync</a>
       </div>
       <div>
         <h2 data-i18n="footer_resources">Resources</h2>

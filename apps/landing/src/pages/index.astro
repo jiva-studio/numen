@@ -1,37 +1,177 @@
 ---
 /**
- * The one page: what numen is, and where to get it.
+ * The page of Numen: what it is, its features, its plugins, Numen Sync, and where to get it.
  */
 import Page from '../layouts/Page.astro'
 import SiteHeader from '../components/page/SiteHeader.astro'
 import HeroSection from '../components/page/HeroSection.astro'
+import WindowShot from '../components/page/WindowShot.astro'
 import PrivacyBand from '../components/page/PrivacyBand.astro'
-import MapBand from '../components/page/MapBand.astro'
-import FindingsBand from '../components/page/FindingsBand.astro'
-import ReviewBand from '../components/page/ReviewBand.astro'
-import SyncBand from '../components/page/SyncBand.astro'
+import FeatureRows from '../components/page/FeatureRows.astro'
+import PluginsBand from '../components/page/PluginsBand.astro'
+import FaqBand from '../components/page/FaqBand.astro'
 import DownloadBand from '../components/page/DownloadBand.astro'
 import SiteFooter from '../components/page/SiteFooter.astro'
+import type { Feature } from '../components/page/features'
+import demoWindowLight from '../assets/window-demo-light.webp'
+import demoWindowDark from '../assets/window-demo-dark.webp'
 
 const title = 'numen — a privacy-first, local-first second brain that actually remembers'
 const description =
   'A privacy-first, local-first notebook and spaced repetition suite: linked notes as plain Markdown files, directional concept map, PDF & EPUB reader with local OCR, offline audio transcription with on-device AI models, and an AI assistant. No account, no email, no telemetry, no vendor lock-in.'
+
+const FACTS = [
+  { icon: 'monitor', text: 'macOS, Windows, Linux' },
+  { icon: 'badge-check', key: 'fact_free', text: 'Free and open source' },
+  { icon: 'user-x', key: 'fact_account', text: 'No account, no telemetry' },
+  { icon: 'lock-open', key: 'fact_lockin', text: 'No vendor lock-in' },
+]
+
+const FEATURES: Feature[] = [
+  {
+    key: 'map',
+    kicker: 'The map',
+    title: 'A map with real structure.',
+    plugin: 'plugins/views-plex-graph/screenshots/map',
+    text: 'Links carry direction: hierarchy above, details below, or lateral jumps across topics, so your graph never turns into a tangled hairball.',
+    points: [
+      'Centered on your active note, so 10,000 notes stay as clear as ten.',
+      'Drag a line to link two notes, or into empty space to create one.',
+      'The map, your editor, a book and the assistant side by side.',
+    ],
+  },
+  {
+    key: 'books',
+    kicker: 'Books',
+    title: 'Read and search books alongside your notes.',
+    plugin: 'plugins/readers-pdf/screenshots/reader',
+    text: 'Open PDFs and EPUBs right beside your editor. Scanned books pass through local OCR, so search jumps straight to the exact page and highlights the passage.',
+    points: [
+      'PDF and EPUB with highlights and passage links.',
+      'Local OCR for scanned books and images.',
+      'Quote a passage into a note with a link back to the page.',
+    ],
+  },
+  {
+    key: 'rec',
+    kicker: 'Recordings',
+    title: 'Turn lectures and voice notes into timestamped text.',
+    plugin: 'plugins/views-media-viewer/screenshots/recording',
+    text: 'Audio and video files are transcribed on your machine with zero cloud uploads. Click any line in the transcript to play from that exact second.',
+    points: [
+      'Speech to text on your own hardware.',
+      'Every line linked to its moment in the recording.',
+      'Record a voice note right in the app.',
+    ],
+  },
+  {
+    key: 'search',
+    kicker: 'Search',
+    title: 'Search by exact words or by meaning.',
+    plugin: 'plugins/engines-embeddings/screenshots/search',
+    text: 'Type a keyword or describe the idea in your own words to find the right passage across all your notes, books and transcripts.',
+    points: [
+      'One index over notes, books and transcripts.',
+      'Keywords and meaning in the same query.',
+      'Embeddings computed locally, nothing uploaded.',
+    ],
+  },
+  {
+    key: 'agent',
+    kicker: 'AI assistant',
+    title: 'Ask questions across your own library.',
+    plugin: 'plugins/views-agent-chat/screenshots/agent',
+    text: 'Compare sources, find gaps in your notes, or draft new notes with full visibility into every file the assistant reads or changes.',
+    points: [
+      'The built-in Numen Agent, also on local models.',
+      'Every file it reads or changes is shown.',
+      'Or connect Claude Code, Codex or Gemini CLI.',
+    ],
+  },
+]
+
+const SYNC: Feature[] = [
+  {
+    key: 'homesync',
+    kicker: 'Numen Sync',
+    title: 'Your vaults on every device.',
+    plugin: 'plugins/tools-sync/screenshots/sync',
+    text: 'Numen Sync keeps your vaults in step across your devices, desktop and phone. It is optional: without it everything works locally.',
+    points: [
+      'End-to-end encrypted: the server sees only random ids, sizes and times.',
+      'No email, no password: your account is a key made from 12 recovery words.',
+      'One subscription covers every vault, with no device limit.',
+    ],
+    more: { href: '/sync', key: 'sync_more', text: 'More about Numen Sync →' },
+  },
+]
+
+const FAQ = [
+  {
+    key: 'faq_free',
+    question: 'Is Numen free?',
+    answer: 'Yes. Numen is free on macOS, Windows and Linux, and its code is open source under AGPL-3.0.',
+  },
+  {
+    key: 'faq_account',
+    question: 'Do I need an account?',
+    answer: 'No. There is no account, no email and no telemetry. Point Numen at a folder and start writing.',
+  },
+  {
+    key: 'faq_stored',
+    question: 'Where are my notes stored?',
+    answer: 'In an ordinary folder of plain Markdown files on your disk. Open them in any editor, track them in Git, and keep them for decades.',
+  },
+  {
+    key: 'faq_cloud',
+    question: 'Do my notes go to the cloud?',
+    answer: 'No. Transcription, OCR and search run on your machine, and the built-in Numen Agent can work with local models, so nothing leaves your computer. If you prefer, connect OpenRouter, OpenAI, Claude Code or Codex.',
+  },
+  {
+    key: 'faq_devices',
+    question: 'How do I sync between devices?',
+    answer: 'With Numen Sync: end-to-end encrypted, no email and no password. Or sync the folder yourself with Git, iCloud, Dropbox or Syncthing.',
+  },
+]
 ---
 
 <Page title={title} description={description}>
-  <SiteHeader />
+  <SiteHeader product="numen" />
 
   <main>
-    <HeroSection />
+    <HeroSection
+      eyebrow={{ key: 'hero_eyebrow', text: 'Your second brain that actually remembers' }}
+      title={{ key: 'hero_title', html: 'Your notes, joined <em>the way you think.</em>' }}
+      lede={{
+        key: 'hero_lead',
+        text: 'Markdown notes, a directional concept map, PDF & EPUB reader with local OCR, offline audio transcription, AI assistant, and spaced repetition. Privacy-first and local-first: no account, no telemetry, just plain Markdown files on your disk.',
+      }}
+      facts={FACTS}
+    >
+      <WindowShot
+        app="numen"
+        title="~/Vault/Physics"
+        light={demoWindowLight}
+        dark={demoWindowDark}
+        alt="Numen workspace"
+        eager
+      />
+    </HeroSection>
     <PrivacyBand />
-    <MapBand />
-    <FindingsBand />
-    <ReviewBand />
-    <SyncBand />
-    <DownloadBand />
+    <FeatureRows id="map" tone="paper" rows={FEATURES} />
+    <PluginsBand />
+    <FeatureRows id="sync" tone="paper" rows={SYNC} />
+    <FaqBand tone="cream" items={FAQ} />
+    <DownloadBand
+      title={{ key: 'close_title', text: 'Download Numen.' }}
+      lede={{
+        key: 'close_lede',
+        text: 'Free for macOS, Windows, and Linux. Includes both Numen and Numen Flashcards.',
+      }}
+    />
   </main>
 
-  <SiteFooter />
+  <SiteFooter product="numen" />
 
   <script>
     import { initSiteControls } from '../scripts/site-controls'

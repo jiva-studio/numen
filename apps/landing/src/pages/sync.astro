@@ -1,0 +1,88 @@
+---
+/**
+ * The page of Numen Sync: how it keeps vaults in step across devices, its plans, and how to get it.
+ */
+import Page from '../layouts/Page.astro'
+import SiteHeader from '../components/page/SiteHeader.astro'
+import HeroSection from '../components/page/HeroSection.astro'
+import PluginShot from '../components/page/PluginShot.astro'
+import SyncBand from '../components/page/SyncBand.astro'
+import PricingBand from '../components/page/PricingBand.astro'
+import FaqBand from '../components/page/FaqBand.astro'
+import DownloadBand from '../components/page/DownloadBand.astro'
+import SiteFooter from '../components/page/SiteFooter.astro'
+
+const title = 'Numen Sync — numen'
+const description =
+  'Numen Sync keeps your Numen vaults in step across your devices. End-to-end encrypted, no email and no password, no device limit.'
+
+const FACTS = [
+  { icon: 'lock', key: 'fact_e2e', text: 'End-to-end encrypted' },
+  { icon: 'key-round', key: 'fact_password', text: 'No email, no password' },
+  { icon: 'infinity', key: 'fact_devices', text: 'No device limit' },
+]
+
+const FAQ = [
+  {
+    key: 'faq_sync_server',
+    question: 'What does the server see?',
+    answer: 'Only random ids, sizes and times. Your data is encrypted on your device before it leaves, and the files on your disk stay plain.',
+  },
+  {
+    key: 'faq_sync_sign_in',
+    question: 'How do I sign in?',
+    answer: 'There is no email and no password. Your account is a key made from 12 recovery words, and the words are stored nowhere: not on your devices and not with us.',
+  },
+  {
+    key: 'faq_sync_devices',
+    question: 'How many devices and vaults?',
+    answer: 'No device limit, and one subscription covers all your vaults.',
+  },
+  {
+    key: 'faq_sync_read',
+    question: 'Do I pay to read what is shared with me?',
+    answer: 'No. A subscription is needed to write; reading what is shared with you is free.',
+  },
+  { key: 'faq_sync_buy', question: 'Where do I buy it?', answer: 'Inside the app.' },
+]
+---
+
+<Page title={title} description={description}>
+  <SiteHeader product="sync" />
+
+  <main>
+    <HeroSection
+      eyebrow={{ text: 'Numen Sync' }}
+      title={{ key: 'sync_hero_title', html: 'Your vaults on <em>every device.</em>' }}
+      lede={{
+        key: 'sync_hero_lede',
+        text: 'Numen Sync keeps your vaults in step across your devices, desktop and phone. Everything is encrypted on your device before it leaves, and the files on your disk stay plain Markdown.',
+      }}
+      facts={FACTS}
+    >
+      <div class="hero-stage">
+        <PluginShot path="plugins/tools-sync/screenshots/sync" alt="Numen syncing a vault" />
+      </div>
+    </HeroSection>
+    <SyncBand />
+    <PricingBand />
+    <FaqBand tone="paper" items={FAQ} />
+    <DownloadBand
+      title={{ key: 'close_title_sync', text: 'Get Numen, then turn on Sync.' }}
+      lede={{
+        key: 'close_lede_sync',
+        text: 'Numen Sync is part of Numen. Download Numen and subscribe inside the app.',
+      }}
+    />
+  </main>
+
+  <SiteFooter product="sync" />
+
+  <script>
+    import { initSiteControls } from '../scripts/site-controls'
+    import { initReleaseLinks } from '../scripts/release-links'
+
+    initSiteControls()
+    await initReleaseLinks()
+  </script>
+</Page>

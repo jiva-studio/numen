@@ -24,6 +24,7 @@
   --offset-shadow: 0.4rem 0.4rem #dfd4c0;
   --offset-shadow-dark: 0.4rem 0.4rem #16110d;
   --lightbox-shadow: 0 1.5rem 4rem -1.5rem #00000059;
+  --panel-shadow: 0 2rem 3rem -2rem #241c1640;
   --header-bg: #faf4e8f2;
   --header-border: #e0d5c1;
   --hero-ring-border: #2c241d1c;
@@ -39,6 +40,7 @@
   --problem-cell-bg: #423429;
   --problem-cell-border: #5c493a;
   --on-deep-muted: #c4b5a3;
+  --on-deep-title: #f3ebdc;
   --footer-border: #3a2e25;
   --footer-muted: #ad9f8f;
   --font-body: 'Nunito Sans Variable', sans-serif;
@@ -70,6 +72,7 @@
   --offset-shadow: 0.4rem 0.4rem #0b0908;
   --offset-shadow-dark: 0.4rem 0.4rem #0b0908;
   --lightbox-shadow: 0 1.5rem 4rem -1.5rem #00000059;
+  --panel-shadow: 0 2rem 3rem -2rem #241c1640;
   --header-bg: #161311f2;
   --header-border: #332c25;
   --hero-ring-border: #ece0cd14;
@@ -85,6 +88,7 @@
   --problem-cell-bg: #2b231d;
   --problem-cell-border: #463a30;
   --on-deep-muted: #b5a796;
+  --on-deep-title: #f3ebdc;
   --footer-border: #2c251f;
   --footer-muted: #9c8f80;
 }

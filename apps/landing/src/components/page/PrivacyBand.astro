@@ -1,4 +1,34 @@
-<!-- Band 1: Forest Band — Privacy-First & Local-First -->
+---
+import LucideIcon from './LucideIcon.astro'
+
+const ITEMS = [
+  {
+    icon: 'file-text',
+    key: 'yours_f1',
+    title: 'Open Markdown files',
+    text: 'Plain .md files in your own folders. Open them in any editor, track them in Git, and keep them for decades without lock-in.',
+  },
+  {
+    icon: 'cpu',
+    key: 'yours_f2',
+    title: 'Local on-device models',
+    text: 'Speech transcription, PDF OCR and semantic search run on your machine. Nothing is uploaded.',
+  },
+  {
+    icon: 'eye-off',
+    key: 'yours_f3',
+    title: 'Private by default',
+    text: 'No sign-up and no telemetry. Point Numen at an existing folder of notes and books and work completely offline.',
+  },
+  {
+    icon: 'code-xml',
+    key: 'yours_f4',
+    title: 'Open source',
+    text: 'Inspect every line of code on GitHub under AGPL-3.0.',
+  },
+]
+---
+
 <section class="problem band">
   <div class="container">
     <div class="problem-layout">
@@ -12,37 +42,19 @@
         </p>
       </div>
 
-      <div class="problem-matrix">
-        <article class="problem-cell">
-          <h3 data-i18n="yours_f1_t">Open Markdown files</h3>
-          <p data-i18n="yours_f1_p">
-            Plain .md files in your own folders. Open them in any editor, track them in Git,
-            and keep them for decades without lock-in.
-          </p>
-        </article>
-        <article class="problem-cell">
-          <h3 data-i18n="yours_f2_t">Local on-device models</h3>
-          <p data-i18n="yours_f2_p">
-            Speech transcription, PDF OCR, and semantic search embeddings run locally via ONNX
-            on your machine — zero cloud uploads.
-          </p>
-        </article>
-        <article class="problem-cell">
-          <h3 data-i18n="yours_f3_t">Private by default</h3>
-          <p data-i18n="yours_f3_p">
-            No sign-up or telemetry. Point Numen at an existing folder of notes and books and
-            work completely offline.
-          </p>
-        </article>
-        <article class="problem-cell">
-          <h3 data-i18n="yours_f4_t">Open source &amp; your own sync</h3>
-          <p data-i18n="yours_f4_p">
-            Inspect every line of code on GitHub (AGPL-3.0) and sync your folder with Git,
-            iCloud, Dropbox, or Syncthing.
-          </p>
-        </article>
-      </div>
+      <ul class="trust-list">
+        {
+          ITEMS.map((item) => (
+            <li>
+              <LucideIcon name={item.icon} />
+              <div>
+                <h3 data-i18n={`${item.key}_t`}>{item.title}</h3>
+                <p data-i18n={`${item.key}_p`}>{item.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
     </div>
   </div>
 </section>
-

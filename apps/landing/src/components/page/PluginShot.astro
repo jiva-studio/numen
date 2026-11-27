@@ -1,0 +1,21 @@
+---
+/**
+ * A plugin screenshot of this repository in light and dark, read at build time from
+ * `plugins/<folder>/screenshots/<name>-light.webp` and `-dark.webp`.
+ */
+import { getRepositoryShot } from '../plugins/screenshots'
+
+interface Props {
+  path: string
+  alt: string
+}
+
+const { path, alt } = Astro.props
+const light = await getRepositoryShot(`${path}-light.webp`)
+const dark = await getRepositoryShot(`${path}-dark.webp`)
+---
+
+<figure class="feature__media">
+  <img class="img-light" src={light.src} width={light.width} height={light.height} alt={alt} loading="lazy" />
+  <img class="img-dark" src={dark.src} width={dark.width} height={dark.height} alt={alt} loading="lazy" />
+</figure>
