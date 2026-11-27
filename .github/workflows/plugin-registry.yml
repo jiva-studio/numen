@@ -44,7 +44,11 @@ jobs:
           go-version-file: tools/plugin-registry/licenses/go.mod
           cache-key: plugin-registry
 
+      # osv-scanner needs a newer Go than the repository builds with; Go fetches that toolchain
+      # through its proxy and checks it against the checksum database.
       - name: Install osv-scanner
+        env:
+          GOTOOLCHAIN: auto
         run: go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.7.1
 
       - uses: ./.github/actions/install-lock-packages
