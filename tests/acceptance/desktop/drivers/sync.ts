@@ -287,18 +287,6 @@ export class SyncDriver {
     this.paused.delete(scenario)
   }
 
-  startTrial(_plan: string): Promise<never> {
-    return Promise.reject(new Error('the payment stand-in cannot start a trial'))
-  }
-
-  cancelTrial(): Promise<never> {
-    return Promise.reject(new Error('the payment stand-in cannot cancel a trial'))
-  }
-
-  getTrialEnd(): never {
-    throw new Error('the payment stand-in cannot provide the end of a trial')
-  }
-
   async holdInCloud(gigabytes: number): Promise<void> {
     await this.requireOwn('make the cloud hold gigabytes of notes').setUsage(gigabytes)
   }

@@ -26,9 +26,6 @@ export const getPlanLinePattern = (name: string, gigabytes: number): RegExp => n
 /** The name of the item of the menu "Change plan" of a plan: the name of the plan, then its size and price or nothing. */
 export const getPlanItemPattern = (name: string): RegExp => new RegExp(`^${name}(?![A-Za-z])`)
 
-/** The day as the card of the subscription writes it, such as "December 7, 2026". */
-export const formatDay = (day: Date): string => day.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
-
 export class SubscriptionDriver {
   constructor(
     private readonly scenario: Scenario,
@@ -93,12 +90,6 @@ export class SubscriptionDriver {
   /** Expects the card to show an active subscription: the row with the day it renews. */
   async expectActive(): Promise<void> {
     await this.expectSubscription(RENEWS)
-  }
-
-  /** Expects the card to say until which day the trial runs. */
-  async expectTrialUntil(day: Date): Promise<void> {
-    await this.expectSubscription('Trial until')
-    await this.expectSubscription(formatDay(day))
   }
 
   /** Buys the plan of a name at the stand-in and waits until the card shows the subscription as active. */

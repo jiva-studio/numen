@@ -197,18 +197,6 @@ When('{int} GB are removed from the cloud', async ({ person }, gigabytes: number
   await person.sync.deleteFromCloud(gigabytes)
 })
 
-When('the person starts a trial of the plan {string}', async ({ person }, name: string) => {
-  await person.sync.startTrial(name)
-})
-
-When('the person cancels the trial', async ({ person }) => {
-  await person.sync.cancelTrial()
-})
-
-Then('the subscription shows the day the trial ends', async ({ person }) => {
-  await person.subscription.expectTrialUntil(person.sync.getTrialEnd())
-})
-
 When('the operator makes a backup of the sync server', async ({ person }) => {
   await person.sync.makeBackup()
 })
