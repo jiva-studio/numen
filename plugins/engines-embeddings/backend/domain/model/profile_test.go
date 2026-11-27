@@ -36,12 +36,12 @@ func TestShippedProfilesPinTheFilesOfEveryLocalModel(t *testing.T) {
 		if p.Tier == "" {
 			t.Errorf("%s: unexpected curated profile Tier=%q", p.ID, p.Tier)
 		}
-		if len(p.Revision) != 40 {
-			t.Errorf("%s: revision %q is no commit", p.ID, p.Revision)
+		if p.Revision != "" || p.SHA256 != nil {
+			t.Errorf("%s: a shipped profile pins its files by address: %q %v", p.ID, p.Revision, p.SHA256)
 		}
 		for _, name := range []string{p.OnnxFile, TokenizerFile} {
-			if len(p.SHA256[name]) != 64 {
-				t.Errorf("%s: no sha256 for %s", p.ID, name)
+			if p.Dependencies[name] == "" {
+				t.Errorf("%s: no dependency for %s", p.ID, name)
 			}
 		}
 	}
@@ -149,7 +149,7 @@ func TestUserProfileOverridesTheFieldsItNamesAndKeepsTheRest(t *testing.T) {
 	if p.QueryPrefix != "search_query: " || p.DocumentPrefix != "search_document: " {
 		t.Errorf("prefixes = %q, %q", p.QueryPrefix, p.DocumentPrefix)
 	}
-	if p.Dimensions != 384 || p.Revision == "" || len(p.SHA256) == 0 {
+	if p.Dimensions != 384 || len(p.Dependencies) == 0 {
 		t.Errorf("an unnamed field was lost: %+v", p)
 	}
 	shipped, err := getShippedProfiles(t).GetLocal(DefaultModel)
@@ -174,7 +174,7 @@ func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.OnnxFile != "onnx/model_int8.onnx" || p.Revision != "" || p.SHA256 != nil {
+	if p.OnnxFile != "onnx/model_int8.onnx" || p.Revision != "" || p.SHA256 != nil || p.Dependencies != nil {
 		t.Errorf("pins of the old file kept: %+v", p)
 	}
 
@@ -186,7 +186,7 @@ func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
 		func(file string, err error) { t.Errorf("reported %s: %v", file, err) },
 	)
 	p2, err := tablePinned.GetLocal(DefaultModel)
-	if err != nil || p2.SHA256["onnx/model_int8.onnx"] != "abc" || p2.Revision == "" {
+	if err != nil || p2.SHA256["onnx/model_int8.onnx"] != "abc" || p2.Dependencies != nil {
 		t.Errorf("explicit sha256 pin lost: %+v, %v", p2, err)
 	}
 }
@@ -418,13 +418,13 @@ func TestProfileNormalizeCloneAndErrorPaths(t *testing.T) {
 	}
 	m3.Aliases[0] = "changed"
 	m3.ExtraInputs[0] = "changed"
-	m3.SHA256[TokenizerFile] = "changed"
+	m3.Dependencies[TokenizerFile] = "changed"
 
 	m3Again, err := withExtra.GetLocal("Xenova/bge-m3")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m3Again.Aliases[0] == "changed" || m3Again.ExtraInputs[0] == "changed" || m3Again.SHA256[TokenizerFile] == "changed" {
+	if m3Again.Aliases[0] == "changed" || m3Again.ExtraInputs[0] == "changed" || m3Again.Dependencies[TokenizerFile] == "changed" {
 		t.Errorf("mutating returned Profile mutated table state: %+v", m3Again)
 	}
 }

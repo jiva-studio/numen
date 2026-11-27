@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/rerank"
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/domain/profile"
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/internal/adapter/console"
+	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/internal/adapter/engine"
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/internal/adapter/profilefiles"
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/usecase/reranking"
@@ -24,8 +25,11 @@ import (
 func newTestProvider(t *testing.T) connection.Provider {
 	t.Helper()
 	t.Setenv("NUMEN_PLUGIN_DATA_DIR", t.TempDir())
-	r, err := openRerankingUseCase(hosttest.NewQueue().EnqueueWork, func(context.Context, string, string) (string, error) {
-		return "", errors.New("model unavailable offline")
+	r, err := openRerankingUseCase(hosttest.NewQueue().EnqueueWork, engine.Fetch{
+		Dependency: func(context.Context, string) (string, error) { return "", errors.New("model unavailable offline") },
+		File: func(context.Context, string, string) (string, error) {
+			return "", errors.New("model unavailable offline")
+		},
 	})
 	if err != nil {
 		t.Fatal(err)

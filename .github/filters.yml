@@ -271,7 +271,7 @@ docs:
   - *docs_sources
   - .github/actions/deploy-bunny/**
   - .github/workflows/docs.yml
-# The story names the manual and the landing page hold, and the trees they are held against.
+# The manual's generated pages, and the screenshots the stories declare with the files they write.
 references:
   - *ci_router
   - *node_lock
@@ -280,9 +280,11 @@ references:
   - libs/ui/components/src/**
   - libs/ui/workbench/src/**
   - apps/desktop/flashcards/src/**
+  - apps/landing/src/assets/**
+  - plugins/*/screenshots/**
   - plugins/themes-presets/themes/**
   - tools/ci-stories/**
-  - apps/landing/tools/**
+  - tools/shoot/**
 
 # ---------------------------------------------------------------- Repository
 

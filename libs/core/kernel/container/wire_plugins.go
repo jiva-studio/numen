@@ -203,8 +203,9 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	revision := func() string { return searchquerydomain.GetCatalogRevision(getSearchCatalog(manifests)()) }
 	tools := toolbridge.NewCatalog(toolHost, toolHost, processes.Storage, revision, processes.Clock, toolbridge.GetErrorOutput())
 	callers := hostendpoint.Callers{
-		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),
-		Activation:   management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
+		Dependencies: hostendpoint.DependencyUseCases{
+			Model: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)), Declared: plugindependency.NewFetchDeclaredModel(management.Registry, getDependencyProvisioner(processes.Services))},
+		Activation: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services, CallCancels: searchcancel.NewSearches(processes.Clock),
 		GetTools: func() hostendpoint.PluginTools { return tools },
 		Health:   hostendpoint.HealthUseCases{Report: pluginhealth.NewReport(processes.Health, management.Registry), Clear: pluginhealth.NewClear(processes.Health)},

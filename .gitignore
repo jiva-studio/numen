@@ -65,3 +65,5 @@ refactoring-plan.md
 tests/acceptance/desktop/.features-gen/
 tests/acceptance/desktop/acceptance-report/
 tests/acceptance/desktop/acceptance-blobs/
+/.coverage-quality/
+/.registry/

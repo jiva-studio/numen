@@ -116,3 +116,18 @@ export const OpenAndClose: Story = {
     await expect(args.onClose).toHaveBeenCalledTimes(1)
   },
 }
+
+/** The item in the title bar of the window, with its popover open over the note. */
+export const InTheWindow: Story = {
+  ...Open,
+  tags: ['screenshot'],
+  parameters: {
+    frame: { place: 'title-status' },
+    screenshot: [{ name: 'index' }],
+  },
+  render: (args) => ({
+    components: { StatsIndicator },
+    setup: () => ({ args }),
+    template: '<StatsIndicator v-bind="args" />',
+  }),
+}

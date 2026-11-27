@@ -4,6 +4,11 @@ Explore your notes as an interactive visual map showing how ideas connect as par
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/map-dark.webp">
+  <img alt="The plex of a note in the window beside the note itself" src="screenshots/map-light.webp">
+</picture>
+
 ## What You Can Do
 
 - **See the context around any note**: Shows your current note at the center with its parent topics above, subtopics below, and related notes to the side.

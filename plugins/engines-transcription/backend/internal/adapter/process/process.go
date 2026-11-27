@@ -37,6 +37,11 @@ func (Process) GetConfig() settings.Config {
 	return cfg
 }
 
+// ReportCloseError writes the failure to close the model to standard error.
+func (Process) ReportCloseError(err error) {
+	fmt.Fprintln(os.Stderr, "engines-transcription: close the model:", err)
+}
+
 // ReportError writes a background failure of the plugin to standard error.
 func (Process) ReportError(what string, err error) {
 	if err != nil {

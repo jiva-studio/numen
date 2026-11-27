@@ -10,7 +10,7 @@ func TestDefaults(t *testing.T) {
 	if cfg.Model != GetModels()[0] {
 		t.Errorf("Defaults().Model = %+v, want %+v", cfg.Model, GetModels()[0])
 	}
-	wantSegmenter := SegmenterModel{Name: "silero-vad", Repo: segmenterDefault}
+	wantSegmenter := SegmenterModel{Name: "silero-vad", Dependency: "silero-vad"}
 	if cfg.Segmenter != wantSegmenter {
 		t.Errorf("Defaults().Segmenter = %+v, want %+v", cfg.Segmenter, wantSegmenter)
 	}

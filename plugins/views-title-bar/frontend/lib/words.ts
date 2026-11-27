@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 /** The words the bar writes itself: the names of its own buttons. */
 export interface TitleBarWords {
   readonly toolbar: string

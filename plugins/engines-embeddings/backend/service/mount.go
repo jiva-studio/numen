@@ -23,7 +23,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
-func newLocalModelOpener(library *onnx.Library, fetch onnx.FetchFile, queue host.InferenceQueue) ports.OpenEmbedder {
+func newLocalModelOpener(library *onnx.Library, fetch engine.Fetch, queue host.InferenceQueue) ports.OpenEmbedder {
 	// gomutants:disable-next-line RETURN_ZERO reason="production opener wraps engine.Open with native ONNX runtime"
 	return func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (ports.Embedder, error) {
 		emb, err := engine.Open(ctx, library, info, local, fetch, queue)
@@ -41,7 +41,7 @@ func newMockEmbedder(logPath string) ports.Embedder {
 	return mockembedder.Embedder{LogPath: logPath}
 }
 
-func newServer(open ports.OpenModels, fetch onnx.FetchFile, queue host.InferenceQueue) *serving.Server {
+func newServer(open ports.OpenModels, fetch engine.Fetch, queue host.InferenceQueue) *serving.Server {
 	return serving.New(serving.Ports{
 		Queue: queue, Machine: process.Process{},
 		Profiles:    profilefiles.GetDefaultDirectory(),
@@ -71,7 +71,7 @@ func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
 }
 
 func mount(s *server.Server, queue host.InferenceQueue, open ports.OpenModels, places openPlace, reports sourcehealth.OpenHealth) error {
-	embedSrv := newServer(open, fetchModelFile(s), queue)
+	embedSrv := newServer(open, getModelFetch(s), queue)
 	s.SetUpdateConfig(func(values map[string]string) {
 		embedSrv.Update(values)
 	})
@@ -81,12 +81,21 @@ func mount(s *server.Server, queue host.InferenceQueue, open ports.OpenModels, p
 	return nil
 }
 
-func fetchModelFile(s *server.Server) onnx.FetchFile {
-	return func(ctx context.Context, address, sum string) (string, error) {
-		endpoint, err := s.GetHostEndpoint()
-		if err != nil {
-			return "", err
-		}
-		return host.NewDependencyClient(endpoint).FetchModelFile(ctx, address, sum)
+func getModelFetch(s *server.Server) engine.Fetch {
+	return engine.Fetch{
+		Dependency: func(ctx context.Context, id string) (string, error) {
+			endpoint, err := s.GetHostEndpoint()
+			if err != nil {
+				return "", err
+			}
+			return host.NewDependencyClient(endpoint).FetchDependency(ctx, id)
+		},
+		File: func(ctx context.Context, address, sum string) (string, error) {
+			endpoint, err := s.GetHostEndpoint()
+			if err != nil {
+				return "", err
+			}
+			return host.NewDependencyClient(endpoint).FetchModelFile(ctx, address, sum)
+		},
 	}
 }

@@ -4,6 +4,11 @@ Keeps queries of the search language as notes of the vault, and shows their resu
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/results-dark.webp">
+  <img alt="A saved search open in the window beside a note, its passages under the query" src="screenshots/results-light.webp">
+</picture>
+
 ## What It Enables
 
 - **Saved searches as notes**: A saved search is a note of type `search`. Its body holds the query in a fenced block `numen-query`; prose outside the block is free. Reranking and the number of results are part of the query, as `.rerank("…")` and `.top(N)`.

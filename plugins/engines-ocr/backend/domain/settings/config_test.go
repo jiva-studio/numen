@@ -2,7 +2,6 @@ package settings
 
 import (
 	"slices"
-	"strings"
 	"testing"
 )
 
@@ -59,13 +58,13 @@ func TestTheDefaultsReadAtThreeHundredDPIAndFetchWhatIsMissing(t *testing.T) {
 	if cfg.Compute.Threads != 0 || cfg.Compute.Jobs != 0 {
 		t.Errorf("unexpected compute defaults: %+v", cfg.Compute)
 	}
-	for name, got := range map[string]string{
-		"layout":     cfg.Layout.Name,
-		"detector":   cfg.Detect.Name,
-		"recognizer": cfg.Recognize.Name,
+	for name, ids := range map[string][2]string{
+		"layout":     {cfg.Layout.Name, "pp-doclayout"},
+		"detector":   {cfg.Detect.Name, "pp-ocr-det"},
+		"recognizer": {cfg.Recognize.Name, "rec-pp-ocrv6-tiny"},
 	} {
-		if !strings.HasPrefix(got, "https://") || !strings.HasSuffix(got, ".onnx") {
-			t.Errorf("the %s model is %q, want an address of an onnx file", name, got)
+		if ids[0] != ids[1] {
+			t.Errorf("the %s model is %q, want the dependency %s of the manifest", name, ids[0], ids[1])
 		}
 	}
 }

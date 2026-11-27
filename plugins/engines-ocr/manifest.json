@@ -116,6 +116,105 @@
       "metadata": {
         "envVar": "NUMEN_ONNX_RUNTIME_LIB"
       }
+    },
+    {
+      "id": "pp-doclayout",
+      "kind": "model",
+      "version": "46bbdf188bb0a772c08aed74882ce7e51a8f1ea6",
+      "sourceUrls": [
+        "https://huggingface.co/PaddlePaddle/PP-DocLayoutV3_onnx/resolve/46bbdf188bb0a772c08aed74882ce7e51a8f1ea6/inference.onnx"
+      ],
+      "checksumSha256": "45bf71750b00739a41fc209f132eb104a4d6b5bb29483c9078164d8b87cf28ba",
+      "sizeBytes": 130502049,
+      "metadata": { "title": "PP-DocLayoutV3 layout model" }
+    },
+    {
+      "id": "pp-ocr-det",
+      "kind": "model",
+      "version": "e6f4fa85f00e168c862bc462aebca69eef9b3d3d",
+      "sourceUrls": [
+        "https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx/resolve/e6f4fa85f00e168c862bc462aebca69eef9b3d3d/inference.onnx"
+      ],
+      "checksumSha256": "a431985659dc921974177a95adcfbb90fd9e51989a5e04d70d0b75f597b6e61d",
+      "sizeBytes": 4826518,
+      "metadata": { "title": "PP-OCRv5 detection model" }
+    },
+    {
+      "id": "rec-pp-ocrv6-tiny",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "sourceUrls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx"
+      ],
+      "checksumSha256": "e16e242de5937ad92609223f19bc2aff3727ee40b095f996907c24749bad251b",
+      "sizeBytes": 4489813,
+      "metadata": { "title": "PP-OCRv6 tiny recognition model" }
+    },
+    {
+      "id": "rec-pp-ocrv6-small",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "sourceUrls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_small.onnx"
+      ],
+      "checksumSha256": "6f327246b50388f3c176ae304bd95767ea6dc0c9ae92153ef8cbe210b3c14884",
+      "sizeBytes": 21234383,
+      "metadata": { "title": "PP-OCRv6 small recognition model" }
+    },
+    {
+      "id": "rec-pp-ocrv5-latin",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "sourceUrls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "checksumSha256": "b20bd37c168a570f583afbc8cd7925603890efbcdc000a59e22c269d160b5f5a",
+      "sizeBytes": 7904513,
+      "metadata": { "title": "PP-OCRv5 Latin recognition model" }
+    },
+    {
+      "id": "rec-pp-ocrv5-eslav",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "sourceUrls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "checksumSha256": "08705d6721849b1347d26187f15a5e362c431963a2a62bfff4feac578c489aab",
+      "sizeBytes": 7911802,
+      "metadata": { "title": "PP-OCRv5 East Slavic recognition model" }
+    },
+    {
+      "id": "rec-pp-ocrv5-cyrillic",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "sourceUrls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/cyrillic_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "checksumSha256": "90f761b4bfcce0c8c561c0cb5c887b0971d3ec01c32164bdf7374a35b0982711",
+      "sizeBytes": 8074092,
+      "metadata": { "title": "PP-OCRv5 Cyrillic recognition model" }
+    },
+    {
+      "id": "rec-pp-ocrv5-devanagari",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "sourceUrls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/devanagari_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "checksumSha256": "d6f0a906580e3fa6b324a318718f1f31f268b6ea8ef985f91c2012a37f52c91e",
+      "sizeBytes": 7940361,
+      "metadata": { "title": "PP-OCRv5 Devanagari recognition model" }
+    },
+    {
+      "id": "rec-pp-ocrv5-greek",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "sourceUrls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/el_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "checksumSha256": "b4368bccd557123c702b7549fee6cd1e94b581337d1c9b65310f109131542b7f",
+      "sizeBytes": 7832350,
+      "metadata": { "title": "PP-OCRv5 Greek recognition model" }
     }
   ],
   "backend": {
@@ -132,36 +231,43 @@
       "options": [
         {
           "value": "pp-ocrv6-tiny",
+          "dependencies": ["rec-pp-ocrv6-tiny"],
           "title": "PP-OCRv6 tiny",
           "detail": "Chinese, English and Latin-script languages, 4.5 MB"
         },
         {
           "value": "pp-ocrv6-small",
+          "dependencies": ["rec-pp-ocrv6-small"],
           "title": "PP-OCRv6 small",
           "detail": "Chinese, English, Japanese and Latin-script languages, 21 MB"
         },
         {
           "value": "pp-ocrv5-latin",
+          "dependencies": ["rec-pp-ocrv5-latin"],
           "title": "PP-OCRv5 Latin",
           "detail": "English, French, German, Spanish, Italian, Portuguese, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Croatian, Slovenian, Danish, Swedish, Norwegian, Finnish, Estonian, Lithuanian, Latvian, Turkish, Latin and other Latin-script languages, 7.9 MB"
         },
         {
           "value": "pp-ocrv5-eslav",
+          "dependencies": ["rec-pp-ocrv5-eslav"],
           "title": "PP-OCRv5 East Slavic",
           "detail": "Russian, Ukrainian, Belarusian, English, 7.9 MB"
         },
         {
           "value": "pp-ocrv5-cyrillic",
+          "dependencies": ["rec-pp-ocrv5-cyrillic"],
           "title": "PP-OCRv5 Cyrillic",
           "detail": "Russian, Ukrainian, Belarusian, Bulgarian, Serbian, Macedonian, Mongolian, Kazakh, Kyrgyz, Tajik, Tatar and other Cyrillic-script languages, English, 8.1 MB"
         },
         {
           "value": "pp-ocrv5-devanagari",
+          "dependencies": ["rec-pp-ocrv5-devanagari"],
           "title": "PP-OCRv5 Devanagari",
           "detail": "Hindi, Sanskrit, Marathi, Nepali, Konkani, Maithili, Bhojpuri, English, 7.9 MB"
         },
         {
           "value": "pp-ocrv5-greek",
+          "dependencies": ["rec-pp-ocrv5-greek"],
           "title": "PP-OCRv5 Greek",
           "detail": "Greek, English, 7.8 MB"
         },

@@ -2,6 +2,102 @@
   "version": 1,
   "assets": [
     {
+      "id": "bge-m3-graph",
+      "kind": "model",
+      "version": "4de13258303883538bd53b696b452bf8099f0858",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/Xenova/bge-m3/resolve/4de13258303883538bd53b696b452bf8099f0858/onnx/model_int8.onnx"
+      ],
+      "sha256": "a206e10e995aa2a833924bcd725ba5dd6c3425cd34bac3cf2b5677cd2a1c51d6",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-embeddings"
+      ],
+      "path": "bge-m3-graph/4de13258303883538bd53b696b452bf8099f0858/any/model_int8.onnx"
+    },
+    {
+      "id": "bge-m3-tokenizer",
+      "kind": "model",
+      "version": "4de13258303883538bd53b696b452bf8099f0858",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/Xenova/bge-m3/resolve/4de13258303883538bd53b696b452bf8099f0858/tokenizer.json"
+      ],
+      "sha256": "6710678b12670bc442b99edc952c4d996ae309a7020c1fa0096dd245c2faf790",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-embeddings"
+      ],
+      "path": "bge-m3-tokenizer/4de13258303883538bd53b696b452bf8099f0858/any/tokenizer.json"
+    },
+    {
+      "id": "bge-reranker-v2-m3-graph",
+      "kind": "model",
+      "version": "6f5ff65298512715a1e669753bc754d2bc8f367b",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/6f5ff65298512715a1e669753bc754d2bc8f367b/onnx/model_quantized.onnx"
+      ],
+      "sha256": "912fc1215c2dbff6499700534bd8d31253af01573861abbfc43afd1fab6cce5d",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-reranking"
+      ],
+      "path": "bge-reranker-v2-m3-graph/6f5ff65298512715a1e669753bc754d2bc8f367b/any/model_quantized.onnx"
+    },
+    {
+      "id": "bge-reranker-v2-m3-tokenizer",
+      "kind": "model",
+      "version": "6f5ff65298512715a1e669753bc754d2bc8f367b",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/onnx-community/bge-reranker-v2-m3-ONNX/resolve/6f5ff65298512715a1e669753bc754d2bc8f367b/tokenizer.json"
+      ],
+      "sha256": "8bf8afbfd11306bd872018c53bfdf2e160a56f8edbcf49933324404791c148d3",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-reranking"
+      ],
+      "path": "bge-reranker-v2-m3-tokenizer/6f5ff65298512715a1e669753bc754d2bc8f367b/any/tokenizer.json"
+    },
+    {
+      "id": "e5-small-graph",
+      "kind": "model",
+      "version": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/onnx/model_quantized.onnx"
+      ],
+      "sha256": "f80102d3f2a1229f387d3c81909990d8945513e347b0eab049f7de3c6f98c193",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-embeddings"
+      ],
+      "path": "e5-small-graph/761b726dd34fb83930e26aab4e9ac3899aa1fa78/any/model_quantized.onnx"
+    },
+    {
+      "id": "e5-small-tokenizer",
+      "kind": "model",
+      "version": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/Xenova/multilingual-e5-small/resolve/761b726dd34fb83930e26aab4e9ac3899aa1fa78/tokenizer.json"
+      ],
+      "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-embeddings"
+      ],
+      "path": "e5-small-tokenizer/761b726dd34fb83930e26aab4e9ac3899aa1fa78/any/tokenizer.json"
+    },
+    {
       "id": "ffmpeg",
       "kind": "binary",
       "version": "6.1.1",
@@ -80,6 +176,86 @@
         "tools-media-importer"
       ],
       "path": "ffmpeg/6.1.1/windows-amd64/ffmpeg-win32-x64"
+    },
+    {
+      "id": "gte-reranker-graph",
+      "kind": "model",
+      "version": "ee64367e35a2db0da46bb6497e13a18f8bd585cb",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/onnx-community/gte-multilingual-reranker-base/resolve/ee64367e35a2db0da46bb6497e13a18f8bd585cb/onnx/model_quantized.onnx"
+      ],
+      "sha256": "ccf51dba7f8aa9205753761cfaa68c55f741792501463a3bf25d7e5bcdac7c35",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-reranking"
+      ],
+      "path": "gte-reranker-graph/ee64367e35a2db0da46bb6497e13a18f8bd585cb/any/model_quantized.onnx"
+    },
+    {
+      "id": "gte-reranker-tokenizer",
+      "kind": "model",
+      "version": "ee64367e35a2db0da46bb6497e13a18f8bd585cb",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/onnx-community/gte-multilingual-reranker-base/resolve/ee64367e35a2db0da46bb6497e13a18f8bd585cb/tokenizer.json"
+      ],
+      "sha256": "3ffb37461c391f096759f4a9bbbc329da0f36952f88bab061fcf84940c022e98",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-reranking"
+      ],
+      "path": "gte-reranker-tokenizer/ee64367e35a2db0da46bb6497e13a18f8bd585cb/any/tokenizer.json"
+    },
+    {
+      "id": "harrier-270m-graph-data",
+      "kind": "model",
+      "version": "d59c919d0159aea2c19ed7d04288fcdd048d0f9c",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/onnx-community/harrier-oss-v1-270m-ONNX/resolve/d59c919d0159aea2c19ed7d04288fcdd048d0f9c/onnx/model_quantized.onnx_data"
+      ],
+      "sha256": "a81e3db98eaedd77deafe07d7c3c03b254b7e012790a7a1774295aff03d4fbdf",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-embeddings"
+      ],
+      "path": "harrier-270m-graph-data/d59c919d0159aea2c19ed7d04288fcdd048d0f9c/any/model_quantized.onnx_data"
+    },
+    {
+      "id": "harrier-270m-graph",
+      "kind": "model",
+      "version": "d59c919d0159aea2c19ed7d04288fcdd048d0f9c",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/onnx-community/harrier-oss-v1-270m-ONNX/resolve/d59c919d0159aea2c19ed7d04288fcdd048d0f9c/onnx/model_quantized.onnx"
+      ],
+      "sha256": "44fe93efec64ac3446703403634fd8410c7dabf3814bf00dc0825f1e2dde75c0",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-embeddings"
+      ],
+      "path": "harrier-270m-graph/d59c919d0159aea2c19ed7d04288fcdd048d0f9c/any/model_quantized.onnx"
+    },
+    {
+      "id": "harrier-270m-tokenizer",
+      "kind": "model",
+      "version": "d59c919d0159aea2c19ed7d04288fcdd048d0f9c",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/onnx-community/harrier-oss-v1-270m-ONNX/resolve/d59c919d0159aea2c19ed7d04288fcdd048d0f9c/tokenizer.json"
+      ],
+      "sha256": "ec95be298bea26f90370854faa650744c9fb0a04ca5e5ff95dd3913393ac5e45",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-embeddings"
+      ],
+      "path": "harrier-270m-tokenizer/d59c919d0159aea2c19ed7d04288fcdd048d0f9c/any/tokenizer.json"
     },
     {
       "id": "onnxruntime",
@@ -180,6 +356,294 @@
         "engines-transcription"
       ],
       "path": "onnxruntime/1.23.0/windows-amd64/onnxruntime-win-x64-1.23.0.zip"
+    },
+    {
+      "id": "parakeet-v2-decoder",
+      "kind": "model",
+      "version": "1ab9323565ddb038682214b292f588070a538ce2",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/resolve/1ab9323565ddb038682214b292f588070a538ce2/decoder.int8.onnx"
+      ],
+      "sha256": "b6bb64963457237b900e496ee9994b59294526439fbcc1fecf705b31a15c6b4e",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-transcription"
+      ],
+      "path": "parakeet-v2-decoder/1ab9323565ddb038682214b292f588070a538ce2/any/decoder.int8.onnx"
+    },
+    {
+      "id": "parakeet-v2-encoder",
+      "kind": "model",
+      "version": "1ab9323565ddb038682214b292f588070a538ce2",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/resolve/1ab9323565ddb038682214b292f588070a538ce2/encoder.int8.onnx"
+      ],
+      "sha256": "a32b12d17bbbc309d0686fbbcc2987b5e9b8333a7da83fa6b089f0a2acd651ab",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-transcription"
+      ],
+      "path": "parakeet-v2-encoder/1ab9323565ddb038682214b292f588070a538ce2/any/encoder.int8.onnx"
+    },
+    {
+      "id": "parakeet-v2-joiner",
+      "kind": "model",
+      "version": "1ab9323565ddb038682214b292f588070a538ce2",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/resolve/1ab9323565ddb038682214b292f588070a538ce2/joiner.int8.onnx"
+      ],
+      "sha256": "7946164367946e7f9f29a122407c3252b680dbae9a51343eb2488d057c3c43d2",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-transcription"
+      ],
+      "path": "parakeet-v2-joiner/1ab9323565ddb038682214b292f588070a538ce2/any/joiner.int8.onnx"
+    },
+    {
+      "id": "parakeet-v2-tokens",
+      "kind": "model",
+      "version": "1ab9323565ddb038682214b292f588070a538ce2",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/resolve/1ab9323565ddb038682214b292f588070a538ce2/tokens.txt"
+      ],
+      "sha256": "ec182b70dd42113aff6c5372c75cac58c952443eb22322f57bbd7f53977d497d",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-transcription"
+      ],
+      "path": "parakeet-v2-tokens/1ab9323565ddb038682214b292f588070a538ce2/any/tokens.txt"
+    },
+    {
+      "id": "parakeet-v3-decoder",
+      "kind": "model",
+      "version": "2bda32ec70b097a55adaa07d9a7173915b43cc78",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/2bda32ec70b097a55adaa07d9a7173915b43cc78/decoder.int8.onnx"
+      ],
+      "sha256": "179e50c43d1a9de79c8a24149a2f9bac6eb5981823f2a2ed88d655b24248db4e",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-transcription"
+      ],
+      "path": "parakeet-v3-decoder/2bda32ec70b097a55adaa07d9a7173915b43cc78/any/decoder.int8.onnx"
+    },
+    {
+      "id": "parakeet-v3-encoder",
+      "kind": "model",
+      "version": "2bda32ec70b097a55adaa07d9a7173915b43cc78",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/2bda32ec70b097a55adaa07d9a7173915b43cc78/encoder.int8.onnx"
+      ],
+      "sha256": "acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-transcription"
+      ],
+      "path": "parakeet-v3-encoder/2bda32ec70b097a55adaa07d9a7173915b43cc78/any/encoder.int8.onnx"
+    },
+    {
+      "id": "parakeet-v3-joiner",
+      "kind": "model",
+      "version": "2bda32ec70b097a55adaa07d9a7173915b43cc78",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/2bda32ec70b097a55adaa07d9a7173915b43cc78/joiner.int8.onnx"
+      ],
+      "sha256": "3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-transcription"
+      ],
+      "path": "parakeet-v3-joiner/2bda32ec70b097a55adaa07d9a7173915b43cc78/any/joiner.int8.onnx"
+    },
+    {
+      "id": "parakeet-v3-tokens",
+      "kind": "model",
+      "version": "2bda32ec70b097a55adaa07d9a7173915b43cc78",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/2bda32ec70b097a55adaa07d9a7173915b43cc78/tokens.txt"
+      ],
+      "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-transcription"
+      ],
+      "path": "parakeet-v3-tokens/2bda32ec70b097a55adaa07d9a7173915b43cc78/any/tokens.txt"
+    },
+    {
+      "id": "pp-doclayout",
+      "kind": "model",
+      "version": "46bbdf188bb0a772c08aed74882ce7e51a8f1ea6",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/PaddlePaddle/PP-DocLayoutV3_onnx/resolve/46bbdf188bb0a772c08aed74882ce7e51a8f1ea6/inference.onnx"
+      ],
+      "sha256": "45bf71750b00739a41fc209f132eb104a4d6b5bb29483c9078164d8b87cf28ba",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-ocr"
+      ],
+      "path": "pp-doclayout/46bbdf188bb0a772c08aed74882ce7e51a8f1ea6/any/inference.onnx"
+    },
+    {
+      "id": "pp-ocr-det",
+      "kind": "model",
+      "version": "e6f4fa85f00e168c862bc462aebca69eef9b3d3d",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx/resolve/e6f4fa85f00e168c862bc462aebca69eef9b3d3d/inference.onnx"
+      ],
+      "sha256": "a431985659dc921974177a95adcfbb90fd9e51989a5e04d70d0b75f597b6e61d",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-ocr"
+      ],
+      "path": "pp-ocr-det/e6f4fa85f00e168c862bc462aebca69eef9b3d3d/any/inference.onnx"
+    },
+    {
+      "id": "rec-pp-ocrv5-cyrillic",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "platform": "any",
+      "urls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/cyrillic_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "sha256": "90f761b4bfcce0c8c561c0cb5c887b0971d3ec01c32164bdf7374a35b0982711",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-ocr"
+      ],
+      "path": "rec-pp-ocrv5-cyrillic/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/any/cyrillic_PP-OCRv5_rec_mobile.onnx"
+    },
+    {
+      "id": "rec-pp-ocrv5-devanagari",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "platform": "any",
+      "urls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/devanagari_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "sha256": "d6f0a906580e3fa6b324a318718f1f31f268b6ea8ef985f91c2012a37f52c91e",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-ocr"
+      ],
+      "path": "rec-pp-ocrv5-devanagari/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/any/devanagari_PP-OCRv5_rec_mobile.onnx"
+    },
+    {
+      "id": "rec-pp-ocrv5-eslav",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "platform": "any",
+      "urls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "sha256": "08705d6721849b1347d26187f15a5e362c431963a2a62bfff4feac578c489aab",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-ocr"
+      ],
+      "path": "rec-pp-ocrv5-eslav/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/any/eslav_PP-OCRv5_rec_mobile.onnx"
+    },
+    {
+      "id": "rec-pp-ocrv5-greek",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "platform": "any",
+      "urls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/el_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "sha256": "b4368bccd557123c702b7549fee6cd1e94b581337d1c9b65310f109131542b7f",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-ocr"
+      ],
+      "path": "rec-pp-ocrv5-greek/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/any/el_PP-OCRv5_rec_mobile.onnx"
+    },
+    {
+      "id": "rec-pp-ocrv5-latin",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "platform": "any",
+      "urls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile.onnx"
+      ],
+      "sha256": "b20bd37c168a570f583afbc8cd7925603890efbcdc000a59e22c269d160b5f5a",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-ocr"
+      ],
+      "path": "rec-pp-ocrv5-latin/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/any/latin_PP-OCRv5_rec_mobile.onnx"
+    },
+    {
+      "id": "rec-pp-ocrv6-small",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "platform": "any",
+      "urls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_small.onnx"
+      ],
+      "sha256": "6f327246b50388f3c176ae304bd95767ea6dc0c9ae92153ef8cbe210b3c14884",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-ocr"
+      ],
+      "path": "rec-pp-ocrv6-small/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/any/PP-OCRv6_rec_small.onnx"
+    },
+    {
+      "id": "rec-pp-ocrv6-tiny",
+      "kind": "model",
+      "version": "4e9666f0fbf5fac850d30e530bf0a2e0d886aa78",
+      "platform": "any",
+      "urls": [
+        "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx"
+      ],
+      "sha256": "e16e242de5937ad92609223f19bc2aff3727ee40b095f996907c24749bad251b",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-ocr"
+      ],
+      "path": "rec-pp-ocrv6-tiny/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/any/PP-OCRv6_rec_tiny.onnx"
+    },
+    {
+      "id": "silero-vad",
+      "kind": "model",
+      "version": "e71cae966052b992a7eca6b17738916ce0eca4ec",
+      "platform": "any",
+      "urls": [
+        "https://huggingface.co/onnx-community/silero-vad/resolve/e71cae966052b992a7eca6b17738916ce0eca4ec/onnx/model.onnx"
+      ],
+      "sha256": "a4a068cd6cf1ea8355b84327595838ca748ec29a25bc91fc82e6c299ccdc5808",
+      "member": "",
+      "memberSha256": "",
+      "consumers": [
+        "engines-transcription"
+      ],
+      "path": "silero-vad/e71cae966052b992a7eca6b17738916ce0eca4ec/any/model.onnx"
     },
     {
       "id": "yt-dlp",

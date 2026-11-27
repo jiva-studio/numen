@@ -64,7 +64,7 @@ func PrepareModel(ctx context.Context, model RepositoryModel, cache string, fetc
 	}
 	tokens := locals["tokenizer.json"]
 	delete(locals, "tokenizer.json")
-	graph, err := placeGraph(cache, model.Graph, locals)
+	graph, err := PlaceModelFiles(cache, model.Graph, locals)
 	return ModelFiles{Model: graph, Tokenizer: tokens}, err
 }
 

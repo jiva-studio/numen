@@ -1,0 +1,179 @@
+---
+/**
+ * The side column of a plugin page: contributors, the apps and systems it works on, its source,
+ * plugins that go with it, and links to report a bug or ask for a feature.
+ */
+import numenIcon from '../../../../../tools/build-icons/icon.svg?url'
+import flashcardsIcon from '../../../../../tools/build-icons/flashcards.svg?url'
+import PluginIcon from './PluginIcon.astro'
+import {
+  type CatalogPlugin,
+  getAvatarUrl,
+  getBugReportUrl,
+  getContributorUrl,
+  getFeatureRequestUrl,
+  getInitial,
+  getPlatformName,
+  getPlatformSystem,
+  getPluginPath,
+  listApps,
+} from './catalog'
+import { SYSTEM_ICONS } from './systems'
+
+interface Props {
+  plugin: CatalogPlugin
+  related: CatalogPlugin[]
+}
+
+const { plugin, related } = Astro.props
+const APP_ICONS: Readonly<Record<string, string>> = {
+  'desktop.editor': numenIcon,
+  'desktop.flashcards': flashcardsIcon,
+}
+const apps = listApps(plugin.targets).map((app) => ({ ...app, icon: APP_ICONS[app.target] }))
+const systems = plugin.platforms.map((platform) => ({
+  name: getPlatformName(platform),
+  icon: SYSTEM_ICONS[getPlatformSystem(platform)],
+}))
+const people = plugin.contributors.map((person) => ({
+  name: person.name,
+  avatar: getAvatarUrl(person, 52),
+  url: getContributorUrl(person),
+}))
+const isInternal = plugin.source.kind === 'internal'
+---
+
+<aside class="plugin-side">
+  {
+    plugin.contributors.length > 0 && (
+      <section class="plugin-side__section">
+        <h2>
+          <span data-i18n="plugin_contributors">Contributors</span>
+          <span class="plugin-count">{plugin.contributors.length}</span>
+        </h2>
+        <ul class="plugin-people">
+          {people.map((person) => {
+            const avatar = person.avatar ? (
+              <img class="plugin-avatar" src={person.avatar} width="26" height="26" alt="" loading="lazy" />
+            ) : (
+              <span class="plugin-avatar" aria-hidden="true">
+                {getInitial(person.name)}
+              </span>
+            )
+            return (
+              <li>
+                {person.url ? (
+                  <a class="plugin-person" href={person.url} target="_blank" rel="noopener">
+                    {avatar}
+                    {person.name}
+                  </a>
+                ) : (
+                  <>
+                    {avatar}
+                    {person.name}
+                  </>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      </section>
+    )
+  }
+
+  <section class="plugin-side__section">
+    <h2 data-i18n="plugin_compatibility">Compatibility</h2>
+    {
+      apps.length > 0 && (
+        <div class="plugin-compat">
+          <h3 data-i18n="plugin_apps">Apps</h3>
+          <ul>
+            {apps.map((app) => (
+              <li>
+                {app.icon && <img src={app.icon} width="20" height="20" alt="" />}
+                {app.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+    {
+      systems.length > 0 && (
+        <div class="plugin-compat">
+          <h3 data-i18n="plugin_systems">Systems</h3>
+          <ul>
+            {systems.map((system) => (
+              <li>
+                {system.icon && (
+                  <svg class="plugin-compat__glyph" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={system.icon} />
+                  </svg>
+                )}
+                {system.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  </section>
+
+  <section class="plugin-side__section">
+    <h2 data-i18n="plugin_source">Source code</h2>
+    <a class="plugin-source" href={plugin.source.url} target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path
+          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.71 1.22 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+        />
+      </svg>
+      <span class="plugin-source__text">
+        <span class="plugin-source__repo">{plugin.source.repo}</span>
+        {isInternal && plugin.source.path && (
+          <span class="plugin-source__path">{plugin.source.path}</span>
+        )}
+      </span>
+    </a>
+  </section>
+
+  {
+    related.length > 0 && (
+      <section class="plugin-side__section">
+        <h2 data-i18n="plugin_related">Works well with</h2>
+        <ul class="plugin-related">
+          {related.map((one) => (
+            <li>
+              <a class="plugin-entry" href={getPluginPath(one.id)}>
+                <span class="plugin-tile plugin-tile--small">
+                  <PluginIcon name={one.icon} />
+                </span>
+                <span class="plugin-entry__text">
+                  <span class="plugin-entry__name">{one.name}</span>
+                  <span class="plugin-entry__description">{one.description}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <section class="plugin-side__section">
+    <h2 data-i18n="plugin_links">Links</h2>
+    <ul class="plugin-links">
+      <li>
+        <a href={getBugReportUrl(plugin)} target="_blank" rel="noopener">
+          <PluginIcon name="bug" />
+          <span data-i18n="plugin_report_bug">Report a bug</span>
+        </a>
+      </li>
+      <li>
+        <a href={getFeatureRequestUrl(plugin)} target="_blank" rel="noopener">
+          <PluginIcon name="lightbulb" />
+          <span data-i18n="plugin_request_feature">Request a feature</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+</aside>

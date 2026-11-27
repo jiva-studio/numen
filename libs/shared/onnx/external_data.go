@@ -13,7 +13,10 @@ import (
 	"slices"
 )
 
-func placeGraph(cache, graph string, files map[string]string) (string, error) {
+// PlaceModelFiles returns the path of the graph among files, which maps the repository-relative name
+// of each file of one model to its local path. A graph with external data is linked, with its data,
+// into a folder of cache under the relative names the graph encodes.
+func PlaceModelFiles(cache, graph string, files map[string]string) (string, error) {
 	if len(files) == 1 {
 		return files[graph], nil
 	}

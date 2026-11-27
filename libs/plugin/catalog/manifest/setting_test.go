@@ -19,9 +19,9 @@ func readTestManifest(t *testing.T) Manifest {
 		"id": "org.example.sample", "name": "Sample", "version": "1.0.0",
 		"backend": {"entrypoint": "bin/sample"},
 		"dependencies": [
-			{"id": "shared", "kind": "model"},
-			{"id": "small-weights", "kind": "model"},
-			{"id": "large-weights", "kind": "model"}
+			{"id": "shared", "kind": "dataset"},
+			{"id": "small-weights", "kind": "dataset"},
+			{"id": "large-weights", "kind": "dataset"}
 		],
 		"settings": [
 			{"key": "model", "type": "enum", "title": "Model", "default": "large", "options": [
@@ -224,7 +224,7 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 				Options: map[string]SettingOptions{"local": {{Value: "m1", Dependencies: []string{"dep1"}}}},
 			}},
 		},
-		Dependencies: []DependencyRequirement{{ID: "dep1", Kind: DependencyKindModel}},
+		Dependencies: []DependencyRequirement{{ID: "dep1", Kind: DependencyKindDataset}},
 	}
 	resolved := emptyOptsManifest.ResolveSettings(map[string]any{"model": "m1"})
 	if _, ok := resolved["model"]; ok {

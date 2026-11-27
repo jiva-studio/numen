@@ -36,6 +36,8 @@ type LocalModel struct {
 
 	Revision string            `json:"revision"`
 	Sums     map[string]string `json:"sums"`
+
+	Dependencies map[string]string `json:"-"`
 }
 
 // ModelInfo describes the embedding model properties exposed to clients.
@@ -108,6 +110,7 @@ func NewConfig(profile Profile) (ModelInfo, LocalModel) {
 		ShouldDownload: true,
 		Revision:       profile.Revision,
 		Sums:           profile.SHA256,
+		Dependencies:   profile.Dependencies,
 	}
 	return info, local
 }
@@ -120,12 +123,13 @@ const (
 )
 
 // WithRepository returns the model fetched from another repository. The
-// revision and sums belong to the repository they were pinned for, so they are
-// dropped.
+// revision, sums and dependencies belong to the repository they were pinned for, so they
+// are dropped.
 func (m LocalModel) WithRepository(name string) LocalModel {
 	m.Name = name
 	m.Revision = ""
 	m.Sums = nil
+	m.Dependencies = nil
 	return m
 }
 

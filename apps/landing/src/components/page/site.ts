@@ -3,7 +3,7 @@ export const DOCS = 'https://docs.numen.md'
 export const FORUM = 'https://forum.numen.md'
 export const GITHUB = 'https://github.com/jiva-studio/numen/'
 export const STUDIO = 'https://jiva.studio'
-export const DOWNLOAD = '#get'
+export const DOWNLOAD = '/#get'
 
 /** The address of the latest release, from the configured base or the public default. */
 export function getShelfBase(configured: string | undefined): string {

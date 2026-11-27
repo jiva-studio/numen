@@ -118,35 +118,42 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+const renderBook = (height: string) => () => ({
+  components: { Reader },
+  setup() {
+    const page = ref(BOOK_FIRST)
+    return {
+      height,
+      page,
+      pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
+      picture: (pageIndex: number) => renderPage(pageIndex),
+      highlightsOn: (pageIndex: number) => (pageIndex === BOOK_FIRST ? HIGHLIGHTS : []),
+      go: (targetPage: number) => {
+        page.value = Math.min(Math.max(targetPage, 0), BOOK_LEAVES - 1)
+      },
+    }
+  },
+  template: `
+    <div :style="{ height }">
+      <Reader
+        style="height: 100%"
+        :pages="pages"
+        :at="page"
+        :picture="picture"
+        :highlights="highlightsOn"
+        @go="go"
+      />
+    </div>
+  `,
+})
+
 /** The book open at the page the search landed on. */
 export const Reading: Story = {
-  render: () => ({
-    components: { Reader },
-    setup() {
-      const page = ref(BOOK_FIRST)
-      return {
-        page,
-        pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
-        picture: (pageIndex: number) => renderPage(pageIndex),
-        highlightsOn: (pageIndex: number) => (pageIndex === BOOK_FIRST ? HIGHLIGHTS : []),
-        go: (targetPage: number) => {
-          page.value = Math.min(Math.max(targetPage, 0), BOOK_LEAVES - 1)
-        },
-      }
-    },
-    template: `
-      <div style="height: 100vh">
-        <Reader
-          style="height: 100%"
-          :pages="pages"
-          :at="page"
-          :picture="picture"
-          :highlights="highlightsOn"
-          @go="go"
-        />
-      </div>
-    `,
-  }),
+  tags: ['screenshot'],
+  parameters: {
+    screenshot: [{ name: 'reader', app: 'docs' }],
+  },
+  render: renderBook('100vh'),
   play: async ({ canvasElement }) => {
     // Reading means the document is open at the page the search landed on,
     // with the passage it found highlighted on it.
@@ -156,4 +163,22 @@ export const Reading: Story = {
       await expect(page?.querySelectorAll('.reader__highlight').length).toBeGreaterThan(0)
     })
   },
+}
+
+/** The book in a tab of the window, beside the note that cites the page. */
+export const InTheWindow: Story = {
+  ...Reading,
+  tags: ['screenshot'],
+  parameters: {
+    frame: {
+      place: 'tab',
+      tab: { title: 'Boltzmann 1877', icon: 'book' },
+      otherTabs: [{ title: 'Shannon 1948', icon: 'book' }],
+      note: 'after',
+      share: 0.55,
+      selected: 'Reading/Boltzmann 1877.pdf',
+    },
+    screenshot: [{ name: 'reader' }],
+  },
+  render: renderBook('100%'),
 }

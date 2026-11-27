@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchsource"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/sourcehealth"
 )
 
@@ -41,7 +42,7 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	for name, value := range hostHealth.BuildVars(linkedToken) {
 		t.Setenv(name, value)
 	}
-	h := newHandler(newServer(nil, nil, hosttest.NewQueue().EnqueueWork), noPlaces, sourcehealth.New(health.NewClientFromEnv, console.Report))
+	h := newHandler(newServer(nil, engine.Fetch{}, hosttest.NewQueue().EnqueueWork), noPlaces, sourcehealth.New(health.NewClientFromEnv, console.Report))
 
 	_, describeErr := h.Describe(t.Context())
 	if !hasCode(describeErr, "failed_precondition") {
@@ -65,7 +66,7 @@ func hasCode(err error, code string) bool {
 
 func TestTheHandlerDescribesAndIndexesWithTheModelTheEnvironmentNames(t *testing.T) {
 	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
-	h := newHandler(newServer(nil, nil, hosttest.NewQueue().EnqueueWork), noPlaces, sourcehealth.New(noHealth, console.Report))
+	h := newHandler(newServer(nil, engine.Fetch{}, hosttest.NewQueue().EnqueueWork), noPlaces, sourcehealth.New(noHealth, console.Report))
 
 	described, err := h.Describe(t.Context())
 	if err != nil {
@@ -88,7 +89,7 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	place := &nearestPlace{matches: []host.NearestMatch{{ChunkID: "41", Similarity: 0.8}, {ChunkID: "7", Similarity: 0.5}}}
 	var vaults []string
-	h := newHandler(newServer(nil, nil, hosttest.NewQueue().EnqueueWork), func(vaultID string) (host.PlaceSearch, error) {
+	h := newHandler(newServer(nil, engine.Fetch{}, hosttest.NewQueue().EnqueueWork), func(vaultID string) (host.PlaceSearch, error) {
 		vaults = append(vaults, vaultID)
 		return place, nil
 	}, sourcehealth.New(noHealth, console.Report))

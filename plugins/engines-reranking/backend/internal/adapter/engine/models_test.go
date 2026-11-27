@@ -2,6 +2,7 @@ package engine
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"os"
 	"path/filepath"
@@ -127,10 +128,14 @@ func TestShippedProfilesScoreARelevantDocumentAboveAnUnrelatedOne(t *testing.T) 
 			if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(p.OnnxFile))); err != nil {
 				t.Skipf("%s holds no %s of %s", root, p.OnnxFile, p.ID)
 			}
-			fetch := func(_ context.Context, address, _ string) (string, error) {
-				_, name, _ := strings.Cut(address, "/resolve/"+p.Revision+"/")
-				return filepath.Join(dir, filepath.FromSlash(name)), nil
-			}
+			fetch := Fetch{Dependency: func(_ context.Context, id string) (string, error) {
+				for name, declared := range p.Dependencies {
+					if declared == id {
+						return filepath.Join(dir, filepath.FromSlash(name)), nil
+					}
+				}
+				return "", fmt.Errorf("%s declares no %s", p.ID, id)
+			}}
 			scorer, err := Open(t.Context(), onnx.NewLibrary(), p, fetch, hosttest.NewQueue().EnqueueWork)
 			if err != nil {
 				t.Fatalf("Open: %v", err)

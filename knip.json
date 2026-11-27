@@ -170,7 +170,7 @@
         "tools/*.mjs!"
       ],
       "project": [
-        "src/**/*.{ts,astro,vue}!",
+        "src/**/*.{ts,astro}!",
         "tools/**/*.mjs!"
       ]
     },

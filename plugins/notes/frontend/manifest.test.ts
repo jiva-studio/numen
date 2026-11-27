@@ -28,6 +28,7 @@ describe('the manifest', () => {
       {
         slot: 'titleBar.commands',
         command: 'app:note.create',
+        title: 'Create note',
         group: 'new',
         order: 10,
         when: 'window.isVaultOpen',

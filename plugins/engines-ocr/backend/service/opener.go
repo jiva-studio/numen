@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/engines"
 )
 
-func newOpener(library *onnx.Library, isMock func() bool, fetch engine.FetchModelFile) engines.Opener {
+func newOpener(library *onnx.Library, isMock func() bool, fetch engine.FetchDependency) engines.Opener {
 	return func(ctx context.Context, cfg settings.Config) (engines.Recognizer, error) {
 		if isMock() {
 			return engine.MockRecognizer{}, nil

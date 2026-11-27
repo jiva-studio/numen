@@ -159,7 +159,7 @@ func TestAnOpenWhoseTokenizerIsNotTheKindOfItsProfileFails(t *testing.T) {
 	info, local := model.NewConfig(profiles[0])
 	local.Dir = dir
 
-	emb, err := Open(t.Context(), onnx.NewLibrary(), info, local, nil, hosttest.NewQueue().EnqueueWork)
+	emb, err := Open(t.Context(), onnx.NewLibrary(), info, local, Fetch{}, hosttest.NewQueue().EnqueueWork)
 	if err == nil {
 		if closeErr := emb.Close(); closeErr != nil {
 			t.Errorf("Close() = %v", closeErr)

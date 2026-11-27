@@ -1,0 +1,38 @@
+---
+import { type CatalogPlugin, formatDate } from './catalog'
+
+interface Props {
+  plugin: CatalogPlugin
+}
+
+const { plugin } = Astro.props
+---
+
+{
+  plugin.changelog.length === 0 ? (
+    <p class="plugin-muted" data-i18n="plugin_changelog_none">
+      No released versions yet.
+    </p>
+  ) : (
+    <ol class="plugin-changelog">
+      {plugin.changelog.map((change) => (
+        <li>
+          <h3>
+            {change.version}
+            <time datetime={change.date}>{formatDate(change.date)}</time>
+          </h3>
+          <div>
+            {change.changes && (
+              <ul>
+                {change.changes.map((line) => (
+                  <li>{line}</li>
+                ))}
+              </ul>
+            )}
+            {change.notesHtml && <div class="plugin-prose" set:html={change.notesHtml} />}
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}

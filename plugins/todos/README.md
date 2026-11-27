@@ -4,6 +4,11 @@ Turns the task lists in your notes into one place to look at: write a task anywh
 
 <!-- more -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/tasks-due-dark.webp">
+  <img alt="The window with the tasks due opened from the title bar, grouped by Overdue, Today, Next 7 days and No date" src="screenshots/tasks-due-light.webp">
+</picture>
+
 ## Writing a Task
 
 A task is a list item with a checkbox, in any note:

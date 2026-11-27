@@ -13,7 +13,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-type dependencyHost struct{}
+type dependencyHost struct {
+	numenv1connect.UnimplementedHostDependencyServiceHandler
+}
 
 func (dependencyHost) FetchModelFile(_ context.Context, req *connect.Request[v1.FetchModelFileRequest]) (*connect.Response[v1.FetchModelFileResponse], error) {
 	if req.Header().Get("Authorization") != "Bearer test" || req.Msg.GetUrl() != "https://models.invalid/graph" {
