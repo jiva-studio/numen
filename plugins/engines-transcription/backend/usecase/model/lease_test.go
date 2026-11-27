@@ -15,7 +15,7 @@ type closeErrors struct{ errs []error }
 
 func (c *closeErrors) ReportCloseError(err error) { c.errs = append(c.errs, err) }
 
-// heldRecording is a recording that hears nothing.
+// heldRecording is a recording that receives no audio.
 type heldRecording struct{}
 
 func (heldRecording) GetDuration() int { return 0 }
