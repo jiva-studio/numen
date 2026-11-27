@@ -33,14 +33,26 @@ func TestDecodeCatalogEntry_ReturnsTheEntryEncodeCatalogEntryMade(t *testing.T) 
 	}
 }
 
-func TestEncodeCatalogEntry_ReturnsTheSameBytesForTheSameEntry(t *testing.T) {
+func TestCatalogCodec_KeepsTheBytesOfAStoredEntry(t *testing.T) {
 	t.Parallel()
+	entry := newCatalogEntry()
+	want := readHex(t,
+		"0803122009090909090909090909090909090909090909090909090909090909090909091a100101010101010101"+
+			"010101010101010120012a04626f6479322007070707070707070707070707070707070707070707070707070707"+
+			"070707073a4008080808080808080808080808080808080808080808080808080808080808080808080808080808"+
+			"080808080808080808080808080808080808080808080808")
 
-	one, errOne := syncprotocol.EncodeCatalogEntry(newCodecEntry())
-	other, errOther := syncprotocol.EncodeCatalogEntry(newCodecEntry())
+	got, err := syncprotocol.EncodeCatalogEntry(entry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, want) {
+		t.Errorf("stored entry = %x\nwant           %x", got, want)
+	}
 
-	if errOne != nil || errOther != nil || !bytes.Equal(one, other) {
-		t.Errorf("encodings differ: %x, %x, %v, %v", one, other, errOne, errOther)
+	decoded, err := syncprotocol.DecodeCatalogEntry(want)
+	if err != nil || !proto.Equal(decoded, entry) {
+		t.Errorf("DecodeCatalogEntry = %v, %v, want the entry", decoded, err)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
@@ -58,11 +59,30 @@ func wantShareLogEntryMessage(entry *syncv1.ShareLogEntry) []byte {
 func TestGetShareLogEntryMessage_ProducesTheFrozenLayout(t *testing.T) {
 	t.Parallel()
 	entry := newShareLogEntry()
+	entry.Kind = syncv1.ShareLogKind_SHARE_LOG_KIND_ROTATE
+	entry.VaultId, entry.SubjectRootSignKey = nil, nil
+	entry.Seals = []*syncv1.ShareSeal{
+		{ReaderRootSignKey: bytes.Repeat([]byte{8}, 32), Sealed: []byte("two")},
+		{ReaderRootSignKey: bytes.Repeat([]byte{7}, 32), Sealed: []byte("one")},
+	}
+	want := readHex(t,
+		"6e756d656e2d73796e632f73686172652d6c6f672f76310010010101010101010101010101010101010020020202"+
+			"02020202020202020202020202020202020202020202020202020202020020050505050505050505050505050505"+
+			"05050505050505050505050505050505050000000000000003000000020420c09e34fb3a1ae9d0deda8af4cc7d88"+
+			"352eff848e8c61e884f112f1c7fb8600b6207e24b666ca3cb7f00150e8d74dc42958df54f0ae8c834a41244281fb"+
+			"01caa340206cd6465450478b08e9822c6fff4653c0d5b21c8aae379f5f021f57e9ec51b479000000022008080808"+
+			"08080808080808080808080808080808080808080808080808080808203fc4ccfe745870e2c0d99f71f30ff0656c"+
+			"8dedd41cc1d7d3d376b0dbe685e2f320070707070707070707070707070707070707070707070707070707070707"+
+			"0707207692c3ad3540bb803c020b3aee66cd8887123234ea0c6e7143c0add73ff431ed")
 
 	got := syncprotocol.GetShareLogEntryMessage(entry)
 
-	if want := wantShareLogEntryMessage(entry); !bytes.Equal(got, want) {
+	if !bytes.Equal(got, want) {
 		t.Errorf("message = %x\nwant      %x", got, want)
+	}
+	id := syncprotocol.GetShareLogEntryID(entry)
+	if wantID := "dee0301fc809ba2a0c651dc9514a44a298359ecc302a691e291ed5ba12674054"; hex.EncodeToString(id[:]) != wantID {
+		t.Errorf("id = %x, want %s", id, wantID)
 	}
 }
 
@@ -163,17 +183,33 @@ func TestGetRevisionMessageWithMetaHash_IsTheRevisionMessageForTheHashOfItsMeta(
 func TestGetRevisionMessageWithMetaHash_VerifiesARevisionWhoseMetaWasWithheld(t *testing.T) {
 	t.Parallel()
 	full := newRevision()
-	metaHash := sha256.Sum256(full.GetEncMeta())
-	stripped := newRevision()
-	stripped.EncMeta = nil
+	full.ShareRootId = bytes.Repeat([]byte{9}, 16)
+	full.FileVersion = 0x0102030405060708
+	full.Epoch = 0x11223344
+	want := readHex(t,
+		"6e756d656e2d73796e632f7265766973696f6e2f7631001001010101010101010101010101010101100202020202"+
+			"02020202020202020202022003030303030303030303030303030303030303030303030303030303030303031004"+
+			"04040404040404040404040404040420050505050505050505050505050505050505050505050505050505050505"+
+			"050520ea3bd73e2b506e00527232b3ed743c066da83a8e3066f62a71e75eb9b4aa1db62006060606060606060606"+
+			"06060606060606060606060606060606060606060606100909090909090909090909090909090920070707070707"+
+			"07070707070707070707070707070707070707070707070707070000000000001000010203040506070811223344"+
+			"00")
+	const wantID = "970126b767024dbb6a3f0a04456f8c1999191a286eca685ce8bc764c98af45fc"
+	metaHash := [32]byte(readHex(t, "ea3bd73e2b506e00527232b3ed743c066da83a8e3066f62a71e75eb9b4aa1db6"))
 
-	got := syncprotocol.GetRevisionMessageWithMetaHash(stripped, metaHash)
-
-	if !bytes.Equal(got, syncprotocol.GetRevisionMessage(full)) {
-		t.Error("a stripped revision with the hash does not give the message the owner signed")
+	if got := syncprotocol.GetRevisionMessage(full); !bytes.Equal(got, want) {
+		t.Errorf("full message = %x\nwant           %x", got, want)
 	}
-	if id, want := syncprotocol.GetRevisionIDWithMetaHash(stripped, metaHash), syncprotocol.GetRevisionID(full); id != want {
-		t.Errorf("id = %x, want %x", id, want)
+	if id := syncprotocol.GetRevisionID(full); hex.EncodeToString(id[:]) != wantID {
+		t.Errorf("full id = %x, want %s", id, wantID)
+	}
+
+	full.EncMeta = nil
+	if got := syncprotocol.GetRevisionMessageWithMetaHash(full, metaHash); !bytes.Equal(got, want) {
+		t.Errorf("message with withheld metadata = %x\nwant                             %x", got, want)
+	}
+	if id := syncprotocol.GetRevisionIDWithMetaHash(full, metaHash); hex.EncodeToString(id[:]) != wantID {
+		t.Errorf("id with withheld metadata = %x, want %s", id, wantID)
 	}
 }
 
