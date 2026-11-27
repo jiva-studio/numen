@@ -1,7 +1,6 @@
 ---
 /** A window screenshot in light and dark, in a window frame with its title bar. */
 import type { ImageMetadata } from 'astro'
-import { getImage } from 'astro:assets'
 
 interface Props {
   app: string
@@ -14,9 +13,6 @@ interface Props {
 }
 
 const { app, title, light, dark, alt, class: className, eager = false } = Astro.props
-const shown = { format: 'webp' as const, quality: 84 }
-const lit = await getImage({ src: light, ...shown })
-const unlit = await getImage({ src: dark, ...shown })
 const width = light.width / 2
 const height = light.height / 2
 const loading = eager ? 'eager' : 'lazy'
@@ -28,6 +24,6 @@ const loading = eager ? 'eager' : 'lazy'
     <div class="window-titlebar__title"><strong>{app}</strong> — {title}</div>
     <span></span>
   </div>
-  <img class="img-light" src={lit.src} width={width} height={height} alt={alt} loading={loading} fetchpriority={eager ? 'high' : undefined} />
-  <img class="img-dark" src={unlit.src} width={width} height={height} alt={alt} loading={loading} fetchpriority={eager ? 'high' : undefined} />
+  <img class="img-light" src={light.src} width={width} height={height} alt={alt} loading={loading} fetchpriority={eager ? 'high' : undefined} />
+  <img class="img-dark" src={dark.src} width={width} height={height} alt={alt} loading={loading} fetchpriority={eager ? 'high' : undefined} />
 </figure>

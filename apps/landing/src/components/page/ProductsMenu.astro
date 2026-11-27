@@ -8,7 +8,7 @@ import LucideIcon from './LucideIcon.astro'
 import { ANNOUNCED_PRODUCTS, MENU_PLUGINS, PRODUCTS, type ProductId } from './products'
 
 interface Props {
-  current?: ProductId
+  current?: ProductId | undefined
 }
 
 const { current } = Astro.props

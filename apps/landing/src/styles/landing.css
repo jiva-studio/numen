@@ -634,12 +634,6 @@ a.mega-card:hover {
   padding: 0 1rem;
   border-radius: 0.4rem;
   font-size: 0.8rem;
-  box-shadow: none;
-}
-
-.button-small:hover {
-  transform: none;
-  box-shadow: none;
 }
 
 /* ---------------------------------- Hero ---------------------------------- */
