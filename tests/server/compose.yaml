@@ -62,7 +62,7 @@ services:
     entrypoint: ["/numen-sync-dev"]
     command:
       - payment
-      - -listen=0.0.0.0:8788
+      - -listen=0.0.0.0:${NUMEN_SYNC_PORT_PAYMENT:-8788}
       - -public-url=http://127.0.0.1:${NUMEN_SYNC_PORT_PAYMENT:-8788}
       - -control=0.0.0.0:8789
       - -webhook-target=http://127.0.0.1:8787/webhooks/creem
@@ -71,7 +71,7 @@ services:
     # accepts for a payment page over plain http, so no host name needs an entry in /etc/hosts.
     ports:
       - "127.0.0.1:${NUMEN_SYNC_PORT_SERVER:-8787}:8787"
-      - "127.0.0.1:${NUMEN_SYNC_PORT_PAYMENT:-8788}:8788"
+      - "127.0.0.1:${NUMEN_SYNC_PORT_PAYMENT:-8788}:${NUMEN_SYNC_PORT_PAYMENT:-8788}"
       - "127.0.0.1:${NUMEN_SYNC_PORT_CONTROL:-8789}:8789"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8789/checkouts"]
@@ -93,7 +93,7 @@ services:
       NUMEN_SYNC_BUCKET_ACCESS_KEY_ID: numendev
       NUMEN_SYNC_BUCKET_SECRET_ACCESS_KEY: numendevsecret
       NUMEN_SYNC_HEALTH_TOKEN: numen-dev-health-token
-      NUMEN_SYNC_PAYMENT_API_URL: http://127.0.0.1:8788
+      NUMEN_SYNC_PAYMENT_API_URL: http://127.0.0.1:${NUMEN_SYNC_PORT_PAYMENT:-8788}
       NUMEN_SYNC_PAYMENT_API_KEY: creem_test_standin
       NUMEN_SYNC_PAYMENT_WEBHOOK_SECRET: whsec_numen_dev_standin_secret
       NUMEN_SYNC_PAYMENT_MODE: test
