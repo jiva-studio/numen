@@ -43,6 +43,7 @@ await test('a change to the window, the support code or the lock file selects ev
     'go.work',
     '.github/workflows/desktop-e2e.yml',
     '.github/actions/setup-playwright/action.yml',
+    '.github/actions/cache-apt/archives.sh',
     '.github/actions/fetch-e2e-build/action.yml',
     '.github/scripts/hash-e2e-build.sh',
     '.github/scripts/run-e2e-build.sh',
