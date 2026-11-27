@@ -35,6 +35,7 @@ function translate(
     if (!text) continue
     if (selector === 'html') el.innerHTML = text
     else if (selector === 'aria') el.setAttribute('aria-label', text)
+    else if (selector === 'placeholder') el.setAttribute('placeholder', text)
     else el.textContent = text
   }
 }
@@ -52,6 +53,7 @@ function setLanguage(lang: string): void {
   translate('text', 'data-i18n', dict)
   translate('html', 'data-i18n-html', dict)
   translate('aria', 'data-i18n-aria', dict)
+  translate('placeholder', 'data-i18n-placeholder', dict)
   writeStorageValue('numen-lang', lang)
 }
 

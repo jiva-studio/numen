@@ -1,0 +1,34 @@
+{
+  "featured": [
+    "md.numen.engines.ocr",
+    "md.numen.views.agent.chat",
+    "md.numen.views.plex.graph",
+    "md.numen.engines.transcription",
+    "md.numen.readers.epub",
+    "md.numen.views.flashcards.studio",
+    "md.numen.tools.sync"
+  ],
+  "icons": {
+    "md.numen.agents.mcp.server": "server",
+    "md.numen.agents.tools.vault": "vault",
+    "md.numen.agents.tools.window": "app-window",
+    "md.numen.connections.llm": "brain-circuit",
+    "md.numen.engines.embeddings": "sparkles",
+    "md.numen.engines.ocr": "scan-text",
+    "md.numen.engines.reranking": "arrow-down-wide-narrow",
+    "md.numen.todos": "list-todo",
+    "md.numen.tools.index.stats": "database",
+    "md.numen.tools.plugin.stats": "activity",
+    "md.numen.tools.search.relevance": "sliders-horizontal",
+    "md.numen.tools.sync": "cloud",
+    "md.numen.tools.updater": "refresh-cw",
+    "md.numen.views.plex.headings.dropdown": "list-collapse",
+    "md.numen.views.plex.headings.inline": "heading-1",
+    "md.numen.views.plex.navigation": "arrow-left-right",
+    "md.numen.views.plex.related.names": "tags",
+    "md.numen.views.statusBar": "panel-bottom",
+    "md.numen.views.tasks": "loader",
+    "md.numen.views.titleBar": "panel-top"
+  },
+  "external": []
+}

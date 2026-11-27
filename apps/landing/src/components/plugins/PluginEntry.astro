@@ -1,0 +1,21 @@
+---
+/** One row of the catalog list: the plugin's icon, name and description, with its filter values. */
+import PluginIcon from './PluginIcon.astro'
+import { type CatalogPlugin, getPluginPath, getSearchText } from './catalog'
+
+interface Props {
+  plugin: CatalogPlugin
+}
+
+const { plugin } = Astro.props
+---
+
+<li data-plugin-entry data-search={getSearchText(plugin)} data-category={plugin.category}>
+  <a class="plugin-entry" href={getPluginPath(plugin.id)}>
+    <span class="plugin-tile plugin-tile--row"><PluginIcon name={plugin.icon} /></span>
+    <span class="plugin-entry__text">
+      <span class="plugin-entry__name">{plugin.name}</span>
+      <span class="plugin-entry__description">{plugin.description}</span>
+    </span>
+  </a>
+</li>

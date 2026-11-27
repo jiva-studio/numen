@@ -1,0 +1,93 @@
+name: Plugin registry
+
+# The registry the plugin catalog of the site is built from (docs/plugins/registry.md). Every
+# night it is collected from the plugins of the repository, the external sources of
+# tools/plugin-registry/registry.json and the quality files of the mutation and coverage workflows. When its
+# content differs from the published one, it is uploaded to plugins/registry/ of the downloads
+# zone and the site is rebuilt; otherwise nothing is written.
+on:
+  schedule:
+    - cron: '30 7 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: plugin-registry
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  collect:
+    name: Collect
+    environment: production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      # The changelog of an internal plugin is read from the history of its folder.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      # Go downloads the modules whose licenses tools/plugin-registry/licenses reads and runs
+      # tools/plugin-registry/gosource on the Go code of each plugin, and osv-scanner scans the
+      # dependencies of each plugin for known vulnerabilities.
+      - uses: ./.github/actions/setup-go
+        with:
+          go-version-file: tools/plugin-registry/licenses/go.mod
+          cache-key: plugin-registry
+
+      - name: Install osv-scanner
+        run: go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.7.1
+
+      - uses: ./.github/actions/install-lock-packages
+        with:
+          packages: "@bufbuild/protobuf @lucide/vue typescript"
+
+      - name: Read the published registry and the quality files
+        env:
+          BUNNY_STORAGE_ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+        run: |
+          set -euo pipefail
+          node tools/plugin-registry/storage.mjs get plugins/registry/latest.json "$RUNNER_TEMP/previous.json"
+          node tools/plugin-registry/storage.mjs get plugins/quality/mutation.json "$RUNNER_TEMP/quality/mutation.json"
+          node tools/plugin-registry/storage.mjs get plugins/quality/coverage.json "$RUNNER_TEMP/quality/coverage.json"
+
+      - id: collect
+        name: Collect the registry
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          node tools/plugin-registry/collect.mjs
+          --out "$RUNNER_TEMP/registry"
+          --previous "$RUNNER_TEMP/previous.json"
+          --quality "$RUNNER_TEMP/quality"
+
+      - name: Publish the registry
+        if: steps.collect.outputs.changed == 'true'
+        env:
+          BUNNY_STORAGE_ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          BUNNY_SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          node tools/plugin-registry/storage.mjs put "$RUNNER_TEMP/registry" plugins/registry
+          node tools/plugin-registry/storage.mjs purge plugins/registry/latest.json
+
+      # A run started with the workflow token still starts a workflow_dispatch run.
+      - name: Rebuild the site
+        if: steps.collect.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run site.yml --repo "$GITHUB_REPOSITORY" --ref main
