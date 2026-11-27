@@ -115,5 +115,5 @@ jobs:
           if [ -n "$open" ]; then
             gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "The plugin registry failed again: $RUN_URL"
           else
-            gh issue create --repo "$GITHUB_REPOSITORY" --title 'Plugin registry failed' --body "The plugin registry failed: $RUN_URL"
+            gh issue create --repo "$GITHUB_REPOSITORY" --type Bug --title 'Plugin registry failed' --body "The plugin registry failed: $RUN_URL"
           fi

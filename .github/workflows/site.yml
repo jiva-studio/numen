@@ -177,5 +177,5 @@ jobs:
           if [ -n "$open" ]; then
             gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "The site deploy failed again: $RUN_URL"
           else
-            gh issue create --repo "$GITHUB_REPOSITORY" --title 'Site deploy failed' --body "The site deploy failed: $RUN_URL"
+            gh issue create --repo "$GITHUB_REPOSITORY" --type Bug --title 'Site deploy failed' --body "The site deploy failed: $RUN_URL"
           fi
