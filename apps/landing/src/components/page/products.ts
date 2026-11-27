@@ -1,7 +1,4 @@
 /** The products the site has a page for, and those that are announced. */
-import flashcardsIcon from '../../../../../tools/build-icons/flashcards.svg?url'
-import syncIcon from '../../assets/sync.svg?url'
-
 export type ProductId = 'numen' | 'flashcards' | 'sync'
 
 type Product = {
@@ -37,7 +34,7 @@ export const PRODUCTS: readonly Product[] = [
     name: 'Numen Flashcards',
     sub: 'Flashcards',
     href: '/flashcards',
-    icon: flashcardsIcon,
+    icon: '/flashcards.svg',
     key: 'product_flashcards',
     text: 'Remember what is in your notes, a few minutes a day.',
   },
@@ -46,7 +43,7 @@ export const PRODUCTS: readonly Product[] = [
     name: 'Numen Sync',
     sub: 'Sync',
     href: '/sync',
-    icon: syncIcon,
+    icon: '/sync.svg',
     key: 'product_sync',
     text: 'Your vaults on every device, end-to-end encrypted.',
   },
