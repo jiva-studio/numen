@@ -21,7 +21,7 @@ const REMOVAL_DELAY_SECONDS = '1'
 const SETTLE_MS = 6_000
 /** A device the plugin added to the chain, or a revoked one, shows on the server within a few passes. */
 const DEVICE_LIST_TIMEOUT_MS = 15_000
-/** How long the lead computer has the server to itself before the held computers go on. */
+/** Delay before the deferred computer's sync backend resumes. */
 const HOLD_MS = 6_000
 
 /** A number and a unit, as a scenario writes an interval. */
@@ -108,7 +108,7 @@ export class SyncDriver {
   private stack: SyncStack | undefined
   private startedAt = new Date()
   private own: OwnStack | undefined
-  private held: Scenario | undefined
+  private deferredScenario: Scenario | undefined
   private readonly paused = new Map<Scenario, Set<number>>()
   private seeded: { readonly seed: IdentitySeed; readonly folder: string } | undefined
 
@@ -303,7 +303,7 @@ export class SyncDriver {
   async holdOther(other: Scenario): Promise<void> {
     this.requireOwn('cut the other computers off from the server')
     await this.pausePlugin(other)
-    this.held = other
+    this.deferredScenario = other
   }
 
   async setReachable(scenario: Scenario, isReachable: boolean): Promise<void> {
@@ -327,10 +327,10 @@ export class SyncDriver {
   async resume(): Promise<void> {
     const own = this.requireOwn('run the server again')
     await own.startServer()
-    if (this.held !== undefined) {
+    if (this.deferredScenario !== undefined) {
       await wait(HOLD_MS)
-      await this.resumePlugin(this.held)
-      this.held = undefined
+      await this.resumePlugin(this.deferredScenario)
+      this.deferredScenario = undefined
     }
   }
 
