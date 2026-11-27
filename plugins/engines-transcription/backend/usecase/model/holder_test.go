@@ -103,3 +103,53 @@ func TestAnOpenThatFailedForMissingFilesIsTriedAgainAtTheNextRequest(t *testing.
 		t.Errorf("GetRecognizer() after the files arrived = %v, %v", recognizer, err)
 	}
 }
+
+// openedModels opens a quietModel for each request and keeps the name each opened with and the closes of each.
+type openedModels struct {
+	names  []string
+	closed []*int
+}
+
+func (o *openedModels) open(_ context.Context, cfg settings.Config) (Model, error) {
+	o.names = append(o.names, cfg.Model.Name)
+	o.closed = append(o.closed, new(int))
+	return quietModel{closed: o.closed[len(o.closed)-1]}, nil
+}
+
+func TestAnotherModelInTheSettingsClosesTheOpenModelAndTheNextRequestOpensTheNewOne(t *testing.T) {
+	opened := &openedModels{}
+	models := NewHolder(settings.NewDefaultConfig(), opened.open)
+	models.UpdateSettings(map[string]string{"model": "parakeet-tdt-0.6b-v3-int8"})
+	if _, err := models.GetRecognizer(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	models.UpdateSettings(map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"})
+	if *opened.closed[0] != 1 {
+		t.Errorf("the parakeet-tdt-0.6b-v3-int8 model was closed %d times after the settings named another, want 1", *opened.closed[0])
+	}
+	if _, err := models.GetRecognizer(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(opened.names) != 2 || opened.names[1] != "parakeet-tdt-0.6b-v2-int8" {
+		t.Errorf("opened %v, want parakeet-tdt-0.6b-v3-int8 then parakeet-tdt-0.6b-v2-int8", opened.names)
+	}
+}
+
+func TestTheSameModelInTheSettingsKeepsTheOpenModel(t *testing.T) {
+	opened := &openedModels{}
+	models := NewHolder(settings.NewDefaultConfig(), opened.open)
+	models.UpdateSettings(map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"})
+	first, err := models.GetRecognizer(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	models.UpdateSettings(map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"})
+	second, err := models.GetRecognizer(t.Context())
+
+	if err != nil || second != first || len(opened.names) != 1 || *opened.closed[0] != 0 {
+		t.Errorf("after the same model: %v, %v, opened %v, closed %d; want the open model kept", second, err, opened.names, *opened.closed[0])
+	}
+}
