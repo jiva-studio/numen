@@ -39,11 +39,10 @@ export class OwnStack {
     return (await child).stdout
   }
 
-  private async sql(statements: string, database = DATABASE): Promise<string> {
+  private async runSQL(statements: string, database = DATABASE): Promise<string> {
     return this.compose(['exec', '-T', 'postgres', 'psql', '-U', 'postgres', '--set', 'ON_ERROR_STOP=1', '--quiet', '-At', '--dbname', database], statements)
   }
 
-  /** Waits until the server answers its own health check. */
   private async waitHealthy(): Promise<void> {
     const deadline = Date.now() + START_LIMIT_MS
     for (;;) {
@@ -65,7 +64,7 @@ export class OwnStack {
   /** Starts the server, and the bucket when a break stopped it, and waits until the server is healthy. */
   async startServer(): Promise<void> {
     try {
-      await this.stopWatching()
+      await this.stopTrafficWatch()
     } finally {
       await this.compose(['start', 'bucket', 'sync'])
       await this.waitHealthy()
@@ -79,31 +78,31 @@ export class OwnStack {
 
   /** Ends the sessions of every account of the stack. */
   async endSessions(): Promise<void> {
-    const accounts = (await this.sql('SELECT encode(id, \'hex\') FROM accounts')).split('\n').filter((line) => line !== '')
+    const accounts = (await this.runSQL('SELECT encode(id, \'hex\') FROM accounts')).split('\n').filter((line) => line !== '')
     for (const account of accounts) await this.compose(['exec', '-T', 'sync', '/numen-sync', 'admin', 'revoke-sessions', '--account', account])
   }
 
   /** Moves the end of the paid period of every account to the days ago; the grace the plan has stays after it. */
   async endSubscriptions(daysAgo: number): Promise<void> {
-    await this.sql(
+    await this.runSQL(
       `UPDATE entitlements SET period_end = now() - interval '${daysAgo} days', ends_at = now() - interval '${daysAgo} days' + grace_days * interval '1 day'`,
     )
   }
 
   /** Sets the bytes the cloud holds for every account. */
   async setUsage(gigabytes: number): Promise<void> {
-    await this.sql(
+    await this.runSQL(
       `INSERT INTO account_usage (account_id, used_bytes) SELECT id, ${Math.round(gigabytes * GIB)} FROM accounts ON CONFLICT (account_id) DO UPDATE SET used_bytes = EXCLUDED.used_bytes`,
     )
   }
 
   async addUsage(gigabytes: number): Promise<void> {
-    await this.sql(`UPDATE account_usage SET used_bytes = greatest(used_bytes + ${Math.round(gigabytes * GIB)}, 0)`)
+    await this.runSQL(`UPDATE account_usage SET used_bytes = greatest(used_bytes + ${Math.round(gigabytes * GIB)}, 0)`)
   }
 
   /** Ages every deletion record past its life and has the server prune them. */
   async forgetRemovals(): Promise<void> {
-    await this.sql("UPDATE files SET committed_at = now() - interval '91 days' WHERE deleted")
+    await this.runSQL("UPDATE files SET committed_at = now() - interval '91 days' WHERE deleted")
     await this.compose(['exec', '-T', 'sync', '/numen-sync', 'admin', 'prune-tombstones'])
   }
 
@@ -113,17 +112,16 @@ export class OwnStack {
 
   /** Replaces the database with the backup, as an operator does, and tells the computers by a restore epoch when the step says so. */
   async restoreBackup(isTold: boolean): Promise<void> {
-    await this.stopWatching()
+    await this.stopTrafficWatch()
     await this.compose(['stop', '--timeout', '2', 'sync'])
-    await this.sql(`DROP DATABASE IF EXISTS ${DATABASE} WITH (FORCE)`, 'postgres')
-    await this.sql(`CREATE DATABASE ${DATABASE} OWNER ${OWNER}`, 'postgres')
+    await this.runSQL(`DROP DATABASE IF EXISTS ${DATABASE} WITH (FORCE)`, 'postgres')
+    await this.runSQL(`CREATE DATABASE ${DATABASE} OWNER ${OWNER}`, 'postgres')
     await this.compose(['exec', '-T', 'postgres', 'pg_restore', '-U', 'postgres', '--exit-on-error', '--dbname', DATABASE, DUMP])
     await this.compose(['start', 'sync'])
     await this.waitHealthy()
     if (isTold) await this.compose(['exec', '-T', 'sync', '/numen-sync', 'admin', 'issue-restore-epoch'])
   }
 
-  /** Reads the bytes the bucket container received and sent on its network. */
   private async readTraffic(signal?: AbortSignal): Promise<Traffic> {
     const text = await this.compose(['exec', '-T', 'bucket', 'cat', '/proc/net/dev'], undefined, { signal })
     const line = text.split('\n').find((one) => one.trim().startsWith('eth0:'))
@@ -138,7 +136,7 @@ export class OwnStack {
 
   /** Stops the bucket once the bytes of a direction passed the limit, as seen from the bucket: received is what went up, sent what went down. */
   async breakAfter(direction: 'received' | 'sent', bytes: number): Promise<void> {
-    await this.stopWatching()
+    await this.stopTrafficWatch()
     const before = await this.readTraffic()
     const controller = new AbortController()
     const result = this.watchTraffic(direction, before[direction] + bytes, controller.signal).catch(
@@ -161,7 +159,7 @@ export class OwnStack {
     }
   }
 
-  private async stopWatching(): Promise<void> {
+  private async stopTrafficWatch(): Promise<void> {
     const watcher = this.watcher
     if (watcher === undefined) return
     this.watcher = undefined
