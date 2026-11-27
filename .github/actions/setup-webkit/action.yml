@@ -8,9 +8,9 @@ runs:
       with:
         key: webkit-${{ hashFiles('.github/actions/setup-webkit/action.yml') }}
 
-    # The restored .deb files are the packages the install needs, so dpkg installs them without
-    # asking the mirrors, whose newer versions have replaced the ones the cache holds. A failed
-    # attempt, or a miss, takes the apt path, which refreshes the package lists.
+    # The restored .deb files are the packages the install needs, so apt installs them without
+    # asking the mirrors, whose newer versions have replaced the ones the cache holds. A set that
+    # does not install together, or a miss, takes the apt path, which refreshes the package lists.
     - name: Install WebKit & GTK dependencies
       shell: bash
       env:
@@ -18,12 +18,12 @@ runs:
         RESTORED: ${{ steps.apt.outputs.cache-matched-key != '' }}
       run: |
         sudo rm -f /var/lib/man-db/auto-update
-        if [ "$RESTORED" = true ] && sudo dpkg --force-unsafe-io --refuse-downgrade -i ~/.cache/apt-archives/*.deb; then
-          exit 0
+        if [ "$RESTORED" != true ] || ! .github/actions/cache-apt/archives.sh install; then
+          .github/scripts/apt-retry.sh --update sudo apt-get install -y --no-install-recommends \
+            -o Dpkg::Options::=--force-unsafe-io \
+            libgtk-4-dev libwebkitgtk-6.0-dev
         fi
-        .github/scripts/apt-retry.sh --update sudo apt-get install -y --no-install-recommends \
-          -o Dpkg::Options::=--force-unsafe-io \
-          libgtk-4-dev libwebkitgtk-6.0-dev
+        .github/actions/cache-apt/archives.sh prune
 
     # A pull request's cache is visible only to that pull request; main's to all.
     - if: github.ref == 'refs/heads/main' && steps.apt.outputs.cache-hit != 'true'
