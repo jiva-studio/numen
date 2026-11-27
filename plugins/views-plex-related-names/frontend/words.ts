@@ -21,13 +21,18 @@ export const WORDS = {
     direction?: LinkDirection,
   ): string => {
     switch (relation) {
+      // Stryker restore next-line StringLiteral
       case 'parent':
         return `${title}, parent of ${owner}`
+      // Stryker restore next-line StringLiteral
       case 'child':
         return `${title}, child of ${owner}`
+      // Stryker restore next-line StringLiteral
       case 'jump':
         return `${title}, jump from ${owner}`
+      // Stryker restore next-line StringLiteral
       case 'reference':
+        // Stryker restore next-line StringLiteral
         return `${title}, ${REFERENCE_LABELS[direction ?? 'both']} ${owner}`
     }
   },

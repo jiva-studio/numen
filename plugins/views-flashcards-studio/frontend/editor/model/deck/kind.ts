@@ -4,7 +4,7 @@
 import { Layers } from '@lucide/vue'
 import type { Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
-import { getMarkOf } from '../../lib/buffer/words'
+import { getMarkOf } from '../../lib/buffer/state'
 import type { Cards } from '../../../types'
 import type { ConflictWords } from '../../lib/buffer/types'
 import type { DeckTabState } from './tabState'

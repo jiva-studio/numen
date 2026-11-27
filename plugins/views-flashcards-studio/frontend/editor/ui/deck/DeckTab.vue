@@ -9,7 +9,7 @@ import {
   type InsertionPoint,
 } from '../../../lib/cards'
 import { DeckEditor } from '../cards/deck-editor'
-import { parseFileConflict } from '../../lib/buffer/words'
+import { parseFileConflict } from '../../lib/buffer/state'
 import FileConflictPrompt from '../FileConflictPrompt.vue'
 import DeckScheduleBar from './DeckScheduleBar.vue'
 import { WORDS as words } from '../../../words'
