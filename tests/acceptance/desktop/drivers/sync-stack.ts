@@ -7,6 +7,7 @@ import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
+import { test } from 'playwright/test'
 
 export const ENV_URL = 'NUMEN_SYNC_TEST_URL'
 export const ENV_ROOT_KEY = 'NUMEN_SYNC_TEST_ROOT_KEY'
@@ -46,9 +47,13 @@ const trimAddress = (text: string | undefined): string | undefined => (text === 
 /** Whether a run without the stack fails: the job that runs the stack says so, and a job without it, such as a pull request from a fork, skips. */
 export const isStackRequired = (env: Environment = process.env): boolean => env[ENV_REQUIRED] === '1'
 
+/** The stack the scenario runs against; without one the scenario skips, and fails when the run requires the stack. */
 export const requireStack = (): SyncStack => {
   const stack = readStack()
-  if (stack === undefined) throw new Error(NO_STACK_MESSAGE)
+  if (stack === undefined) {
+    test.skip(!isStackRequired(), NO_STACK_MESSAGE)
+    throw new Error(NO_STACK_MESSAGE)
+  }
   return stack
 }
 
