@@ -31,9 +31,9 @@ runs:
       with:
         key: playwright-${{ inputs.browsers }}-${{ inputs.packages }}-${{ hashFiles('package-lock.json') }}
 
-    # The restored .deb files are the packages the install needs, so dpkg installs them without
-    # asking the mirrors, whose newer versions have replaced the ones the cache holds. A failed
-    # attempt, or a miss, takes the apt path, which refreshes the package lists.
+    # The restored .deb files are the packages the install needs, so apt installs them without
+    # asking the mirrors, whose newer versions have replaced the ones the cache holds. A set that
+    # does not install together, or a miss, takes the apt path, which refreshes the package lists.
     - name: Install browser system dependencies
       shell: bash
       env:
@@ -43,7 +43,8 @@ runs:
         RESTORED: ${{ steps.apt.outputs.cache-matched-key != '' }}
       run: |
         sudo rm -f /var/lib/man-db/auto-update
-        if [ "$RESTORED" = true ] && sudo dpkg --force-unsafe-io --refuse-downgrade -i ~/.cache/apt-archives/*.deb; then
+        installed=false
+        if [ "$RESTORED" = true ] && .github/actions/cache-apt/archives.sh install; then
           installed=true
           for pkg in $PACKAGES; do
             if [ "$(dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null)" != "install ok installed" ]; then
@@ -51,16 +52,16 @@ runs:
               break
             fi
           done
-          if [ "$installed" = true ]; then
-            exit 0
+        fi
+        if [ "$installed" = false ]; then
+          .github/scripts/apt-retry.sh npx playwright install-deps $BROWSERS
+          if [ -n "$PACKAGES" ]; then
+            .github/scripts/apt-retry.sh sudo apt-get install -y --no-install-recommends \
+              -o Dpkg::Options::=--force-unsafe-io \
+              $PACKAGES
           fi
         fi
-        .github/scripts/apt-retry.sh npx playwright install-deps $BROWSERS
-        if [ -n "$PACKAGES" ]; then
-          .github/scripts/apt-retry.sh sudo apt-get install -y --no-install-recommends \
-            -o Dpkg::Options::=--force-unsafe-io \
-            $PACKAGES
-        fi
+        .github/actions/cache-apt/archives.sh prune
 
     # A pull request's cache is visible only to that pull request; main's to all.
     - if: github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
