@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Brings the test stack of the real sync server up and down, and prints the settings the tests read.
-# usage: stack.sh up | down [PROJECT] | env | fresh PROJECT [COMPOSE_FILE]
+# Usage: stack.sh {up|down|env} [PROJECT] | stack.sh fresh PROJECT [COMPOSE_FILE]
 # The four published ports are NUMEN_SYNC_PORT_BASE (default 8787) and the next three: the server, the payment page, the payment control, the bucket. A stack beside another takes a different project name and base.
 # fresh drops the containers and volumes of the named project, then brings it up again from COMPOSE_FILE (default: compose.yaml here) and prints its settings.
 # The real server cannot delete uploaded files, so a stack that ran a full test run holds gigabytes in its bucket; fresh empties it.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
-project=numen-sync-test
+project=${2:-numen-sync-test}
 file=$here/compose.yaml
 
 # The newest images of the private packages, unless the environment names others.
@@ -42,7 +42,6 @@ case "${1:-}" in
     compose up --detach --wait --quiet-pull
     ;;
   down)
-    project=${2:-$project}
     compose down --volumes
     ;;
   env)
@@ -53,7 +52,6 @@ case "${1:-}" in
       echo "fresh needs the project name: stack.sh fresh PROJECT [COMPOSE_FILE]" >&2
       exit 2
     fi
-    project=$2
     file=${3:-$file}
     pull_images
     echo "removing the containers and volumes of the project $project:" >&2
@@ -64,7 +62,7 @@ case "${1:-}" in
     print_env
     ;;
   *)
-    echo "usage: stack.sh up | down [PROJECT] | env | fresh PROJECT [COMPOSE_FILE]" >&2
+    echo "usage: stack.sh {up|down|env} [PROJECT] | stack.sh fresh PROJECT [COMPOSE_FILE]" >&2
     exit 2
     ;;
 esac
