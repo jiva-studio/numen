@@ -154,14 +154,25 @@ func TestGetShareLogEntryMessage_KeepsTheOrderOfTheSeals(t *testing.T) {
 	}
 }
 
-func TestGetShareLogEntryID_IsTheSHA256OfTheMessage(t *testing.T) {
+func TestGetShareLogEntryMessage_ProducesTheFrozenLayoutForAnAddReader(t *testing.T) {
 	t.Parallel()
 	entry := newShareLogEntry()
+	want := readHex(t,
+		"6e756d656e2d73796e632f73686172652d6c6f672f76310010010101010101010101010101010101011003030303"+
+			"03030303030303030303030320020202020202020202020202020202020202020202020202020202020202020220"+
+			"04040404040404040404040404040404040404040404040404040404040404042005050505050505050505050505"+
+			"050505050505050505050505050505050505050000000000000003000000020220c09e34fb3a1ae9d0deda8af4cc"+
+			"7d88352eff848e8c61e884f112f1c7fb8600b6207e24b666ca3cb7f00150e8d74dc42958df54f0ae8c834a412442"+
+			"81fb01caa340206cd6465450478b08e9822c6fff4653c0d5b21c8aae379f5f021f57e9ec51b47900000001200404"+
+			"0404040404040404040404040404040404040404040404040404040404042032d8542e1cfe183be6459d2fd0eeb3"+
+			"e36d38209908a6b218393b31d015247cf4")
 
-	got := syncprotocol.GetShareLogEntryID(entry)
-
-	if want := sha256.Sum256(wantShareLogEntryMessage(entry)); got != want {
-		t.Errorf("id = %x, want %x", got, want)
+	if got := syncprotocol.GetShareLogEntryMessage(entry); !bytes.Equal(got, want) {
+		t.Errorf("message = %x\nwant      %x", got, want)
+	}
+	id := syncprotocol.GetShareLogEntryID(entry)
+	if wantID := "e82de1311c32d1807d9d46cfea9b3426e7f37457dff350130b5ada6c9849f15b"; hex.EncodeToString(id[:]) != wantID {
+		t.Errorf("id = %x, want %s", id, wantID)
 	}
 }
 
