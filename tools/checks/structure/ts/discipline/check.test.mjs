@@ -67,6 +67,10 @@ describe("the Stryker disable comments", () => {
     assert.equal(find("a.ts", text, 0).length, 1);
     assert.deepEqual(find("a.test.ts", text, 0), []);
   });
+  it("fails shipped code above the recorded Stryker ceiling", () => {
+    const text = ("// Stryker disable StringLiteral: label of the interface\nconst value = 'x';\n").repeat(215);
+    assert.equal(find("a.ts", text).length, 1);
+  });
 });
 
 describe("the suppressions", () => {
