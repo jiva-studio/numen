@@ -156,13 +156,11 @@ test("a shared library that reaches the plugin SDK is reported", () => {
   assert.match(found[1].symbol, /family libs\/shared\/tokenizer reaches libs\/plugin\/sdk-go/);
 });
 
-test("every shared library row reaches only shared libraries", () => {
+test("every shared library row is a leaf", () => {
   const shared = Object.entries(LIBRARY_DEPENDENCIES).filter(([family]) => family.startsWith("libs/shared/"));
   assert.ok(shared.length > 0);
   for (const [family, allowed] of shared) {
-    for (const reached of allowed) {
-      assert.ok(reached.startsWith("libs/shared/"), `${family} may reach ${reached}`);
-    }
+    assert.deepEqual(allowed, [], `${family} may reach a library of this repository`);
   }
 });
 

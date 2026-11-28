@@ -1,5 +1,4 @@
 /** What the key file store reports when the core refuses a call or a read fails. */
-// Stryker disable StringLiteral: interface copy
 import type { KeyFileFailure } from './lib/types'
 
 const FAILURE_TEXTS: Readonly<Record<KeyFileFailure['error'], string>> = {
