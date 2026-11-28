@@ -363,4 +363,5 @@ jobs:
       - name: Summarize the test jobs
         env:
           RESULTS: ${{ toJSON(needs) }}
-        run: echo "$RESULTS" | jq -r 'to_entries[] | "(.key): (.value.result)"' >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"' >> "$GITHUB_STEP_SUMMARY"
