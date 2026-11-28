@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/identityfile"
@@ -38,7 +39,7 @@ func getDebugIdentityFolder() string {
 		return ""
 	}
 	home, err = filepath.EvalSymlinks(home)
-	if err != nil {
+	if err != nil || filepath.Base(home) != "home" {
 		return ""
 	}
 	profile := filepath.Dir(home)
@@ -51,7 +52,7 @@ func getDebugIdentityFolder() string {
 		return ""
 	}
 	path, err = filepath.EvalSymlinks(path)
-	if err != nil || !isWithinDebugProfile(profile, path) {
+	if err != nil || path != getDebugSettingsPath(home) {
 		return ""
 	}
 	if settings.ReadCredentialsFile(path) != settings.CredentialsFilePlaintext {
@@ -62,6 +63,14 @@ func getDebugIdentityFolder() string {
 		return ""
 	}
 	return folder
+}
+
+func getDebugSettingsPath(home string) string {
+	config := filepath.Join(filepath.Dir(home), "config")
+	if runtime.GOOS == "darwin" {
+		config = filepath.Join(home, "Library", "Application Support")
+	}
+	return filepath.Join(config, "numen", "numen.json")
 }
 
 func isWithinDebugProfile(profile, path string) bool {
