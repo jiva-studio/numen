@@ -1,6 +1,9 @@
 name: Reports
 
 on:
+  pull_request:
+    branches: [integ/final]
+    types: [opened, synchronize, reopened]
   push:
     branches: [main]
   workflow_dispatch:
@@ -76,7 +79,7 @@ permissions:
 jobs:
   build:
     name: Build
-    if: ${{ github.event_name == 'push' || inputs.environments != 'live' }}
+    if: ${{ (github.event_name == 'pull_request' && github.head_ref == 'test/acceptance-nightly-groups' && github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'jiva-studio/numen' && github.actor != 'dependabot[bot]') || (github.event_name != 'pull_request' && (github.event_name == 'push' || inputs.environments != 'live')) }}
     uses: ./.github/workflows/desktop-e2e-build.yml
     with:
       scope: all
@@ -121,7 +124,7 @@ jobs:
   e2e:
     name: End-to-End
     needs: [build]
-    if: inputs.specs
+    if: inputs.specs || github.event_name == 'pull_request'
     uses: ./.github/workflows/desktop-e2e.yml
     with:
       scope: specs
@@ -347,7 +350,7 @@ jobs:
   summary:
     name: Result
     needs: [acceptance, e2e, live-sync, stand]
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.head_ref == 'test/acceptance-nightly-groups' && github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'jiva-studio/numen' && github.actor != 'dependabot[bot]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
