@@ -1,0 +1,129 @@
+name: Stand
+
+# The stand scenarios control an isolated server, payment service, bucket and database.
+on:
+  workflow_call:
+    inputs:
+      artifact-name:
+        description: desktop build artifact in the same run
+        type: string
+        required: true
+      features:
+        description: feature files under features/, separated by spaces
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  stand:
+    name: Stand Tests
+    if: ${{ github.repository == 'jiva-studio/numen' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      NUMEN_SYNC_PORT_BASE: "18787"
+      NUMEN_SYNC_OWN_STACK: numen-sync-own
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-go
+        with:
+          go-version-file: plugins/tools-sync/go.mod
+          cache-key: stand
+
+      - name: Log in to the registry
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin <<< "$TOKEN"; then
+            echo "::error title=No access to the server images::The login to ghcr.io was denied. Add the repository jiva-studio/numen with Read in the package settings of both numen-sync and numen-sync-devtools (Packages, package settings, Manage Actions access)."
+            exit 1
+          fi
+
+      - id: go-tests
+        name: Run the Go tests that control the stand data
+        continue-on-error: true
+        env:
+          NUMEN_SYNC_OWN_STACK_REQUIRED: "1"
+          NUMEN_SYNC_TEST_REQUIRED: "1"
+        run: |
+          settings=$(bash tests/server/stack.sh fresh "$NUMEN_SYNC_OWN_STACK")
+          eval "$settings"
+          .github/scripts/live-go-tests.sh "Go tests of plugins/tools-sync against a stack of their own" -p 1 -count=1 -timeout 10m             ./backend/internal/adapter/cloud/... ./backend/usecase/pull/... ./backend/usecase/restore/... ./backend/usecase/share/... ./backend/usecase/syncvault/...
+
+      - name: Reset the stand for acceptance
+        run: bash tests/server/stack.sh fresh "$NUMEN_SYNC_OWN_STACK" > /dev/null
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      # The GTK and WebKitGTK runtime libraries the window links against, and the engine.
+      - uses: ./.github/actions/setup-playwright
+        with:
+          browsers: chromium
+          packages: libgtk-4-1 libwebkitgtk-6.0-4
+
+      - uses: ./.github/actions/fetch-e2e-build
+        with:
+          artifact-name: ${{ inputs.artifact-name }}
+
+      - name: Unpack the build
+        run: |
+          tar -xf "$RUNNER_TEMP/e2e-build.tar"
+          if ldd apps/desktop/numen-debug | grep 'not found'; then exit 1; fi
+
+      - name: Run stand acceptance scenarios
+        working-directory: tests/acceptance/desktop
+        env:
+          FEATURES: ${{ inputs.features }}
+          NUMEN_SYNC_TEST_REQUIRED: "1"
+          PLAYWRIGHT_VIDEO: "1"
+          PWTEST_BLOB_DO_NOT_REMOVE: "1"
+          PLAYWRIGHT_BLOB_OUTPUT_DIR: ${{ github.workspace }}/tests/acceptance/desktop/acceptance-blobs
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: run-linux-stand.zip
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/acceptance-stand.json
+        run: bash ../../../.github/scripts/run-real-acceptance.sh acceptance:stand
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: acceptance-blobs-stand-linux
+          path: tests/acceptance/desktop/acceptance-blobs/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: acceptance-results-stand-linux
+          path: ${{ runner.temp }}/acceptance-stand.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Check the Go test result
+        if: ${{ !cancelled() && steps.go-tests.outcome == 'failure' }}
+        run: exit 1
+
+      # Print only RPC lines from disposable test data on a public runner.
+      - name: Print the RPC lines of the server log
+        if: failure()
+        run: |
+          container=$(docker ps -aq --filter "label=com.docker.compose.project="$NUMEN_SYNC_OWN_STACK"" --filter label=com.docker.compose.service=sync)
+          if [ -n "$container" ]; then
+            docker logs --tail 5000 "$container" 2>&1 | grep -iE '\bRPC\b' | tail -n 200 || true
+          fi
+
+      - name: Stop the server
+        if: always()
+        run: bash tests/server/stack.sh down "$NUMEN_SYNC_OWN_STACK"

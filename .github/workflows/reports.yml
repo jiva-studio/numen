@@ -18,9 +18,9 @@ on:
         type: string
         default: chromium webkit
       environments:
-        description: 'linux (GitHub runners), live (virtual machines), or both separated by a space'
+        description: 'linux for GitHub runners or live for a manual macOS run'
         type: string
-        default: linux live
+        default: linux
       live-guests:
         description: 'JSON list of the guests the live scenarios run in: the name of the system, the label of its runners and the artifact of its build'
         type: string
@@ -42,20 +42,29 @@ on:
         default: chromium webkit
       environments:
         type: string
-        default: linux live
+        default: linux
       live-guests:
         type: string
         default: '[{"os":"macOS","runner":"numen-macos-26","build":"e2e-build-darwin-arm64"}]'
       publish:
         type: boolean
         default: false
+    secrets:
+      NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY:
+        required: false
     outputs:
       linux:
         description: result of the acceptance run on the GitHub runners
         value: ${{ jobs.summary.outputs.linux }}
+      e2e:
+        description: result of the end-to-end specs
+        value: ${{ jobs.summary.outputs.e2e }}
       live:
-        description: result of the live runs in the virtual machines
+        description: result of shared real-server acceptance
         value: ${{ jobs.summary.outputs.live }}
+      stand:
+        description: result of acceptance on the isolated stand
+        value: ${{ jobs.summary.outputs.stand }}
 
 env:
   ENGINES: ${{ inputs.engines || 'chromium webkit' }}
@@ -65,41 +74,63 @@ permissions:
   contents: read
 
 jobs:
+  build:
+    name: Build
+    if: ${{ github.event_name == 'push' || inputs.environments != 'live' }}
+    uses: ./.github/workflows/desktop-e2e-build.yml
+    with:
+      scope: all
+      engines: ${{ inputs.engines || 'chromium webkit' }}
+
   acceptance:
     name: Acceptance
-    if: ${{ github.event_name == 'push' || contains(inputs.environments, 'linux') }}
-    uses: ./.github/workflows/desktop-e2e.yml
+    needs: [build]
+    uses: ./.github/workflows/desktop-acceptance.yml
     with:
-      scope: acceptance
+      artifact-name: ${{ needs.build.outputs.artifact-name }}
       engines: ${{ inputs.engines || 'chromium webkit' }}
       features: ${{ inputs.features }}
       video: true
 
-  # The scenarios and Go tests that need the real sync server, from the newest images (live.yml). Only at night and by
-  # hand: a push to main does not start them. They run after the acceptance job, which saves the build they restore.
-  # The blobs of their scenarios, with the videos, join the others in the report.
   live-sync:
     name: Real server
-    needs: [acceptance]
-    if: ${{ !cancelled() && github.event_name != 'push' && contains(inputs.environments, 'linux') }}
+    needs: [build]
+    if: ${{ github.event_name != 'push' && github.repository == 'jiva-studio/numen' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     uses: ./.github/workflows/live.yml
     permissions:
       contents: read
       packages: read
     with:
+      artifact-name: ${{ needs.build.outputs.artifact-name }}
+      features: ${{ inputs.features }}
+    secrets:
+      NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY: ${{ secrets.NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY }}
+
+  stand:
+    name: Isolated stand
+    needs: [build]
+    if: ${{ github.event_name != 'push' && github.repository == 'jiva-studio/numen' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    uses: ./.github/workflows/stand.yml
+    permissions:
+      contents: read
+      packages: read
+    with:
+      artifact-name: ${{ needs.build.outputs.artifact-name }}
       features: ${{ inputs.features }}
 
   e2e:
     name: End-to-End
-    if: ${{ inputs.specs && contains(inputs.environments, 'linux') }}
+    needs: [build]
+    if: inputs.specs
     uses: ./.github/workflows/desktop-e2e.yml
     with:
       scope: specs
+      artifact-name: ${{ needs.build.outputs.artifact-name }}
       engines: ${{ inputs.engines || 'chromium webkit' }}
 
   build-macos:
     name: Build / macOS
-    if: ${{ github.event_name != 'push' && contains(inputs.environments, 'live') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.environments == 'live' }}
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -167,7 +198,7 @@ jobs:
   acceptance-live:
     name: Acceptance / Live / ${{ matrix.os }}
     needs: [build-macos]
-    if: ${{ github.event_name != 'push' && contains(inputs.environments, 'live') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.environments == 'live' }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -215,10 +246,12 @@ jobs:
 
   report:
     name: Report
-    needs: [acceptance, acceptance-live, live-sync]
-    if: ${{ !cancelled() && (needs.acceptance.result == 'success' || needs.acceptance-live.result == 'success' || needs.live-sync.result == 'success') }}
+    needs: [acceptance, acceptance-live, live-sync, stand]
+    if: ${{ !cancelled() && (needs.acceptance.result != 'skipped' || needs.acceptance-live.result != 'skipped' || needs.live-sync.result != 'skipped' || needs.stand.result != 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      available: ${{ steps.merge.outputs.available }}
     permissions:
       contents: read
       actions: read
@@ -242,13 +275,22 @@ jobs:
           merge-multiple: true
           path: tests/acceptance/desktop/acceptance-blobs
 
-      - name: Merge the runs into the report
+      - id: merge
+        name: Merge the runs into the report
         working-directory: tests/acceptance/desktop
         run: |
+          shopt -s nullglob
+          blobs=(acceptance-blobs/*.zip)
+          if [ "${#blobs[@]}" -eq 0 ]; then
+            echo "No acceptance reports were uploaded." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           npm run acceptance:gen
           npm run acceptance:merge
+          echo "available=true" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.merge.outputs.available == 'true'
         with:
           name: acceptance-report
           path: tests/acceptance/desktop/acceptance-report/
@@ -260,7 +302,7 @@ jobs:
     concurrency:
       group: pages
       cancel-in-progress: false
-    if: ${{ !cancelled() && needs.report.result == 'success' && inputs.publish }}
+    if: ${{ !cancelled() && needs.report.result == 'success' && needs.report.outputs.available == 'true' && inputs.publish && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -304,25 +346,18 @@ jobs:
 
   summary:
     name: Result
-    needs: [acceptance, e2e, build-macos, acceptance-live]
-    if: ${{ always() }}
+    needs: [acceptance, e2e, live-sync, stand]
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
     outputs:
-      linux: ${{ steps.results.outputs.linux }}
-      live: ${{ steps.results.outputs.live }}
+      linux: ${{ needs.acceptance.result }}
+      e2e: ${{ needs.e2e.result }}
+      live: ${{ needs.live-sync.result }}
+      stand: ${{ needs.stand.result }}
     steps:
-      - id: results
+      - name: Summarize the test jobs
         env:
-          ACCEPTANCE: ${{ needs.acceptance.result }}
-          SPECS: ${{ needs.e2e.result }}
-          LIVE: ${{ needs.acceptance-live.result }}
-          BUILD: ${{ needs.build-macos.result }}
-        run: |
-          linux=$ACCEPTANCE
-          if [ "$SPECS" != skipped ] && [ "$SPECS" != success ]; then linux=$SPECS; fi
-          echo "linux=$linux" >> "$GITHUB_OUTPUT"
-          live=$LIVE
-          if [ "$LIVE" = skipped ] && { [ "$BUILD" = failure ] || [ "$BUILD" = cancelled ]; }; then live=failure; fi
-          echo "live=$live" >> "$GITHUB_OUTPUT"
+          RESULTS: ${{ toJSON(needs) }}
+        run: echo "$RESULTS" | jq -r 'to_entries[] | "(.key): (.value.result)"' >> "$GITHUB_STEP_SUMMARY"
