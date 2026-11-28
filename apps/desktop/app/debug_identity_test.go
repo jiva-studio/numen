@@ -59,6 +59,31 @@ func TestDebugHTTPKeepsMemoryStoresWithoutAPlaintextLoopbackProfile(t *testing.T
 	}
 }
 
+func TestDebugHTTPPersistsAnIdentityCreatedInAnEmptyPlaintextProfile(t *testing.T) {
+	folder := makeDebugProfile(t, settings.CredentialsFilePlaintext)
+	for _, name := range []string{"credentials", "identity"} {
+		if err := os.RemoveAll(filepath.Join(folder, name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	opts := DebugOptions{HTTPAddr: "127.0.0.1:0"}
+	res := container.NewResources()
+	if err := opts.apply(func() {}, res); err != nil {
+		t.Fatal(err)
+	}
+	if err := res.Stores.Keys.SetKey(t.Context(), "identity", "new record"); err != nil {
+		t.Fatal(err)
+	}
+	if err := res.Stores.Chains.Write(t.Context(), []byte("new chain")); err != nil {
+		t.Fatal(err)
+	}
+	restart := container.NewResources()
+	if err := opts.apply(func() {}, restart); err != nil {
+		t.Fatal(err)
+	}
+	requireDebugIdentity(t, restart, "new record", "new chain")
+}
+
 func TestDebugHTTPDoesNotOpenIdentityFilesOutsideTheTemporaryProfile(t *testing.T) {
 	folder := makeDebugProfile(t, settings.CredentialsFilePlaintext)
 	outside := filepath.Join(t.TempDir(), "numen")
@@ -66,6 +91,19 @@ func TestDebugHTTPDoesNotOpenIdentityFilesOutsideTheTemporaryProfile(t *testing.
 		t.Fatal(err)
 	}
 	if err := os.Symlink(outside, folder); err != nil {
+		t.Skipf("cannot create a symlink: %v", err)
+	}
+	requireEmptyDebugIdentity(t, "127.0.0.1:0")
+}
+
+func TestDebugHTTPDoesNotFollowAnIdentityFileSymlinkOutsideTheProfile(t *testing.T) {
+	folder := makeDebugProfile(t, settings.CredentialsFilePlaintext)
+	credentials := filepath.Join(folder, "credentials", "credentials.json")
+	outside := filepath.Join(t.TempDir(), "credentials.json")
+	if err := os.Rename(credentials, outside); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, credentials); err != nil {
 		t.Skipf("cannot create a symlink: %v", err)
 	}
 	requireEmptyDebugIdentity(t, "127.0.0.1:0")
