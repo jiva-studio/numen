@@ -70,13 +70,20 @@ export class SubscriptionDriver {
 
   private async openPayment(): Promise<Page> {
     const card = this.getCard(await this.showPage())
-    const opened = this.scenario.page.waitForEvent('popup')
-    await card.getByRole('button', { name: CHOOSE }).first().click()
-    return opened
+    return this.openCheckout(card.getByRole('button', { name: CHOOSE }).first())
+  }
+
+  private async openCheckout(button: Locator): Promise<Page> {
+    await expect(button).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    const [payment] = await Promise.all([
+      this.scenario.page.waitForEvent('popup', { timeout: SUBSCRIPTION_LIMIT_MS }),
+      button.click({ timeout: SUBSCRIPTION_LIMIT_MS }),
+    ])
+    return payment
   }
 
   private async completePayment(payment: Page): Promise<void> {
-    await payment.waitForURL(PAYMENT_ROUTE)
+    await payment.waitForURL(PAYMENT_ROUTE, { timeout: SUBSCRIPTION_LIMIT_MS })
     await sendPayment(requireStack(), getCheckoutId(payment.url()))
     await payment.close()
   }
@@ -95,9 +102,7 @@ export class SubscriptionDriver {
   /** Buys the plan of a name at the stand-in and waits until the card shows the subscription as active. */
   async choosePlan(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
-    const opened = this.scenario.page.waitForEvent('popup')
-    await card.getByRole('button', { name: getChoosePattern(name) }).click()
-    await this.completePayment(await opened)
+    await this.completePayment(await this.openCheckout(card.getByRole('button', { name: getChoosePattern(name) })))
     await this.expectActive()
   }
 

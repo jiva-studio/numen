@@ -119,7 +119,7 @@ jobs:
       - name: Print the RPC lines of the server log
         if: failure()
         run: |
-          container=$(docker ps -aq --filter "label=com.docker.compose.project="$NUMEN_SYNC_OWN_STACK"" --filter label=com.docker.compose.service=sync)
+          container=$(docker ps -aq --filter "label=com.docker.compose.project=$NUMEN_SYNC_OWN_STACK" --filter label=com.docker.compose.service=sync)
           if [ -n "$container" ]; then
             docker logs --tail 5000 "$container" 2>&1 | grep -iE '\bRPC\b' | tail -n 200 || true
           fi

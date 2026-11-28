@@ -8,7 +8,7 @@ eval "$settings"
 
 status=0
 read -ra features <<< "$FEATURES"
-npm run "$group" -- --project=chromium --reporter=list,json,blob "${features[@]}" || status=$?
+npm run "$group" -- --project=chromium --max-failures=0 --reporter=list,json,blob "${features[@]}" || status=$?
 if [ -s "$PLAYWRIGHT_JSON_OUTPUT_NAME" ]; then
   counts=$(jq -r '.stats | "\(.expected) passed, \(.unexpected) failed, \(.flaky) flaky, \(.skipped) skipped"' "$PLAYWRIGHT_JSON_OUTPUT_NAME")
   echo "$group: $counts" | tee -a "$GITHUB_STEP_SUMMARY"
