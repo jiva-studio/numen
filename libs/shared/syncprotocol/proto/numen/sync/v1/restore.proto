@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// RestoreService tells a device that the server was restored from a backup.
+service RestoreService {
+  // GetRestoreEpoch returns the current restore epoch and the key that signs epochs.
+  rpc GetRestoreEpoch(GetRestoreEpochRequest) returns (GetRestoreEpochResponse);
+}
+
+message GetRestoreEpochRequest {}
+
+message GetRestoreEpochResponse {
+  // epoch_sign_key is the Ed25519 public key of the server for epochs, 32 bytes. A client trusts it only through the
+  // certificate below.
+  bytes epoch_sign_key = 1;
+  // epoch is unset until the first restore.
+  RestoreEpoch epoch = 2;
+  // epoch_serial, epoch_not_before and epoch_not_after (unix seconds) and root_signature are the certificate of
+  // epoch_sign_key: the offline root key of the operator signs them over epochtrust.GetCertMessage.
+  uint64 epoch_serial = 3;
+  int64 epoch_not_before = 4;
+  int64 epoch_not_after = 5;
+  // root_signature is 64 bytes.
+  bytes root_signature = 6;
+}
+
+message RestoreEpoch {
+  // id is 16 random bytes.
+  bytes id = 1;
+  // issued_at is in unix seconds.
+  int64 issued_at = 2;
+  // signature is 64 bytes over GetRestoreEpochMessage.
+  bytes signature = 3;
+}

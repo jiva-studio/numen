@@ -40,7 +40,9 @@ type Vault struct {
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing is at the path. The vault stays on the list, and the
 	// folder is found again if it returns.
-	IsMissing     bool `protobuf:"varint,4,opt,name=is_missing,json=isMissing,proto3" json:"is_missing,omitempty"`
+	IsMissing bool `protobuf:"varint,4,opt,name=is_missing,json=isMissing,proto3" json:"is_missing,omitempty"`
+	// managed_by is the id of the plugin that alone writes this vault; empty for a vault anyone may write.
+	ManagedBy     string `protobuf:"bytes,5,opt,name=managed_by,json=managedBy,proto3" json:"managed_by,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -101,6 +103,13 @@ func (x *Vault) GetIsMissing() bool {
 		return x.IsMissing
 	}
 	return false
+}
+
+func (x *Vault) GetManagedBy() string {
+	if x != nil {
+		return x.ManagedBy
+	}
+	return ""
 }
 
 type ListVaultsRequest struct {
@@ -190,7 +199,10 @@ type AddVaultRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// What to call the vault. Empty takes the folder's own name, and a name
 	// another vault has gets a number appended.
-	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// managed_by makes the vault one that only the plugin with this id writes. It is honored on the host endpoint only,
+	// where it must equal the id of the plugin of the token and the plugin needs vault:manage; a window request ignores it.
+	ManagedBy     string `protobuf:"bytes,3,opt,name=managed_by,json=managedBy,proto3" json:"managed_by,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -235,6 +247,13 @@ func (x *AddVaultRequest) GetPath() string {
 func (x *AddVaultRequest) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *AddVaultRequest) GetManagedBy() string {
+	if x != nil {
+		return x.ManagedBy
 	}
 	return ""
 }
@@ -635,19 +654,23 @@ var File_numen_v1_vaults_proto protoreflect.FileDescriptor
 
 const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/vaults.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"^\n" +
+	"\x15numen/v1/vaults.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"}\n" +
 	"\x05Vault\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
-	"is_missing\x18\x04 \x01(\bR\tisMissing\"\x13\n" +
+	"is_missing\x18\x04 \x01(\bR\tisMissing\x12\x1d\n" +
+	"\n" +
+	"managed_by\x18\x05 \x01(\tR\tmanagedBy\"\x13\n" +
 	"\x11ListVaultsRequest\"=\n" +
 	"\x12ListVaultsResponse\x12'\n" +
-	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.VaultR\x06vaults\"9\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.VaultR\x06vaults\"X\n" +
 	"\x0fAddVaultRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x8b\x01\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"managed_by\x18\x03 \x01(\tR\tmanagedBy\"\x8b\x01\n" +
 	"\x10AddVaultResponse\x12*\n" +
 	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x12)\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +

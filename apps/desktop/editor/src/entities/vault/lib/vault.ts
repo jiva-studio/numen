@@ -10,6 +10,7 @@ export interface Vault {
   readonly name: string
   readonly path: string
   readonly isMissing: boolean
+  readonly isReadOnly: boolean
 }
 
 /** Every vault of the installation, and the id of the one a window shows. */

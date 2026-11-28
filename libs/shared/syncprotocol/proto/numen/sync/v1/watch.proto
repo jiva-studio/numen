@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// WatchService tells a device that a vault of its account has a change.
+service WatchService {
+  // WatchChanges opens a stream of change hints for every vault of the account of the session.
+  rpc WatchChanges(WatchChangesRequest) returns (stream WatchChangesResponse);
+}
+
+message WatchChangesRequest {}
+
+message WatchChangesResponse {
+  oneof event {
+    Started started = 1;
+    ChangeHint hint = 2;
+    Heartbeat heartbeat = 3;
+  }
+}
+
+// Started is always the first message.
+message Started {
+  // heartbeat_seconds is the longest silence of the stream while it is healthy.
+  uint32 heartbeat_seconds = 1;
+}
+
+// ChangeHint says that the vault is at seq, or later. It carries no content.
+message ChangeHint {
+  // vault_id is 16 bytes.
+  bytes vault_id = 1;
+  uint64 seq = 2;
+}
+
+// Heartbeat is sent when nothing else was sent for heartbeat_seconds.
+message Heartbeat {}

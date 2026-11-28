@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
 	"github.com/jiva-studio/numen/apps/desktop/internal/plugindirs"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/identityfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -32,7 +33,7 @@ const (
 
 // GetConfig returns the desktop launch paths.
 func GetConfig() container.Config {
-	var cfg container.Config
+	cfg := container.Config{Absent: true}
 	if path, err := GetIndexPath(); err == nil {
 		cfg.IndexPath = path
 	}
@@ -51,7 +52,12 @@ type Installation struct {
 func NewPluginServices(target string) Installation {
 	dirs := plugindirs.GetDirs()
 	res := container.NewResources()
-	res.KeyStore = getKeyStore()
+	store := getKeyStore()
+	passphrase := &keychain.Passphrase{}
+	applyCredentialsFile(store, passphrase)
+	container.SetKeys(res, store)
+	res.KeyFile = keychain.NewKeyFile(store, passphrase)
+	res.Stores.Chains = getChainStore()
 	execution, preferences, endpoints, discoverErr := container.NewPluginHost(GetConfig().IndexPath, res, reportPluginHost, target, dirs...)
 	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
@@ -67,6 +73,27 @@ func reportPluginHost(err error) {
 func reportPluginFailure(stage string, err error) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "numen: %s: %v\n", stage, err)
+	}
+}
+
+func getChainStore() *identityfile.Chain {
+	path, err := settings.GetPath()
+	if err != nil {
+		return identityfile.Open(os.TempDir())
+	}
+	return identityfile.Open(filepath.Dir(path))
+}
+
+func applyCredentialsFile(store *keychain.Store, passphrase *keychain.Passphrase) {
+	path, err := settings.GetPath()
+	if err != nil {
+		return
+	}
+	switch settings.ReadCredentialsFile(path) {
+	case settings.CredentialsFilePlaintext:
+		store.UsePlaintextFile()
+	case settings.CredentialsFilePassphrase:
+		store.UsePassphraseFile(passphrase)
 	}
 }
 

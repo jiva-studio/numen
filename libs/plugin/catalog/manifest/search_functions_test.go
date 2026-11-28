@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/searchfunction"
+
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
@@ -28,8 +30,8 @@ func TestAManifestDeclaresTheSearchFunctionsItsBackendAnswers(t *testing.T) {
 		t.Fatalf("search functions = %+v", got)
 	}
 	f := got.Functions[0]
-	if f.Name != "rhymes" || f.Level != manifest.SearchFunctionLevelDocument || f.Description != "notes that rhyme with a word" ||
-		f.Example != `rhymes("moon")` || len(f.Args) != 1 || f.Args[0] != (manifest.SearchFunctionArg{Name: "word", Type: manifest.SearchFunctionArgString}) {
+	if f.Name != "rhymes" || f.Level != searchfunction.LevelDocument || f.Description != "notes that rhyme with a word" ||
+		f.Example != `rhymes("moon")` || len(f.Args) != 1 || f.Args[0] != (searchfunction.Arg{Name: "word", Type: searchfunction.ArgString}) {
 		t.Errorf("function = %+v", f)
 	}
 }
@@ -59,12 +61,12 @@ func TestASearchFunctionDeclaredWronglyIsRefusedNamingTheField(t *testing.T) {
 }
 
 func searchPlugin(id string, names ...string) manifest.DiscoveredPlugin {
-	var functions []manifest.SearchFunction
+	var functions []searchfunction.Function
 	for _, name := range names {
-		functions = append(functions, manifest.SearchFunction{Name: name})
+		functions = append(functions, searchfunction.Function{Name: name})
 	}
 	return manifest.DiscoveredPlugin{Manifest: manifest.Manifest{
-		ID: id, Contributes: manifest.Contributes{SearchFunctions: manifest.SearchFunctions{Version: 1, Functions: functions}},
+		ID: id, Contributes: manifest.Contributes{SearchFunctions: searchfunction.Set{Version: 1, Functions: functions}},
 	}}
 }
 

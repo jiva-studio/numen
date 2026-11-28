@@ -18,6 +18,8 @@ const emit = defineEmits<{
 defineSlots<{
   /** Tags drawn before the chevron. */
   trail?(): VNode[]
+  /** A mark drawn right after the name. */
+  'name-suffix'?(): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -46,7 +48,10 @@ function onClick(): void {
       aria-hidden="true"
     />
     <span class="navigation-row__main">
-      <span class="navigation-row__name">{{ props.name }}</span>
+      <span class="navigation-row__title">
+        <span class="navigation-row__name">{{ props.name }}</span>
+        <slot name="name-suffix" />
+      </span>
       <span v-if="props.detail" class="navigation-row__detail">{{ props.detail }}</span>
     </span>
     <slot name="trail" />
@@ -117,8 +122,19 @@ function onClick(): void {
   min-inline-size: 0;
 }
 
+.navigation-row__title {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-inline-size: 0;
+}
+
 .navigation-row__name {
+  min-inline-size: 0;
+  overflow: hidden;
   font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .navigation-row__detail {

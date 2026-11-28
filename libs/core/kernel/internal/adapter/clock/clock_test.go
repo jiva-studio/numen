@@ -44,7 +44,7 @@ func TestSystemWaitReturnsNilOnceTheTimeHasPassed(t *testing.T) {
 
 func TestSystemAfterReceivesTheTimeOnceDHasPassed(t *testing.T) {
 	select {
-	case <-(clock.System{}).After(time.Millisecond):
+	case <-(clock.System{}).StartTimer(time.Millisecond):
 	case <-time.After(time.Minute):
 		t.Fatal("the channel received nothing")
 	}

@@ -46,8 +46,8 @@ type Endpoint struct {
 }
 
 // Open starts serving the host service on the address, which is a
-// free loopback port by default.
-func Open(ctx context.Context, address string, callers Callers) (*Endpoint, error) {
+// free loopback port by default, with the identity calls of accounts.
+func Open(ctx context.Context, address string, callers Callers, accounts AccountCalls) (*Endpoint, error) {
 	if err := checkLoopback(address); err != nil {
 		return nil, err
 	}
@@ -61,20 +61,22 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	}
 	endpoint := &Endpoint{callers: callers, serveResult: make(chan error, 1)}
 
+	gate := endpoint.newPermissionOption()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(newConnectionCalls(endpoint, callers.CallCancels)))
-	vault.Mount(mux, endpoint, callers.Lent)
-	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewSearchServiceHandler(&searchTextEndpoint{searchEndpoint: searchEndpoint{endpoint: endpoint}}))
-	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewHostWindowServiceHandler(&windowEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewPluginHealthServiceHandler(&healthEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewHostProcessServiceHandler(&processEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewLogServiceHandler(&logsEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewHostDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}, gate))
+	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(newConnectionCalls(endpoint, callers.CallCancels), gate))
+	vault.Mount(mux, endpoint, callers.Lent, gate)
+	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{auth: endpoint, calls: accounts}, gate))
+	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}, gate))
+	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}, gate))
+	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}, gate))
+	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}, gate))
+	mux.Handle(numenv1connect.NewSearchServiceHandler(&searchTextEndpoint{searchEndpoint: searchEndpoint{endpoint: endpoint}}, gate))
+	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}, gate))
+	mux.Handle(numenv1connect.NewHostWindowServiceHandler(&windowEndpoint{endpoint: endpoint}, gate))
+	mux.Handle(numenv1connect.NewPluginHealthServiceHandler(&healthEndpoint{endpoint: endpoint}, gate))
+	mux.Handle(numenv1connect.NewHostProcessServiceHandler(&processEndpoint{endpoint: endpoint}, gate))
+	mux.Handle(numenv1connect.NewLogServiceHandler(&logsEndpoint{endpoint: endpoint}, gate))
 	countingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		endpoint.callCount.Add(1)
 		defer endpoint.callCount.Add(-1)
@@ -129,20 +131,9 @@ func (e *Endpoint) getVault(header http.Header) (*vault.Access, error) {
 
 func (e *Endpoint) Authenticate(header string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
-	pluginID, recognized := e.callers.Identity.GetPluginIDByToken(token)
+	pluginID, recognized := e.callers.Activation.GetPluginIDByToken(token)
 	if !found || !recognized {
 		return "", connect.NewError(connect.CodeUnauthenticated, errUnknownCaller)
-	}
-	return pluginID, nil
-}
-
-func (e *Endpoint) Authorize(header, permission string) (string, error) {
-	pluginID, err := e.Authenticate(header)
-	if err != nil {
-		return "", err
-	}
-	if err := e.callers.Identity.CheckPluginPermission(pluginID, permission); err != nil {
-		return "", connect.NewError(connect.CodePermissionDenied, fmt.Errorf("plugin %s: %w", pluginID, err))
 	}
 	return pluginID, nil
 }

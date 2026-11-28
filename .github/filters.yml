@@ -56,6 +56,10 @@ shared_go_lib: &shared_go_lib
   - libs/shared/**
 rerank_lib: &rerank_lib
   - libs/shared/rerank/**
+identity_lib: &identity_lib
+  - libs/shared/identity/**
+syncprotocol_lib: &syncprotocol_lib
+  - libs/shared/syncprotocol/**
 result_lib: &result_lib
   - libs/shared/result/**
 sdk_ts_lib: &sdk_ts_lib
@@ -77,6 +81,7 @@ go_base: &go_base
   - *go_rules
   - *protocol_lib
   - *rerank_lib
+  - *identity_lib
   - *atomicfile_lib
   - *notes_lib
   - *core_lib
@@ -126,6 +131,7 @@ protocol:
   - *node_lock
   - *protocol_lib
   - *rerank_lib
+  - *syncprotocol_lib
   - .github/workflows/go.yml
   - '!**/*.md'
 sdk_go:
@@ -134,6 +140,7 @@ sdk_go:
   - *go_rules
   - *protocol_lib
   - *rerank_lib
+  - *identity_lib
   - *atomicfile_lib
   - *notes_lib
   - *sdk_go_lib

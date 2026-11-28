@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// SignInService is how a device proves to the sync server that it holds the device key of an account, and
+// gets a session. The server answers a request that carries another protocol version, or none, with
+// FAILED_PRECONDITION and an UpdateRequired detail; the version is the header Numen-Sync-Protocol.
+service SignInService {
+  // GetChallenge starts a sign-in: the server answers with a single-use challenge.
+  rpc GetChallenge(GetChallengeRequest) returns (GetChallengeResponse);
+
+  // SignIn completes it: the device proves it holds the device key, and gets a session. Any failure is
+  // UNAUTHENTICATED, which says nothing more than that the sign-in failed.
+  rpc SignIn(SignInRequest) returns (SignInResponse);
+}
+
+message GetChallengeRequest {
+  // device_sign_key is the Ed25519 public key of the device, 32 bytes.
+  bytes device_sign_key = 1;
+}
+
+message GetChallengeResponse {
+  // challenge_id is 16 random bytes. It is not signed.
+  bytes challenge_id = 1;
+  // nonce is 32 random bytes, valid once.
+  bytes nonce = 2;
+  // expires_at is the end of the challenge, in unix seconds. The server allows 60 seconds.
+  int64 expires_at = 3;
+  // audience is the address of this server, as the server knows itself.
+  string audience = 4;
+}
+
+message SignInRequest {
+  bytes challenge_id = 1;
+  // device_sign_key is the key of GetChallenge.
+  bytes device_sign_key = 2;
+  // signature is the Ed25519 signature of the device, 64 bytes, over the plugin domain prefix, the id of the
+  // plugin and the bytes syncprotocol.GetSignInMessage returns.
+  bytes signature = 3;
+  // chain is the signed device chain of the account. It lets the server open the account and check that
+  // the device is in it.
+  bytes chain = 4;
+  reserved 5;
+  reserved "restore_account";
+}
+
+message SignInResponse {
+  // session_token is an opaque bearer, sent as "Authorization: Bearer <token>".
+  string session_token = 1;
+  // expires_at is the end of the session, in unix seconds.
+  int64 expires_at = 2;
+  string account_fingerprint = 3;
+}
+
+// UpdateRequired is the detail of the FAILED_PRECONDITION that says the protocol versions differ.
+message UpdateRequired {
+  uint32 server_version = 1;
+}

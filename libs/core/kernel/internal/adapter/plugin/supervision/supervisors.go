@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/exitwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -29,7 +30,9 @@ type Supervisors struct {
 	handleDrop func(pluginID string)
 	idleLimits map[string]time.Duration
 	stopIdle   func(pluginID string)
-	watchers   []chan struct{}
+
+	Exits    exitwatch.Hook
+	watchers []chan struct{}
 }
 
 // processRun is the process of a plugin that runs: its endpoint, the ports it reported for its
@@ -314,6 +317,7 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 	sup.SetOnExit(func() {
 		s.Drop(pluginID)
 		onExit()
+		s.Exits.Notify(pluginID, sup.GetExitSignal())
 	})
 	sup.Acquire(attach.Lease, now)
 	s.runs[pluginID] = &processRun{endpoint: endpoint, listenerPorts: listeners, startTime: now, isReleased: false}

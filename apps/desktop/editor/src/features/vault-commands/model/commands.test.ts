@@ -3,12 +3,17 @@
  * entity: which calls each makes, and what it reports when the list rejects the request.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { shallowRef } from 'vue'
 import { WIRE_ERROR_CODE } from '@numen/core-client'
 import { createHandledApi } from '@/testing/coreAnswers'
+import { getCloudRowId } from '@/entities/vault'
 import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { VAULT_WORDS as words } from '../words'
 import { createVaultCommands } from './commands'
+
+const HARE = { remoteId: 'r1', name: 'Hare Krishna', sizeBytes: 100, vaultId: '' }
+const HARE_PLACE = { folder: '/docs', path: '/docs/Hare Krishna', isTaken: false }
 
 interface Answers {
   readonly opened?: object
@@ -61,6 +66,17 @@ const createWindow = (answers: Answers = {}, withHold = false) => {
   const set = createVaultCommands(
     {
       vaults: api.vault.vaults,
+      cloud: {
+        known: { all: shallowRef([HARE]), refresh: async () => undefined },
+        remote: {
+          suggestPath: async () => ({ ok: true, value: HARE_PLACE }),
+          open: async (remoteId, path) => {
+            calls.push(`get ${remoteId} ${path}`)
+            return { ok: true, value: 'hare-local' }
+          },
+        },
+        ask: { selectOption: async () => 'use' },
+      },
       clearTrash: api.vault.file.emptyTrash,
       ...(withHold ? { tabsHold: hold } : {}),
       setVaultName,
@@ -165,6 +181,25 @@ describe('showing another vault', () => {
     await one.carry(invoke('app:vault.open', withVault('heat')))
 
     expect(one.hold.resume).toHaveBeenCalledOnce()
+  })
+})
+
+describe('getting a cloud vault', () => {
+  it('places the vault in the chosen folder, opens it and reloads the page', async () => {
+    const one = createWindow()
+
+    await one.carry(invoke('app:vault.open', withVault(getCloudRowId('r1'))))
+
+    expect(one.calls).toStrictEqual(['get r1 /docs/Hare Krishna', 'open hare-local'])
+    expect(one.reload).toHaveBeenCalledOnce()
+  })
+
+  it('does nothing for a cloud vault the window does not know', async () => {
+    const one = createWindow()
+
+    await one.carry(invoke('app:vault.open', withVault(getCloudRowId('gone'))))
+
+    expect(one.calls).toStrictEqual([])
   })
 })
 

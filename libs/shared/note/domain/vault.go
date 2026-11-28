@@ -13,9 +13,10 @@ type VaultID string
 // Vault is a folder the user has added to the application. Its identity is a
 // ULID carried inside the vault itself.
 type Vault struct {
-	ID   VaultID
-	Name string
-	Path string
+	ID        VaultID
+	Name      string
+	Path      string
+	ManagedBy string
 }
 
 // VaultSummary is how much of a vault the index holds. A read model, shown to

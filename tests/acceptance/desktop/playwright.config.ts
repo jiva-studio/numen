@@ -6,7 +6,8 @@ import base from '../../e2e/desktop/playwright.config.js'
 // this config runs with the engines of the e2e suite.
 const testDir = defineBddConfig({
   featuresRoot: '../../..',
-  features: '../../../features/**/*.feature',
+  // The phone features (features/mobile) are proven by Go integration tests and the emulator script, not by this desktop harness.
+  features: '../../../features/{editor,flashcards}/**/*.feature',
   steps: '{steps,support}/**/!(*.test).ts',
   outputDir: '.features-gen',
 })
@@ -20,6 +21,7 @@ export default defineConfig({
   ...base,
   testDir,
   testMatch: undefined,
+  globalSetup: './support/global-setup.ts',
   fullyParallel: true,
   workers: 2,
   ...(isLive && { timeout: 240_000 }),

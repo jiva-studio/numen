@@ -43,6 +43,7 @@ export interface WindowPluginsDeps {
   readonly windowSettings: WindowBase['windowSettings']
   readonly getTarget: WindowBase['getTarget']
   readonly appCommands: WindowBase['appCommands']
+  readonly picker: WindowBase['picker']
 }
 
 interface BackgroundTaskHost {
@@ -68,13 +69,44 @@ function createBackgroundTasks(
   })
 }
 
+interface DeclaredCommandsHost {
+  readonly foundation: PluginsFoundation
+  readonly itemLists: WindowBase['vault']['itemLists']
+  readonly pluginHost: ReturnType<typeof createPluginHostSupport>['pluginHost']
+  readonly declarations: ReturnType<typeof createPluginDeclarations>
+}
+
+function startDeclaredCommands({
+  foundation,
+  itemLists,
+  pluginHost,
+  declarations,
+}: DeclaredCommandsHost) {
+  const { api, rest, registry } = foundation
+  const declaredCommands = useDeclaredCommands({
+    list: api.plugins.declaredCommands.listDeclaredCommands,
+    run: api.plugins.declaredCommands.runDeclaredCommand,
+    state: declarations.declared,
+    registry,
+    isListed: (id) => isCommandListed(pluginHost, id),
+    hasBackend: declarations.catalog.hasBackend,
+    listItems: itemLists.listItems,
+  })
+  syncKeybindings(
+    pluginHost.keybindings,
+    declaredCommands.contributions.keybindings,
+    rest.state.plugins,
+  )
+  return { declaredCommands, slotGroups: createSlotGroups(declaredCommands) }
+}
+
 export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { foundation, tabs, vault, getTarget, appCommands } = deps
-  const { api, log, rest, frame, status, registry } = foundation
+  const { api, log, rest, frame, status } = foundation
   const { note } = api.vault
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
-  const { notices, picker } = createPluginSurfaces()
+  const { notices, picker, dialogs } = createPluginSurfaces(api.window.saveText, deps.picker)
   const pluginNotes = createPluginNotes({ read: note.readNote, write: note.writeNote })
   const declarations = createPluginDeclarations({
     api: api.plugins.declaredCommands,
@@ -99,6 +131,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       editing,
       window,
       vaults,
+      cloud: vaults.cloud.fresh,
       hostPort,
       frame,
       log,
@@ -125,26 +158,18 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       pluginNotes,
       hostParts: declarations.hostParts,
       picker,
+      dialogs: dialogs.host,
     }),
   })
   vault.vaultChanges.subscribe((event) => {
     services.notes.clearRelatedNotes()
     pluginHost.notifyVaultChange(event)
   })
-  const declaredCommands = useDeclaredCommands({
-    list: api.plugins.declaredCommands.listDeclaredCommands,
-    run: api.plugins.declaredCommands.runDeclaredCommand,
-    state: declarations.declared,
-    registry,
-    isListed: (id) => isCommandListed(pluginHost, id),
-    hasBackend: declarations.catalog.hasBackend,
-    listItems: itemLists.listItems,
+  const { declaredCommands, slotGroups } = startDeclaredCommands({
+    foundation,
+    itemLists,
+    pluginHost,
+    declarations,
   })
-  syncKeybindings(
-    pluginHost.keybindings,
-    declaredCommands.contributions.keybindings,
-    rest.state.plugins,
-  )
-  const slotGroups = createSlotGroups(declaredCommands)
-  return { hostPort, pluginHost, pluginLoader, declaredCommands, slotGroups, picker }
+  return { hostPort, pluginHost, pluginLoader, declaredCommands, slotGroups, picker, dialogs }
 }

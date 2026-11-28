@@ -208,6 +208,21 @@ describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
   })
 })
 
+describe('MarkdownNoteEditor over a note of a vault that is read only', () => {
+  it('shows the text and takes no typing, and is writable where the vault is not read only', async () => {
+    const isReadOnly = ref(true)
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { filePath: 'notes/Tide.md', state: createState({ isReadOnly }) },
+    })
+    await flushPromises()
+
+    expect(wrapper.get('.cm-content').attributes('contenteditable')).toBe('false')
+
+    isReadOnly.value = false
+    await flushPromises()
+    expect(wrapper.get('.cm-content').attributes('contenteditable')).toBe('true')
+  })
+})
 describe('MarkdownNoteEditor over a tab that offers links', () => {
   it('draws the completion of wikilinks from the tab', async () => {
     const wrapper = mount(MarkdownNoteEditor, {

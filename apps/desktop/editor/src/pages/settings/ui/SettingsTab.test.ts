@@ -238,7 +238,7 @@ describe('the settings tab', () => {
     expect(system.text()).toContain(words.systemSettingsDetail)
   })
 
-  it('draws the Appearance, Editor, Search, Connections and Licenses tiles after System and the plugin rows below them', () => {
+  it('draws the Appearance, Editor, Search, Connections and Identity and licenses tiles after System and the plugin rows below them', () => {
     const samplePlugin: PluginInfo = {
       id: 'test.transcription',
       name: 'Transcription Plugin',
@@ -257,7 +257,7 @@ describe('the settings tab', () => {
       'Editor',
       'Search',
       'Connections',
-      'Licenses',
+      'Identity and licenses',
       'Transcription Plugin',
     ])
   })
@@ -545,7 +545,7 @@ describe('the settings tab', () => {
       expect(getToolbar(tab).find('.settings-toolbar__actions').exists()).toBe(false)
     })
 
-    it('opens the Licenses page, shows Buy providers, activates a key and deactivates it', async () => {
+    it('opens the Identity and licenses page, shows Buy providers, activates a key and deactivates it', async () => {
       const sync: LicenseInfo = {
         id: 'numen.sync',
         title: 'Numen Sync',
@@ -611,10 +611,10 @@ describe('the settings tab', () => {
         },
       })
 
-      await openPlugin(tab, 'Licenses')
+      await openPlugin(tab, 'Identity and licenses')
 
       expect(getSegments(tab)).toStrictEqual(['Settings'])
-      expect(getCurrent(tab)).toBe(words.licenses)
+      expect(getCurrent(tab)).toBe(words.identityAndLicenses)
       expect(tab.text()).toContain('Numen Sync')
       expect(tab.text()).toContain('Agent Chat')
       expect(tab.text()).toContain('Multi-agent conversations and background tasks')

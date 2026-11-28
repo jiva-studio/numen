@@ -1,0 +1,12 @@
+{
+  "subscription": {
+    "hasIdentity": true,
+    "phase": "active",
+    "periodEndAt": "2026-12-20T12:00:00Z",
+    "writesEndAt": "2026-12-27T12:00:00Z",
+    "deleteAt": "2027-02-18T12:00:00Z",
+    "plan": "pro",
+    "quotaBytes": 268435456000,
+    "usedBytes": 1073741824
+  }
+}

@@ -323,3 +323,63 @@ describe('PluginData', () => {
     expect(mountData(2, 'permission denied').get('[role="alert"]').text()).toBe('permission denied')
   })
 })
+
+describe('PluginDetail with a contributed tab', () => {
+  const TabStub = defineComponent({
+    props: { id: { type: String, required: true } },
+    render() {
+      return h('div', { class: 'view', 'data-tab': this.id }, 'vaults')
+    },
+  })
+  const mountWithContributedTabs = (overrides: Partial<PluginDetailProps> = {}) =>
+    mount(PluginDetail, {
+      props: baseProps({
+        hasSettings: true,
+        contributedTabs: [{ id: 'sync', title: 'Sync' }],
+        ...overrides,
+      }),
+      slots: { settings: SettingsStub, tab: (slot: { id: string }) => h(TabStub, { id: slot.id }) },
+    })
+
+  it('lists the tab right after Settings', () => {
+    const tabs = mountWithContributedTabs().findAll('[role="tab"]')
+
+    expect(tabs.map((one) => one.text())).toStrictEqual([
+      'Settings',
+      'Sync',
+      'About',
+      'Contributes',
+    ])
+  })
+
+  it('draws the views of the tab with no card around them and not the settings', async () => {
+    const wrapper = mountWithContributedTabs()
+    await openTab(wrapper, 'Sync')
+
+    const view = wrapper.get('.view')
+
+    expect(view.attributes('data-tab')).toBe('sync')
+    expect(view.element.closest('.settings-card')).toBeNull()
+    expect(wrapper.find('.settings-stub').exists()).toBe(false)
+  })
+
+  it('moves through the tab with the arrow keys', async () => {
+    const wrapper = mountWithContributedTabs()
+    const selected = () => wrapper.get('[role="tab"][aria-selected="true"]').text()
+
+    await wrapper.findAll('[role="tab"]')[0]?.trigger('keydown', { key: 'ArrowRight' })
+    expect(selected()).toBe('Sync')
+    await wrapper.findAll('[role="tab"]')[1]?.trigger('keydown', { key: 'ArrowRight' })
+    expect(selected()).toBe('About')
+  })
+
+  it('ties the tab to its panel by id', async () => {
+    const wrapper = mountWithContributedTabs()
+    await openTab(wrapper, 'Sync')
+
+    const panel = wrapper.get('[role="tabpanel"]')
+
+    expect(getTab(wrapper, 'Sync')?.attributes('aria-controls')).toBe(panel.attributes('id'))
+    expect(panel.attributes('aria-labelledby')).toBe(getTab(wrapper, 'Sync')?.attributes('id'))
+  })
+})

@@ -399,6 +399,7 @@ describe('createWorkspaceService, createVaultAccess and createWindowService', ()
     const access = createVaultAccess({
       notes: api.vault.note,
       files: api.vault.file,
+      downloads: api.vault.downloads,
       relations: { roles: [] } as never,
       search: { searchNames: async () => [] },
       making: { createUntitledNote, createWithTitle: async () => null } as never,
@@ -407,8 +408,7 @@ describe('createWorkspaceService, createVaultAccess and createWindowService', ()
         writeNote: async () => undefined,
         write: async () => 'next',
       },
-      getTarget: () => ({}) as never,
-      runInvocation: async () => undefined,
+      invoking: { getTarget: () => ({}) as never, runCommand: async () => undefined },
     })
     expect(await access.notes.createUntitledNote()).toBe('New.md')
 

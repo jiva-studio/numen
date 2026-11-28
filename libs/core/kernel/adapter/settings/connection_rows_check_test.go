@@ -163,11 +163,11 @@ func TestOnlyTheRowsThatFailOnReadAreLeftOutWithANotice(t *testing.T) {
 	if rows[0]["model"] != "a" || rows[1]["model"] != "d" {
 		t.Errorf("rows in force = %v", rows)
 	}
-	if !hasNotice(cfg.Notices, rowsPluginID, "connections", "c00000000") {
-		t.Errorf("no notice names the row of the missing connection: %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, rowsPluginID, "connections", "c00000000") {
+		t.Errorf("no notice names the row of the missing connection: %q", cfg.Header.Notices)
 	}
-	if len(cfg.Notices) != 3 {
-		t.Errorf("notices = %q, want one for each of the 3 rows left out", cfg.Notices)
+	if len(cfg.Header.Notices) != 3 {
+		t.Errorf("notices = %q, want one for each of the 3 rows left out", cfg.Header.Notices)
 	}
 }
 
@@ -189,16 +189,16 @@ func TestAValueThatIsNoListIsLeftOutWholeOnRead(t *testing.T) {
 	if got, found := cfg.GetValue(rowsPluginID, "connections"); found {
 		t.Errorf("a text is in force as %v", got)
 	}
-	if !hasNotice(cfg.Notices, rowsPluginID, "connections") {
-		t.Errorf("notices = %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, rowsPluginID, "connections") {
+		t.Errorf("notices = %q", cfg.Header.Notices)
 	}
 }
 
 func TestRowsOfConnectionsThatExistProduceNoNotice(t *testing.T) {
 	cfg := openRows(t, `[{"connection":"c1f0a9e20","model":"a"},{"connection":"c77b01d40","model":"b","reasoning":"low"}]`)
 
-	if len(cfg.Notices) != 0 {
-		t.Errorf("notices = %q", cfg.Notices)
+	if len(cfg.Header.Notices) != 0 {
+		t.Errorf("notices = %q", cfg.Header.Notices)
 	}
 }
 
@@ -292,7 +292,7 @@ func TestARowOfADetectedConnectionStaysInForceOnRead(t *testing.T) {
 	if len(rows) != 1 || rows[0]["connection"] != kiteAgentID {
 		t.Errorf("rows in force = %v, want the row of Kite agent only", rows)
 	}
-	if !hasNotice(cfg.Notices, rowsPluginID, "connections", wrenAgentID) {
-		t.Errorf("no notice names the row of the connection that is not detected: %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, rowsPluginID, "connections", wrenAgentID) {
+		t.Errorf("no notice names the row of the connection that is not detected: %q", cfg.Header.Notices)
 	}
 }

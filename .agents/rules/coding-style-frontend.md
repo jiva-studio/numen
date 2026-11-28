@@ -134,9 +134,12 @@ function formatValue(val: string) { ... }
 - **`theme.css` defines Tailwind's names from the tokens, never the reverse**, so `bg-surface` and `var(--numen-surface)` resolve to one value.
 - **Text on a ground is readable on it: 4.5:1 for text, 3:1 for large text and for marks.** Text on the accent takes `--numen-accent-ink`, never the inherited colour, `--numen-surface` or a dimmed `opacity`; a hover moves a ground away from its text, not toward it. A person chooses the token pairs in the theme files; no story or test measures a ratio.
 - **No `dark:` variant anywhere in the module**, including in a component copied in from the shadcn-vue registry — the tokens are `light-dark()` pairs and `color-scheme` chooses.
+- **Rows of a card have no divider lines; spacing separates them.**
+- **No native title tooltips: use the Tooltip component.** `tools/checks/style/tooltips` fails on a `title` attribute of an HTML element.
 - **The root's font size is the interface multiplier.** What scales with the interface is in `rem`; a hairline, a border, a focus ring and the stroke of a handle are one physical line and stay in `px`.
 - **One `Tooltip` from `@numen/ui` serves every hint.** Native HTML `title` attributes are forbidden in `.vue` templates, and elements whose text is already visible on screen carry no tooltip.
 - A component copied in from the registry is edited when it is copied in: its palette, its `dark:` variants and its types are maintained in this module from then on, because the copied source belongs to this module.
+- **A row that is about one object (the recovery kit) keeps its own action in the row; the header holds the actions of the card as a whole.**
 
 ---
 
@@ -186,3 +189,18 @@ Then the windows, which need the library built first:
 cd apps/desktop/editor         && npm run typecheck && npm test
 cd apps/desktop/flashcards && npm run typecheck && npm test
 ```
+
+## Dialogs
+
+One `Dialog` from `@numen/ui` hosts every dialog, at the window root.
+
+- One job per dialog. A title of two or three words, a hint of one short line or none.
+- The actions sit in the bottom row. The body holds no buttons.
+- Gaps and text sizes come from tokens. A dialog sets no font size, no line height and no gap of its own.
+- No reserved empty line for a message that may not come. A box that fills later (a QR code, a camera) has its final size from the first frame.
+- A mode that scans shows no text field; a mode that types shows no camera. A second way is one secondary button.
+- Look at how Signal, 1Password and Bitwarden do the same thing before inventing a layout.
+
+## Words
+
+- The product has an identity, not an account: no user-visible text says account.

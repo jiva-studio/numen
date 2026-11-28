@@ -18,6 +18,8 @@ const TITLES: Readonly<Record<string, string>> = {
   'app:note.rename': 'Rename note',
   'app:file.remove': 'Move to trash',
   'app:file.copyPath': 'Copy note path',
+  'app:file.download': 'Download',
+  'app:file.dropDownload': 'Remove download',
   'app:file.open#note': 'Go to note',
   'app:file.open#document': 'Open the document here',
   'app:tab.close': 'Close tab',

@@ -88,6 +88,97 @@ export const WORDS = {
   pathChoose: 'Choose…',
   pathAdd: 'Add…',
   pathClear: 'Clear',
+  /** The identity section of the page of identity and licenses. */
+  identitySection: 'Identity',
+  identityNoneDetail:
+    'Your identity in Numen lives on your own computer, not on our servers: there is no email and no password to remember. Your devices use it to recognize each other, and your subscription belongs to it. Numen never sees it: nobody else can read your notes.',
+  identityNoneWords:
+    'When you create it, you get 12 recovery words — write them down. With them you can bring the same identity to a new computer or get it back if this one is lost.',
+  identityCreate: 'Create identity',
+  moreActions: 'More actions',
+  identityRestore: 'Restore',
+  identityRestoreFromWords: 'Recovery words',
+  identityRestoreFromWordsDetail: 'Type the 12 words',
+  identityRestoreKit: 'Recovery kit',
+  identityRestoreScanDetail: 'Scan the QR codes of two sheets',
+  identityRestoreTypeDetail: 'Type the words of two sheets',
+  identityRestoreWords: 'Recovery words',
+  identityRestoreSheets: 'Recovery kit: scan',
+  identityRestoreRejectedCode: 'This code is not a sheet of the recovery kit.',
+  identityJoin: 'Use existing',
+  identityLinkDevice: 'Link a new device',
+  identitySetupTitle: 'Recovery words',
+  identityWriteDown: 'Write the 12 words down in order. We show them once.',
+  identityNobodyRecovers:
+    'Neither Numen nor support can recover these words. If you lose the words and all your devices, you lose access to your cloud vaults.',
+  identityWordsWritten: 'I wrote the words down',
+  identityRecoveryWords: 'Recovery words',
+  identityCheckTitle: 'Check the words',
+  identityConfirmHint: (positions: readonly number[]) =>
+    `Enter words ${positions
+      .slice(0, -1)
+      .map((position) => `#${position}`)
+      .join(', ')} and #${positions.at(-1)} from your record.`,
+  identityConfirmWord: (position: number) => `Word ${position}`,
+  identityConfirmPlaceholder: 'word',
+  identityBack: 'Back',
+  identityContinue: 'Continue',
+  identityKeeping: 'Keeping…',
+  identityCancel: 'Cancel',
+  restoreUnverifiedNote:
+    'The sync server cannot be checked against your recovery kit. If you have another device, open it and confirm the devices listed are yours.',
+  restoreWordsHint: 'Enter your 12 recovery words.',
+  restoreSheetsHint:
+    'Take two of your three recovery sheets and scan their QR codes one after the other.',
+  restoreTypedTitle: 'Recovery kit: type',
+  restoreTypedHint: 'Type the words of two sheets, one sheet in each field.',
+  restoreSheetField: (sheet: number) => `Sheet ${sheet}`,
+  restoreSheetSlot: (slot: number) => `${slot === 1 ? 'First' : 'Second'} sheet`,
+  restoreSheetNumber: (sheet: number) => `Sheet ${sheet}`,
+  restoreAction: 'Restore',
+  restoringNow: 'Restoring…',
+  /** What a scanned code of a kit sheet is refused for. */
+  scanNotSheet: 'This is not a code of a Numen recovery kit.',
+  scanOtherKit: 'This sheet is from another kit. Scan a sheet of the same kit.',
+  scanRepeated: (sheet: number) => `Sheet ${sheet} is scanned already. Scan another sheet.`,
+  identityNotValid: 'Some words are not valid.',
+  identityAccount: 'Identity fingerprint',
+  identityAccountDetail: 'Compare it when you link a device',
+  identityThisDevice: 'This device',
+  identityDevices: 'Devices',
+  identityDeviceLinked: (date: string) => (date === '' ? 'Linked' : `Linked ${date}`),
+  identityDelete: 'Delete identity',
+  identityDeleteTitle: 'Delete the identity from this device?',
+  identityDeleteWarning:
+    'Without the 12 words or two sheets of the recovery kit this identity cannot be restored.',
+  identityDeleteConfirm: 'Delete',
+  identityDeleteCancel: 'Cancel',
+  /** The recovery kit of three sheets on the identity section, saved as a PDF. */
+  kitTitle: 'Recovery kit',
+  kitDetail: 'Printed sheets to bring your identity back',
+  kitDetails:
+    'Printed sheets to bring your identity back if you lose this computer. Any two of the three restore it.',
+  kitDownload: 'Download PDF',
+  kitDownloading: 'Saving…',
+  kitSaved: 'Recovery kit saved',
+  kitDialogTitle: 'Download recovery kit',
+  kitProofHint: 'Enter the 12 recovery words, or any two sheets of an earlier kit.',
+  proofField: 'Recovery words or sheets',
+  proofPlaceholder: 'Type or paste the 12 words, or put one sheet on each line',
+  proofWordsSoFar: (count: number) => `${count} of 12 words`,
+  proofWordsRecognized: '12 words recognized',
+  proofWrongCount: (count: number) =>
+    `${count} words: the recovery words are 12 and a sheet has 33. Remove the extra words.`,
+  proofSheetShort: (sheet: number, count: number) => `Sheet ${sheet} has ${count} of 33 words`,
+  proofSheetLong: (sheet: number, count: number) =>
+    `Sheet ${sheet} has ${count} words, a sheet has 33. Put one sheet on each line.`,
+  proofSheetRepeated: (sheet: number, first: number) =>
+    `Sheet ${sheet} is the same as sheet ${first}. Enter a different sheet.`,
+  proofTooManySheets: 'Two sheets are enough. Remove the others.',
+  proofOneSheet: (sheet: number) => `Sheet ${sheet} recognized, one more sheet needed`,
+  proofTwoSheets: '2 of 3 sheets recognized',
+  deviceRevokedNotice: 'This device was revoked',
+  deviceDeleteRevoked: 'Delete identity from this device',
   /** The page of licenses. */
   licensesEmpty: 'No licenses declared.',
   licensesEmptyDetail:

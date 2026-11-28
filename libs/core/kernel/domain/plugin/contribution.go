@@ -114,7 +114,7 @@ func listContributesSections(c manifest.Contributes) []Contribution {
 		{ContributionOperations, mapItems(c.Operations, func(one manifest.Operation) ContributionItem {
 			return ContributionItem{Text: getTitle(one.Title, one.Name), Detail: one.Name}
 		})},
-		{ContributionSearchFunctions, mapItems(c.SearchFunctions.Functions, newSearchFunctionItem)},
+		{ContributionSearchFunctions, listSearchFunctionItems(c)},
 		{ContributionLicenses, mapItems(c.Licenses, func(one manifest.License) ContributionItem {
 			return ContributionItem{Text: getTitle(one.Title, one.ID), Detail: one.ID}
 		})},
@@ -205,10 +205,14 @@ func joinContentTypes(reader manifest.Reader) string {
 	return strings.Join(types, ", ")
 }
 
-func newSearchFunctionItem(one manifest.SearchFunction) ContributionItem {
-	args := make([]string, 0, len(one.Args))
-	for _, arg := range one.Args {
-		args = append(args, arg.Name+": "+string(arg.Type))
+func listSearchFunctionItems(c manifest.Contributes) []ContributionItem {
+	items := make([]ContributionItem, 0, len(c.SearchFunctions.Functions))
+	for _, one := range c.SearchFunctions.Functions {
+		args := make([]string, 0, len(one.Args))
+		for _, arg := range one.Args {
+			args = append(args, arg.Name+": "+string(arg.Type))
+		}
+		items = append(items, ContributionItem{Text: one.Name, Detail: one.Name + "(" + strings.Join(args, ", ") + ")"})
 	}
-	return ContributionItem{Text: one.Name, Detail: one.Name + "(" + strings.Join(args, ", ") + ")"}
+	return items
 }

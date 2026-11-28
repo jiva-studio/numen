@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
@@ -57,7 +58,7 @@ func (r recordingSearch) SearchText(ctx context.Context, query host.SearchResult
 
 func newRecordedSearch(t *testing.T, vault *hosttest.Vault, results []host.SearchResult) (*searchCalls, *tools.Registry) {
 	t.Helper()
-	search := hosttest.NewSearch(testVault)
+	search := searchtest.NewSearch(testVault)
 	search.SetIndexedResults(results)
 	texts := hosttest.NewTexts(testVault, readerID)
 	calls := &searchCalls{}

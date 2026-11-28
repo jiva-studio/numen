@@ -33,7 +33,7 @@ describe('a vault requested for', () => {
     })
 
     expect(await vaults.list()).toStrictEqual([
-      { id: 'v1', name: 'Vault 1', path: '/v1', isMissing: true },
+      { id: 'v1', name: 'Vault 1', path: '/v1', isMissing: true, isReadOnly: false },
     ])
   })
 
@@ -50,6 +50,20 @@ describe('a vault requested for', () => {
     expect(await vaults.choose('Pick')).toBe('/v2')
   })
 
+  it('is read only where a plugin manages it', async () => {
+    const vaults = getVaults()
+    requestLog.listVaults.mockResolvedValue({
+      vaults: [
+        { id: 'v1', name: 'Food', path: '/v1', isMissing: false, managedBy: 'md.numen.tools.sync' },
+        { id: 'v2', name: 'Home', path: '/v2', isMissing: false, managedBy: '' },
+      ],
+    })
+
+    const listed = await vaults.list()
+
+    expect(listed.map((one) => one.isReadOnly)).toStrictEqual([true, false])
+  })
+
   it('is added and renamed, and answers the vault the core names', async () => {
     const vaults = getVaults()
     requestLog.addVault.mockResolvedValue({
@@ -59,7 +73,7 @@ describe('a vault requested for', () => {
     expect(requestLog.addVault.mock.calls.at(-1)?.[0]).toMatchObject({ path: '/v2', name: 'V2' })
     expect(added).toStrictEqual({
       ok: true,
-      value: { id: 'v2', name: 'V2', path: '/v2', isMissing: false },
+      value: { id: 'v2', name: 'V2', path: '/v2', isMissing: false, isReadOnly: false },
     })
 
     requestLog.renameVault.mockResolvedValue({

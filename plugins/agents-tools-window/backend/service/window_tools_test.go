@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/windowtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
@@ -28,7 +29,7 @@ const (
 )
 
 type windowTools struct {
-	window   *hosttest.Window
+	window   *windowtest.Window
 	registry *tools.Registry
 }
 
@@ -40,7 +41,7 @@ func newWindowTools(t *testing.T) windowTools {
 	vault.WriteFile(bookPath, "PK\x03\x04epub body")
 	vault.WriteFile(talkPath, "ID3\x00\x03audio")
 
-	window := hosttest.NewWindow(vault)
+	window := windowtest.NewWindow(vault)
 	return windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: window})}
 }
 
@@ -189,7 +190,7 @@ func TestSourceFocusPassesSpansAndReturnsPathAndCount(t *testing.T) {
 	if out.Path != guidePath || out.HighlightCount == nil || *out.HighlightCount != 2 {
 		t.Errorf("returned %+v", out)
 	}
-	want := []hosttest.FocusRequest{{Path: guidePath, Spans: []host.ByteSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}}}
+	want := []windowtest.FocusRequest{{Path: guidePath, Spans: []host.ByteSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}}}
 	if got := w.window.GetFocusRequests(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window received %+v, want %+v", got, want)
 	}
@@ -386,7 +387,7 @@ func TestWindowTabListMarksATabWithoutAnIDInactive(t *testing.T) {
 }
 
 type failingListWindow struct {
-	*hosttest.Window
+	*windowtest.Window
 }
 
 func (failingListWindow) ReadOpenTabs(context.Context) ([]host.OpenTab, string, error) {
@@ -395,7 +396,7 @@ func (failingListWindow) ReadOpenTabs(context.Context) ([]host.OpenTab, string, 
 
 func TestWindowTabListReportsAHostErrorAsAToolError(t *testing.T) {
 	vault := hosttest.New(testVault)
-	window := hosttest.NewWindow(vault)
+	window := windowtest.NewWindow(vault)
 	w := windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: failingListWindow{Window: window}})}
 	if failure := w.call(t, "window_tab_list", `{}`, nil, nil); !strings.Contains(failure, "window bus failed") {
 		t.Errorf("failure = %q, want window bus failed", failure)

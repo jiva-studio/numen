@@ -60,8 +60,8 @@ export function createUiServiceBridge(
       getPermission: (command) => findCommandPermission(commands, manifests, command),
     },
     getWindow: window.getWindow,
-    getNotices: window.getNotices,
-    getPicker: window.getPicker,
+    forPlugin: { getVaultFlags: window.getVaultFlags, getNotices: window.getNotices },
+    prompts: { getPicker: window.getPicker, getDialogs: window.getDialogs },
     getSlots: () => slots,
   }
 }

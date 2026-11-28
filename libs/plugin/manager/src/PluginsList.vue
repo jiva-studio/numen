@@ -50,7 +50,7 @@ const TILES = [
   { page: 'editor', name: words.editorSettings, detail: words.editorSettingsDetail },
   { page: 'search', name: words.searchSettings, detail: words.searchSettingsDetail },
   { page: 'connections', name: words.connections, detail: words.connectionsDetail },
-  { page: 'licenses', name: words.licenses, detail: words.licensesDetail },
+  { page: 'identity', name: words.identityAndLicenses, detail: words.identityAndLicensesDetail },
 ]
 
 /* -------------------------------- Handlers -------------------------------- */

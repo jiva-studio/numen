@@ -54,6 +54,18 @@ describe('the vaults and the window of a plugin context', () => {
     expect(ledger.host.ui.window?.getState()).toStrictEqual(window.getState())
   })
 
+  it('reach the vault flags the window gives, set under the id of the plugin', () => {
+    const setFlag = vi.fn()
+    const getFlags = vi.fn(() => ({ setFlag }))
+    const host = createTestPluginHost(createDeps({ getVaultFlags: getFlags }))
+
+    const context = host.lifecycle.createContext('org.example.ledger', BAR)
+    context.host.ui.vaultFlags?.setFlag('sea', 'isOpen', true)
+
+    expect(getFlags).toHaveBeenCalledWith('org.example.ledger')
+    expect(setFlag).toHaveBeenCalledWith('sea', 'isOpen', true)
+  })
+
   it('are absent where the window gives none', () => {
     const host = createTestPluginHost(createDeps())
 

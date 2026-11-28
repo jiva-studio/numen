@@ -5,7 +5,7 @@ description: The model that reads your notes, with running it on your machine, u
 
 Two of the three bands in [search](/search/) are words, and need nothing. The third finds notes that are _about_ what you typed, and for that your notes have to be read by a model.
 
-That model is provided by the Vector Embeddings plugin. By default it is small, runs on your machine, and is downloaded the first time it is needed. It needs no key and no account, and nothing you write leaves the computer. numen stores the vectors the plugin creates in the vault's index and searches them; it creates none itself.
+That model is provided by the Vector Embeddings plugin. By default it is small, runs on your machine, and is downloaded the first time it is needed. It needs no key and no sign-up, and nothing you write leaves the computer. numen stores the vectors the plugin creates in the vault's index and searches them; it creates none itself.
 
 ## Turning it off
 

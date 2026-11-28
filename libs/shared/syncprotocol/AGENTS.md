@@ -1,0 +1,47 @@
+# libs/shared/syncprotocol
+
+The protocol between Numen Sync and the sync server, shared by the plugin and by the sync server. Where a shared library goes is the skill [`nm-place-library`](../../../.agents/skills/nm-place-library/SKILL.md) and `architecture.md` §11 (e).
+
+## A leaf
+
+The module requires `connectrpc.com/connect`, `google.golang.org/protobuf`, `golang.org/x/crypto` and `github.com/klauspost/compress` (for `blobcipher`). Nothing else imports it: a chain and a key are `bytes` in the messages, so a client needs no key code. The `go/shared-leaf` check fails on a requirement of a module outside `libs/shared`.
+
+## Generated code is never edited
+
+`gen/` comes from `buf generate` over `proto/`, and `make generate-check` fails on a tree whose generated code is out of date with the schema. The Go and Connect-Go plugins only: no TypeScript has a consumer.
+
+## One version, no compatibility layer
+
+`Version` is the one protocol version this code implements. Every request carries it in `Numen-Sync-Protocol`, set by `NewVersionInterceptor` on the client and checked by `NewVersionHandlerInterceptor` on the server, so a service added later gets it with no code. A mismatch is `FAILED_PRECONDITION` with an `UpdateRequired` detail and `ErrUpdateRequired` on the client. A change to a message that an older client reads wrongly raises `Version`; nothing negotiates and nothing converts.
+
+Version 1 is the first supported wire contract. It requires a root-signed certificate for the restore epoch key. The client refuses the pre-release restore format without that certificate.
+
+## What is signed
+
+`GetSignInMessage` is the frozen byte layout of a sign-in. The core signs it under `numen/v1/plugin-sign/<plugin id>` (`identity.SignForPlugin`), and the server builds the same bytes from its own record of the challenge. A change to the layout is a change of `Version`. `GetAccountDeleteMessage` and `GetVaultDeleteMessage` are the same layout under the labels `numen-sync/account-delete/v1` and `numen-sync/vault-delete/v1`, signed by the device key under the plugin domain; the vault one has the 16 bytes of the vault id between the device key and the version. The server builds both from its own record of the challenge, which one call consumes. `GetChainReadMessage` is the same layout under the label `numen-sync/chain-read/v1`, signed by the recovery key under `numen/v1/recovery-sign/<plugin id>` and a zero byte (`identity.SignForRecovery`, `SignAsRecovery`; the server checks it with `identity.VerifyForRecovery` under `SignInPluginID`), not as plain Ed25519 over the message, to read the chain of an account. `CheckChallenge` is what a client runs before it signs: the audience is the address it dialed and the expiry is near its own clock.
+
+`GetRevisionMessage` and `GetCatalogEntryMessage` are the frozen layouts of a revision and of a catalog entry, signed the same way under the plugin domain. Both start with a label (`numen-sync/revision/v1`, `numen-sync/catalog/v1`) and a zero byte. Variable fields are a uvarint length and bytes, so a byte moved between two neighbouring fields changes the message; `enc_meta` and `enc_body` enter as their SHA-256; numbers are big endian. The signature and the `seq` are never signed. `GetRevisionID` and `GetCatalogEntryID` are the SHA-256 of the message: the `parent_rev` of the next revision and the `prev_hash` of the next entry. A change to any layout is a change of `Version`. `CheckRevision` and `CheckCatalogEntry` check shape and sizes only, for the client and the server alike; `limits.go` holds the sizes and page limits.
+
+`GetRestoreEpochMessage` is the frozen layout the server signs to announce a restore: the label `numen-sync/restore-epoch/v1`, a zero byte, the 16 bytes of id and `issued_at` as 8 bytes big endian. `CheckRestoreEpoch` checks sizes and the Ed25519 signature against the key `GetRestoreEpoch` returns; `client.RestoreClient` runs it before it returns an epoch. A server that was restored from a backup cannot know it was, so the operator issues the epoch; every `GetChangesResponse` names the current id in `restore_epoch_id`, empty before the first. `GetBlobUrls` answers a blob whose body the store lost with `NOT_FOUND` and a `BlobMissing` detail, read as `BlobMissingError` (it reads as `ErrBlobMissing`, not as `ErrNoVault`). `EncodeCatalogEntry` and `DecodeCatalogEntry` give the bytes a device keeps a copy of a catalog in.
+
+`GetShareLogEntryMessage` is the frozen layout of a share log entry, with the label `numen-sync/share-log/v1`: the ids and keys as uvarint length and bytes, then version, epoch and kind as big endian numbers, the SHA-256 of `enc_owner_body`, `enc_share_body` and `prev_key_seal`, and the seals in order as the count and, for each, the reader key and the SHA-256 of `sealed`. `GetShareLogEntryID` is its SHA-256, the `prev_hash` of the next entry. `GetRevisionMessageWithMetaHash` is `GetRevisionMessage` with a given hash in place of the SHA-256 of `enc_meta`, so a reader verifies a revision whose meta the server withheld (`ShareChange.left`), and `GetRevisionIDWithMetaHash` is its id. `CheckShareLogEntry` and `CheckShareRevision` check shape, kind rules and sizes; the `MaxShareSeals` and `MaxEncShareBody` limits are in `limits.go`. A change to either layout is a change of `Version`.
+
+## Clients
+
+The package `client` holds them, so the root package is values only and a use case may import it (`ts/plugins` allows the root, `blobcipher` and `gen`, not `client`). `client.NewCatalogClient`, `NewRevisionClient`, `NewBlobClient`, `NewAccountClient` and `NewShareClient` apply the version interceptor and `NewBearerInterceptor`, which reads the session token again for each request. The refusals of the server are mapped to `ErrWriteNotAllowed` (permission denied), `ErrNoVault`, `ErrVaultExists`, `QuotaExceededError` and `BlobNotReadyError` (from the details), `ErrNoShare`, `ErrShareExists`, `ErrReaderUnknown`, `ShareEndedError` and `RateLimitedError` (share service), `ErrUnauthenticated`, `ErrUnreachable` and `ErrUpdateRequired`; any other refusal is returned as the server sent it. `client.PutBlob` and `client.GetBlob` move a body over a presigned URL with plain HTTP: no bearer and no version header.
+
+`AccountService.ExportAccount` is a server stream of `ExportAccountResponse{data}`, each chunk at most `MaxExportChunk` (256 KiB) and free to end inside a JSON token; the chunks in stream order concatenate to one JSON document. `AccountClient.ExportAccount` joins them and returns the bytes, so a caller sees no change. An error after the first chunk fails the read; no partial document is returned.
+
+## Multipart and the metadata-only revision
+
+A body above `MaxBlobSize` goes in parts: `ReserveMultipartBlob` (checked by `CheckReserveMultipart`), `GetPartUrls`, `PutPart` of each part, `ListParts` to go on after a break, `CompleteMultipartBlob` (the server builds the part list; the client never sees an ETag) and `AbortMultipartBlob`. `GetBlobRange` reads a stored body from a byte. `blobcipher.Sealer` gives the stored bytes at any offset, so a part is derived again, never kept. A revision may name the blob of the head of its own file with the same hash and size, and the head as parent: that is a move or a rename without a new body. A tombstone has no blob and may have an empty `enc_meta`. `GetChangesResponse.reset` says the cursor is older than the deletion records the server keeps.
+
+## The stream
+
+`WatchService.WatchChanges` is one server stream per device for every vault of the account. The first message is `Started{heartbeat_seconds}`; then one `ChangeHint{vault_id, seq}` for each vault whose seq is above 0, then one for each commit, and a `Heartbeat` after each silence of `heartbeat_seconds` (1 to 30 s, `WatchHeartbeat` is 20 s). Hints of a vault never decrease and are coalesced, and every clean end (session end, server stop, replaced by a newer stream) reads as `io.EOF`: the client treats it like a drop and opens again. A hint is never trusted for content: it names a vault and an upper bound for its seq, and the reader pulls with `GetChanges` from its own cursor. The `http.Client` of `client.NewWatchClient` must have no `Timeout`, which ends the read of the body. Refusals at the open are `ErrUnauthenticated`, `ErrUpdateRequired` and `ErrUnreachable`; `RESOURCE_EXHAUSTED` stays a Connect error.
+
+## Who vouches for a restore epoch
+
+`epochtrust` is the trust in a restore announcement: the client builds in public root keys (`epochroots.go`), a root key signs a `Cert` over the epoch key of the server (`GetCertMessage`, label `numen-sync/epoch-cert/v1`, serial from 1, not-before, not-after), and the epoch key signs the announcement. `client.RestoreClient` runs `VerifyCert` then `VerifyAnnouncement` and returns `epochtrust.ErrUntrusted` otherwise; the response fields `epoch_serial`, `epoch_not_before`, `epoch_not_after` and `root_signature` carry the certificate. A root key from a plugin setting counts only for a server that is not `DefaultServer`, and the embedded root counts only for `DefaultServer`. The operator tool is `tools/epochkey`.
+
+The embedded root is a first key generated on a development machine and must be replaced by a key generated offline before release: replace the constant `EmbeddedRootHex` (one line) and re-sign the certificate of the server with `epochkey sign-cert`. The operator signs the epoch certificate of the sync server with the matching private root key.

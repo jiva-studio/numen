@@ -1,0 +1,179 @@
+import { ReportedError } from '@numen/plugin-sdk'
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, within } from 'storybook/test'
+import type { RemoteVault, Vault, VaultsClient } from '../api/vaults'
+import { decorateWithFrame } from './testing/storyFrame'
+import VaultsView from './VaultsView.vue'
+import { NO_TRANSFER } from './testing/vaultFixture'
+import '../styles.css'
+
+const NOW = new Date('2026-11-23T12:00:00Z')
+
+const work: Vault = {
+  id: 'work',
+  name: 'Work',
+  path: '/home/person/Work',
+  state: 'connected',
+  lastSyncedAt: '2026-11-23T11:55:00Z',
+  conflictCount: 0,
+  remoteId: 'aa11',
+  ...NO_TRANSFER,
+}
+
+const home: Vault = {
+  ...work,
+  id: 'home',
+  name: 'Home',
+  remoteId: 'cc33',
+  lastSyncedAt: '2026-11-23T11:59:50Z',
+}
+
+const plain: Vault = {
+  id: 'plain',
+  name: 'Plain',
+  path: '/home/person/Plain',
+  state: 'notConnected',
+  lastSyncedAt: '',
+  conflictCount: 0,
+  remoteId: '',
+  ...NO_TRANSFER,
+}
+
+const cloud: RemoteVault[] = [
+  { remoteId: 'aa11', name: 'Work', isConnected: true, sizeBytes: 1_048_576 },
+  { remoteId: 'bb22', name: 'Recipes', isConnected: false, sizeBytes: 3_670_016 },
+]
+
+interface Setup {
+  readonly vaults?: Vault[]
+  readonly remote?: RemoteVault[]
+  readonly hasIdentity?: boolean
+  readonly isReachable?: boolean
+  readonly differCount?: number
+  readonly failure?: string
+  readonly isPending?: boolean
+}
+
+const never = <T>(): Promise<T> => new Promise<T>(() => undefined)
+
+const createClient = (setup: Setup): VaultsClient => ({
+  listVaults: () => Promise.resolve({ vaults: setup.vaults ?? [] }),
+  listRemoteVaults: () => Promise.resolve({ vaults: setup.remote ?? [] }),
+  getConnectPreview: () => Promise.resolve({ differCount: setup.differCount ?? 0 }),
+  resolveDeletions: () => Promise.resolve(),
+  connectVault: () => Promise.resolve(),
+  stopSyncingVault: () => Promise.resolve(),
+  deleteCloudVault: () => Promise.resolve(),
+  getStatus: () => {
+    if (setup.isPending === true) return never()
+    if (setup.failure !== undefined) return Promise.reject(new ReportedError(setup.failure))
+    return Promise.resolve({
+      hasIdentity: setup.hasIdentity ?? true,
+      isReachable: setup.isReachable ?? true,
+      items: [],
+    })
+  },
+})
+
+const meta = {
+  title: 'NumenSync/Vaults',
+  component: VaultsView,
+  decorators: [decorateWithFrame],
+  render: (args) => ({
+    components: { VaultsView },
+    setup: () => ({ args }),
+    template: '<VaultsView v-bind="args" />',
+  }),
+} satisfies Meta<typeof VaultsView>
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const Loading: Story = {
+  args: { client: createClient({ isPending: true }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    const rows = within(canvasElement).getAllByRole('listitem')
+    await expect(rows).toHaveLength(1)
+    await expect(rows[0]).toHaveTextContent('')
+  },
+}
+
+export const LoadFailed: Story = {
+  args: { client: createClient({ failure: 'The sync service did not answer' }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByRole('alert')).toHaveTextContent('did not answer')
+    await expect(canvas.getByRole('button', { name: 'Try again' })).toBeVisible()
+  },
+}
+
+export const Empty: Story = {
+  args: { client: createClient({ vaults: [plain] }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('No vault is synced yet')).toBeVisible()
+    await expect(canvas.queryByText('Plain')).toBeNull()
+    await expect(canvas.queryByRole('button')).toBeNull()
+  },
+}
+
+export const Synced: Story = {
+  args: { client: createClient({ vaults: [work, home, plain] }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Work')).toBeVisible()
+    await expect(canvas.getByText('Last sync 5 minutes ago')).toBeVisible()
+    await expect(canvas.getByText('Last sync just now')).toBeVisible()
+    await expect(canvas.queryByText('Plain')).toBeNull()
+  },
+}
+
+export const ChangedOnTwoDevices: Story = {
+  args: { client: createClient({ vaults: [{ ...work, conflictCount: 3 }] }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    await expect(
+      await within(canvasElement).findByText('3 notes changed on two devices'),
+    ).toBeVisible()
+  },
+}
+
+export const DeletionsPaused: Story = {
+  args: {
+    client: createClient({
+      vaults: [{ ...work, pausedDeletions: { count: 5, tracked: 10, direction: 'send' } }],
+    }),
+    now: () => NOW,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('5 of 10 files are removed here')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Remove the files' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Keep the files' })).toBeVisible()
+  },
+}
+
+export const ServerAway: Story = {
+  args: { client: createClient({ vaults: [work], isReachable: false }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    await expect(await within(canvasElement).findByText('Last sync 5 minutes ago')).toBeVisible()
+  },
+}
+
+export const NoIdentity: Story = {
+  args: { client: createClient({ hasIdentity: false }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    await expect(await within(canvasElement).findByText('No identity on this device')).toBeVisible()
+  },
+}
+
+export const NotSyncingHere: Story = {
+  args: { client: createClient({ vaults: [work], remote: cloud }), now: () => NOW },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Recipes')).toBeVisible()
+    await expect(canvas.getByText('Not syncing')).toBeVisible()
+    await expect(canvas.getByText('1 MB in the cloud')).toBeVisible()
+    await expect(canvas.getByText('3.5 MB in the cloud')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Actions for Recipes' })).toBeVisible()
+  },
+}

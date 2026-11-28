@@ -2,9 +2,8 @@
 /**
  * One settings row: the title with a one-line description under it on the left, the control on the
  * right. A setting with details shows an info button beside the title that opens them in a popover.
- * Escape closes it and gives the focus back to the button, and a press outside closes it; a scroll or
- * a resize of the page leaves it open, since it moves with its row. A value changed from its default
- * shows a Reset action beside the title. When the settings column is narrower than 34rem, the control
+ * A value changed from its default shows a Reset action beside the title. When the settings column
+ * is narrower than 34rem, the control
  * moves under the title at full width.
  *
  * The title carries the id the control is labelled by, because switches, segments and composite
@@ -15,10 +14,10 @@
  * is drawn with a focus request and whenever it is given a new one, so a repeated request scrolls
  * again.
  */
-import { computed, nextTick, onMounted, ref, useTemplateRef, watch, type VNode } from 'vue'
+import { computed, onMounted, ref, useTemplateRef, watch, type VNode } from 'vue'
 import { Info, RotateCcw, TriangleAlert } from '@lucide/vue'
-import { runInBackground, isPageMove, useMenuDismissal } from '@numen/ui'
 import { WORDS as words } from '../../words'
+import InfoPopover from './InfoPopover.vue'
 import RowAction from './RowAction.vue'
 import type { SettingRowProps } from './SettingRow.types'
 
@@ -44,25 +43,11 @@ const trimmedDetails = computed(() => props.details?.trim() ?? '')
 const row = useTemplateRef<HTMLElement>('row')
 const label = useTemplateRef<HTMLElement>('label')
 const infoButton = useTemplateRef<HTMLButtonElement>('infoButton')
-const popover = useTemplateRef<HTMLElement>('popover')
 const isInfoOpen = ref(false)
-const dismissal = useMenuDismissal(label, () => closeInfo(false), isPageMove)
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
   if (props.focus) scrollIntoView()
-})
-
-watch(isInfoOpen, (isOpen) => {
-  if (!isOpen) {
-    dismissal.release()
-    return
-  }
-  dismissal.listen()
-  runInBackground(
-    nextTick(() => popover.value?.focus()),
-    () => undefined,
-  )
 })
 
 watch(
@@ -81,12 +66,8 @@ function onToggleInfo(): void {
   isInfoOpen.value = !isInfoOpen.value
 }
 
-function onPopoverEscape(): void {
-  closeInfo(true)
-}
-
 /* -------------------------------- Helpers --------------------------------- */
-function closeInfo(isFocusReturned: boolean): void {
+function onCloseInfo(isFocusReturned: boolean): void {
   isInfoOpen.value = false
   if (isFocusReturned) infoButton.value?.focus()
 }
@@ -131,18 +112,14 @@ function scrollIntoView(): void {
       <span v-if="trimmedDetail" :id="detailId" class="settings__detail">
         {{ trimmedDetail }}
       </span>
-      <div
+      <InfoPopover
         v-if="isInfoOpen"
-        ref="popover"
-        class="settings__popover"
-        role="dialog"
-        :aria-label="words.aboutSetting(props.name)"
-        tabindex="-1"
-        @keydown.esc.stop.prevent="onPopoverEscape"
-      >
-        <p class="settings__popover-title">{{ props.name }}</p>
-        <p class="settings__popover-text">{{ trimmedDetails }}</p>
-      </div>
+        :name="props.name"
+        :text="trimmedDetails"
+        :anchor="infoButton"
+        :from="label"
+        @close="onCloseInfo"
+      />
     </div>
     <div class="settings__value">
       <slot v-bind="{ labelledBy: nameId, describedBy: detailId }" />
@@ -160,7 +137,6 @@ function scrollIntoView(): void {
   box-sizing: border-box;
   min-block-size: var(--settings-row-min);
   padding-block: var(--settings-row-pad);
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .settings__info {
@@ -183,46 +159,13 @@ function scrollIntoView(): void {
   color: var(--numen-ink);
 }
 
-.settings__info:focus-visible,
-.settings__popover:focus-visible {
+.settings__info:focus-visible {
   outline: var(--numen-stroke) solid var(--numen-accent);
-}
-
-.settings__popover {
-  position: absolute;
-  inset-block-start: calc(100% + 0.25rem);
-  inset-inline-start: 0;
-  z-index: 1;
-  box-sizing: border-box;
-  inline-size: max-content;
-  max-inline-size: min(26rem, 100cqi);
-  padding: 0.75rem 0.875rem;
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius-popup);
-  background-color: var(--numen-raised);
-  box-shadow: var(--numen-shadow-card);
-  color: var(--numen-ink);
-  font-size: var(--numen-text-2);
-  line-height: 1.5;
-}
-
-.settings__popover-title {
-  margin: 0 0 0.25rem;
-  font-weight: 600;
-}
-
-.settings__popover-text {
-  margin: 0;
-  color: var(--numen-hushed);
 }
 
 .settings__mark {
   flex: none;
   color: var(--numen-alarm);
-}
-
-.settings__row:last-child {
-  border-block-end: none;
 }
 
 .settings__label {

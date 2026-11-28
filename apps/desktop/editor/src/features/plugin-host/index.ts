@@ -10,6 +10,8 @@ export {
   createVaultServiceParts,
 } from './model/createHostParts'
 export type { HostParts } from './model/createHostParts'
+export { createDialogStack } from './model/createDialogStack'
+export { default as PluginDialogs } from './ui/PluginDialogs.vue'
 export { createWindowPluginStatus } from './model/pluginSettings'
 export {
   createVaultAccess,
@@ -20,6 +22,7 @@ export { createPluginCatalog } from './model/createPluginCatalog'
 export { createPluginReports } from './model/createPluginReports'
 export { getAppCommandIds } from './model/window/getAppCommandIds'
 export { getListedCommandIds, isCommandListed } from './model/window/listedCommands'
+export { createVaultFlags } from './model/window/createVaultFlags'
 export { createWindowFacts } from './model/window/createWindowFacts'
 export { createWindowSlots } from './model/window/createWindowSlots'
 export { createSlotGroups } from './model/window/slotGroups'
@@ -31,3 +34,4 @@ export type { PluginServices } from './model/pluginServices'
 export { createWindowCommands } from './model/window/windowCommands'
 export { createWindowVaults } from './model/window/createWindowVaults'
 export { createSearchMenu } from './lib/searchMenu'
+export { createTextSaver, type TextSaver } from './model/createTextSaver'

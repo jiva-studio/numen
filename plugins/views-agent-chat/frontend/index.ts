@@ -3,6 +3,7 @@ import {
   definePlugin,
   type HostServices,
   type PluginContext,
+  formatErrorMessage,
 } from '@numen/plugin-sdk'
 import { runInBackground } from '@numen/ui'
 import { useConversation } from './thread'
@@ -35,7 +36,9 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   }
   const agents = createAgentList(connections, WORDS)
   const reloadAgents = () =>
-    runInBackground(agents.reload(), (error) => host.ui.notices.show(String(error), 'error'))
+    runInBackground(agents.reload(), (error) =>
+      host.ui.notices.show(formatErrorMessage(error), 'error'),
+    )
   plugin.settings.onChange(AGENTS_SETTING, reloadAgents)
   // A host that tells of changes of the connections lists the agents now and again on each change; one
   // that does not lists them for each tab it opens.

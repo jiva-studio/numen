@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedchunks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -76,7 +77,7 @@ func (c TestInstallation) SubscribeSettingChanges() (<-chan []settingsdomain.Set
 
 // SubscribeAppliedPluginSettings reports when the host finishes applying a settings batch.
 func (c TestInstallation) SubscribeAppliedPluginSettings() (<-chan struct{}, func()) {
-	return c.Resources.pluginChanges.Subscribe()
+	return c.Resources.subscriptions.Changes.Subscribe()
 }
 
 func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher indexing.VaultWatcher) *indexing.VaultOpener {
@@ -116,7 +117,7 @@ func settingsGetSettingsAt(c settingsParts, path string) (settingsadapter.File, 
 
 func Scan(c TestInstallation, db *Index) indexing.Scan { return searchScan(indexPlanOf(c), db) }
 
-func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (indexing.Embed, error) {
+func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (embedchunks.Embed, error) {
 	return searchEmbed(indexPlanOf(c), db, source, v)
 }
 
@@ -138,7 +139,7 @@ func GetSettingsWriter(c TestInstallation) func(entries []settingsdomain.Setting
 
 // UnsubscribeHost stops the settings subscription of the plugin host before a test ends.
 func UnsubscribeHost(c TestInstallation) {
-	c.Resources.subscribedHosts.Unsubscribe(c.Preferences.Configuration)
+	c.Resources.subscriptions.Hosts.Unsubscribe(c.Preferences.Configuration)
 }
 
 func VaultReaders(c TestInstallation) vaultport.VaultReaders {
@@ -167,7 +168,7 @@ func VaultOpener(c TestInstallation, db *Index) *indexing.VaultOpener {
 }
 
 func InstallPluginVault(c TestInstallation, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks) error {
-	vaults, err := c.openRegistry()
+	vaults, err := openVaultRegistry(c.RegistryPath)
 	if err != nil {
 		return err
 	}

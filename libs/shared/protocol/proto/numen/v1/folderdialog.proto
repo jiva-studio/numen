@@ -10,6 +10,33 @@ service FolderDialogService {
   // and answers with the folder they chose. A person who closes the dialog has
   // chosen nothing, and the answer says so.
   rpc ChooseFolder(ChooseFolderRequest) returns (ChooseFolderResponse);
+
+  // SaveTextFile puts this machine's own save dialog in front of the person and writes the text to
+  // the file they chose. A person who closes the dialog has saved nothing, and the answer says so.
+  rpc SaveTextFile(SaveTextFileRequest) returns (SaveTextFileResponse);
+}
+
+message SaveTextFileRequest {
+  // What the dialog is titled. Empty takes the words the application chooses.
+  string title = 1;
+
+  // The name the dialog proposes, with its extension.
+  string file_name = 2;
+
+  // The extension the dialog offers files of, with its dot, such as ".json". Empty offers every file.
+  string extension = 3;
+
+  // What the file holds.
+  string content = 4 [debug_redact = true];
+}
+
+message SaveTextFileResponse {
+  // The file that was written, empty when none was.
+  string path = 1;
+
+  // Set when the person chose a file and the text is in it. False is a dialog they closed, which is
+  // an ordinary answer.
+  bool is_saved = 2;
 }
 
 message ChooseFolderRequest {

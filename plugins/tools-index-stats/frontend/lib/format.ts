@@ -9,9 +9,6 @@ import { isPending } from './pending'
 /** The mark in front of the count in the title bar. */
 export const MARK = '⬡'
 
-const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const
-const BYTES_PER_UNIT = 1024
-
 /** A whole number with the thousands separator of the locale; the locale of the window when none. */
 export function formatCount(value: number, locale?: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)
@@ -26,22 +23,6 @@ export function formatVectors(stats: Pick<Stats, 'vectors'>, locale?: string): s
 export function formatSummary(stats: Pick<Stats, 'vectors' | 'waiting'>, locale?: string): string {
   const vectors = `${formatCount(stats.vectors, locale)} ${words.vectorsUnit}`
   return isPending(stats) ? `${vectors}, ${words.indexing}` : vectors
-}
-
-/** A size in bytes in the largest unit that keeps the figure at one or more, with one decimal. */
-export function formatBytes(bytes: number, locale?: string): string {
-  let size = Math.max(0, bytes)
-  let unit = 0
-  while (size >= BYTES_PER_UNIT && unit < BYTE_UNITS.length - 1) {
-    size /= BYTES_PER_UNIT
-    unit += 1
-  }
-  const digits = unit === 0 ? 0 : 1
-  const figure = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(size)
-  return `${figure} ${BYTE_UNITS[unit]}`
 }
 
 /** A rate with one decimal. */

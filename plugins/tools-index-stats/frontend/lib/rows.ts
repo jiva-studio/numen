@@ -1,9 +1,10 @@
 /**
  * The rows of the popover: a label, a value and, where the meaning is not obvious, a one-line hint.
  */
+import { formatBytes } from '@numen/ui'
 import type { Kind, KindCount, Stats } from '../types'
 import { WORDS as words } from '../words'
-import { formatBytes, formatCount, formatRate, formatTime } from './format'
+import { formatCount, formatRate, formatTime } from './format'
 
 export interface Row {
   readonly id: string

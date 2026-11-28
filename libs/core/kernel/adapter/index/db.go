@@ -21,6 +21,7 @@ import (
 	_ "modernc.org/sqlite"
 	_ "modernc.org/sqlite/vec"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
@@ -46,6 +47,10 @@ type DB struct {
 	noteCache   *note.Cache
 }
 
+// busyTimeout waits for a writer, up to five seconds, before SQLITE_BUSY. The check of the file before the pool
+// opens waits as well: the last connection of this process to close checkpoints the WAL under an exclusive lock.
+const busyTimeout = "busy_timeout(5000)"
+
 func getPragmas() []string {
 	return []string{
 		// WAL so a long scan does not block readers. This one is persisted in the
@@ -56,7 +61,7 @@ func getPragmas() []string {
 		// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer being
 		// waited for may be in another process, and a write that exhausted the wait
 		// retries.
-		"busy_timeout(5000)",
+		busyTimeout,
 		// Pages are read from the mapped file, shared by every connection, up to
 		// 256 MiB of it.
 		"mmap_size(268435456)",
@@ -197,9 +202,13 @@ func (d *DB) Sources() sources {
 // reads the vaults again and leaves them as they are.
 func (d *DB) TextVersions() *version.Repository { return version.NewRepository(d.read, d.write) }
 
-// OpenTabs is the tabs the window has open on every vault. A rebuild of the
+// NewOpenTabs is the tabs the window has open on every vault, kept in the database of the index. A rebuild of the
 // index leaves them as they are.
-func (d *DB) OpenTabs() *opentabs.Repository { return opentabs.NewRepository(d.read, d.write) }
+func NewOpenTabs(d *DB) *opentabs.Repository { return opentabs.NewRepository(d.read, d.write) }
+
+// AbsentFiles is the registry of the files each vault lists and does not hold. A rebuild of the
+// index empties it, and the plugin that filled it sends it again.
+func (d *DB) AbsentFiles() *absent.Repository { return absent.NewRepository(d.read, d.write) }
 
 // SearchFloors is the effective similarity floor of every vault under every recipe. A rebuild of
 // the index leaves it as it is.

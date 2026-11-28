@@ -6,13 +6,16 @@ require (
 	cel.dev/cel-go v0.33.2
 	connectrpc.com/connect v1.21.1
 	github.com/ebitengine/purego v0.11.3
+	github.com/go-pdf/fpdf v0.9.0
 	github.com/rjeczalik/notify v0.9.3
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	golang.org/x/sync v0.25.0
 	golang.org/x/text v0.44.0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240826202546-f6391c0de4c7
 	google.golang.org/protobuf v1.36.12
 	modernc.org/sqlite v1.62.0
 	pgregory.net/rapid v1.3.0
+	rsc.io/qr v0.2.0
 )
 
 require (
@@ -21,7 +24,6 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240826202546-f6391c0de4c7 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240826202546-f6391c0de4c7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -39,6 +41,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
+	github.com/jiva-studio/numen/libs/shared/identity v0.0.0
 	github.com/jiva-studio/numen/libs/shared/note v0.0.0
 	github.com/jiva-studio/numen/libs/shared/protocol v0.0.0
 	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0
@@ -60,3 +63,5 @@ replace github.com/jiva-studio/numen/libs/shared/note => ../../shared/note
 replace github.com/jiva-studio/numen/libs/plugin/catalog => ../../plugin/catalog
 
 replace github.com/jiva-studio/numen/libs/shared/atomicfile => ../../../libs/shared/atomicfile
+
+replace github.com/jiva-studio/numen/libs/shared/identity => ../../shared/identity

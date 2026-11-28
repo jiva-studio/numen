@@ -2,7 +2,9 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, ref, shallowRef } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { type Mode, type Theme } from '../lib/appearance'
-import { useAppearancePalette, type AppearancePaletteDeps } from './useAppearancePalette'
+import { useAppearancePalette } from './useAppearancePalette'
+
+type AppearancePaletteDeps = Parameters<typeof useAppearancePalette>[0]
 
 const WORDS = {
   apply: 'Apply',

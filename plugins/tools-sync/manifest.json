@@ -1,26 +1,123 @@
 {
   "id": "md.numen.tools.sync",
   "name": "Numen Sync",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "protocol": 1,
   "description": "Synchronizes your vaults across devices",
-  "targets": ["desktop.editor"],
+  "targets": ["desktop.editor", "mobile.app"],
+  "activationEvents": ["onFilesChanged"],
   "contributes": {
     "category": "tools",
-    "licenses": [
+    "commands": [
+      { "id": "vault.sync", "title": "Sync this vault", "icon": "refresh-cw" },
+      { "id": "vault.stopSync", "title": "Stop syncing this vault", "icon": "cloud-off" },
+      { "id": "share.open", "title": "Share...", "icon": "share-2" },
+      { "id": "share.accept", "title": "Accept a shared folder...", "icon": "folder-input" },
       {
-        "id": "sync",
-        "title": "Numen Sync",
-        "description": "Synchronizes your vaults across devices",
-        "providers": [
-          {
-            "provider": "creem",
-            "url": "https://www.creem.io/test/payment/prod_5YckdJcFG6a0eH2aETTOAz"
-          }
-        ]
+        "id": "vault.fromCloud",
+        "title": "Get a vault from the cloud...",
+        "icon": "cloud-download"
       }
     ],
-    "slots": [{ "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 }]
+    "slots": [
+      { "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 },
+      {
+        "slot": "fileTree.context",
+        "command": "vault.sync",
+        "group": "6-sync",
+        "when": "target.isRoot && vault.flags.md.numen.tools.sync.isSynced == false"
+      },
+      {
+        "slot": "fileTree.context",
+        "command": "vault.stopSync",
+        "group": "6-sync",
+        "when": "target.isRoot && vault.flags.md.numen.tools.sync.isSynced == true"
+      },
+      {
+        "slot": "fileTree.context",
+        "command": "share.open",
+        "group": "6-sync",
+        "when": "target.isFolder && vault.flags.md.numen.tools.sync.isSynced == true"
+      }
+    ]
   },
+  "permissions": [
+    "identity",
+    "identity:link",
+    "link:open",
+    "vault:manage",
+    "vault:read",
+    "vault:write"
+  ],
+  "capabilities": ["files.provider", "vault.provider"],
+  "services": ["md.numen.tools.sync"],
+  "backend": {
+    "entrypoint": "bin/tools-sync",
+    "lifecycle": "persistent",
+    "requires": ["identity"]
+  },
+  "settings": [
+    {
+      "key": "server",
+      "type": "string",
+      "title": "Sync server",
+      "description": "Address of the server this device signs in to",
+      "default": "https://sync.numen.md"
+    },
+    {
+      "key": "syncIntervalSeconds",
+      "type": "number",
+      "title": "Sync interval",
+      "description": "How often this device asks the server for changes",
+      "default": 30,
+      "min": 1
+    },
+    {
+      "key": "removalDelaySeconds",
+      "type": "number",
+      "title": "Removal delay",
+      "description": "How long a removed file is watched before the removal is sent",
+      "default": 60,
+      "min": 1
+    },
+    {
+      "key": "epochRootKey",
+      "type": "string",
+      "title": "Epoch root key",
+      "description": "Public root key of a server you typed above",
+      "details": "64 hex digits. The key vouches for the restore announcements of that server and never counts for the default server.",
+      "default": ""
+    },
+    {
+      "key": "receivedFolder",
+      "type": "string",
+      "title": "Folder for shared vaults",
+      "description": "Where the folders shared with you are kept",
+      "details": "Where the folders shared with you are kept. Empty means Numen Shared in your home folder.",
+      "default": ""
+    },
+    {
+      "key": "syncOnlyWhileOpen",
+      "type": "boolean",
+      "title": "Sync only while the app is open",
+      "description": "Stops the sync while the app is off the screen",
+      "details": "Stops the sync when the app leaves the screen and starts it when it returns.",
+      "default": false
+    },
+    {
+      "key": "downloadOnDemand",
+      "type": "boolean",
+      "title": "Download big files when opened",
+      "description": "Keeps large files in the cloud until you open them",
+      "details": "Notes and small images are still downloaded at once. Files already on this device stay.",
+      "default": true
+    }
+  ],
+  "settingsTabs": [{ "id": "sync", "title": "Sync" }],
+  "settingsViews": [
+    { "id": "vaults", "title": "Synced vaults", "tab": "sync" },
+    { "id": "shares", "title": "Shared folders", "tab": "sync" },
+    { "id": "subscription", "title": "Subscription", "page": "identity" }
+  ],
   "frontend": {}
 }

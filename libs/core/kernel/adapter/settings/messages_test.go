@@ -30,8 +30,8 @@ func TestTheNoticesOfReadingTheFileNameTheKeyAndWhatHappens(t *testing.T) {
 			t.Fatalf("%s: the file was rejected: %v", body, err)
 		}
 		cfg.DropInvalid(declaredSettings, installedThemes)
-		if !slices.Contains(cfg.Notices, want) {
-			t.Errorf("%s: the notices are %q, want %q among them", body, cfg.Notices, want)
+		if !slices.Contains(cfg.Header.Notices, want) {
+			t.Errorf("%s: the notices are %q, want %q among them", body, cfg.Header.Notices, want)
 		}
 	}
 }

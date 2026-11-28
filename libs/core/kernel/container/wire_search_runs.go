@@ -2,12 +2,10 @@ package container
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
@@ -16,13 +14,8 @@ import (
 	queryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
-
-func newIndexGenerations(clock machineport.Clock) *indexgeneration.Generations {
-	return indexgeneration.New(strconv.FormatInt(clock.Now().UnixNano(), 36))
-}
 
 func emitIndexChanged(generations *indexgeneration.Generations, events *editor.Events) func(context.Context, domain.Vault) {
 	return func(ctx context.Context, v domain.Vault) {
@@ -39,23 +32,21 @@ type windowSearch struct {
 
 func newSearchRuns(
 	tasks *run.Tasks, generations *indexgeneration.Generations, find *queryusecase.FindSearchResults,
-	resolver pluginResolver, manifests pluginmanifest.Manifests, clock installationClock,
+	resolver pluginResolver, manifests pluginmanifest.Manifests, clock timeSource,
 ) *queryusecase.SearchRuns {
 	runs := queryusecase.NewSearchRuns(queryusecase.Deps{
 		Store:       searchstore.New(),
 		Cancels:     searchcancel.NewSearches(clock),
 		Tasks:       tasks,
 		Clock:       clock,
-		CreateTimer: clock.After,
+		CreateTimer: clock.StartTimer,
 		Policy:      searchrundomain.DefaultPolicy(),
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: generations,
 		Run:         find.Execute,
-		Names: func(pluginID string) string {
-			return getPluginName(resolver, pluginID)
-		},
-		GetCatalog: getSearchCatalog(manifests),
-		MaxResults: find.Limits.MaxLimit,
+		Names:       getPluginNames(resolver),
+		GetCatalog:  getSearchCatalog(manifests),
+		MaxResults:  find.Limits.MaxLimit,
 	})
 	return &runs
 }
@@ -64,12 +55,4 @@ func getSearchCatalog(manifests pluginmanifest.Manifests) func() searchquerydoma
 	return func() searchquerydomain.Catalog {
 		return searchquerydomain.MergeCatalog(searchquerydomain.GetBuiltinCatalog(), manifests.ListSearchFunctions())
 	}
-}
-
-func getListingRevision(catalog func() searchquerydomain.Catalog) func() string {
-	return func() string { return searchquerydomain.GetCatalogRevision(catalog()) }
-}
-
-func getCoreClaims() manifest.CoreClaims {
-	return manifest.CoreClaims{SearchFunctions: searchquerydomain.ListFunctionNames(searchquerydomain.GetBuiltinCatalog())}
 }

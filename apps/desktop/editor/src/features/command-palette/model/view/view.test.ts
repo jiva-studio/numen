@@ -413,3 +413,45 @@ describe('the confirmation of the item picked for a command', () => {
     ])
   })
 })
+
+describe('the vault step with cloud vaults', () => {
+  const open = createCommand({ id: COMMAND.openVault, text: 'Open vault', group: 'vault' })
+  const remove = createCommand({ id: COMMAND.removeVault, text: 'Remove vault', group: 'vault' })
+  const hare = { remoteId: 'r1', name: 'Hare Krishna', sizeBytes: 2040109466, vaultId: '' }
+  const createCloudView = (cloud: readonly (typeof hare)[]) =>
+    getPaletteView({
+      words,
+      commands: [open, remove],
+      byId: new Map([open, remove].map((one) => [one.id, one])),
+      runs: runSupport(),
+      lists,
+      found: ref([]),
+      known: ref([]),
+      showing: ref(''),
+      isWorking: ref(false),
+      failureMessage: ref(''),
+      getCloudVaults: () => cloud,
+      getStepTitle: () => '',
+      getStepLabel: () => '',
+    })
+  const stepOf = (command: Command): PendingStep => ({ step: 'vault', command, on: front() })
+
+  it('lists them under the vaults of this device, with the size under the name', () => {
+    const groups = createCloudView([hare]).createGroups(stepOf(open), front(), '')
+
+    expect(groups.map((group) => group.id)).toStrictEqual(['vaults', 'cloud'])
+    expect(groups[1]).toMatchObject({
+      title: 'Cloud',
+      items: [{ id: 'cloud:r1', title: 'Hare Krishna', detail: '1.9 GB' }],
+    })
+  })
+
+  it('shows no group where there is no cloud vault, or where the words typed leave none', () => {
+    expect(createCloudView([]).createGroups(stepOf(open), front(), '')).toHaveLength(1)
+    expect(createCloudView([hare]).createGroups(stepOf(open), front(), 'zzz')).toHaveLength(1)
+  })
+
+  it('shows none in the step of a command that removes a vault', () => {
+    expect(createCloudView([hare]).createGroups(stepOf(remove), front(), '')).toHaveLength(1)
+  })
+})

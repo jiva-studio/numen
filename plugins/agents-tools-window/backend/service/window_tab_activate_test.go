@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/windowtest"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
 )
 
@@ -26,7 +27,7 @@ type tabActivateOutput struct {
 	Tab tabOutput `json:"tab"`
 }
 
-func requireWindowNotMoved(t *testing.T, window *hosttest.Window) {
+func requireWindowNotMoved(t *testing.T, window *windowtest.Window) {
 	t.Helper()
 	if notes, files := window.GetFocusedNotes(), window.GetFocusRequests(); len(notes) != 0 || len(files) != 0 {
 		t.Errorf("the window received a call to focus notes %v and files %+v", notes, files)
@@ -139,7 +140,7 @@ func TestWindowTabActivateDescriptionNamesWindowTabList(t *testing.T) {
 // otherActiveWindow is a window that does not make the requested tab active: ActivateTab returns the tab
 // and the id of the tab that stays active.
 type otherActiveWindow struct {
-	*hosttest.Window
+	*windowtest.Window
 	activeID string
 }
 
@@ -158,7 +159,7 @@ func (w otherActiveWindow) ActivateTab(ctx context.Context, id string) (host.Ope
 
 func TestWindowTabActivateReturnsIsActiveFromTheWindow(t *testing.T) {
 	vault := hosttest.New(testVault)
-	window := hosttest.NewWindow(vault)
+	window := windowtest.NewWindow(vault)
 	window.SetOpenTabs(getGuideTabs(), "tab-1")
 	w := windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: otherActiveWindow{Window: window, activeID: "tab-1"}})}
 
@@ -173,7 +174,7 @@ func TestWindowTabActivateReturnsIsActiveFromTheWindow(t *testing.T) {
 
 // countingWindow is the window of the vault that counts the ActivateTab calls it receives.
 type countingWindow struct {
-	*hosttest.Window
+	*windowtest.Window
 	activateCalls *atomic.Int64
 }
 
@@ -185,7 +186,7 @@ func (w countingWindow) ActivateTab(ctx context.Context, id string) (host.OpenTa
 func newCountingTools(t *testing.T) (windowTools, *atomic.Int64) {
 	t.Helper()
 	vault := hosttest.New(testVault)
-	window := hosttest.NewWindow(vault)
+	window := windowtest.NewWindow(vault)
 	tabs := append(getGuideTabs(), host.OpenTab{ID: "tab-4", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":2,"pageCount":120}`})
 	window.SetOpenTabs(tabs, "tab-1")
 	calls := &atomic.Int64{}
@@ -219,7 +220,7 @@ func TestWindowTabActivateActivatesATabOnce(t *testing.T) {
 // lateWindow is a window that does not show the requested tab in time: ActivateTab returns the error
 // the host sends when the window does not report the tab active within its bound.
 type lateWindow struct {
-	*hosttest.Window
+	*windowtest.Window
 }
 
 func (w lateWindow) ActivateTab(_ context.Context, id string) (host.OpenTab, string, error) {
@@ -228,7 +229,7 @@ func (w lateWindow) ActivateTab(_ context.Context, id string) (host.OpenTab, str
 
 func TestWindowTabActivateRejectsATabNotShownInTime(t *testing.T) {
 	vault := hosttest.New(testVault)
-	window := hosttest.NewWindow(vault)
+	window := windowtest.NewWindow(vault)
 	window.SetOpenTabs(getGuideTabs(), "tab-1")
 	w := windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: lateWindow{Window: window}})}
 

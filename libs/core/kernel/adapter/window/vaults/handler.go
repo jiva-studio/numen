@@ -37,9 +37,15 @@ type FolderChooser interface {
 	Execute(ctx context.Context, title, startingAt string) (picker.PickedFolder, error)
 }
 
-// Dialog answers the request for the machine's native folder dialog.
+// TextSaver opens the native save dialog and writes a text to the file the person chose.
+type TextSaver interface {
+	Execute(ctx context.Context, file picker.TextFile) (picker.SavedFile, error)
+}
+
+// Dialog answers the requests for the machine's native folder and save dialogs.
 type Dialog struct {
 	chooseFolder FolderChooser
+	saveText     TextSaver
 }
 
 // Handler answers about the vaults this installation holds.
@@ -67,8 +73,8 @@ func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Han
 
 // NewDialogRoute is where the folder dialog service answers: its path and the handler of its calls. Each call
 // goes through counted. A build with no native folder dialog does not mount it, and a client gets Unimplemented.
-func NewDialogRoute(choose FolderChooser, counted connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewFolderDialogServiceHandler(&Dialog{chooseFolder: choose}, counted)
+func NewDialogRoute(choose FolderChooser, save TextSaver, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewFolderDialogServiceHandler(&Dialog{chooseFolder: choose, saveText: save}, counted)
 }
 
 // ListVaults returns every vault of the installation. The active vault is
@@ -102,6 +108,23 @@ func (s *Dialog) ChooseFolder(
 	}
 	// A closed dialog is a valid response with IsChosen false.
 	return connect.NewResponse(&v1.ChooseFolderResponse{Path: selected.Path, IsChosen: selected.IsChosen}), nil
+}
+
+// SaveTextFile opens this machine's native save dialog and writes the text to the file the person chose.
+func (s *Dialog) SaveTextFile(
+	ctx context.Context,
+	r *connect.Request[v1.SaveTextFileRequest],
+) (*connect.Response[v1.SaveTextFileResponse], error) {
+	saved, err := s.saveText.Execute(ctx, picker.TextFile{
+		Title: r.Msg.GetTitle(), Name: r.Msg.GetFileName(), Extension: r.Msg.GetExtension(), Content: r.Msg.GetContent(),
+	})
+	if picker.IsFolderDialogUnavailable(err) {
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	}
+	if err != nil {
+		return nil, wire.NewInternalError(err)
+	}
+	return connect.NewResponse(&v1.SaveTextFileResponse{Path: saved.Path, IsSaved: saved.IsSaved}), nil
 }
 
 // AddVault turns a folder into a vault on the list. A name another vault has
@@ -179,7 +202,7 @@ func (s *Handler) OpenVault(
 func convertVaultToWire(v vaults.ListedVault) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
-		IsMissing: v.IsMissing,
+		IsMissing: v.IsMissing, ManagedBy: v.ManagedBy,
 	}
 }
 

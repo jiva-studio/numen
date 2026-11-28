@@ -154,3 +154,6 @@ func (PluginLister) IsPluginEnabled(string) bool { return false }
 
 // IsEnabled reports that no plugin is enabled.
 func (PluginLister) IsEnabled(string) bool { return false }
+
+// KeepAll has no plugin to keep.
+func (Settings) KeepAll(context.Context) {}

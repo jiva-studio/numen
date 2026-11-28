@@ -9,6 +9,7 @@ import (
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 )
 
@@ -17,11 +18,13 @@ const (
 	nightCSS = ":root { --numen-surface: #101010 }"
 )
 
-// fakePlugins is a source of plugin themes held in memory.
+// fakePlugins is a source of plugin themes held in memory; the host calls changed after it enables or disables a plugin.
 type fakePlugins struct {
-	mu     sync.Mutex
-	themes []themedomain.PluginTheme
-	texts  map[string]string
+	mu      sync.Mutex
+	themes  []themedomain.PluginTheme
+	texts   map[string]string
+	lists   int
+	changed func()
 }
 
 func createFakePlugins() *fakePlugins {
@@ -40,6 +43,7 @@ func createFakePlugins() *fakePlugins {
 func (f *fakePlugins) ListThemes() []themedomain.PluginTheme {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.lists++
 	return append([]themedomain.PluginTheme(nil), f.themes...)
 }
 
@@ -58,12 +62,14 @@ func (f *fakePlugins) enable(themes ...themedomain.PluginTheme) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.themes = append(f.themes, themes...)
+	f.announce()
 }
 
 func (f *fakePlugins) disable() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.themes = nil
+	f.announce()
 }
 
 // fakeAppearances is the settings behind the themes, held in memory.
@@ -97,6 +103,7 @@ type themesDesk struct {
 	appearance *fakeAppearances
 	sources    themeusecase.Sources
 	scales     *themeusecase.Scales
+	changes    *settingsusecase.PluginChanges
 }
 
 func createThemesDesk(t *testing.T, stored themedomain.Appearance) *themesDesk {
@@ -106,12 +113,15 @@ func createThemesDesk(t *testing.T, stored themedomain.Appearance) *themesDesk {
 		t.Fatal(err)
 	}
 	plugins := createFakePlugins()
+	changes := &settingsusecase.PluginChanges{}
+	plugins.changed = changes.Signal
 	return &themesDesk{
 		files:      files,
 		plugins:    plugins,
 		appearance: &fakeAppearances{appearance: stored, saves: nil, warnings: nil, failure: nil},
 		sources:    themeusecase.Sources{Presets: files, Own: files, Plugins: plugins},
 		scales:     themeusecase.NewScales(0, 0),
+		changes:    changes,
 	}
 }
 
@@ -150,4 +160,16 @@ func hasTheme(themes []themedomain.Theme, name string) bool {
 		}
 	}
 	return false
+}
+
+func (f *fakePlugins) announce() {
+	if f.changed != nil {
+		go f.changed()
+	}
+}
+
+func (f *fakePlugins) countLists() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.lists
 }

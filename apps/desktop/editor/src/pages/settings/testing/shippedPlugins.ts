@@ -35,6 +35,7 @@ type Manifest = Entry & {
   readonly capabilities?: readonly string[]
   readonly settings?: readonly ManifestSetting[]
   readonly settingsViews?: PluginInfo['settingsViews']
+  readonly settingsTabs?: PluginInfo['settingsTabs']
   readonly settingGroups?: PluginInfo['settingGroups']
   readonly contributes?: Entry & {
     readonly category?: string
@@ -224,6 +225,7 @@ const readPlugin = (manifest: Manifest): PluginInfo => ({
   capabilities: manifest.capabilities ?? [],
   settings: (manifest.settings ?? []).map(readSetting),
   settingsViews: manifest.settingsViews ?? [],
+  settingsTabs: manifest.settingsTabs ?? [],
   settingGroups: manifest.settingGroups ?? [],
   contributions: listContributions(manifest),
 })

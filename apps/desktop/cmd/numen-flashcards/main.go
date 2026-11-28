@@ -123,6 +123,10 @@ func runApplication(handler http.Handler, target *shutdown.Sequence) error {
 		Width:  760,
 		Height: 720,
 		URL:    "/",
+		Permissions: map[application.PermissionType]application.Permission{
+			application.PermissionCamera:     application.PermissionDeny,
+			application.PermissionMicrophone: application.PermissionDeny,
+		},
 	}))
 	return app.Run()
 }

@@ -12,6 +12,14 @@ import { ConnectionsDriver } from './connections.js'
 import { DeckDriver } from './deck.js'
 import { parseEnvironment } from './environment.js'
 import { FileTreeDriver } from './file-tree.js'
+import { DevicesDriver } from './devices.js'
+import { IdentityDriver } from './identity.js'
+import { AccountDriver } from './account.js'
+import { SubscriptionDriver } from './subscription.js'
+import { ComputerDriver } from './computer.js'
+import { SyncDriver } from './sync.js'
+import { SyncVaultsDriver } from './sync-vaults.js'
+import { SyncedFilesDriver } from './synced-files.js'
 import { NoteDriver } from './notes.js'
 import { PaletteDriver } from './palette.js'
 import { PlexDriver } from './plex.js'
@@ -22,6 +30,10 @@ import { type Recording, Scenario } from './scenario.js'
 import { ServiceDriver } from './services.js'
 import { SearchDriver } from './search.js'
 import { SettingsDriver } from './settings.js'
+import { ShareDriver } from './share.js'
+import { SharedReaderDriver } from './shared-reader.js'
+import { SharingDriver } from './sharing.js'
+import { NoticeDriver } from './notices.js'
 import { TabDriver } from './tabs.js'
 import { TextDriver } from './text.js'
 import { VaultDriver } from './vault.js'
@@ -49,6 +61,16 @@ export class Person {
   readonly connections: ConnectionsDriver
   readonly reader: ReaderDriver
   readonly deck: DeckDriver
+  readonly identity: IdentityDriver
+  readonly subscription: SubscriptionDriver
+  readonly accounts: AccountDriver
+  readonly sync: SyncDriver
+  readonly syncVaults: SyncVaultsDriver
+  readonly computers: ComputerDriver
+  readonly files: SyncedFilesDriver
+  readonly readers: SharedReaderDriver
+  readonly sharing: SharingDriver
+  readonly notices: NoticeDriver
   readonly scenario: Scenario
 
   constructor(page: Page, viewport: ViewportSize | null, recording?: Recording, isLive = false) {
@@ -78,6 +100,23 @@ export class Person {
     this.connections = new ConnectionsDriver(this.scenario, this.settings, this.services)
     this.reader = new ReaderDriver(this.scenario, this.tab)
     this.deck = new DeckDriver(this.scenario, this.tab)
+    this.identity = new IdentityDriver(this.scenario, this.settings)
+    this.subscription = new SubscriptionDriver(this.scenario, this.settings)
+    this.accounts = new AccountDriver(this.scenario, this.settings, this.identity)
+    this.sync = new SyncDriver(this.scenario, this.identity)
+    this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings, this.application)
+    this.readers = new SharedReaderDriver({ first: this.scenario, viewport, sync: this.sync })
+    this.sharing = new SharingDriver(this.scenario, new ShareDriver(this.scenario, this.fileTree, this.application, this.settings), this.readers, this.identity)
+    this.computers = new ComputerDriver(this.scenario, viewport, {
+      identity: this.identity,
+      subscription: this.subscription,
+      sync: this.sync,
+      vaults: this.syncVaults,
+      settings: this.settings,
+      devices: new DevicesDriver(this.scenario, this.settings),
+    })
+    this.notices = new NoticeDriver(this.computers, this.sharing, this.readers)
+    this.files = new SyncedFilesDriver(this.computers, this.sync, this.syncVaults)
   }
 
   /** Sets the environment of the application; a release that comes out while the window is open is looked for again. */
@@ -94,6 +133,19 @@ export class Person {
   /** Leaves the vault as the scenario found it; a scenario with a world of its own removes the world and its server. */
   async removeNotes(): Promise<void> {
     this.services.stopAll()
+    try {
+      await this.sync.remove()
+    } finally {
+      try {
+        await this.computers.remove()
+        await this.readers.remove()
+      } finally {
+        await this.removeFirstComputer()
+      }
+    }
+  }
+
+  private async removeFirstComputer(): Promise<void> {
     if (this.scenario.hasWorld) return this.scenario.removeWorld()
     try {
       await this.plugin.enableDisabled()

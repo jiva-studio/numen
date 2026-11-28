@@ -9,6 +9,11 @@ export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
 
+export { QrCode } from './shared/ui/qr-code'
+
+export { QrScanner } from './shared/ui/qr-scanner'
+export { hasCamera, type ScannerCamera } from './shared/api/camera'
+
 export { NumberField } from './shared/ui/number-field'
 
 export { Switch } from './shared/ui/switch'
@@ -26,6 +31,7 @@ export { isTyping } from './shared/lib/dom/typing'
 
 export { KeyCap, getKeyChord } from './shared/ui/key-cap'
 export type { Keystroke } from './shared/ui/key-cap'
+export { Fingerprint } from './shared/ui/fingerprint'
 
 export {
   createRequestGuard,
@@ -38,14 +44,29 @@ export { runInBackground } from './shared/lib/async/background'
 export { reportFailure } from './shared/api/report'
 
 export { Spinner } from './shared/ui/spinner'
+export { ProgressRing } from './shared/ui/progress-ring'
+
+export { StageList, type Stage, type StageState } from './shared/ui/stage-list'
+
+export { Toast } from './shared/ui/toast'
 
 export { createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { ErrorState } from './shared/ui/error-state'
-export { IslandCard } from './shared/ui/island-card'
+export {
+  CardAction,
+  CardActions,
+  IslandCard,
+  type CardActionChoice,
+  type CardActionItem,
+} from './shared/ui/island-card'
+
+export { ConfirmDialog } from './shared/ui/confirm-dialog'
+export { Dialog, provideDialogHost } from './shared/ui/dialog'
 export { Skeleton } from './shared/ui/skeleton'
 
 export { groupDigits, formatCount, formatPercent, pickPlural } from './shared/lib/format/digits'
+export { formatBytes, formatBytesOf } from './shared/lib/format/bytes'
 
 export { Prose } from './shared/ui/prose'
 export type { LinkPiece } from './shared/lib/text/marks'
@@ -81,4 +102,4 @@ export { Tooltip, useTooltip } from './shared/ui/tooltip'
 export { isPageMove, useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
 export { Tree } from './features/tree'
-export type { Row, RowMarker } from './features/tree'
+export type { Row, RowStatus, RowMarker } from './features/tree'

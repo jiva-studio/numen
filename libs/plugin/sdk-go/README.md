@@ -26,8 +26,11 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | `contracts/readerplace`          | the place a reader tab shows, as JSON in the Place of an open tab                                                   |
 | `health`, `health/healthtest`    | the health items a plugin reports                                                                                   |
 | `process`, `process/processtest` | the release of the process of a plugin whose work is done                                                           |
+| `account`, `account/accounttest` | signing with the key of this device and the public identity, for a plugin with the permission `identity`            |
 | `command`                        | the commands the manifest declares, served as `PluginCommandService`                                                |
 | `tools`, `toolstest`             | the tools a plugin offers an agent, served as `PluginToolService`                                                   |
+| `fileprovider`                   | the files a vault lists as absent, served as `FileProviderService`                                                  |
+| `vaultprovider`                  | the remote vaults a plugin offers, served as `VaultProviderService`                                                 |
 | `searchsource`                   | a search source, served as `SearchSourceService`                                                                    |
 | `cache`                          | keyed values in memory and on disk, with expiration, backoff and background refresh                                 |
 | `performance`                    | the performance limits supplied by the host                                                                 |
@@ -54,6 +57,10 @@ The core knows an operation by its name only; the payload and the frames are byt
 ## Health
 
 `health.NewClientFromEnv()` returns the health client. `Report(ctx, item)` puts an item under its key or replaces it, and `Clear(ctx, key)` takes it out. An `Error` item shows in the window's list of tasks and on the plugin's page, a `Warning` item on the page only. `health.OpenSettings(setting)` is the action that opens the settings of the plugin at a setting. The host refuses more than 8 keys, a text over 120 characters, a detail over 500, and the keys `configure`, `start` and `search`. `healthtest.NewHost(t)` keeps the reported items for tests.
+
+## Account
+
+`account.NewClient(endpoint)` returns the client of the identity of this device. `SignAsDevice(ctx, message)` returns the signature of the device key over 1 to 4096 bytes, made under the id of the plugin, and `GetPublicIdentity(ctx)` the fingerprints, the public signing key and the signed chain. Both need the permission `identity` and return `account.ErrNoIdentity` while the device holds none. `SealData(ctx, context, plain)` and `OpenData(ctx, context, sealed)` seal and open up to 32 KiB under a key of the plugin (`account.ErrCannotOpen` for bytes that do not open). `GetPendingRestore`, `SignAsRecovery` and `CompleteRestore` let a plugin join an account while the person restores from words (`account.ErrNoPendingRestore`, `account.ErrInvalidChain`). `accounttest.NewFake(t, pluginID)` serves all of them from a real identity in memory; `StartRestore(words)` makes it hold a pending restore.
 
 ## Process
 

@@ -60,7 +60,7 @@ func readMove(m *v1.MoveResult) domain.MoveResult {
 }
 
 func readVault(v *v1.Vault) domain.Vault {
-	return domain.Vault{ID: domain.VaultID(v.GetId()), Name: v.GetName(), Path: v.GetPath()}
+	return domain.Vault{ID: domain.VaultID(v.GetId()), Name: v.GetName(), Path: v.GetPath(), ManagedBy: v.GetManagedBy()}
 }
 
 func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename, error) {
@@ -152,7 +152,7 @@ func (c *Client) GetVaultList(ctx context.Context) ([]VaultEntry, error) {
 	out := make([]VaultEntry, 0, len(res.Msg.GetVaults()))
 	for _, one := range res.Msg.GetVaults() {
 		out = append(out, VaultEntry{
-			Vault:     domain.Vault{ID: domain.VaultID(one.GetId()), Name: one.GetName(), Path: one.GetPath()},
+			Vault:     readVault(one),
 			IsMissing: one.GetIsMissing(),
 		})
 	}
@@ -160,7 +160,13 @@ func (c *Client) GetVaultList(ctx context.Context) ([]VaultEntry, error) {
 }
 
 func (c *Client) AddVault(ctx context.Context, root, name string) (domain.Vault, error) {
-	res, err := c.list.AddVault(ctx, request(c, &v1.AddVaultRequest{Path: root, Name: name}))
+	return c.AddManagedVault(ctx, root, name, "")
+}
+
+// AddManagedVault is AddVault for a vault that only the plugin with the id managedBy writes. The id is the id of
+// this plugin, and the plugin needs the permission vault:manage.
+func (c *Client) AddManagedVault(ctx context.Context, root, name, managedBy string) (domain.Vault, error) {
+	res, err := c.list.AddVault(ctx, request(c, &v1.AddVaultRequest{Path: root, Name: name, ManagedBy: managedBy}))
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}

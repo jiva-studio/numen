@@ -100,8 +100,8 @@ function createHost(
       getCommands: () => ui.commands,
       commandAccess: { isListed: () => true },
       getSlots: () => ui.slots as never,
-      getNotices: () => ui.notices as never,
-      getPicker: () => ui.picker as never,
+      forPlugin: { getVaultFlags: () => undefined, getNotices: () => ui.notices as never },
+      prompts: { getPicker: () => ui.picker as never, getDialogs: () => undefined },
       ...overrides.ui,
     },
     work: {

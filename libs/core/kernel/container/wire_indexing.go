@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedchunks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -90,7 +91,7 @@ func buildReadWholeVault(c vaultIndexPlan,
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	return indexing.NewReadWholeVault(searchScan(c, db), texts, embed), nil
+	return indexing.NewReadWholeVault(searchScan(c, db), texts, embed.EmbedWithProgress), nil
 }
 
 func createUnreadableFinder(refresh indexing.Refresh) func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
@@ -100,14 +101,12 @@ func createUnreadableFinder(refresh indexing.Refresh) func(ctx context.Context, 
 	}
 }
 
-func searchEmbed(c vaultIndexPlan, db *vaultIndex, source searchsourceport.Source, v domain.Vault) (indexing.Embed, error) {
+func searchEmbed(c vaultIndexPlan, db *vaultIndex, source searchsourceport.Source, v domain.Vault) (embedchunks.Embed, error) {
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{ServiceDir: c.ServiceDir}, coreFolder)
 	if err != nil {
-		return indexing.Embed{}, err
+		return embedchunks.Embed{}, err
 	}
-	return indexing.NewEmbed(
-		c.VaultReaders, db.Sources(), db.Sources(), store.NewIndexClaim(coreFolder+"/indexing"), c.TextReaders, cmp.Or[searchsourceport.Source](source, none.SearchSource{}),
-	), nil
+	return embedchunks.NewEmbed(c.VaultReaders, db.Sources(), db.Sources(), store.NewIndexClaim(coreFolder+"/indexing"), c.TextReaders, cmp.Or[searchsourceport.Source](source, none.SearchSource{})), nil
 }
 
 func indexTexts(

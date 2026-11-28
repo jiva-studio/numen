@@ -11,13 +11,13 @@ Open **Settings**, choose **Connections**, and press **Add connection**. Choose 
 
 ## Where to get a key
 
-A service gives you a key in your account on its website, usually under a heading such as API keys. Copy the key, paste it into the **API key** field of the Add dialog, and save. Numen keeps the key in the system keychain and never shows it again. To replace it, edit the connection and type the new one. To remove it, press **Remove key** and save.
+A service gives you a key on its website, in your profile, usually under a heading such as API keys. Copy the key, paste it into the **API key** field of the Add dialog, and save. Numen keeps the key in the system keychain and never shows it again. To replace it, edit the connection and type the new one. To remove it, press **Remove key** and save.
 
 The key belongs to the address of the connection. If you change the address, Numen removes the stored key and asks for it again, so a key is never sent to a server you did not enter it for.
 
 ## What a paid connection costs
 
-The service charges your account for the requests Numen sends, by the size of the text and the model you choose. Numen does not know the price and does not limit it. Check the price list of the service before you pick a large model, and set a spending limit in your account where the service offers one. An agent connection, such as one for a program that runs on your computer, uses the subscription or login of that program.
+The service charges you for the requests Numen sends, by the size of the text and the model you choose. Numen does not know the price and does not limit it. Check the price list of the service before you pick a large model, and set a spending limit with the service where the service offers one. An agent connection, such as one for a program that runs on your computer, uses the subscription or login of that program.
 
 ## What leaves your computer
 

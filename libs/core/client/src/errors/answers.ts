@@ -37,7 +37,7 @@ export const parseFingerprint = (stat: string) => {
 /**
  * Maps each error code of the schema to the window's own message code.
  *
- * An answer with no error has no message, and neither has a file that changed since the caller read it: it is a prompt for the user, not a
+ * An answer with no error has no message, and neither has a file that changed since the caller read it or has changes of its own: it is a prompt for the user, not a
  * message, and the window reports it as `changed`. The map is keyed by the schema, so a new error
  * code must be given a message or an explicit empty entry here before this compiles.
  */
@@ -81,6 +81,27 @@ const ERROR_CODE: Record<number, ErrorCode | null> = {
   [ProtoErrorCode.NO_MODEL]: 'unreachable',
   [ProtoErrorCode.RECIPE_MISMATCH]: 'unreadable',
   [ProtoErrorCode.LIMIT_EXCEEDED]: 'unreadable',
+  [ProtoErrorCode.HASH_MISMATCH]: 'unreadable',
+  [ProtoErrorCode.INVALID_RANGE]: 'unreadable',
+  [ProtoErrorCode.READ_ONLY]: 'readOnly',
+  [ProtoErrorCode.FILE_ABSENT]: 'notFound',
+  [ProtoErrorCode.FILE_PRESENT]: 'alreadyExists',
+  [ProtoErrorCode.CHANGED]: null,
+  [ProtoErrorCode.INVALID_WORDS]: 'unreadable',
+  [ProtoErrorCode.INVALID_SHEETS]: 'unreadable',
+  [ProtoErrorCode.NOT_ENOUGH_SHEETS]: 'unreadable',
+  [ProtoErrorCode.OTHER_ACCOUNT]: 'unreadable',
+  [ProtoErrorCode.NO_IDENTITY]: 'unreadable',
+  [ProtoErrorCode.LINK_ACTIVE]: 'unreadable',
+  [ProtoErrorCode.NO_LINK]: 'unreadable',
+  [ProtoErrorCode.LAST_DEVICE]: 'unreadable',
+  [ProtoErrorCode.REVOKE_RACED]: 'unreadable',
+  [ProtoErrorCode.NOT_ALLOWED_THIS_DEVICE]: 'unreadable',
+  [ProtoErrorCode.DEVICE_REVOKED]: 'unreadable',
+  [ProtoErrorCode.CHAIN_OUTDATED]: 'unreadable',
+  [ProtoErrorCode.WRONG_PASSPHRASE]: 'unreadable',
+  [ProtoErrorCode.EMPTY_PASSPHRASE]: 'unreadable',
+  [ProtoErrorCode.LINK_TEXT_INVALID]: 'unreadable',
 } satisfies Record<ProtoErrorCode, ErrorCode | null>
 
 /** What one answer encountered as an error, and nothing where it succeeded. */

@@ -1,0 +1,135 @@
+# The real sync server and what it needs, for the tests of Numen Sync. The two images are private packages, tagged main; NUMEN_SYNC_IMAGE and NUMEN_SYNC_DEVTOOLS_IMAGE name others, such as a local build.
+# Bring it up with `make sync_stack_up`; `make sync_stack_env` prints the settings the tests read.
+# The ports are on 127.0.0.1 only. A second stack beside this one takes other ports: stack.sh derives the four from NUMEN_SYNC_PORT_BASE (default 8787). Development keys and passwords: this stack holds no real data.
+# The real server cannot delete uploaded files: a full test run leaves about 1.8 GB in the bucket, and the Docker disk fills. After a full run recreate the stand
+# empty with `make sync_stack_fresh PROJECT=<name> [COMPOSE=<file>]`; it names what it removes first and refuses to run without the project name.
+# A stand made from an older copy of this file lacks NUMEN_SYNC_LIMIT_REQUESTS_ENABLED=false (as the stand numen-dev does); recreating it from this file makes the link tests fast.
+name: numen-sync-test
+
+services:
+  postgres:
+    image: postgres:18@sha256:c699303802144847d238196173655dbbecf7a96aeca1565f2b02eb671a1f0b6b
+    environment:
+      POSTGRES_PASSWORD: postgres
+    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off"]
+    configs:
+      - source: database
+        target: /docker-entrypoint-initdb.d/10-sync.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      retries: 30
+
+  bucket:
+    image: versity/versitygw:v1.11.0@sha256:8319a530d08d537426e2f855bae5280709795dc73a3f0c347973ef915d6343c5
+    command: ["--access", "numendev", "--secret", "numendevsecret", "--port", ":8790", "--region", "us-east-1", "posix", "--sidecar", "/meta", "/data"]
+    volumes:
+      - bucket-data:/data
+      - bucket-meta:/meta
+    ports:
+      - "127.0.0.1:${NUMEN_SYNC_PORT_BUCKET:-8790}:8790"
+
+  bucket-init:
+    image: amazon/aws-cli:2.42.4@sha256:4a1a668837d5f97ced202e03827da1bc0b48cda946be89909cd7a02023f62921
+    depends_on: [bucket]
+    environment:
+      AWS_ACCESS_KEY_ID: numendev
+      AWS_SECRET_ACCESS_KEY: numendevsecret
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for i in $$(seq 1 30); do
+          if aws --endpoint-url http://bucket:8790 s3api head-bucket --bucket numen-sync 2>/dev/null \
+            || aws --endpoint-url http://bucket:8790 s3api create-bucket --bucket numen-sync 2>/dev/null; then
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "the bucket was not made" >&2
+        exit 1
+    restart: "no"
+
+  keys:
+    image: ${NUMEN_SYNC_DEVTOOLS_IMAGE:-ghcr.io/jiva-studio/numen-sync-devtools:main}
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["/numen-sync-dev keys -dir /keys -not-before $$(date +%s) -days 365 && chmod 755 /keys && chmod 644 /keys/epoch-signing-key /keys/epoch-certificate.json"]
+    volumes: ["keys:/keys"]
+    restart: "no"
+
+  payment:
+    image: ${NUMEN_SYNC_DEVTOOLS_IMAGE:-ghcr.io/jiva-studio/numen-sync-devtools:main}
+    entrypoint: ["/numen-sync-dev"]
+    command:
+      - payment
+      - -listen=0.0.0.0:${NUMEN_SYNC_PORT_PAYMENT:-8788}
+      - -public-url=http://127.0.0.1:${NUMEN_SYNC_PORT_PAYMENT:-8788}
+      - -control=0.0.0.0:8789
+      - -webhook-target=http://127.0.0.1:8787/webhooks/creem
+      - -webhook-secret=whsec_numen_dev_standin_secret
+    # The server shares this container's network, so its port is published here too. The stand-in is at 127.0.0.1 for the server, which the real client
+    # accepts for a payment page over plain http, so no host name needs an entry in /etc/hosts.
+    ports:
+      - "127.0.0.1:${NUMEN_SYNC_PORT_SERVER:-8787}:8787"
+      - "127.0.0.1:${NUMEN_SYNC_PORT_PAYMENT:-8788}:${NUMEN_SYNC_PORT_PAYMENT:-8788}"
+      - "127.0.0.1:${NUMEN_SYNC_PORT_CONTROL:-8789}:8789"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8789/checkouts"]
+      interval: 3s
+      retries: 20
+
+  sync:
+    image: ${NUMEN_SYNC_IMAGE:-ghcr.io/jiva-studio/numen-sync:main}
+    environment:
+      NUMEN_SYNC_ENV: dev
+      NUMEN_SYNC_LISTEN_ADDR: 0.0.0.0:8787
+      NUMEN_SYNC_PUBLIC_URL: http://127.0.0.1:${NUMEN_SYNC_PORT_SERVER:-8787}
+      NUMEN_SYNC_DB_URL: postgres://numen_sync:numen_sync@postgres:5432/numen_sync?sslmode=disable
+      NUMEN_SYNC_DB_MIGRATE_URL: postgres://numen_sync_owner:numen_sync_owner@postgres:5432/numen_sync?sslmode=disable
+      NUMEN_SYNC_BUCKET_ENDPOINT: http://bucket:8790
+      NUMEN_SYNC_BUCKET_PUBLIC_ENDPOINT: http://127.0.0.1:${NUMEN_SYNC_PORT_BUCKET:-8790}
+      NUMEN_SYNC_BUCKET_REGION: us-east-1
+      NUMEN_SYNC_BUCKET_NAME: numen-sync
+      NUMEN_SYNC_BUCKET_ACCESS_KEY_ID: numendev
+      NUMEN_SYNC_BUCKET_SECRET_ACCESS_KEY: numendevsecret
+      NUMEN_SYNC_HEALTH_TOKEN: numen-dev-health-token
+      NUMEN_SYNC_PAYMENT_API_URL: http://127.0.0.1:${NUMEN_SYNC_PORT_PAYMENT:-8788}
+      NUMEN_SYNC_PAYMENT_API_KEY: creem_test_standin
+      NUMEN_SYNC_PAYMENT_WEBHOOK_SECRET: whsec_numen_dev_standin_secret
+      NUMEN_SYNC_PAYMENT_MODE: test
+      NUMEN_SYNC_PAYMENT_PLANS_INTERVAL: 5s
+      NUMEN_SYNC_LIMIT_SIGN_IN_SOURCE_PER_MINUTE: "100000"
+      NUMEN_SYNC_LIMIT_ACCOUNTS_NEW_SOURCE_PER_HOUR: "100000"
+      NUMEN_SYNC_LIMIT_ACCOUNTS_NEW_GLOBAL_PER_HOUR: "100000"
+      NUMEN_SYNC_LIMIT_CHALLENGES_GLOBAL_PER_MINUTE: "100000"
+      NUMEN_SYNC_LIMIT_REQUESTS_ENABLED: "false"
+      NUMEN_SYNC_EPOCH_SIGNING_KEY_FILE: /keys/epoch-signing-key
+      NUMEN_SYNC_EPOCH_CERTIFICATE_FILE: /keys/epoch-certificate.json
+    volumes: ["keys:/keys:ro"]
+    network_mode: "service:payment"
+    depends_on:
+      postgres: {condition: service_healthy}
+      bucket-init: {condition: service_completed_successfully}
+      keys: {condition: service_completed_successfully}
+      payment: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "/numen-sync", "healthcheck"]
+      interval: 3s
+      retries: 40
+
+configs:
+  database:
+    content: |
+      CREATE USER numen_sync_owner PASSWORD 'numen_sync_owner';
+      CREATE USER numen_sync PASSWORD 'numen_sync';
+      CREATE DATABASE numen_sync OWNER numen_sync_owner;
+      \connect numen_sync
+      REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+      GRANT USAGE ON SCHEMA public TO numen_sync;
+      ALTER DEFAULT PRIVILEGES FOR ROLE numen_sync_owner IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO numen_sync;
+      ALTER DEFAULT PRIVILEGES FOR ROLE numen_sync_owner IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO numen_sync;
+
+volumes:
+  keys:
+  bucket-data:
+  bucket-meta:

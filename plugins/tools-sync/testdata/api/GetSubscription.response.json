@@ -1,0 +1,10 @@
+{
+  "hasIdentity": true,
+  "phase": "grace",
+  "periodEndAt": "2026-11-20T12:00:00Z",
+  "writesEndAt": "2026-11-27T12:00:00Z",
+  "deleteAt": "2027-01-19T12:00:00Z",
+  "plan": "plus",
+  "quotaBytes": 107374182400,
+  "usedBytes": 2147483648
+}

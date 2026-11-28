@@ -15,6 +15,7 @@ import {
 import {
   createPluginCatalog,
   createPluginReports,
+  createVaultFlags,
   createWindowFacts,
   createWindowSlots,
   type HostParts,
@@ -53,12 +54,14 @@ export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
       reportError: (error) => log.getWriter('command')(formatError(error), 'error'),
     },
   })
+  const vaultFlags = createVaultFlags()
   const slots = createWindowSlots({
     declaredCommands: declarationState,
     facts: createWindowFacts({
       appCommands: deps.appCommands,
       getTarget: deps.getTarget,
       isPaletteOpen: deps.isPaletteOpen,
+      getVaultFlags: vaultFlags.getFlags,
     }),
     getSlotLayout: (pluginId) => getSlotLayout(rest, pluginId),
     writeIssue: pluginReports.writeIssue,
@@ -72,6 +75,7 @@ export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
   })
   const hostParts: readonly HostParts[] = [
     slots.hostDeps,
+    { window: { getVaultFlags: vaultFlags.createHost } },
     { commands: handlers },
     {
       commands: {

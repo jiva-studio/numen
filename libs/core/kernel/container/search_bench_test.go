@@ -127,7 +127,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	if err != nil {
 		b.Fatal(err)
 	}
-	if _, err := embedderUseCase.Execute(ctx, v); err != nil {
+	if _, err := embedderUseCase.EmbedWithProgress(ctx, v, nil, nil); err != nil {
 		b.Fatal(err)
 	}
 

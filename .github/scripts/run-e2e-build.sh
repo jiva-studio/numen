@@ -28,6 +28,7 @@ run_part() {
         timed go-numen-debug go build -C apps/desktop -tags numen_debug -o numen-debug ./cmd/numen &&
         mkdir -p plugins/connections-llm/bin &&
         timed go-fakeopenai go build -C plugins/connections-llm -o bin/fakeopenai ./backend/cmd/fakeopenai
+
       ;;
     flashcards)
       timed vite-flashcards npm run build --prefix apps/desktop/flashcards &&

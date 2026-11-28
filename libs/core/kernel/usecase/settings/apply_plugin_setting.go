@@ -21,6 +21,7 @@ type ApplyPluginSetting struct {
 	listeners PluginListeners
 	push      PluginConfigPush
 	health    PluginHealth
+	keeper    PluginKeeper
 }
 
 // ApplyPluginSettingDeps is what ApplyPluginSetting is made of.
@@ -31,13 +32,14 @@ type ApplyPluginSettingDeps struct {
 	Listeners PluginListeners
 	Push      PluginConfigPush
 	Health    PluginHealth
+	Keeper    PluginKeeper
 }
 
 // NewApplyPluginSetting makes the use case.
 func NewApplyPluginSetting(deps ApplyPluginSettingDeps) *ApplyPluginSetting {
 	return &ApplyPluginSetting{
 		values: deps.Values, stopper: deps.Stopper, failures: deps.Failures, listeners: deps.Listeners, push: deps.Push,
-		health: deps.Health,
+		health: deps.Health, keeper: deps.Keeper,
 	}
 }
 
@@ -71,6 +73,7 @@ func (u *ApplyPluginSetting) applyEnabledFlag(ctx context.Context, pluginID stri
 	}
 	var stopErr error
 	if !enabled {
+		u.dropKept(ctx, pluginID)
 		stopErr = u.stopper.StopPlugin(ctx, pluginID)
 		u.health.RemovePlugin(pluginID)
 	} else {
@@ -78,5 +81,14 @@ func (u *ApplyPluginSetting) applyEnabledFlag(ctx context.Context, pluginID stri
 	}
 	u.failures.ClearFailure(pluginID)
 	u.listeners.RefreshListeners(ctx, pluginID)
+	if enabled && u.keeper != nil {
+		u.keeper.Keep(ctx, pluginID)
+	}
 	return stopErr
+}
+
+func (u *ApplyPluginSetting) dropKept(ctx context.Context, pluginID string) {
+	if u.keeper != nil {
+		u.keeper.Drop(ctx, pluginID)
+	}
 }

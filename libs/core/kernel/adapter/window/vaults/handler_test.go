@@ -95,6 +95,7 @@ type folders struct {
 	fails    error
 	title    string
 	from     string
+	proposed string
 }
 
 func (f *folders) ChooseFolder(_ context.Context, title, startingAt string) (string, bool, error) {
@@ -177,7 +178,7 @@ func onAList(t *testing.T) *onTheList {
 	)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewVaultsServiceHandler(handler))
-	mux.Handle(numenv1connect.NewFolderDialogServiceHandler(&Dialog{chooseFolder: chooseFolder}))
+	mux.Handle(numenv1connect.NewFolderDialogServiceHandler(&Dialog{chooseFolder: chooseFolder, saveText: picker.NewSaveText(f.dialog)}))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -612,6 +613,28 @@ func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 	}
 }
 
+func TestAWindowRequestIgnoresTheManagerAndTheVaultStaysOrdinary(t *testing.T) {
+	f := onAList(t)
+
+	out, err := f.client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{
+		Path: folderNamed(t, "claimed"), ManagedBy: "md.numen.tools.sync",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if out.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || out.Msg.GetVault().GetManagedBy() != "" {
+		t.Errorf("the added vault is %v, want one with no manager", out.Msg)
+	}
+	list, err := f.client.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := onList(t, list.Msg, out.Msg.GetVault().GetId()).GetManagedBy(); got != "" {
+		t.Errorf("the vault on the list has the manager %q, want none", got)
+	}
+}
+
 func TestAnInstallationWithNoFolderDialogAnswersUnimplemented(t *testing.T) {
 	f := onAList(t)
 	mux := http.NewServeMux()
@@ -625,4 +648,12 @@ func TestAnInstallationWithNoFolderDialogAnswersUnimplemented(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("the folder dialog answered %v, want %v", connect.CodeOf(err), connect.CodeUnimplemented)
 	}
+}
+
+// ChooseSaveFile answers the save dialog with the file a test chose, and keeps what was proposed.
+func (f *folders) ChooseSaveFile(_ context.Context, _, name string, _ []string) (string, bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.proposed = name
+	return f.pick, f.isChosen, f.fails
 }

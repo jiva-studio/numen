@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/semver"
 )
 
 func TestVersionsAreOrderedByPrecedence(t *testing.T) {
@@ -33,32 +34,32 @@ func TestVersionsAreOrderedByPrecedence(t *testing.T) {
 		{"1.0.0-18446744073709551615", "1.0.0-0a", -1},
 	}
 	for _, one := range cases {
-		got, err := manifest.CompareVersions(one.a, one.b)
+		got, err := semver.Compare(one.a, one.b)
 		if err != nil {
-			t.Errorf("CompareVersions(%q, %q): %v", one.a, one.b, err)
+			t.Errorf("Compare(%q, %q): %v", one.a, one.b, err)
 			continue
 		}
 		if got != one.want {
-			t.Errorf("CompareVersions(%q, %q) = %d, want %d", one.a, one.b, got, one.want)
+			t.Errorf("Compare(%q, %q) = %d, want %d", one.a, one.b, got, one.want)
 		}
-		reverse, err := manifest.CompareVersions(one.b, one.a)
+		reverse, err := semver.Compare(one.b, one.a)
 		if err != nil || reverse != -one.want {
-			t.Errorf("CompareVersions(%q, %q) = %d, %v; want %d", one.b, one.a, reverse, err, -one.want)
+			t.Errorf("Compare(%q, %q) = %d, %v; want %d", one.b, one.a, reverse, err, -one.want)
 		}
 	}
 }
 
 func TestAVersionThatIsNoVersionCannotBeCompared(t *testing.T) {
 	for _, text := range []string{"", "1.0", "one", "1.0.0.0", "01.0.0", "18446744073709551616.0.0"} {
-		got, err := manifest.CompareVersions(text, "1.0.0")
-		if !errors.Is(err, manifest.ErrInvalidVersion) || got != 0 {
-			t.Errorf("CompareVersions(%q, 1.0.0) = %d, %v; want 0, invalid version", text, got, err)
+		got, err := semver.Compare(text, "1.0.0")
+		if !errors.Is(err, semver.ErrInvalid) || got != 0 {
+			t.Errorf("Compare(%q, 1.0.0) = %d, %v; want 0, invalid version", text, got, err)
 		}
-		if text == "18446744073709551616.0.0" && !hasWrappedCause(err, manifest.ErrInvalidVersion) {
-			t.Errorf("CompareVersions(%q, 1.0.0) = %v, expected wrapped parse cause", text, err)
+		if text == "18446744073709551616.0.0" && !hasWrappedCause(err, semver.ErrInvalid) {
+			t.Errorf("Compare(%q, 1.0.0) = %v, expected wrapped parse cause", text, err)
 		}
-		if got, err := manifest.CompareVersions("1.0.0", text); !errors.Is(err, manifest.ErrInvalidVersion) || got != 0 {
-			t.Errorf("CompareVersions(1.0.0, %q) = %d, %v; want 0, invalid version", text, got, err)
+		if got, err := semver.Compare("1.0.0", text); !errors.Is(err, semver.ErrInvalid) || got != 0 {
+			t.Errorf("Compare(1.0.0, %q) = %d, %v; want 0, invalid version", text, got, err)
 		}
 	}
 }

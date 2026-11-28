@@ -28,7 +28,7 @@ const everyFieldManifest = `{
 		{"id": "lib", "kind": "runtime", "sources": [{"platform": "linux/amd64", "sourceUrl": "https://example.org/l.tgz", "sourceUrls": ["https://example.org/l.tgz"],
 			"checksumSha256": "1111111111111111111111111111111111111111111111111111111111111111", "archiveMember": "l.so", "memberSha256": "2222222222222222222222222222222222222222222222222222222222222222"}],
 			"environment": ["GPU_*", "LIB_PATH"], "search": ["/opt/l/l.so*"]}],
-	"backend": {"entrypoint": "bin/full", "idleStopSeconds": 600},
+	"backend": {"entrypoint": "bin/full", "idleStopSeconds": 600, "lifecycle": "onDemand", "requires": ["identity"]},
 	"frontend": {},
 	"settings": [
 		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "details": "dd", "group": "g", "default": "a", "palette": true, "icon": "gauge",
@@ -42,7 +42,8 @@ const everyFieldManifest = `{
 		{"key": "folders", "type": "list", "title": "Folders", "default": ["templates", "archive/old"]}
 	],
 	"services": ["numen.v1.Full"],
-	"settingsViews": [{"id": "v", "title": "V"}],
+	"settingsTabs": [{"id": "t", "title": "T"}],
+	"settingsViews": [{"id": "v", "title": "V", "page": "identity", "tab": "t"}],
 	"settingGroups": [{"id": "g", "title": "G"}],
 	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play",
 		"when": "target.contentType.startsWith('audio/')",

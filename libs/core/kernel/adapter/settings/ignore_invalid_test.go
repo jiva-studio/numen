@@ -30,8 +30,8 @@ func TestAScaleOutsideItsBoundsIsReadAndIgnoredWithANotice(t *testing.T) {
 	if got, _ := cfg.GetValue("app", "appearance", "mode"); got != "dark" {
 		t.Errorf("the mode in force is %v, want the valid value beside it", got)
 	}
-	if !hasNotice(cfg.Notices, "appearance.textScale") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "appearance.textScale") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -46,8 +46,8 @@ func TestAValueOfTheWrongTypeInTheShellIsReadAndIgnoredWithANotice(t *testing.T)
 	if got, _ := cfg.GetValue("app", "naming", "syncTitleAndFilename"); got != true {
 		t.Errorf("the naming in force is %v, want the default", got)
 	}
-	if !hasNotice(cfg.Notices, "appearance.textScale") || !hasNotice(cfg.Notices, "naming.syncTitleAndFilename") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "appearance.textScale") || !hasNotice(cfg.Header.Notices, "naming.syncTitleAndFilename") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -59,8 +59,8 @@ func TestAnUndeclaredKeyOfTheAppearanceIsReadAndIgnoredWithANotice(t *testing.T)
 	if got, found := cfg.GetValue("app", "appearance", "tint"); found {
 		t.Errorf("the undeclared key is in force as %v", got)
 	}
-	if !hasNotice(cfg.Notices, "appearance.tint") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "appearance.tint") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -87,8 +87,8 @@ func TestAValidFileProducesNoNotice(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg.DropInvalid(declaredSettings, installedThemes)
-	if len(cfg.Notices) != 0 {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if len(cfg.Header.Notices) != 0 {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -101,8 +101,8 @@ func TestAThemeThatIsNotInstalledIsIgnoredWithANotice(t *testing.T) {
 	if got, _ := cfg.GetValue("app", "appearance", "theme"); got != "preset:numen" {
 		t.Errorf("the theme in force is %v, want the default", got)
 	}
-	if !hasNotice(cfg.Notices, "appearance.theme") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "appearance.theme") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -116,8 +116,8 @@ func TestAnUndeclaredKeyOfAPluginIsIgnoredWithANotice(t *testing.T) {
 	if _, found := owner["mistyped"]; found || owner["model"] != "small" {
 		t.Errorf("the object of the plugin is %v", owner)
 	}
-	if !hasNotice(cfg.Notices, "md.numen.sample.speech", "mistyped") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "md.numen.sample.speech", "mistyped") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -131,8 +131,8 @@ func TestAPluginValueOfTheWrongTypeIsIgnoredWithANotice(t *testing.T) {
 	if _, found := owner["maxTokens"]; found || owner["model"] != "small" {
 		t.Errorf("the object of the plugin is %v", owner)
 	}
-	if !hasNotice(cfg.Notices, "maxTokens") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "maxTokens") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -145,8 +145,8 @@ func TestAPluginValueThatIsNoOptionIsIgnoredWithANotice(t *testing.T) {
 	if _, found := cfg.GetOwner("md.numen.sample.speech")["model"]; found {
 		t.Error("the model that is no option is in force")
 	}
-	if !hasNotice(cfg.Notices, "model") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "model") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -159,8 +159,8 @@ func TestAPluginNumberOutsideItsRangeIsIgnoredWithANotice(t *testing.T) {
 	if _, found := cfg.GetOwner("md.numen.sample.speech")["temperature"]; found {
 		t.Error("the temperature outside its range is in force")
 	}
-	if !hasNotice(cfg.Notices, "temperature") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "temperature") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -173,8 +173,8 @@ func TestAnObjectOfAnUnknownOwnerIsIgnoredWithANotice(t *testing.T) {
 	if owner := cfg.GetOwner("md.numen.ghost"); len(owner) != 0 {
 		t.Errorf("the object of the unknown owner is in force: %v", owner)
 	}
-	if !hasNotice(cfg.Notices, "md.numen.ghost") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "md.numen.ghost") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }
 
@@ -189,8 +189,8 @@ func TestAnEditorValueOutsideItsBoundsIsReadAndIgnoredWithANoticeThatNamesTheBou
 		if err != nil {
 			t.Fatalf("%s: the file was refused: %v", body, err)
 		}
-		if len(cfg.Notices) != 1 || strings.Contains(cfg.Notices[0], "no such setting") || !strings.Contains(cfg.Notices[0], "editor.") {
-			t.Errorf("%s: the notices are %q, want one about the value out of range", body, cfg.Notices)
+		if len(cfg.Header.Notices) != 1 || strings.Contains(cfg.Header.Notices[0], "no such setting") || !strings.Contains(cfg.Header.Notices[0], "editor.") {
+			t.Errorf("%s: the notices are %q, want one about the value out of range", body, cfg.Header.Notices)
 		}
 	}
 }
@@ -213,8 +213,8 @@ func TestTheDefaultOfAnEditorSettingStaysInForceWhenItsValueIsIgnored(t *testing
 		}
 	}
 	for _, key := range []string{"fontSize", "lineHeight", "softWrap", "lineNumbers", "fontFamily"} {
-		if !hasNotice(cfg.Notices, "editor."+key) || hasNotice(cfg.Notices, "editor."+key, "no such setting") {
-			t.Errorf("editor.%s has no notice about its value: %q", key, cfg.Notices)
+		if !hasNotice(cfg.Header.Notices, "editor."+key) || hasNotice(cfg.Header.Notices, "editor."+key, "no such setting") {
+			t.Errorf("editor.%s has no notice about its value: %q", key, cfg.Header.Notices)
 		}
 	}
 }
@@ -225,7 +225,7 @@ func TestAValidFileOfTheEditorGroupProducesNoNotice(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg.DropInvalid(declaredSettings, installedThemes)
-	if len(cfg.Notices) != 0 {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if len(cfg.Header.Notices) != 0 {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 }

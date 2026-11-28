@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  formatBytes,
-  formatCount,
-  formatSummary,
-  formatVectors,
-  formatRate,
-  formatTime,
-} from './format'
+import { formatCount, formatSummary, formatVectors, formatRate, formatTime } from './format'
 import { isPending } from './pending'
 
 describe('formatCount', () => {
@@ -58,20 +51,6 @@ describe('formatSummary', () => {
       '124,507 vectors, indexing',
     )
     expect(formatSummary({ vectors: 124508, waiting: 0 }, 'en-US')).toBe('124,508 vectors')
-  })
-})
-
-describe('formatBytes', () => {
-  it('uses the largest unit that keeps the figure at one or more', () => {
-    expect(formatBytes(0, 'en-US')).toBe('0 B')
-    expect(formatBytes(1023, 'en-US')).toBe('1,023 B')
-    expect(formatBytes(1024, 'en-US')).toBe('1.0 KB')
-    expect(formatBytes(73400320, 'en-US')).toBe('70.0 MB')
-    expect(formatBytes(5 * 1024 ** 3, 'en-US')).toBe('5.0 GB')
-  })
-
-  it('takes a negative size for zero', () => {
-    expect(formatBytes(-5, 'en-US')).toBe('0 B')
   })
 })
 

@@ -16,6 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
@@ -36,8 +37,8 @@ func openReadEndpoint(t *testing.T, access *vaultapi.Access) hostendpoint.HostVa
 	t.Helper()
 	lent := hostendpoint.NewServices(func() hostendpoint.Lent { return hostendpoint.Lent{Vault: access} })
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, hostendpoint.Callers{
-		Identity: readerIdentity{}, Lent: lent,
-	})
+		Activation: readerIdentity{}, Lent: lent,
+	}, hostendpoint.AccountCalls{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,3 +158,7 @@ func TestRangedReadFileWithoutAVaultReturnsNoVault(t *testing.T) {
 		t.Errorf("a ranged read with no vault returned %v, want NO_VAULT", got)
 	}
 }
+
+func (readerIdentity) AcquireOwn(string, string, plugin.Holder) bool { return true }
+
+func (readerIdentity) ReleaseOwn(string, string, plugin.Holder) {}

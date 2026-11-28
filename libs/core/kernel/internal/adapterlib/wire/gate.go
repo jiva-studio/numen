@@ -169,6 +169,9 @@ func (t *callTrace) recordCall(
 	}
 	if err != nil {
 		props["error"] = strconv.Quote(connect.CodeOf(err).String())
+		if isDetailed(service, connect.CodeOf(err)) {
+			props["detail"] = strconv.Quote(truncateDetail(err.Error()))
+		}
 	}
 	t.record(logs.Entry{
 		Time:       start,
@@ -177,6 +180,21 @@ func (t *callTrace) recordCall(
 		Message:    formatRPCMessage(service, method, caller, durationMs),
 		Properties: props,
 	})
+}
+
+func isDetailed(service string, code connect.Code) bool {
+	return service == "IdentityService" && (code == connect.CodeInternal || code == connect.CodeUnknown)
+}
+
+// maxDetailRunes bounds the error text of a failed call in the log.
+const maxDetailRunes = 400
+
+func truncateDetail(text string) string {
+	runes := []rune(text)
+	if len(runes) > maxDetailRunes {
+		return string(runes[:maxDetailRunes])
+	}
+	return text
 }
 
 func formatRPCMessage(service, method, caller, durationMs string) string {

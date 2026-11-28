@@ -4,7 +4,8 @@
  */
 import type { VaultChangeEvent } from '@numen/plugin-loader'
 import type { createTabNavigation, FileOpeners, WindowTabs } from '@/entities/tab'
-import { useVaults } from '@/entities/vault'
+import { reportFailure, runInBackground } from '@numen/ui'
+import { useCloudVaults, useVaults, watchCloudVaults } from '@/entities/vault'
 import { createCommandNotes, createNotes } from '@/features/command-palette'
 import { createNoteEditors } from '@/features/file-conflict'
 import { createNoteNavigator } from '@/features/note-commands'
@@ -30,6 +31,10 @@ export function createVaultServices(deps: VaultServicesDeps) {
   const { api, log, windowTabs, tabOpeners, navigation } = deps
   const { vault } = api
   const writeMessage = log.getWriter('command')
+  const cloud = useCloudVaults(vault.remoteVaults)
+  runInBackground(cloud.refresh(), reportFailure)
+  watchCloudVaults(() => runInBackground(cloud.refresh(), reportFailure))
+  const vaults = { ...useVaults({ listVaults: vault.listVaults, log }), cloud }
   const noteEditors = createNoteEditors({
     api: {
       notes: vault.note,
@@ -38,6 +43,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
     },
     log,
     windowTabs,
+    isReadOnly: () => vaults.isReadOnly.value,
   })
   const editing = {
     ...noteEditors,
@@ -69,10 +75,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
     editing,
     notes: createCommandNotes(editing.reached, windowTabs),
     window,
-    vaults: useVaults({
-      listVaults: vault.listVaults,
-      log,
-    }),
+    vaults,
     renames: renameEmitter,
     vaultChanges,
     itemLists: createCommandItemLists({

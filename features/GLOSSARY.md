@@ -20,7 +20,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### vault
 
 - Is: A folder of files that you add to Numen. A window shows one vault. The installation keeps one list of vaults for all windows.
-- States: `isMissing` (shown as "Missing"): nothing is at the path now; the vault stays on the list.
+- States: `isMissing` (shown as "Missing"): nothing is at the path now; the vault stays on the list. `isReadOnly` (shown as "Read only"): another plugin manages the vault, so it can be read and not written; see "shared vault".
 - Actions: `app:vault.open` "Open vault", `vault.create` "Create vault", `vault.rename` "Rename vault", `vault.remove` "Remove vault from list", `vault.erase` "Erase vault".
 - Texts: "The folder is not deleted"; "The folder moves to the trash"; "Type the vault name to confirm"; "a vault with this name exists"; "the only vault cannot be removed"; "No vault open" (apps/desktop/editor/src/shared/words.ts, entities/vault/words.ts).
 - Not: not a "window" and not a "workspace". A folder cannot be added if it is inside a vault of the list or holds one.
@@ -66,6 +66,16 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: The menu on a row of the tree (right click). The tab adds its entries, the window adds the rest.
 - Actions: "New" with "New note" and "New folder"; "Rename"; "Move to trash".
 - Texts: "N files" (drag label); "Not moved, names already exist:" (plugins/views-file-tree/frontend/words.ts).
+
+### staged file
+
+- Is: A file a plugin writes in parts to its own store folder (`.numen/<plugin id>/<name>`) before it is placed in the vault in one step, so that no reader sees a half file. Numen Sync stages a file it downloads.
+- Not: not a file of the vault, not a trash entry.
+
+### removal record
+
+- Is: What Numen Sync sends to the sync server instead of a removed file: a signed revision that says the file is removed and holds no content and no name.
+- Not: not the trash; the other computers move their copy to the trash when they apply it.
 
 ## Notes and tabs
 
@@ -212,6 +222,12 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A message of the window, the core or a plugin with a severity (`info`, `warning`, `error`). It has no screen of its own: a warning or an error shows as a failed task; `info` is dropped. Example: a bad value in `numen.json` is ignored with a notice titled "Read settings".
 - Texts: "Vault changes not watched", "Vault unreadable", "Themes unavailable", "Theme unreadable".
 - Not: not a toast, not a banner, not a "notification". The e2e spec says "the window shows no corner notices".
+
+### toast
+
+- Is: A short message at the bottom of the window that says something the person did is done, and goes away by itself after a few seconds (`Toast` of `@numen/ui`, a live status region).
+- Texts: "Recovery kit saved".
+- Not: not a notice and not a task; it shows no error.
 
 ### fatal start report
 
@@ -553,6 +569,65 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Actions: "Add connection", "Edit", "Delete", "Remove key", "Open Connections"; on the page of a plugin: "Connection", "Model", "Reasoning", "Remove row 1".
 - Texts: page "Connections"; fields "Type", "Name", "Address", "API key"; type "OpenAI-compatible server"; "Delete connection"; question "Index the notes again?": "The vault will be indexed again: 3 notes through Name. This can take a while and may cost money.", answers "Index", "Cancel" (editor/src/pages/settings/words.ts, plugins/connections-llm/manifest.json).
 - Not: not a note connection. A key is a private value kept in the system keychain and never shown again after it is saved. A plugin that is a type of connection is "Language model services".
+
+### identity
+
+- Is: The Numen identity of a person, kept on their own computers and not on any server: no email and no password. Their devices use it to recognize each other, and their subscription belongs to it. 12 recovery words, shown once when the identity is created, restore it. Its fingerprint is the same on every device and after a restore; this device has a fingerprint of its own.
+- States: not created (the card explains in two paragraphs what an identity is ("Your identity in Numen lives ...") and what the 12 recovery words are for, and offers "Create identity", "Restore from words" and "Restore from sheets" in its header); an identity with its fingerprint and this device.
+- Actions: "Create identity", a menu button "Restore" with each item two lines: "Recovery words / Type the 12 words", "Recovery kit / Scan the QR codes of two sheets", "Recovery kit / Type the words of two sheets", "Use existing", "Delete identity" (in the header of the Identity card); a new identity is made in two steps: the 12 words are shown once, then the person enters 3 of them ("Check the words"); nothing is kept unless the check passes. "Restore from words" opens a dialog with one field for the 12 words. "Restore from sheets" opens a dialog with the camera and two slots, "Sheet 1 waiting" and "Sheet 2 waiting"; each scanned sheet fills a slot, the camera stays on, and the second sheet starts the restore. A machine with no camera gets the dialog "Type sheets" with two fields, "Sheet 1" and "Sheet 2".
+- Link a device: the dialog "Link a device" keeps one list of three steps from the first frame to the last, with no numbers: "On the other device, choose Use existing.", "Scan this code.", "Type the code shown here on the other device."; the awaited step carries the only spinner, done steps a check. Step 1 is active while the QR code waits to be scanned; once the other device connected, steps 1 and 2 are done and step 3 is active, with the device name, fingerprint, 6-digit code and "Link device" / "Don't link" below; after linking all three are done. No status line below the list.
+- Remove a device: a right-click (or the Menu key) on the row of another device opens a menu with one item "Remove", then the question that names the fingerprint; the rows have no button, and this device has no menu.
+- Texts: page "Identity and licenses" ("Identity, this device and license keys"); "Recovery words", "Identity fingerprint", "Devices", "This device" (badge right after the name of the linked device), "Linked <date>"; "Some words are not valid." (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
+- Not: not a login and not a password. The words are not kept anywhere after they are shown; a lost identity without its words cannot be restored. A license key is not part of the identity.
+
+### recovery kit
+
+- Is: Three sheets that restore an identity: any two of them give back the identity, one alone reveals nothing. The core makes them from the 12 words and saves them as one PDF, one A4 sheet to a page; no sheet is shown in the window.
+- Actions: the icon button "Download recovery kit" (while saving "Saving…") in the row "Recovery kit" of the Identity card. Right after the identity is created it saves the kit at once; later it asks in the dialog "Download recovery kit" for the 12 words or two sheets of an earlier kit. The file is saved where the person chooses, as "Numen recovery kit.pdf" by default. A new kit does not cancel an earlier one. A saved kit is announced by the toast "Recovery kit saved"; a cancelled save dialog shows nothing; a refusal shows under the row.
+- Texts: the row says "Printed sheets to bring your identity back", and its info button opens "Printed sheets to bring your identity back if you lose this computer. Any two of the three restore it."; "Three sheets. Any two restore your identity; one alone reveals nothing. Keep them in different places."; "Recovery kit saved" (toast); each sheet: "Numen recovery kit", "Sheet N of 3", the 33 numbered words, a QR code of the sheet and one line about restoring.
+- Not: not printed from the window and not checked in the window.
+
+### subscription
+
+- Is: What the person buys to sync their vaults with Numen Sync, for the identity and not for one computer. The sync server tells where it stands: no subscription, active, ended with changes still sent, read only, or deleted; the app only shows it.
+- States: no identity ("Needs an identity" as the badge, the card says what Numen Sync does), no subscription (a row per plan to choose, no badge), active (the plan as the badge, the day it renews), Ended (changes are sent until a date), Read only (changes stay on this device, the cloud deletes the vaults on a date), Deleted.
+- Actions: a click on a plan row of the card "Numen Sync" of the page "Identity and licenses" (named "Choose Plus, 100 GB, $15 / month"); it opens the payment page in the system browser and the card follows the payment. An active subscription changes its plan from the menu "Change plan": it lists every plan with its size and price, the current plan checked and tagged "Current plan" and not to choose; choosing another plan asks "Switch to Pro?" with "Now", "New plan", "Charged now" (the difference for the rest of this period, to the card on file) and "Next payment", answered "Switch to Pro" or "Cancel". The plan changes only after "Switch to Pro".
+- Texts: "Sync needs a subscription", "Subscription ended: changes are sent until <date>", "Subscription ended: changes stay on this device" (plugins/tools-sync/backend/usecase/subscription/warn.go, plugins/tools-sync/frontend/words.ts).
+- Not: not a license key; there is no key to enter. Nothing about a payment or a card is kept in the app.
+
+### sync server and session
+
+- Is: The sync server is the program plugin "Numen Sync" signs in to with the identity of this device; its address is the setting "Sync server" of the plugin. A session is what the server gives a device that signed in. Numen Sync keeps it in memory, signs in again before it ends, and and tries again at a fixed interval where it cannot sign in. It signs in again only when the renewal comes due, not at the moment the server ends the session.
+- States: signed in; not signed in, with the plugin warning about why.
+- Texts: "No identity on this device", "Could not reach the sync server", "Update Numen", "Could not sign in" (plugins/tools-sync/backend/usecase/session/keep.go).
+- Not: not a login and not a password. A session is not the identity, and the server sees the public signing key of the device and its signed device chain, and never the recovery words or a private key of the identity.
+
+### share
+
+- Is: A folder of a synced vault that its owner lets other people read. The folder is chosen with "Share..." on a folder of the file tree; the readers get changes of the folder only, never the rest of the vault.
+- States: shared with its readers; ended (the owner stopped sharing, or removed the reader).
+- Actions: "Share...", "Share", "Remove", "Stop sharing".
+- Texts: "A folder inside a shared folder cannot be shared", "A folder containing a shared folder cannot be shared" (plugins/tools-sync/frontend/words.ts).
+- Not: not a synced vault and not a copy. A person removed from a share keeps what they already have.
+
+### reader
+
+- Is: A person who reads a share, with an identity of their own. A reader needs no subscription. The owner sends a link, and allows the device that opens it after comparing the confirmation code on both screens. The owner sees the device by its name and identity fingerprint.
+- Texts: "Devices that can read this folder", "Remove access", "Code" (plugins/tools-sync/frontend/words.ts).
+- Not: not a collaborator: a reader never writes.
+
+### invitation
+
+- Is: A text the owner sends to a reader after "Share". It is not secret, and only the reader it was made for can use it. The reader pastes it into "Receive" of the plugin Numen Sync, and the shared folder arrives as a shared vault.
+- Texts: "Invitation", "Paste the invitation here", "Receive", "This invitation is for another person" (plugins/tools-sync/frontend/words.ts).
+
+### shared vault
+
+- Is: The folder a reader received, on the list of vaults with the mark "Read only". The plugin Numen Sync alone writes it; every other write, in the window or by another plugin, answers "This vault is read only". It is a vault with `managed_by` set to the plugin id.
+- States: Read only; up to date; ended ("The owner ended this share").
+- Actions: it can be opened and read like a vault, and removed from the list (the folder stays on the computer).
+- Texts: "Read only" (editor/src/shared/ui/words.ts), "This vault is read only" (libs/shared/result/src/error.ts), "A shared vault cannot be shared again", "A shared vault cannot be synced again".
+- Not: not a synced vault of the reader and never inside another vault.
 
 ### row
 

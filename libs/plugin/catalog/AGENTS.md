@@ -1,6 +1,6 @@
 # libs/plugin/catalog
 
-The plugin catalog: the manifest model (`manifest`), its JSON reader (`manifestjson`) and the sources the catalog is read from.
+The plugin catalog: the manifest model (`manifest`), its JSON reader (`manifestjson`), the order of plugin versions (`semver`) and the sources the catalog is read from.
 
 ## Dependency on the core protocol
 

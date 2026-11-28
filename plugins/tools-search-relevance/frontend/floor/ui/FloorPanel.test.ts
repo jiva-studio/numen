@@ -4,6 +4,13 @@ import { CALIBRATION_OUTCOME, FLOOR_SOURCE } from '../model/codes'
 import { createFakeClient, createState } from '../model/fixtures'
 import FloorPanel from './FloorPanel.vue'
 
+const unavailable = (): Error =>
+  Object.assign(new Error('unavailable'), {
+    name: 'ConnectError',
+    code: 14,
+    rawMessage: 'The embedder is off',
+  })
+
 globalThis.ResizeObserver ??= class {
   observe = vi.fn()
   unobserve = vi.fn()
@@ -108,12 +115,10 @@ describe('FloorPanel', () => {
 
   it('shows the load error inline and loads again on retry', async () => {
     const client = createFakeClient()
-    client.getFloor.mockRejectedValueOnce(new Error('[unavailable] embedder is not running'))
+    client.getFloor.mockRejectedValueOnce(unavailable())
     const wrapper = mount(FloorPanel, { props: { pluginId: 'p', values: {}, client } })
     await flushPromises()
-    expect(wrapper.get('[data-testid="floor-load-error"]').text()).toContain(
-      'embedder is not running',
-    )
+    expect(wrapper.get('[data-testid="floor-load-error"]').text()).toContain('The embedder is off')
     await wrapper.get('button').trigger('click')
     await flushPromises()
     expect(wrapper.get('[data-testid="floor-value"]').text()).toBe('0.41')
@@ -121,11 +126,13 @@ describe('FloorPanel', () => {
 
   it('shows a calibration error inline', async () => {
     const { wrapper } = await render(createState(), (fake) =>
-      fake.calibrateFloor.mockRejectedValue(new Error('[unavailable] no embedder')),
+      fake.calibrateFloor.mockRejectedValue(unavailable()),
     )
     await wrapper.get('[data-testid="floor-recalculate"]').trigger('click')
     await flushPromises()
-    expect(wrapper.get('[data-testid="floor-action-error"]').text()).toContain('no embedder')
+    expect(wrapper.get('[data-testid="floor-action-error"]').text()).toContain(
+      'The embedder is off',
+    )
   })
 
   it('reports a probe that passes', async () => {
@@ -153,14 +160,14 @@ describe('FloorPanel', () => {
 
   it('shows a probe error inline and does not check an empty query', async () => {
     const { wrapper, client } = await render(createState(), (fake) =>
-      fake.probeFloor.mockRejectedValue(new Error('[unavailable] no embedder')),
+      fake.probeFloor.mockRejectedValue(unavailable()),
     )
     expect(wrapper.get('[data-testid="floor-probe-button"]').attributes('disabled')).toBeDefined()
     await wrapper.get('[data-testid="floor-probe-input"]').setValue('x')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(client.probeFloor).toHaveBeenCalledTimes(1)
-    expect(wrapper.get('[data-testid="floor-probe-error"]').text()).toContain('no embedder')
+    expect(wrapper.get('[data-testid="floor-probe-error"]').text()).toContain('The embedder is off')
     expect(wrapper.find('[data-testid="floor-probe-result"]').exists()).toBe(false)
   })
 })

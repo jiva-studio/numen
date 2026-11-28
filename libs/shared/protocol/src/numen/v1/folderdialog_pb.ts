@@ -10,7 +10,74 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/folderdialog.proto.
  */
 export const file_numen_v1_folderdialog: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi92MS9mb2xkZXJkaWFsb2cucHJvdG8SCG51bWVuLnYxIjoKE0Nob29zZUZvbGRlclJlcXVlc3QSDQoFdGl0bGUYASABKAkSFAoMc3RhcnRfZm9sZGVyGAIgASgJIjcKFENob29zZUZvbGRlclJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIMmQKE0ZvbGRlckRpYWxvZ1NlcnZpY2USTQoMQ2hvb3NlRm9sZGVyEh0ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNob29zZUZvbGRlclJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChtudW1lbi92MS9mb2xkZXJkaWFsb2cucHJvdG8SCG51bWVuLnYxImAKE1NhdmVUZXh0RmlsZVJlcXVlc3QSDQoFdGl0bGUYASABKAkSEQoJZmlsZV9uYW1lGAIgASgJEhEKCWV4dGVuc2lvbhgDIAEoCRIUCgdjb250ZW50GAQgASgJQgOAAQEiNgoUU2F2ZVRleHRGaWxlUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIQCghpc19zYXZlZBgCIAEoCCI6ChNDaG9vc2VGb2xkZXJSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhQKDHN0YXJ0X2ZvbGRlchgCIAEoCSI3ChRDaG9vc2VGb2xkZXJSZXNwb25zZRIMCgRwYXRoGAEgASgJEhEKCWlzX2Nob3NlbhgCIAEoCDKzAQoTRm9sZGVyRGlhbG9nU2VydmljZRJNCgxDaG9vc2VGb2xkZXISHS5udW1lbi52MS5DaG9vc2VGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVzcG9uc2USTQoMU2F2ZVRleHRGaWxlEh0ubnVtZW4udjEuU2F2ZVRleHRGaWxlUmVxdWVzdBoeLm51bWVuLnYxLlNhdmVUZXh0RmlsZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+
+/**
+ * @generated from message numen.v1.SaveTextFileRequest
+ */
+export type SaveTextFileRequest = Message<"numen.v1.SaveTextFileRequest"> & {
+  /**
+   * What the dialog is titled. Empty takes the words the application chooses.
+   *
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * The name the dialog proposes, with its extension.
+   *
+   * @generated from field: string file_name = 2;
+   */
+  fileName: string;
+
+  /**
+   * The extension the dialog offers files of, with its dot, such as ".json". Empty offers every file.
+   *
+   * @generated from field: string extension = 3;
+   */
+  extension: string;
+
+  /**
+   * What the file holds.
+   *
+   * @generated from field: string content = 4;
+   */
+  content: string;
+};
+
+/**
+ * Describes the message numen.v1.SaveTextFileRequest.
+ * Use `create(SaveTextFileRequestSchema)` to create a new message.
+ */
+export const SaveTextFileRequestSchema: GenMessage<SaveTextFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_folderdialog, 0);
+
+/**
+ * @generated from message numen.v1.SaveTextFileResponse
+ */
+export type SaveTextFileResponse = Message<"numen.v1.SaveTextFileResponse"> & {
+  /**
+   * The file that was written, empty when none was.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * Set when the person chose a file and the text is in it. False is a dialog they closed, which is
+   * an ordinary answer.
+   *
+   * @generated from field: bool is_saved = 2;
+   */
+  isSaved: boolean;
+};
+
+/**
+ * Describes the message numen.v1.SaveTextFileResponse.
+ * Use `create(SaveTextFileResponseSchema)` to create a new message.
+ */
+export const SaveTextFileResponseSchema: GenMessage<SaveTextFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_folderdialog, 1);
 
 /**
  * @generated from message numen.v1.ChooseFolderRequest
@@ -37,7 +104,7 @@ export type ChooseFolderRequest = Message<"numen.v1.ChooseFolderRequest"> & {
  * Use `create(ChooseFolderRequestSchema)` to create a new message.
  */
 export const ChooseFolderRequestSchema: GenMessage<ChooseFolderRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_folderdialog, 0);
+  messageDesc(file_numen_v1_folderdialog, 2);
 
 /**
  * @generated from message numen.v1.ChooseFolderResponse
@@ -64,7 +131,7 @@ export type ChooseFolderResponse = Message<"numen.v1.ChooseFolderResponse"> & {
  * Use `create(ChooseFolderResponseSchema)` to create a new message.
  */
 export const ChooseFolderResponseSchema: GenMessage<ChooseFolderResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_folderdialog, 1);
+  messageDesc(file_numen_v1_folderdialog, 3);
 
 /**
  * FolderDialogService is this machine's own folder dialog, in front of the person using the window.
@@ -83,6 +150,17 @@ export const FolderDialogService: GenService<{
     methodKind: "unary";
     input: typeof ChooseFolderRequestSchema;
     output: typeof ChooseFolderResponseSchema;
+  },
+  /**
+   * SaveTextFile puts this machine's own save dialog in front of the person and writes the text to
+   * the file they chose. A person who closes the dialog has saved nothing, and the answer says so.
+   *
+   * @generated from rpc numen.v1.FolderDialogService.SaveTextFile
+   */
+  saveTextFile: {
+    methodKind: "unary";
+    input: typeof SaveTextFileRequestSchema;
+    output: typeof SaveTextFileResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_folderdialog, 0);

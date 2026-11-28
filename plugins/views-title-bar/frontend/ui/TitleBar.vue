@@ -6,7 +6,7 @@
  * hidden from the end of the bar.
  */
 import { computed, useTemplateRef } from 'vue'
-import { Ellipsis } from '@lucide/vue'
+import { Cloud, Ellipsis, Folder } from '@lucide/vue'
 import { SearchableListPopup } from '@numen/ui'
 import { SLOT, type SlotItem } from '@numen/plugin-sdk'
 import { CORNER_INSET, getControls, getControlsRoom } from '../lib/frame'
@@ -82,6 +82,10 @@ const overflow = computed<readonly SlotItem[]>(() => {
 })
 
 const trigger = useTemplateRef<HTMLElement>('trigger')
+const localIds = computed(() => new Set(props.vaults.vaults.map(({ id }) => id)))
+const sizes = computed(
+  () => new Map((props.vaults.cloud ?? []).map(({ id, detail }) => [id, detail])),
+)
 const { hasVaults, isListOpen, popup, toggle, select, close } = useVaultList({
   trigger,
   getVaults: () => props.vaults,
@@ -211,7 +215,25 @@ function onRunCommand(
       :from="trigger"
       @select="select"
       @close="close"
-    />
+    >
+      <template #leading="{ item }">
+        <Cloud
+          v-if="item.group === TITLE_BAR_WORDS.cloud"
+          class="title-bar__vault-icon"
+          aria-hidden="true"
+        />
+        <Folder
+          v-else-if="localIds.has(item.id)"
+          class="title-bar__vault-icon"
+          aria-hidden="true"
+        />
+      </template>
+      <template #trailing="{ item }">
+        <span v-if="sizes.get(item.id)" class="title-bar__vault-size">
+          {{ sizes.get(item.id) }}
+        </span>
+      </template>
+    </SearchableListPopup>
 
     <WindowControls
       v-if="controls === 'windows'"

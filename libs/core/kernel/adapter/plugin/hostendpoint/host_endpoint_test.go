@@ -17,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // callers is a host that resolves the plugins registered with it and
@@ -73,7 +72,7 @@ func (c *callers) asCallers() Callers {
 		}
 	})
 	return Callers{
-		Identity: c, Leases: c, Lent: lent,
+		Activation: c, Lent: lent,
 		GetTools: func() PluginTools { return c.tools },
 	}
 }
@@ -87,6 +86,11 @@ func capability[T any](fake any) T {
 	return found
 }
 
+type fakeStorage struct {
+	vaultapi.StoreOpener
+	vaultapi.CacheStore
+}
+
 func vaultOf(fake any) *vaultapi.Access {
 	return &vaultapi.Access{
 		Notes: capability[vaultapi.NoteLookup](fake), Frontmatter: capability[vaultapi.FrontmatterLookup](fake),
@@ -95,7 +99,7 @@ func vaultOf(fake any) *vaultapi.Access {
 		Files:       capability[vaultapi.FileReader](fake), Writer: capability[vaultapi.FileWriter](fake),
 		Arranger: capability[vaultapi.Arranger](fake), LinkEditor: capability[vaultapi.LinkEditor](fake),
 		Watch: capability[vaultapi.Watch](fake), Switch: capability[vaultapi.Switch](fake),
-		Stores: capability[vaultapi.StoreOpener](fake), Cache: capability[vaultapi.CacheStore](fake),
+		Storage: fakeStorage{StoreOpener: capability[vaultapi.StoreOpener](fake), CacheStore: capability[vaultapi.CacheStore](fake)},
 	}
 }
 
@@ -154,7 +158,7 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 	fakeCallers := newCallers()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	for _, header := range []string{"", "token-a", "Basic token-a", "bearer token-a"} {
-		if _, err := endpoint.Authorize(header, manifest.PermissionVaultRead); readCode(t, err) != connect.CodeUnauthenticated {
+		if _, err := endpoint.Authenticate(header); readCode(t, err) != connect.CodeUnauthenticated {
 			t.Errorf("header %q was accepted", header)
 		}
 	}
@@ -164,7 +168,7 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 	fakeCallers := newCallers()
 	fakeCallers.modelCalls = &scriptedCalls{done: "ok"}
-	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers())
+	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers(), AccountCalls{})
 	if err != nil {
 		t.Fatal(err)
 	}

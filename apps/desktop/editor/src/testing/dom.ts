@@ -2,7 +2,7 @@
  * Queries over the document for the page of connections and the connection rows of a plugin, by
  * the names the user sees: the text of a control, its accessible name or its role.
  */
-import { flushPromises, type VueWrapper } from '@vue/test-utils'
+import { DOMWrapper, flushPromises, type VueWrapper } from '@vue/test-utils'
 
 /** The root a query runs in: the document body, so a menu or a dialog drawn outside the component is found. */
 export const getRoot = (): HTMLElement => document.body
@@ -88,3 +88,6 @@ export const findMenuItem = (pattern: RegExp): HTMLElement => {
   }
   return found[0] as HTMLElement
 }
+
+/** The document body as a wrapper: a dialog is drawn outside the component that opens it. */
+export const getScreen = (): DOMWrapper<HTMLElement> => new DOMWrapper(document.body)

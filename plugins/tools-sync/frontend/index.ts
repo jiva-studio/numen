@@ -1,25 +1,207 @@
-import { defineComponent, h } from 'vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import { createSyncState, SYNC_LICENSE_ID, type SyncState } from './model/sync'
-import SyncBadge from './ui/SyncBadge.vue'
+import {
+  definePlugin,
+  SETTINGS_OPEN_COMMAND,
+  type HostServices,
+  type PluginContext,
+  formatErrorMessage,
+} from '@numen/plugin-sdk'
+import {
+  accountClient,
+  acceptInvitationClient,
+  folderSharesClient,
+  shareInboxClient,
+  shareInvitationClient,
+  vaultsClient,
+} from './api/wire'
+import { getCurrentDate } from '@numen/ui'
+import { createAcceptanceView } from './model/acceptance'
+import { createInvitationView } from './model/invitation'
+import { createSyncState } from './model/sync'
+import { createSyncedFlags } from './model/syncedFlags'
+import { finishSync, startSync } from './model/syncVault'
+import { createSubscriptionView } from './ui/subscriptionView'
+import { createSharesPage } from './ui/sharesPage'
+import { registerUnsync } from './ui/unsyncCommand'
+import AcceptInvitationDialog from './ui/AcceptInvitationDialog.vue'
+import GetVaultDialog from './ui/GetVaultDialog.vue'
+import ShareInvitationDialog from './ui/ShareInvitationDialog.vue'
+import SyncChoiceDialog from './ui/SyncChoiceDialog.vue'
+import { createSyncView } from './ui/syncStatusView'
+import VaultsView from './ui/VaultsView.vue'
+import { WORDS as words } from './words'
 import './styles.css'
 
-export const SYNC_VIEW = SYNC_LICENSE_ID
+export const SYNC_VIEW = 'sync'
+export const VAULTS_VIEW = 'vaults'
+export const SUBSCRIPTION_VIEW = 'subscription'
+export const SHARES_VIEW = 'shares'
+export const SHARE_COMMAND = 'share.open'
+export const SYNC_COMMAND = 'vault.sync'
 
-export function createSyncView(state: SyncState) {
-  return defineComponent({
-    name: 'SyncStatusView',
-    setup: () => () =>
-      h(SyncBadge, {
-        phase: state.phase.value,
-      }),
+export const ACCEPT_COMMAND = 'share.accept'
+export const CLOUD_COMMAND = 'vault.fromCloud'
+
+const createSettingsOpener = (
+  plugin: PluginContext,
+  host: Pick<HostServices, 'ui'>,
+): (() => void) | undefined => {
+  const commands = host.ui.commands
+  if (commands === undefined) return undefined
+  return () => {
+    commands
+      .run(SETTINGS_OPEN_COMMAND, undefined, undefined, { plugin: plugin.identity.id })
+      .catch((error: unknown) => host.ui.notices.show(formatErrorMessage(error), 'error'))
+  }
+}
+
+const getCurrentVault = (host: HostServices): string =>
+  host.vault.vaults?.getState().current?.id ?? ''
+
+const getFolder = (path: string): string => {
+  const trimmed = path.replace(/^\/+|\/+$/g, '')
+  return trimmed === '.' ? '' : trimmed
+}
+
+const registerShare = (plugin: PluginContext, host: HostServices): void => {
+  plugin.register.command({
+    id: SHARE_COMMAND,
+    handler: (note) => {
+      const dialogs = host.ui.dialogs
+      if (dialogs === undefined) return Promise.resolve()
+      const view = createInvitationView({
+        invitations: shareInvitationClient,
+        shares: folderSharesClient,
+        target: { vaultId: getCurrentVault(host), folder: getFolder(note.path) },
+        vaultName: host.vault.vaults?.getState().current?.name ?? '',
+        now: getCurrentDate,
+        close: () => {
+          view.stop()
+          dialog.close()
+        },
+      })
+      const dialog = dialogs.open({ component: ShareInvitationDialog, props: { state: view } })
+      view.start().catch(view.fail)
+      return Promise.resolve()
+    },
   })
 }
 
-export const activate = (plugin: PluginContext): void => {
-  const state = createSyncState(plugin.licenses)
+const registerDialogs = (plugin: PluginContext, host: HostServices): void => {
+  plugin.register.command({
+    id: ACCEPT_COMMAND,
+    handler: () => {
+      const dialogs = host.ui.dialogs
+      if (dialogs === undefined) return Promise.resolve()
+      const view = createAcceptanceView({
+        client: acceptInvitationClient,
+        close: () => {
+          view.stop()
+          dialog.close()
+        },
+      })
+      const dialog = dialogs.open({ component: AcceptInvitationDialog, props: { view } })
+      return Promise.resolve()
+    },
+  })
+  plugin.register.command({
+    id: CLOUD_COMMAND,
+    handler: () => {
+      const dialog = host.ui.dialogs?.open({
+        component: GetVaultDialog,
+        props: { onClose: () => dialog?.close() },
+      })
+      return Promise.resolve()
+    },
+  })
+}
+
+const getFailureText = (failure: unknown): string => {
+  const text = formatErrorMessage(failure)
+  return text.trim() === '' ? words.syncFailed : text
+}
+
+const getOutcomeText = (kind: 'synced' | 'already'): string =>
+  kind === 'synced' ? words.syncStarted : words.syncedAlready
+
+const registerSync = (
+  plugin: PluginContext,
+  host: HostServices,
+  refreshFlags: () => Promise<void>,
+): void => {
+  const show = (failure: unknown): void => host.ui.notices.show(getFailureText(failure), 'error')
+  const choose = (vaultId: string, name: string, remoteId: string): void => {
+    const dialogs = host.ui.dialogs
+    if (dialogs === undefined) return
+    const finish = (id: string): void => {
+      dialog.close()
+      finishSync(vaultsClient, vaultId, id)
+        .then(() => {
+          host.ui.notices.show(words.syncStarted)
+          return refreshFlags()
+        })
+        .catch(show)
+    }
+    const dialog = dialogs.open({
+      component: SyncChoiceDialog,
+      props: {
+        name,
+        onUse: () => finish(remoteId),
+        onSend: () => finish(''),
+        onCancel: () => dialog.close(),
+      },
+    })
+  }
+  plugin.register.command({
+    id: SYNC_COMMAND,
+    handler: async () => {
+      const vaultId = getCurrentVault(host)
+      try {
+        host.work.logs
+          ?.write({
+            level: 'debug',
+            message: 'Sync this vault was chosen',
+            properties: { vault: vaultId },
+          })
+          .catch(() => undefined)
+        const outcome = await startSync(vaultsClient, vaultId)
+        if (outcome.kind === 'choose') choose(vaultId, outcome.name, outcome.remoteId)
+        else host.ui.notices.show(getOutcomeText(outcome.kind))
+        await refreshFlags()
+      } catch (failure) {
+        show(failure)
+      }
+    },
+  })
+}
+
+export const activate = (plugin: PluginContext, host: HostServices): void => {
+  const state = createSyncState(vaultsClient)
   plugin.register.slotView({ id: SYNC_VIEW, component: createSyncView(state) })
+  plugin.register.settingsView({ id: VAULTS_VIEW, component: VaultsView })
+  plugin.register.settingsView({ id: SHARES_VIEW, component: createSharesPage() })
+  plugin.register.settingsView({
+    id: SUBSCRIPTION_VIEW,
+    component: createSubscriptionView(
+      plugin,
+      host,
+      accountClient,
+      createSettingsOpener(plugin, host),
+    ),
+  })
+  registerShare(plugin, host)
+  const flags = host.ui.vaultFlags
+  if (flags === undefined) throw new Error('the window gives no vault flags')
+  const flagSync = createSyncedFlags({
+    client: vaultsClient,
+    flags,
+    getVaultIds: () => host.vault.vaults?.getState().vaults.map((one) => one.id) ?? [],
+  })
+  registerSync(plugin, host, flagSync.refresh)
+  registerUnsync(plugin, host, { vaults: vaultsClient, shareInbox: shareInboxClient })
+  registerDialogs(plugin, host)
   plugin.identity.subscriptions.push({ dispose: () => state.stop() })
+  flagSync.start()
+  plugin.identity.subscriptions.push({ dispose: () => flagSync.stop() })
   state.start()
 }
 

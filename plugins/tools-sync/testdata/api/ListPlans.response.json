@@ -1,0 +1,7 @@
+{
+  "plans": [
+    { "id": "basic", "name": "Basic", "quotaBytes": 10737418240, "priceCents": 500, "currency": "USD" },
+    { "id": "plus", "name": "Plus", "quotaBytes": 107374182400, "priceCents": 1500, "currency": "USD" },
+    { "id": "pro", "name": "Pro", "quotaBytes": 268435456000, "priceCents": 3000, "currency": "USD" }
+  ]
+}

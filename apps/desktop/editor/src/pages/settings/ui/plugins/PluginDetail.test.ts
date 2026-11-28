@@ -765,6 +765,48 @@ describe('the settings views of a plugin', () => {
   })
 })
 
+describe('the tab a plugin contributes to its page', () => {
+  const Card = defineComponent({ template: '<section class="view-card">Vaults card</section>' })
+  const mountSync = () => {
+    const plugin = createPluginInfo('sync.plugin', 'Sync', {
+      settings: [{ key: 'on', type: 'boolean', title: 'Switched', description: '', default: true }],
+      settingsTabs: [{ id: 'sync', title: 'Sync' }],
+      settingsViews: [{ id: 'vaults', title: 'Vaults', tab: 'sync' }],
+    })
+    const installation = createInstallation({
+      getSettingsViews: () => new Map([['vaults', { component: Card }]]),
+      plugins: ref([plugin]),
+    })
+    return mount(PluginDetail, {
+      props: {
+        settings: installation.settings,
+        manager: installation.plugin,
+        connections: installation.connections,
+        plugin,
+      },
+    })
+  }
+
+  it('is listed right after Settings on the plugin page tab strip', () => {
+    const labels = mountSync()
+      .findAll('[role="tab"]')
+      .map((one) => one.text())
+
+    expect(labels.slice(0, 2)).toStrictEqual(['Settings', 'Sync'])
+  })
+
+  it('draws its views with no card around them and not the rows', async () => {
+    const wrapper = mountSync()
+    expect(wrapper.find('.view-card').exists()).toBe(false)
+
+    await wrapper.findAll('[role="tab"]')[1]?.trigger('click')
+
+    const card = wrapper.get('.view-card')
+    expect(card.element.closest('.settings-card')).toBeNull()
+    expect(wrapper.text()).not.toContain('Switched')
+  })
+})
+
 describe('the data of a plugin', () => {
   const TRANSCRIBER = createPluginInfo('test.transcriber', 'Transcriber')
 

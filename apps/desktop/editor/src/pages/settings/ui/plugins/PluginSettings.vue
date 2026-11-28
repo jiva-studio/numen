@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * The declarative settings of a plugin: the card of the settings that name no group, and under it an
- * island with a heading for each group that has a setting to show.
+ * The Settings tab of a plugin page: the views that name no tab, the card of the settings that name
+ * no group, and under it an island with a heading for each group that has a setting to show. A view
+ * draws its own cards, so none wraps the views.
  */
 import { computed } from 'vue'
 import { IslandCard } from '@numen/ui'
@@ -11,7 +12,9 @@ import type { PluginInfo } from '@/entities/settings'
 import { useEnumFields } from '../../model/usePluginFields'
 import { getSettingSections } from '../../lib/settingSections'
 import { hasRowSettings } from '../../lib/pluginSettings'
+import { DEFAULT_TAB } from '../../lib/settingsTabs'
 import PluginFields from './PluginFields.vue'
+import SettingsViews from './SettingsViews.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -30,11 +33,16 @@ const { getShownSettings } = useEnumFields({
 })
 const sections = computed(() => getSettingSections(getShownSettings(), props.plugin.settingGroups))
 const hasPlainRows = computed(() => hasRowSettings(sections.value.plain))
-const hasViews = computed(() => (props.plugin.settingsViews ?? []).length > 0)
 </script>
 
 <template>
-  <PluginSettingsCard v-if="hasPlainRows || hasViews">
+  <SettingsViews
+    :settings="props.settings"
+    :host="props.host"
+    :plugin="props.plugin"
+    :tab="DEFAULT_TAB"
+  />
+  <PluginSettingsCard v-if="hasPlainRows">
     <PluginFields
       :settings="props.settings"
       :host="props.host"

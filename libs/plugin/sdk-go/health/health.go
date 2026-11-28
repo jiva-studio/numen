@@ -20,6 +20,12 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
+// MaxTextLength is the most characters the host accepts in the text of an item; MaxDetailLength the most in its detail.
+const (
+	MaxTextLength   = 120
+	MaxDetailLength = 500
+)
+
 // Severity is how bad an item is.
 type Severity int
 

@@ -36,6 +36,29 @@ export const Syncing: Story = {
   },
 }
 
+export const SyncingWithPercent: Story = {
+  args: {
+    phase: 'syncing',
+    percent: 42,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const status = canvas.getByRole('status', { name: WORDS.syncingDetail })
+    await expect(status).toHaveTextContent(WORDS.syncingPercent(42))
+  },
+}
+
+export const Waiting: Story = {
+  args: {
+    phase: 'waiting',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const status = canvas.getByRole('status', { name: WORDS.statusWaiting })
+    await expect(status).toHaveTextContent(WORDS.statusWaiting)
+  },
+}
+
 export const Synced: Story = {
   args: {
     phase: 'synced',

@@ -1,0 +1,52 @@
+{
+  "vaults": [
+    {
+      "id": "01JCX6Q4ZB3W8N2V7T5R9K1M0P",
+      "name": "Test",
+      "path": "/home/person/Test",
+      "state": "connected",
+      "lastSyncedAt": "2026-11-23T12:00:00Z",
+      "conflictCount": 1,
+      "remoteId": "00112233445566778899aabbccddeeff",
+      "syncing": true,
+      "syncedBytes": 1932735283,
+      "totalBytes": 2040109465,
+      "pendingFiles": 49,
+      "onDemandFiles": 12,
+      "onDemandBytes": 524288000,
+      "pausedDeletions": { "count": 5, "tracked": 10, "direction": "send" }
+    },
+    {
+      "id": "01JCX6Q4ZB3W8N2V7T5R9K1M0Q",
+      "name": "Copy",
+      "path": "/home/person/Copy",
+      "state": "notConnected",
+      "lastSyncedAt": "",
+      "conflictCount": 0,
+      "remoteId": "",
+      "syncing": false,
+      "syncedBytes": 0,
+      "totalBytes": 0,
+      "pendingFiles": 0,
+      "onDemandFiles": 0,
+      "onDemandBytes": 0,
+      "pausedDeletions": null
+    },
+    {
+      "id": "01JCX6Q4ZB3W8N2V7T5R9K1M0R",
+      "name": "Food",
+      "path": "/home/person/Numen Shared/Food",
+      "state": "received",
+      "lastSyncedAt": "2026-11-23T12:00:00Z",
+      "conflictCount": 0,
+      "remoteId": "",
+      "syncing": false,
+      "syncedBytes": 0,
+      "totalBytes": 0,
+      "pendingFiles": 0,
+      "onDemandFiles": 0,
+      "onDemandBytes": 0,
+      "pausedDeletions": null
+    }
+  ]
+}

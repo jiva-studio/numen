@@ -158,7 +158,6 @@ func TestAnEarlierChangeHasTheLatestContentOfItsFile(t *testing.T) {
 	v.WriteFile("a.md", "A, longer\n")
 
 	changes := readFeed(t, v, start).Changes
-
 	if len(changes) != 2 {
 		t.Fatalf("the feed holds %+v, want two changes", changes)
 	}

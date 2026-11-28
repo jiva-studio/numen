@@ -51,6 +51,18 @@ const (
 	// HostFileServiceListFileChangesProcedure is the fully-qualified name of the HostFileService's
 	// ListFileChanges RPC.
 	HostFileServiceListFileChangesProcedure = "/numen.v1.HostFileService/ListFileChanges"
+	// HostFileServiceMoveFileProcedure is the fully-qualified name of the HostFileService's MoveFile
+	// RPC.
+	HostFileServiceMoveFileProcedure = "/numen.v1.HostFileService/MoveFile"
+	// HostFileServiceRemoveFileProcedure is the fully-qualified name of the HostFileService's
+	// RemoveFile RPC.
+	HostFileServiceRemoveFileProcedure = "/numen.v1.HostFileService/RemoveFile"
+	// HostFileServiceReadFileRangeProcedure is the fully-qualified name of the HostFileService's
+	// ReadFileRange RPC.
+	HostFileServiceReadFileRangeProcedure = "/numen.v1.HostFileService/ReadFileRange"
+	// HostFileServicePlaceFileProcedure is the fully-qualified name of the HostFileService's PlaceFile
+	// RPC.
+	HostFileServicePlaceFileProcedure = "/numen.v1.HostFileService/PlaceFile"
 )
 
 // HostFileServiceClient is a client for the numen.v1.HostFileService service.
@@ -73,6 +85,17 @@ type HostFileServiceClient interface {
 	// the latest event of each kind of each file, in the order the index stored
 	// them. It needs vault:read.
 	ListFileChanges(context.Context, *connect.Request[v1.ListFileChangesRequest]) (*connect.Response[v1.ListFileChangesResponse], error)
+	// MoveFile files a file of any kind, or a folder with everything under it,
+	// somewhere else in the vault. It needs vault:write.
+	MoveFile(context.Context, *connect.Request[v1.HostFileServiceMoveFileRequest]) (*connect.Response[v1.HostFileServiceMoveFileResponse], error)
+	// RemoveFile moves a file, or a folder with everything under it, to the
+	// trash of the vault. Nothing is destroyed. It needs vault:write.
+	RemoveFile(context.Context, *connect.Request[v1.HostFileServiceRemoveFileRequest]) (*connect.Response[v1.HostFileServiceRemoveFileResponse], error)
+	// ReadFileRange reads bytes of any file as they are. It needs vault:read.
+	ReadFileRange(context.Context, *connect.Request[v1.ReadFileRangeRequest]) (*connect.Response[v1.ReadFileRangeResponse], error)
+	// PlaceFile moves a file of the plugin's own store folder to a path of the
+	// vault in one atomic rename. It needs vault:write.
+	PlaceFile(context.Context, *connect.Request[v1.PlaceFileRequest]) (*connect.Response[v1.PlaceFileResponse], error)
 }
 
 // NewHostFileServiceClient constructs a client for the numen.v1.HostFileService service. By
@@ -122,6 +145,30 @@ func NewHostFileServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(hostFileServiceMethods.ByName("ListFileChanges")),
 			connect.WithClientOptions(opts...),
 		),
+		moveFile: connect.NewClient[v1.HostFileServiceMoveFileRequest, v1.HostFileServiceMoveFileResponse](
+			httpClient,
+			baseURL+HostFileServiceMoveFileProcedure,
+			connect.WithSchema(hostFileServiceMethods.ByName("MoveFile")),
+			connect.WithClientOptions(opts...),
+		),
+		removeFile: connect.NewClient[v1.HostFileServiceRemoveFileRequest, v1.HostFileServiceRemoveFileResponse](
+			httpClient,
+			baseURL+HostFileServiceRemoveFileProcedure,
+			connect.WithSchema(hostFileServiceMethods.ByName("RemoveFile")),
+			connect.WithClientOptions(opts...),
+		),
+		readFileRange: connect.NewClient[v1.ReadFileRangeRequest, v1.ReadFileRangeResponse](
+			httpClient,
+			baseURL+HostFileServiceReadFileRangeProcedure,
+			connect.WithSchema(hostFileServiceMethods.ByName("ReadFileRange")),
+			connect.WithClientOptions(opts...),
+		),
+		placeFile: connect.NewClient[v1.PlaceFileRequest, v1.PlaceFileResponse](
+			httpClient,
+			baseURL+HostFileServicePlaceFileProcedure,
+			connect.WithSchema(hostFileServiceMethods.ByName("PlaceFile")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -133,6 +180,10 @@ type hostFileServiceClient struct {
 	createFile      *connect.Client[v1.CreateFileRequest, v1.CreateFileResponse]
 	scanFiles       *connect.Client[v1.ScanFilesRequest, v1.ScanFilesResponse]
 	listFileChanges *connect.Client[v1.ListFileChangesRequest, v1.ListFileChangesResponse]
+	moveFile        *connect.Client[v1.HostFileServiceMoveFileRequest, v1.HostFileServiceMoveFileResponse]
+	removeFile      *connect.Client[v1.HostFileServiceRemoveFileRequest, v1.HostFileServiceRemoveFileResponse]
+	readFileRange   *connect.Client[v1.ReadFileRangeRequest, v1.ReadFileRangeResponse]
+	placeFile       *connect.Client[v1.PlaceFileRequest, v1.PlaceFileResponse]
 }
 
 // StatFile calls numen.v1.HostFileService.StatFile.
@@ -165,6 +216,26 @@ func (c *hostFileServiceClient) ListFileChanges(ctx context.Context, req *connec
 	return c.listFileChanges.CallUnary(ctx, req)
 }
 
+// MoveFile calls numen.v1.HostFileService.MoveFile.
+func (c *hostFileServiceClient) MoveFile(ctx context.Context, req *connect.Request[v1.HostFileServiceMoveFileRequest]) (*connect.Response[v1.HostFileServiceMoveFileResponse], error) {
+	return c.moveFile.CallUnary(ctx, req)
+}
+
+// RemoveFile calls numen.v1.HostFileService.RemoveFile.
+func (c *hostFileServiceClient) RemoveFile(ctx context.Context, req *connect.Request[v1.HostFileServiceRemoveFileRequest]) (*connect.Response[v1.HostFileServiceRemoveFileResponse], error) {
+	return c.removeFile.CallUnary(ctx, req)
+}
+
+// ReadFileRange calls numen.v1.HostFileService.ReadFileRange.
+func (c *hostFileServiceClient) ReadFileRange(ctx context.Context, req *connect.Request[v1.ReadFileRangeRequest]) (*connect.Response[v1.ReadFileRangeResponse], error) {
+	return c.readFileRange.CallUnary(ctx, req)
+}
+
+// PlaceFile calls numen.v1.HostFileService.PlaceFile.
+func (c *hostFileServiceClient) PlaceFile(ctx context.Context, req *connect.Request[v1.PlaceFileRequest]) (*connect.Response[v1.PlaceFileResponse], error) {
+	return c.placeFile.CallUnary(ctx, req)
+}
+
 // HostFileServiceHandler is an implementation of the numen.v1.HostFileService service.
 type HostFileServiceHandler interface {
 	// StatFile returns the current FileStat of a file, or NOT_FOUND.
@@ -185,6 +256,17 @@ type HostFileServiceHandler interface {
 	// the latest event of each kind of each file, in the order the index stored
 	// them. It needs vault:read.
 	ListFileChanges(context.Context, *connect.Request[v1.ListFileChangesRequest]) (*connect.Response[v1.ListFileChangesResponse], error)
+	// MoveFile files a file of any kind, or a folder with everything under it,
+	// somewhere else in the vault. It needs vault:write.
+	MoveFile(context.Context, *connect.Request[v1.HostFileServiceMoveFileRequest]) (*connect.Response[v1.HostFileServiceMoveFileResponse], error)
+	// RemoveFile moves a file, or a folder with everything under it, to the
+	// trash of the vault. Nothing is destroyed. It needs vault:write.
+	RemoveFile(context.Context, *connect.Request[v1.HostFileServiceRemoveFileRequest]) (*connect.Response[v1.HostFileServiceRemoveFileResponse], error)
+	// ReadFileRange reads bytes of any file as they are. It needs vault:read.
+	ReadFileRange(context.Context, *connect.Request[v1.ReadFileRangeRequest]) (*connect.Response[v1.ReadFileRangeResponse], error)
+	// PlaceFile moves a file of the plugin's own store folder to a path of the
+	// vault in one atomic rename. It needs vault:write.
+	PlaceFile(context.Context, *connect.Request[v1.PlaceFileRequest]) (*connect.Response[v1.PlaceFileResponse], error)
 }
 
 // NewHostFileServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -230,6 +312,30 @@ func NewHostFileServiceHandler(svc HostFileServiceHandler, opts ...connect.Handl
 		connect.WithSchema(hostFileServiceMethods.ByName("ListFileChanges")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostFileServiceMoveFileHandler := connect.NewUnaryHandler(
+		HostFileServiceMoveFileProcedure,
+		svc.MoveFile,
+		connect.WithSchema(hostFileServiceMethods.ByName("MoveFile")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostFileServiceRemoveFileHandler := connect.NewUnaryHandler(
+		HostFileServiceRemoveFileProcedure,
+		svc.RemoveFile,
+		connect.WithSchema(hostFileServiceMethods.ByName("RemoveFile")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostFileServiceReadFileRangeHandler := connect.NewUnaryHandler(
+		HostFileServiceReadFileRangeProcedure,
+		svc.ReadFileRange,
+		connect.WithSchema(hostFileServiceMethods.ByName("ReadFileRange")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostFileServicePlaceFileHandler := connect.NewUnaryHandler(
+		HostFileServicePlaceFileProcedure,
+		svc.PlaceFile,
+		connect.WithSchema(hostFileServiceMethods.ByName("PlaceFile")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostFileService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostFileServiceStatFileProcedure:
@@ -244,6 +350,14 @@ func NewHostFileServiceHandler(svc HostFileServiceHandler, opts ...connect.Handl
 			hostFileServiceScanFilesHandler.ServeHTTP(w, r)
 		case HostFileServiceListFileChangesProcedure:
 			hostFileServiceListFileChangesHandler.ServeHTTP(w, r)
+		case HostFileServiceMoveFileProcedure:
+			hostFileServiceMoveFileHandler.ServeHTTP(w, r)
+		case HostFileServiceRemoveFileProcedure:
+			hostFileServiceRemoveFileHandler.ServeHTTP(w, r)
+		case HostFileServiceReadFileRangeProcedure:
+			hostFileServiceReadFileRangeHandler.ServeHTTP(w, r)
+		case HostFileServicePlaceFileProcedure:
+			hostFileServicePlaceFileHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -275,4 +389,20 @@ func (UnimplementedHostFileServiceHandler) ScanFiles(context.Context, *connect.R
 
 func (UnimplementedHostFileServiceHandler) ListFileChanges(context.Context, *connect.Request[v1.ListFileChangesRequest]) (*connect.Response[v1.ListFileChangesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostFileService.ListFileChanges is not implemented"))
+}
+
+func (UnimplementedHostFileServiceHandler) MoveFile(context.Context, *connect.Request[v1.HostFileServiceMoveFileRequest]) (*connect.Response[v1.HostFileServiceMoveFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostFileService.MoveFile is not implemented"))
+}
+
+func (UnimplementedHostFileServiceHandler) RemoveFile(context.Context, *connect.Request[v1.HostFileServiceRemoveFileRequest]) (*connect.Response[v1.HostFileServiceRemoveFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostFileService.RemoveFile is not implemented"))
+}
+
+func (UnimplementedHostFileServiceHandler) ReadFileRange(context.Context, *connect.Request[v1.ReadFileRangeRequest]) (*connect.Response[v1.ReadFileRangeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostFileService.ReadFileRange is not implemented"))
+}
+
+func (UnimplementedHostFileServiceHandler) PlaceFile(context.Context, *connect.Request[v1.PlaceFileRequest]) (*connect.Response[v1.PlaceFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostFileService.PlaceFile is not implemented"))
 }

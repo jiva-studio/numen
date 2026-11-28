@@ -1,3 +1,4 @@
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import { getCurrentDate, getNow } from '@numen/ui'
 import { computed, onUnmounted, ref } from 'vue'
 import { BAR_COUNT, openMicrophone, type Microphone } from '../api/microphone'
@@ -7,7 +8,7 @@ export type RecordingStatus = 'idle' | 'starting' | 'recording' | 'paused' | 'sa
 export type RecordAction = 'start' | 'pause' | 'resume' | 'stop' | 'reset'
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  return formatErrorMessage(error)
 }
 
 export function useMediaRecording(getTab: () => RecorderTab | undefined) {

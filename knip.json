@@ -195,6 +195,7 @@
       ]
     },
     "tests/acceptance/desktop": {
+      "ignoreBinaries": ["go"],
       "ignoreDependencies": [
         "gplint",
         "@fontsource-variable/inter"

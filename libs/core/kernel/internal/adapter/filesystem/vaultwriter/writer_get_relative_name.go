@@ -20,8 +20,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
-func (w *VaultWriter) getRelativeName(target string) (string, error) {
-	name, err := filepath.Rel(w.root, target)
+func getRelativeName(root, target string) (string, error) {
+	name, err := filepath.Rel(root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
 		return "", fmt.Errorf("%s: %w", target, vault.ErrOutside)
 	}
@@ -76,9 +76,6 @@ func (w *VaultWriter) isWritableFile(path string) bool {
 	}
 	return true
 }
-
-// Root is where this vault is on disk.
-func (w *VaultWriter) Root() string { return w.root }
 
 // VaultWriters opens vaults for writing. Writers that must exclude each other share Locks.
 type VaultWriters struct {
@@ -209,31 +206,81 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 		return err
 	}
 	defer closeAndJoin(&err, root)
-	switch _, err := root.Lstat(name); {
-	case err == nil:
-		return fmt.Errorf("bring %s: %w", path, vault.ErrAlreadyExists)
-	case !errors.Is(err, fs.ErrNotExist):
+	if err := checkImportTarget(root, name, path); err != nil {
 		return err
 	}
 	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
-	return streamReplace(ctx, root, name, content)
-}
-
-func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) error {
-	_, err := atomicfile.Replace(ctx, root, target, content, newFileMode)
+	_, err = atomicfile.ReplaceUnder(ctx, root, name, content, newFileMode, func(rename func() error) error {
+		w.lock.write.Lock()
+		defer w.lock.write.Unlock()
+		if err := checkImportTarget(root, name, path); err != nil {
+			return err
+		}
+		return rename()
+	})
 	return err
 }
 
-func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.FileMode, error) {
+// Replace streams content over the file at path, whole or not at all, and keeps the permissions of the file. A path
+// with no file returns fs.ErrNotExist.
+func (w *VaultWriter) Replace(ctx context.Context, path string, content io.Reader, baseline domain.FileStat) (err error) {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	target, err := w.resolvePath(path)
+	if err != nil {
+		return err
+	}
+	root, name, err := w.openRoot(target)
+	if err != nil {
+		return err
+	}
+	defer closeAndJoin(&err, root)
+	info, err := root.Stat(name)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return fmt.Errorf("replace %s: it is a directory", path)
+	}
+	_, err = atomicfile.ReplaceUnder(ctx, root, name, content, info.Mode().Perm(), func(rename func() error) error {
+		w.lock.write.Lock()
+		defer w.lock.write.Unlock()
+		if err := checkReplaceBaseline(ctx, root, name, path, baseline); err != nil {
+			return err
+		}
+		return rename()
+	})
+	return err
+}
+
+func checkReplaceBaseline(ctx context.Context, root *os.Root, name, path string, baseline domain.FileStat) error {
+	if baseline.IsZero() {
+		return nil
+	}
+	stale, err := isStale(ctx, root, name, baseline)
+	if errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("replace %s: %w", path, edit.ErrStale)
+	}
+	if err != nil {
+		return err
+	}
+	if stale {
+		return fmt.Errorf("replace %s: %w", path, edit.ErrStale)
+	}
+	return nil
+}
+
+func getWriteMode(ctx context.Context, root *os.Root, name, path string, stat domain.FileStat) (fs.FileMode, error) {
 	info, err := root.Stat(name)
 	switch {
 	case err == nil:
 		if info.IsDir() {
 			return 0, fmt.Errorf("write %s: it is a directory", path)
 		}
-		stale, err := isStale(root, name, stat)
+		stale, err := isStale(ctx, root, name, stat)
 		if err != nil {
 			return 0, err
 		}
@@ -251,6 +298,24 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 	default:
 		return 0, err
 	}
+}
+
+func checkMoveHash(ctx context.Context, root *os.Root, name, path, hash string) error {
+	info, err := root.Stat(name)
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() || hash == "" {
+		return fmt.Errorf("move %s: %w", path, edit.ErrStale)
+	}
+	stale, err := isStale(ctx, root, name, domain.FileStat{Hash: hash})
+	if err != nil {
+		return err
+	}
+	if stale {
+		return fmt.Errorf("move %s: %w", path, edit.ErrStale)
+	}
+	return nil
 }
 
 func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
@@ -281,7 +346,11 @@ func createParents(root *os.Root, dir, path string) error {
 	return err
 }
 
-func isStale(root *os.Root, name string, baseline domain.FileStat) (_ bool, err error) {
+type readFunc func([]byte) (int, error)
+
+func (read readFunc) Read(buffer []byte) (int, error) { return read(buffer) }
+
+func isStale(ctx context.Context, root *os.Root, name string, baseline domain.FileStat) (_ bool, err error) {
 	if baseline.IsZero() {
 		return false, nil
 	}
@@ -290,7 +359,12 @@ func isStale(root *os.Root, name string, baseline domain.FileStat) (_ bool, err 
 		return false, err
 	}
 	defer closeAndJoin(&err, file)
-	hash, err := domain.HashReader(file)
+	hash, err := domain.HashReader(readFunc(func(buffer []byte) (int, error) {
+		if err := ctx.Err(); err != nil {
+			return 0, err
+		}
+		return file.Read(buffer)
+	}))
 	if err != nil {
 		return false, err
 	}
@@ -304,4 +378,15 @@ func (w VaultWriters) GetVersion(v domain.Vault) uint64 {
 		return 0
 	}
 	return w.Locks.getLock(v.Path).version.Load()
+}
+
+func checkImportTarget(root *os.Root, name, path string) error {
+	_, err := root.Lstat(name)
+	switch {
+	case err == nil:
+		return fmt.Errorf("bring %s: %w", path, vault.ErrAlreadyExists)
+	case !errors.Is(err, fs.ErrNotExist):
+		return err
+	}
+	return nil
 }

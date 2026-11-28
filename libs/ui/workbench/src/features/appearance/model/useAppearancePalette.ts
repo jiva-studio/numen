@@ -12,7 +12,7 @@ import type { Ref } from 'vue'
  * What the appearance palette works with. writeChoice resolves to why a choice was not written, empty where
  * it was; onOpen reads again what the palette offers each time it opens.
  */
-export interface AppearancePaletteDeps {
+interface AppearancePaletteDeps {
   readonly appearance: {
     readonly state: {
       readonly themes: Ref<readonly Theme[]>

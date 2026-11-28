@@ -47,8 +47,8 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 	if cfg.Appearance.InterfaceScale != 1 || cfg.Appearance.TextScale != 1 {
 		t.Errorf("drawn at %+v", cfg.Appearance)
 	}
-	if len(cfg.Notices) != 0 {
-		t.Errorf("a file nobody wrote says %q", cfg.Notices)
+	if len(cfg.Header.Notices) != 0 {
+		t.Errorf("a file nobody wrote says %q", cfg.Header.Notices)
 	}
 	if cfg.Appearance.Mode != theme.SchemeSystem {
 		t.Errorf("the colors are read as %q", cfg.Appearance.Mode)
@@ -90,8 +90,8 @@ func TestASizeOutsideWhatItGoesToIsReadAndNotApplied(t *testing.T) {
 		if got, _ := cfg.GetValue("app", "appearance", key); got != 1.0 {
 			t.Errorf("%s: %s in force is %v, want the default", body, key, got)
 		}
-		if !hasSettingsNotice(cfg.Notices, "appearance."+key) {
-			t.Errorf("%s: the notices are %q", body, cfg.Notices)
+		if !hasSettingsNotice(cfg.Header.Notices, "appearance."+key) {
+			t.Errorf("%s: the notices are %q", body, cfg.Header.Notices)
 		}
 	}
 }

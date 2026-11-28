@@ -32,6 +32,7 @@ type Remove struct {
 	filer     VersionMover
 	index     edit.IndexUpdater
 	admission vaultport.WriteAdmission
+	absent    vaultport.AbsentFiles
 }
 
 // NewRemove builds the use case that moves a note into the trash.
@@ -51,10 +52,14 @@ type RemoveResult struct {
 // Execute puts the file or the folder in the trash, with everything a folder
 // holds. Destroy takes one note out of the world.
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
-	return writeUnder(u.admission, func() (RemoveResult, error) { return u.moveToTrash(ctx, v, path) })
+	return u.execute(ctx, v, path, nil)
 }
 
-func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+func (u Remove) execute(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (RemoveResult, error) {
+	return writeUnder(ctx, v, u.admission, func() (RemoveResult, error) { return u.moveToTrash(ctx, v, path, baseline) })
+}
+
+func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
 	went, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
@@ -67,11 +72,7 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 		return res, err
 	}
 
-	writer, err := u.writers.OpenFileMover(v)
-	if err != nil {
-		return res, err
-	}
-	target, err := moveToTrash(ctx, writer, path)
+	target, err := u.moveFilesToTrash(ctx, v, path, baseline)
 	if err != nil {
 		return res, err
 	}
@@ -79,8 +80,39 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 
 	// The text versions of a recording, a scan or a proofread text travel with
 	// the file, so moving it out of the trash brings them back.
-	filingErr := u.filer.MoveVersions(ctx, v.ID, path, target)
+	var filingErr error
+	if target != "" {
+		filingErr = u.filer.MoveVersions(ctx, v.ID, path, target)
+	}
 
+	indexPaths, inside := getIndexPaths(went, path)
+	// The file is in the trash from here on, so the index update result is reported
+	// alongside the links that now resolve to nothing.
+	indexErr := u.updateIndex(ctx, v, indexPaths...)
+	res.Dangling = getDanglingLinks(pointing, inside)
+	return res, errors.Join(filingErr, indexErr)
+}
+
+func (u Remove) moveFilesToTrash(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (string, error) {
+	writer, err := u.writers.OpenFileMover(v)
+	if err != nil {
+		return "", err
+	}
+	target, err := moveToTrash(ctx, writer, path, baseline)
+	if err != nil && (baseline != nil || !errors.Is(err, edit.ErrNoNote)) {
+		return "", err
+	}
+	listed, absentErr := u.removeAbsent(ctx, v, path)
+	if absentErr != nil {
+		return "", absentErr
+	}
+	if err != nil && listed == 0 {
+		return "", err
+	}
+	return target, nil
+}
+
+func getIndexPaths(went []domain.FileStat, path string) ([]string, map[string]bool) {
 	// The index is updated for what the vault held at each path, and with
 	// the path itself where it held nothing.
 	indexPaths := make([]string, 0, len(went))
@@ -92,18 +124,19 @@ func (u Remove) moveToTrash(ctx context.Context, v domain.Vault, path string) (R
 	if len(indexPaths) == 0 {
 		indexPaths = append(indexPaths, path)
 	}
-	// The file is in the trash from here on, so the index update result is reported
-	// alongside the links that now resolve to nothing.
-	indexErr := u.updateIndex(ctx, v, indexPaths...)
+	return indexPaths, inside
+}
+
+func getDanglingLinks(pointing []domain.ResolvedLink, inside map[string]bool) []string {
+	var dangling []string
 	for _, was := range pointing {
 		// A note that wrote a link and went to the trash beside its target has
 		// nothing left to reach from.
-		if inside[was.From] {
-			continue
+		if !inside[was.From] {
+			dangling = append(dangling, was.From)
 		}
-		res.Dangling = append(res.Dangling, was.From)
 	}
-	return res, errors.Join(filingErr, indexErr)
+	return dangling
 }
 
 func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources []domain.FileStat) ([]domain.ResolvedLink, error) {
@@ -121,10 +154,16 @@ func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources
 	return pointing, nil
 }
 
-func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string) (string, error) {
+func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string, baseline *domain.FileStat) (string, error) {
+	move := writer.Move
+	if baseline != nil {
+		move = func(ctx context.Context, from, to string) error {
+			return writer.MoveFileWithHash(ctx, from, to, baseline.Hash)
+		}
+	}
 	target := pathpkg.Join(TrashDir, path)
 	for attempt := 2; ; attempt++ {
-		err := writer.Move(ctx, path, target)
+		err := move(ctx, path, target)
 		if err == nil {
 			return target, nil
 		}
@@ -140,6 +179,10 @@ func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string) (
 
 // Destroy takes the file off the disk. Nothing brings it back.
 func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+	return writeUnder(ctx, v, u.admission, func() (RemoveResult, error) { return u.destroy(ctx, v, path) })
+}
+
+func (u Remove) destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
 	pointing, err := u.links.ListBacklinks(ctx, v.ID, path)

@@ -6,6 +6,8 @@ import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import type { Command } from '@/entities/command'
 import type { Notes } from '@/shared/model/command'
 import { createNoteWriter } from '@/entities/note'
+import { useCloudVaults } from '@/entities/vault'
+import { createPickerSession } from '@/features/command-palette'
 import { WORDS } from '@/shared/ui/words'
 import { createAnsweredApi } from './coreAnswers'
 
@@ -40,10 +42,20 @@ export const createEmptyWindow = (
     },
     writeMessage: discard,
   },
-  files: { files: api.vault.file, notes: NO_NOTES, writeMessage: discard },
+  files: {
+    files: api.vault.file,
+    downloads: api.vault.downloads,
+    notes: NO_NOTES,
+    writeMessage: discard,
+  },
   vaults: {
     vaults: api.vault.vaults,
     clearTrash: api.vault.file.emptyTrash,
+    cloud: {
+      known: useCloudVaults(api.vault.remoteVaults),
+      remote: api.vault.remoteVaults,
+      ask: createPickerSession(),
+    },
     setVaultName: discard,
     reload: discard,
     writeMessage: discard,

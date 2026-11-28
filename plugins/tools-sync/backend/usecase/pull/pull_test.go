@@ -1,0 +1,408 @@
+package pull_test
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"slices"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/ownstacktest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
+)
+
+const (
+	source = "Test"
+	target = "Copy"
+)
+
+type pair struct {
+	own    *ownstacktest.Stack
+	server *synctest.Server
+	a, b   *synctest.Computer
+	vault  transfer.Vault
+}
+
+func newPair(t *testing.T) *pair {
+	t.Helper()
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock)
+	words := synctest.NewWords(t)
+	a := synctest.NewFirstComputer(t, server, clock, source, words)
+	a.Connect(t, source)
+	b := synctest.NewSecondComputer(t, server, clock, target, words)
+	b.ConnectExisting(t, target, a.Link(t, source).RemoteVaultID)
+	return &pair{server: server, a: a, b: b, vault: transfer.Vault{ID: a.GetRemoteID(t, source), Key: a.GetVaultKey(t, source)}}
+}
+
+func newOwnPair(t *testing.T) *pair {
+	t.Helper()
+	own := ownstacktest.Get(t)
+	p := newPair(t)
+	p.own = own
+	return p
+}
+
+func (p *pair) push(t *testing.T, path, text string, previous *transfer.Outcome) transfer.Outcome {
+	t.Helper()
+	file := transfer.File{Path: path, Content: []byte(text)}
+	if previous != nil {
+		file.FileID, file.ParentRev, file.ParentVersion = previous.FileID, previous.RevID, previous.Record.Version
+	}
+	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), ports.CommitInput{Vault: p.vault, Files: []transfer.File{file}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if outcomes[0].Status != transfer.Committed {
+		t.Fatalf("push of %s = %+v, want committed", path, outcomes[0])
+	}
+	return outcomes[0]
+}
+
+func trustAll([]byte) bool { return true }
+
+func (p *pair) pull(t *testing.T, authors func([]byte) bool) restore.PullResult {
+	t.Helper()
+	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: authors})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return result
+}
+
+func TestPullChanges_WritesANewNoteInItsFolder(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Food/Shopping list.md", "eggs", nil)
+
+	result := p.pull(t, trustAll)
+
+	if text, ok := p.b.ReadNote(target, "Food/Shopping list.md"); !ok || text != "eggs" {
+		t.Errorf("note = %q (there: %v), want eggs", text, ok)
+	}
+	if !slices.Equal(result.Applied, []string{"Food/Shopping list.md"}) || len(result.Conflicts) != 0 || result.Unverified != 0 {
+		t.Errorf("result = %+v, want the one note applied", result)
+	}
+}
+
+func TestPullChanges_RecordsTheBaseTheHeadAndThePositionOnTheServer(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Shopping list.md", "milk", nil)
+
+	p.pull(t, trustAll)
+
+	row, ok := p.b.GetFileRow(t, target, "Shopping list.md")
+	if !ok || row.BaseHash != note.Hash([]byte("milk")) || len(row.HeadRev) == 0 || len(row.FileID) == 0 {
+		t.Errorf("row = %+v (there: %v), want the hash of milk as base, the head and the file id", row, ok)
+	}
+	if link := p.b.Link(t, target); link.ServerSeq == 0 {
+		t.Errorf("link = %+v, want the position on the server moved on", link)
+	}
+}
+
+func TestPullChanges_ReplacesANoteThatEqualsItsBase(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, "Shopping list.md", "milk", nil)
+	p.pull(t, trustAll)
+	p.push(t, "Shopping list.md", "bread", &first)
+
+	result := p.pull(t, trustAll)
+
+	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "bread" {
+		t.Errorf("note = %q, want bread", text)
+	}
+	if row, _ := p.b.GetFileRow(t, target, "Shopping list.md"); row.BaseHash != note.Hash([]byte("bread")) {
+		t.Errorf("base = %s, want the hash of bread", row.BaseHash)
+	}
+	if len(result.Conflicts) != 0 {
+		t.Errorf("conflicts = %v, want none", result.Conflicts)
+	}
+}
+
+func TestPullChanges_AdoptsAHeadThatEqualsTheLocalNote(t *testing.T) {
+	p := newPair(t)
+	p.b.WriteNote(target, "Shopping list.md", "milk")
+	p.push(t, "Shopping list.md", "milk", nil)
+
+	result := p.pull(t, trustAll)
+
+	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "milk" {
+		t.Errorf("note = %q, want milk", text)
+	}
+	if row, ok := p.b.GetFileRow(t, target, "Shopping list.md"); !ok || row.BaseHash != note.Hash([]byte("milk")) || len(row.HeadRev) == 0 {
+		t.Errorf("row = %+v (there: %v), want the hash as base and the head recorded", row, ok)
+	}
+	if len(result.Conflicts) != 0 {
+		t.Errorf("conflicts = %v, want none for equal notes", result.Conflicts)
+	}
+}
+
+func TestPullChanges_KeepsTheNoteWhenTheHostRefusesTheWrite(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, "Shopping list.md", "milk", nil)
+	p.pull(t, trustAll)
+	p.push(t, "Shopping list.md", "bread", &first)
+	p.b.Vaults.With(target).RefuseWriting("Shopping list.md", host.ErrStale)
+
+	result := p.pull(t, trustAll)
+
+	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "milk" {
+		t.Errorf("note = %q, want milk, unchanged", text)
+	}
+	if !slices.Equal(result.Conflicts, []string{"Shopping list.md"}) {
+		t.Errorf("conflicts = %v, want the note", result.Conflicts)
+	}
+	if row, _ := p.b.GetFileRow(t, target, "Shopping list.md"); row.BaseHash != note.Hash([]byte("milk")) {
+		t.Errorf("base = %s, want the old base of milk back", row.BaseHash)
+	}
+}
+
+func TestPullChanges_SkipsARevisionOfAnAuthorItDoesNotTrust(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Shopping list.md", "milk", nil)
+
+	result := p.pull(t, func([]byte) bool { return false })
+
+	if _, ok := p.b.ReadNote(target, "Shopping list.md"); ok {
+		t.Error("a note of an author that is not trusted was written")
+	}
+	if result.Unverified != 1 || len(result.Applied) != 0 {
+		t.Errorf("result = %+v, want one unverified revision and none applied", result)
+	}
+}
+
+func TestPullChanges_RejectsABlobThatDiffersFromItsHash(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Shopping list.md", "milk", nil)
+	p.server.SetBlobCorruption(true)
+
+	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll})
+
+	if !errors.Is(err, pull.ErrCorruptBlob) {
+		t.Errorf("error = %v, want ErrCorruptBlob", err)
+	}
+	if _, ok := p.b.ReadNote(target, "Shopping list.md"); ok {
+		t.Error("a note was written from a damaged blob")
+	}
+	if link := p.b.Link(t, target); link.ServerSeq != 0 {
+		t.Errorf("position on the server = %d, want it unchanged at 0", link.ServerSeq)
+	}
+}
+
+func TestPullChanges_ReadsEveryPageOfChanges(t *testing.T) {
+	p := newPair(t)
+	files := make([]transfer.File, 205)
+	for i := range files {
+		files[i] = transfer.File{Path: fmt.Sprintf("n%03d.md", i), Content: []byte(fmt.Sprintf("note %d", i))}
+	}
+	if _, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), ports.CommitInput{Vault: p.vault, Files: files}); err != nil {
+		t.Fatal(err)
+	}
+
+	result := p.pull(t, trustAll)
+
+	if len(result.Applied) != 205 {
+		t.Errorf("applied = %d notes, want 205", len(result.Applied))
+	}
+	if text, ok := p.b.ReadNote(target, "n204.md"); !ok || text != "note 204" {
+		t.Errorf("last note = %q (there: %v), want note 204", text, ok)
+	}
+}
+
+func TestPullChanges_DownloadsNothingWhenNothingChanged(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Shopping list.md", "milk", nil)
+	p.pull(t, trustAll)
+	before := p.server.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure)
+
+	result := p.pull(t, trustAll)
+
+	if after := p.server.CountCalls(syncv1connect.BlobServiceGetBlobUrlsProcedure); after != before {
+		t.Errorf("blob URL requests grew from %d to %d, want no download", before, after)
+	}
+	if len(result.Applied) != 0 {
+		t.Errorf("applied = %v, want none", result.Applied)
+	}
+}
+
+func TestPullChanges_ReportsSameWhenTheServerAnnouncedNoRestore(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Shopping list.md", "milk", nil)
+
+	result := p.pull(t, trustAll)
+
+	if result.Verdict != restore.Same || len(result.EpochID) != 0 {
+		t.Errorf("result = %+v, want Same and no epoch id", result)
+	}
+}
+
+type missingFirstBlob struct {
+	ports.BlobDownloader
+	calls int
+}
+
+func (b *missingFirstBlob) GetBlobUrls(ctx context.Context, vaultID []byte, blobIDs [][]byte) ([]*syncv1.BlobDownload, error) {
+	downloads, err := b.BlobDownloader.GetBlobUrls(ctx, vaultID, blobIDs)
+	b.calls++
+	if b.calls == 1 {
+		for _, download := range downloads {
+			download.Found = false
+		}
+	}
+	return downloads, err
+}
+
+type powerLossHost struct{ ports.Host }
+
+func (h powerLossHost) GetFiles(id domain.VaultID) ports.Files {
+	return powerLossFiles{Files: h.Host.GetFiles(id)}
+}
+
+type powerLossFiles struct{ ports.Files }
+
+func (powerLossFiles) Write(context.Context, string, []byte, domain.FileStat) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("power loss")
+}
+
+type recordsLostAfterOneWrite struct {
+	pull.State
+	writes int
+}
+
+func (s *recordsLostAfterOneWrite) WriteRecords(ctx context.Context, id domain.VaultID, records []transfer.FileRecord) error {
+	s.writes++
+	if s.writes > 1 {
+		return errors.New("power loss")
+	}
+	return s.State.WriteRecords(ctx, id, records)
+}
+
+func TestPullChanges_AppliesTheOtherNotesWhenOneBlobIsMissing(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Plan.md", "tea", nil)
+	p.push(t, "Shopping list.md", "milk", nil)
+	deps := p.b.PullDeps()
+	deps.Blobs = &missingFirstBlob{BlobDownloader: deps.Blobs}
+
+	_, err := pull.NewPullChanges(deps).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll})
+	if err == nil {
+		t.Fatal("pull reported no error for a missing blob")
+	}
+	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "milk" {
+		t.Errorf("note after the failure = %q, want milk from the healthy revision", text)
+	}
+	p.pull(t, trustAll)
+
+	if text, _ := p.b.ReadNote(target, "Plan.md"); text != "tea" {
+		t.Errorf("held note after the next pull = %q, want tea", text)
+	}
+}
+
+func TestPullChanges_DownloadsANoteAgainAfterAStopBetweenTheBaseAndTheWrite(t *testing.T) {
+	p := newPair(t)
+	first := p.push(t, "Shopping list.md", "milk", nil)
+	p.pull(t, trustAll)
+	p.push(t, "Shopping list.md", "bread", &first)
+	deps := p.b.PullDeps()
+	deps.Host = powerLossHost{Host: p.b.Host}
+	deps.State = &recordsLostAfterOneWrite{State: deps.State}
+	if _, err := pull.NewPullChanges(deps).Execute(t.Context(), ports.PullInput{VaultID: target, IsAuthor: trustAll}); err != nil {
+		t.Fatalf("pull = %v, want the file the host could not write skipped and no error", err)
+	}
+	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "milk" {
+		t.Fatalf("note after the stop = %q, want milk", text)
+	}
+	p.b.Clock.Advance(time.Hour)
+
+	result := p.pull(t, trustAll)
+
+	if text, _ := p.b.ReadNote(target, "Shopping list.md"); text != "bread" {
+		t.Errorf("note = %q, want bread", text)
+	}
+	if len(result.Conflicts) != 0 {
+		t.Errorf("conflicts = %v, want none", result.Conflicts)
+	}
+}
+
+func TestPullChanges_KeepsPositionOnRevisionOfUnfetchedEpoch(t *testing.T) {
+	p := newPair(t)
+	if _, err := chaincourier.NewAdopt(p.a.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.a.Fake.AdvanceEpoch(); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(p.a.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v, want the chain of the epoch published", published, err)
+	}
+	if rotated, err := rotatevaultkeys.NewRotateVaultKeys(p.a.RotateDeps()).Execute(t.Context()); err != nil || rotated != 1 {
+		t.Fatalf("rotated = %d, error = %v, want the vault rotated", rotated, err)
+	}
+	keys, err := vaultlink.OpenKeys(t.Context(), p.a.Account, p.a.Link(t, source))
+	if err != nil || len(keys) != 2 {
+		t.Fatalf("keys = %d, error = %v, want epochs 0 and 1", len(keys), err)
+	}
+	p.vault.Later = []transfer.EpochKey{{Epoch: keys[1].Epoch, Key: [32]byte(keys[1].Key)}}
+	p.vault.Key = [32]byte(keys[0].Key)
+	p.push(t, "Shopping list.md", "milk", nil)
+
+	result := p.pull(t, trustAll)
+
+	if result.Unverified != 1 || len(result.Applied) != 0 {
+		t.Errorf("result = %+v, want one unverified revision and none applied", result)
+	}
+	if link := p.b.Link(t, target); link.ServerSeq != 0 {
+		t.Errorf("position on the server = %d, want it held at 0 until the key of the epoch arrives", link.ServerSeq)
+	}
+}
+
+func TestPullChanges_AppliesNoPageForAnEpochThatThisDeviceHasNotRun(t *testing.T) {
+	p := newOwnPair(t)
+	p.push(t, "Shopping list.md", "milk", nil)
+	id := p.own.CreateRestoreEpoch(t)
+
+	result := p.pull(t, trustAll)
+
+	if result.Verdict != restore.Changed || !bytes.Equal(result.EpochID, id) {
+		t.Errorf("result = %+v, want Changed with the epoch id %x", result, id)
+	}
+	if _, ok := p.b.ReadNote(target, "Shopping list.md"); ok || len(result.Applied) != 0 {
+		t.Error("a note of a page under the new epoch was applied")
+	}
+	if link := p.b.Link(t, target); link.ServerSeq != 0 || len(link.RestoreEpochID) != 0 {
+		t.Errorf("link = %+v, want the position and the epoch id as they were", link)
+	}
+}
+
+func TestPullChanges_AppliesNothingWhenTheHeadOfTheServerIsBelowThePosition(t *testing.T) {
+	p := newOwnPair(t)
+	kept := p.own.CreateSnapshot(t)
+	p.push(t, "Shopping list.md", "milk", nil)
+	p.push(t, "Food.md", "eggs", nil)
+	p.pull(t, trustAll)
+	p.own.RollBack(t, kept)
+	p.push(t, "Plan.md", "tea", nil)
+
+	result := p.pull(t, trustAll)
+
+	if result.Verdict != restore.WentBack || len(result.Applied) != 0 {
+		t.Errorf("result = %+v, want WentBack and nothing applied", result)
+	}
+	if _, ok := p.b.ReadNote(target, "Plan.md"); ok {
+		t.Error("a note of a server that went back was applied")
+	}
+}

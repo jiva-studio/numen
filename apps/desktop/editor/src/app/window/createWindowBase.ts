@@ -3,6 +3,7 @@
  * settings of the window and the commands of the features.
  */
 import { measureTabs } from '@/entities/tab'
+import { createPickerSession } from '@/features/command-palette'
 import { createTargetResolver } from '@/features/command-target'
 import { createWindowSettings } from '@/features/settings-commands'
 import { createTabCommandsDeps } from '@/features/tab-commands'
@@ -34,6 +35,7 @@ export function createWindowBase(api: WindowApi) {
     navigation: tabs.navigation,
   })
   const { editing, notes, window, vaults, itemLists } = vault
+  const picker = createPickerSession()
   const tabParts = createWindowTabParts({
     api: api.tabs,
     windowTabs,
@@ -52,9 +54,10 @@ export function createWindowBase(api: WindowApi) {
         navigator: vault.navigator,
         writeMessage,
       },
-      files: { files: api.vault.file, notes, writeMessage },
+      files: { files: api.vault.file, downloads: api.vault.downloads, notes, writeMessage },
       vaults: {
         vaults: api.vault.vaults,
+        cloud: { known: vaults.cloud, remote: api.vault.remoteVaults, ask: picker },
         clearTrash: api.vault.file.emptyTrash,
         tabsHold: tabParts.openTabs,
         setVaultName: vaults.setVaultName,
@@ -75,6 +78,7 @@ export function createWindowBase(api: WindowApi) {
     foundation,
     tabs,
     vault,
+    picker,
     tabParts,
     appCommands: features.commands,
     getTarget: createTargetResolver(windowTabs, vaults, window.health),

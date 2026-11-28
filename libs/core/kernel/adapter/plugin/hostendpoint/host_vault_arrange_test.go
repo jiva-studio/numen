@@ -53,7 +53,7 @@ func newFakeNoteVault() *fakeNoteVault {
 func (a *fakeNoteVault) GetVaults() ([]domain.Vault, error) {
 	return []domain.Vault{
 		{ID: "v1", Name: "Rivers", Path: "/vaults/Rivers"},
-		{ID: "v2", Name: "Lakes", Path: "/vaults/Lakes"},
+		{ID: "v2", Name: "Lakes", Path: "/vaults/Lakes", ManagedBy: "md.numen.a"},
 	}, nil
 }
 
@@ -158,8 +158,12 @@ func (l *recordingList) getCalls() []string {
 	return slices.Clone(l.calls)
 }
 
-func (l *recordingList) AddVault(_ context.Context, root, name string) (domain.Vault, error) {
-	if err := l.record("add " + root + " " + name); err != nil {
+func (l *recordingList) AddVault(_ context.Context, root, name, managedBy string) (domain.Vault, error) {
+	call := "add " + root + " " + name
+	if managedBy != "" {
+		call += " managed-by " + managedBy
+	}
+	if err := l.record(call); err != nil {
 		return domain.Vault{}, err
 	}
 	return domain.Vault{ID: "v3", Name: "Seas", Path: root}, nil
@@ -210,7 +214,7 @@ func newArrangeClient(
 	hostCallers.vault = vaultOf(vault)
 	endpoint := &Endpoint{callers: hostCallers.over(list, granted...)}
 	mux := http.NewServeMux()
-	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
@@ -584,7 +588,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			hostCallers.vault = vaultOf(failingRenameVault{fakeNoteVault: newFakeNoteVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)})
 			endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 			mux := http.NewServeMux()
-			vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+			vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 			client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))
@@ -726,7 +730,7 @@ func newEscapingPathClient(t *testing.T) (HostVaultClient, *fakeNoteVault) {
 	hostCallers.vault = vaultOf(escapingPathVault{vault})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))

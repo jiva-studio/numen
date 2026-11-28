@@ -37,6 +37,19 @@ service FileService {
 
   // CreateFolder makes an empty folder. The folders above it are made with it.
   rpc CreateFolder(CreateFolderRequest) returns (CreateFolderResponse);
+
+  // FetchFile brings the bytes of an absent file onto this device, by the plugin that provides files. The
+  // call returns once the file is filled. A file no enabled plugin can fill is a failed call that says why.
+  rpc FetchFile(FetchFileRequest) returns (FetchFileResponse);
+
+  // DropDownload takes the bytes of a downloaded file off this device and lists the file as absent again,
+  // by the plugin that provides files. A file whose changes that plugin has not kept is a failed
+  // precondition that says so, and its bytes stay.
+  rpc DropDownload(DropDownloadRequest) returns (DropDownloadResponse);
+
+  // GetDownloadProgress says how much of the file at the path the provider has downloaded so far. It is
+  // not known when the provider runs no download of that path.
+  rpc GetDownloadProgress(GetDownloadProgressRequest) returns (GetDownloadProgressResponse);
 }
 
 message ListFilesRequest {
@@ -78,6 +91,12 @@ message Entry {
   // When the file or folder was last modified, in milliseconds since the Unix
   // epoch. 0 where the vault does not know it.
   int64 modified_unix_ms = 8;
+
+  // Whether the file is listed and its bytes are not on this device. Only a synced phone sets it.
+  bool is_absent = 9;
+
+  // The id of the plugin that can fill an absent file. Empty for a file that is not absent.
+  string provider = 10;
 }
 
 message ListFileKindsRequest {
@@ -172,4 +191,32 @@ message CreateFolderRequest {
 
 message CreateFolderResponse {
   ErrorCode error = 1;
+}
+
+message FetchFileRequest {
+  // The absent file to fill, as the vault calls it.
+  string path = 1;
+}
+
+message FetchFileResponse {}
+
+message DropDownloadRequest {
+  // The downloaded file to take off this device, as the vault calls it.
+  string path = 1;
+}
+
+message DropDownloadResponse {}
+
+message GetDownloadProgressRequest {
+  // The file whose download to ask about, as the vault calls it.
+  string path = 1;
+}
+
+message GetDownloadProgressResponse {
+  // False when no download of the file runs; the two sizes are then zero.
+  bool is_known = 1;
+  // The bytes of the file that are on this device so far.
+  int64 bytes_done = 2;
+  // The size of the whole file in bytes.
+  int64 bytes_total = 3;
 }

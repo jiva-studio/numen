@@ -1,0 +1,97 @@
+import { Given, Then, When } from '../support/bdd.js'
+
+When('the person opens the page {string}', async ({ person }, name: string) => {
+  await person.settings.showPage(name)
+})
+
+When('the person starts a new identity', async ({ person }) => {
+  await person.identity.start()
+})
+
+Then('the identity shows {int} recovery words', async ({ person }, count: number) => {
+  await person.identity.expectWordCount(count)
+})
+
+Then('the identity does not show the recovery words', async ({ person }) => {
+  await person.identity.expectNoWords()
+})
+
+When('the person writes the recovery words down', async ({ person }) => {
+  await person.identity.writeWordsDown()
+})
+
+Then('the identity asks for {int} of the recovery words', async ({ person }, count: number) => {
+  await person.identity.expectWordsAsked(count)
+})
+
+When('the person confirms {int} of the recovery words', async ({ person }, count: number) => {
+  await person.identity.confirmWords(count)
+})
+
+When(
+  'the person confirms the recovery words with the word {string} in place of one word',
+  async ({ person }, word: string) => {
+    await person.identity.confirmWithMistake(word)
+  },
+)
+
+Given('the person creates an identity', async ({ person }) => {
+  await person.identity.create()
+})
+
+Then('this device has {presence} identity', async ({ person }, has: boolean) => {
+  await person.identity.expectIdentity(has)
+})
+
+When('the person deletes the identity from this device', async ({ person }) => {
+  await person.identity.delete()
+})
+
+When('the person restores the identity from its recovery words', async ({ person }) => {
+  await person.identity.restoreFromRecoveryWords()
+})
+
+When('the person restores the identity from {int} wrong words', async ({ person }, count: number) => {
+  await person.identity.restoreFromWrongWords(count)
+})
+
+Then('the identity fingerprint is the same as before', async ({ person }) => {
+  await person.identity.expectSameAccount()
+})
+
+When('the person downloads the recovery kit', async ({ person }) => {
+  await person.identity.download()
+})
+
+When('the person downloads the recovery kit again with the recovery words', async ({ person }) => {
+  await person.identity.downloadWithRecoveryWords()
+})
+
+When(
+  'the person downloads the recovery kit of another identity',
+  async ({ person }) => {
+    await person.identity.downloadWithOtherWords()
+  },
+)
+
+Then('the recovery kit is saved as a PDF of {int} sheets', ({ person }, count: number) => {
+  person.identity.expectKitSaved(count)
+})
+
+Then('each sheet shows the identity fingerprint', ({ person }) => {
+  person.identity.expectKitShowsAccount()
+})
+
+When(
+  'the person restores the identity from the sheets {string}',
+  async ({ person }, numbers: string) => {
+    await person.identity.restoreFromSheets(numbers)
+  },
+)
+
+When(
+  'the person restores the identity from the sheets {string} with a wrong word in the sheet {int}',
+  async ({ person }, numbers: string, sheet: number) => {
+    await person.identity.restoreFromSheets(numbers, sheet)
+  },
+)

@@ -64,8 +64,8 @@ func TestAListOfStringsSavedToAListSettingIsReadBackAsTheSameList(t *testing.T) 
 	if !found || !reflect.DeepEqual(got, written) {
 		t.Errorf("the list read back is %#v, %v, want %#v", got, found, written)
 	}
-	if len(cfg.Notices) != 0 {
-		t.Errorf("the notices are %q, want none", cfg.Notices)
+	if len(cfg.Header.Notices) != 0 {
+		t.Errorf("the notices are %q, want none", cfg.Header.Notices)
 	}
 }
 
@@ -125,8 +125,8 @@ func TestAListSettingStoredAsAStringInTheFileIsReadAndIgnoredWithANotice(t *test
 	if got, _ := cfg.GetValue(listPluginID, "label"); got != "tasks" {
 		t.Errorf("the label in force is %v, want the valid value of the same plugin", got)
 	}
-	if !hasNotice(cfg.Notices, "ignoredFolders") {
-		t.Errorf("the notices are %q", cfg.Notices)
+	if !hasNotice(cfg.Header.Notices, "ignoredFolders") {
+		t.Errorf("the notices are %q", cfg.Header.Notices)
 	}
 	declared := manifest.Manifest{ID: listPluginID, Settings: getListSettings()}
 	inForce := declared.ResolveSettings(cfg.GetOwner(listPluginID))

@@ -51,6 +51,11 @@ func (v *Vault) GetVaultList(ctx context.Context) ([]host.VaultEntry, error) {
 // AddVault adds an in-memory vault at the root, in addition to this vault. Its identity is its name,
 // and a duplicate name gets a numeric suffix, as in the host.
 func (v *Vault) AddVault(ctx context.Context, root, name string) (domain.Vault, error) {
+	return v.AddManagedVault(ctx, root, name, "")
+}
+
+// AddManagedVault is AddVault for a vault that only the plugin with the id managedBy writes.
+func (v *Vault) AddManagedVault(ctx context.Context, root, name, managedBy string) (domain.Vault, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.checkListMember(ctx); err != nil {
@@ -68,7 +73,7 @@ func (v *Vault) AddVault(ctx context.Context, root, name string) (domain.Vault, 
 		name = path.Base(root)
 	}
 	name = v.getFreeName(name)
-	added := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, createMemoryFiles())
+	added := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root, ManagedBy: managedBy}, createMemoryFiles())
 	added.world = v.world
 	v.world.members = append(v.world.members, added)
 	return added.vault, nil
@@ -269,4 +274,11 @@ func (v *Vault) find(id domain.VaultID) *Vault {
 		}
 	}
 	return &Vault{unknown: true, world: v.world}
+}
+
+// GetManagedBy returns the id of the plugin that manages the vault, and an empty string for an unmanaged vault.
+func (v *Vault) GetManagedBy(id domain.VaultID) string {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	return v.find(id).vault.ManagedBy
 }

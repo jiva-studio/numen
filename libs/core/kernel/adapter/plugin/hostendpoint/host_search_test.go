@@ -80,7 +80,7 @@ func newSearchClient(t *testing.T, fakeCallers *callers, token string) numenv1co
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}, endpoint.newPermissionOption()))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewHostSearchServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
@@ -90,7 +90,7 @@ func newTextSearchClient(t *testing.T, fakeCallers *callers, token string) numen
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewSearchServiceHandler(&searchTextEndpoint{searchEndpoint: searchEndpoint{endpoint: endpoint}}))
+	mux.Handle(numenv1connect.NewSearchServiceHandler(&searchTextEndpoint{searchEndpoint: searchEndpoint{endpoint: endpoint}}, endpoint.newPermissionOption()))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewSearchServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))

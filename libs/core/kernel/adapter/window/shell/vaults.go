@@ -27,7 +27,7 @@ func (l vaultList) ListVaults(
 	}
 	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(target))}
 	for _, v := range target {
-		out.Vaults = append(out.Vaults, &v1.Vault{Id: string(v.ID), Name: v.Name, Path: v.Path})
+		out.Vaults = append(out.Vaults, &v1.Vault{Id: string(v.ID), Name: v.Name, Path: v.Path, ManagedBy: v.ManagedBy})
 	}
 	return connect.NewResponse(out), nil
 }

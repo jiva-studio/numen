@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func (c searchCall) getRunErrorCode(needsVault bool) v1.ErrorCode {
@@ -43,7 +42,7 @@ func answerRun(ctx context.Context, err error) (v1.ErrorCode, error) {
 func (e *searchEndpoint) StartSearch(
 	ctx context.Context, req *connect.Request[v1.StartSearchRequest],
 ) (*connect.Response[v1.StartSearchResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	call, err := e.begin(req.Header(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +63,7 @@ func (e *searchEndpoint) StartSearch(
 func (e *searchEndpoint) GetSearch(
 	ctx context.Context, req *connect.Request[v1.GetSearchRequest],
 ) (*connect.Response[v1.GetSearchResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, false)
+	call, err := e.begin(req.Header(), false)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +88,7 @@ func (e *searchEndpoint) GetSearch(
 func (e *searchEndpoint) DeleteSearch(
 	ctx context.Context, req *connect.Request[v1.DeleteSearchRequest],
 ) (*connect.Response[v1.DeleteSearchResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, false)
+	call, err := e.begin(req.Header(), false)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +102,7 @@ func (e *searchEndpoint) DeleteSearch(
 func (e *searchEndpoint) ListSearchFunctions(
 	_ context.Context, req *connect.Request[v1.ListSearchFunctionsRequest],
 ) (*connect.Response[v1.ListSearchFunctionsResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, false)
+	call, err := e.begin(req.Header(), false)
 	if err != nil {
 		return nil, err
 	}

@@ -96,8 +96,15 @@ func (u discoverer) walkAndRecord(
 		switch ref.Kind {
 		case domain.KindFile:
 			found[ref.Path] = true
+			if ref.IsAbsent {
+				// The plugin that listed it sends its events; the row of a file that was held stays.
+				return nil
+			}
 			return u.recordFile(ctx, v, stats, ref, res)
 		case domain.KindNote:
+			if ref.IsAbsent {
+				return nil
+			}
 			hasCut, err := u.checkNote(ctx, on, noteStats, ref, res)
 			if err != nil {
 				return err

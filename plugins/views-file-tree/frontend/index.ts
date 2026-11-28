@@ -41,6 +41,10 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   )
   plugin.register.tabKind(trees.kind)
   host.events.onVaultChange((event) => trees.refresh(event))
+  const downloads = files.watchDownloads?.((paths) => {
+    trees.refresh({ paths, renamed: [] }).catch(() => undefined)
+  })
+  if (downloads) plugin.identity.subscriptions.push(downloads)
 
   /** The handler of a command over a row of the tab whose menu was opened last. */
   const runOnTab =

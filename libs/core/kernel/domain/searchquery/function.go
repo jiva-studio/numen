@@ -3,8 +3,6 @@ package searchquery
 import (
 	"errors"
 	"slices"
-
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // ErrInvalidFunctionArguments is a call of a plugin function whose arguments the plugin rejects.
@@ -73,34 +71,4 @@ func ListFunctionNames(c Catalog) []string {
 		names[i] = f.Name
 	}
 	return names
-}
-
-// ConvertManifestFunctions returns the functions a plugin declares as entries of the catalog: each a
-// document-level condition over its arguments.
-func ConvertManifestFunctions(pluginID string, declared manifest.SearchFunctions) []Function {
-	out := make([]Function, 0, len(declared.Functions))
-	for _, one := range declared.Functions {
-		f := Function{
-			Name: one.Name, Result: TypeBool, Level: LevelDocument, PluginID: pluginID,
-			Description: one.Description, Example: one.Example, Args: []ValueType{}, ArgNames: []string{},
-		}
-		for _, arg := range one.Args {
-			f.Args = append(f.Args, getArgumentType(arg.Type))
-			f.ArgNames = append(f.ArgNames, arg.Name)
-		}
-		out = append(out, f)
-	}
-	return out
-}
-
-func getArgumentType(t manifest.SearchFunctionArgType) ValueType {
-	switch t {
-	case manifest.SearchFunctionArgInt:
-		return TypeInt
-	case manifest.SearchFunctionArgBool:
-		return TypeBool
-	case manifest.SearchFunctionArgString:
-		return TypeString
-	}
-	return TypeString
 }

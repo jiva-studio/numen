@@ -18,7 +18,7 @@ func (e *cacheCalls) ReadCache(
 	if vault == nil {
 		return connect.NewResponse(&v1.ReadCacheResponse{Error: noVault}), nil
 	}
-	content, found, err := vault.Cache.ReadCache(ctx, pluginID, req.Msg.GetName())
+	content, found, err := vault.Storage.ReadCache(ctx, pluginID, req.Msg.GetName())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ReadCacheResponse{Error: code}), err
@@ -36,6 +36,6 @@ func (e *cacheCalls) WriteCache(
 	if vault == nil {
 		return connect.NewResponse(&v1.WriteCacheResponse{Error: noVault}), nil
 	}
-	code, err := answer(ctx, vault.Cache.WriteCache(ctx, pluginID, req.Msg.GetName(), req.Msg.GetContent()))
+	code, err := answer(ctx, vault.Storage.WriteCache(ctx, pluginID, req.Msg.GetName(), req.Msg.GetContent()))
 	return connect.NewResponse(&v1.WriteCacheResponse{Error: code}), err
 }

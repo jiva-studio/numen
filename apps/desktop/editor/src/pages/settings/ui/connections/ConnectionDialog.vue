@@ -6,8 +6,8 @@
  * again; changing the address removes the stored key. The type is chosen from a list that filters
  * as one types. A saved connection is announced with `saved` before the dialog closes.
  */
-import { computed, onMounted, useId, useTemplateRef } from 'vue'
-import { Select } from '@numen/ui'
+import { computed } from 'vue'
+import { Dialog, Select } from '@numen/ui'
 import type {
   ConnectionChange,
   ConnectionDraft,
@@ -36,8 +36,6 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const titleId = useId()
-const dialog = useTemplateRef<HTMLElement>('dialog')
 const form = useConnectionForm({
   listTypes: () => props.types,
   getConnection: () => props.connection,
@@ -53,127 +51,60 @@ const typeChoices = computed<readonly SelectChoice[]>(() =>
 )
 const type = computed(() => form.view.value.type)
 
-/* ---------------------------------- Hooks --------------------------------- */
-onMounted(() => dialog.value?.querySelector<HTMLElement>('input, [role="combobox"]')?.focus())
-
 /* -------------------------------- Handlers -------------------------------- */
 function onDelete(): void {
   if (props.connection) emit('delete', props.connection)
 }
-
-function onKeepFocus(event: KeyboardEvent): void {
-  const items = Array.from(
-    dialog.value?.querySelectorAll<HTMLElement>(
-      'input, button, [role="combobox"], [role="switch"], a[href]',
-    ) ?? [],
-  ).filter((one) => !one.hasAttribute('disabled'))
-  const first = items[0]
-  const last = items[items.length - 1]
-  if (!first || !last) return
-  if (event.shiftKey && event.target === first) {
-    event.preventDefault()
-    last.focus()
-  } else if (!event.shiftKey && event.target === last) {
-    event.preventDefault()
-    first.focus()
-  }
-}
 </script>
 
 <template>
-  <div
-    class="connection-dialog__backdrop"
-    @click.self="emit('close')"
-    @keydown.esc="emit('close')"
-    @keydown.tab="onKeepFocus"
+  <Dialog
+    is-form
+    :label="form.isEditing ? words.connectionEdit : words.connectionAdd"
+    @submit="form.actions.submit"
+    @cancel="emit('close')"
   >
-    <form
-      ref="dialog"
-      class="connection-dialog"
-      role="dialog"
-      aria-modal="true"
-      :aria-labelledby="titleId"
-      @submit.prevent="form.actions.submit"
-    >
-      <h2 :id="titleId" class="connection-dialog__title">
-        {{ form.isEditing ? words.connectionEdit : words.connectionAdd }}
-      </h2>
-
-      <div class="connection-dialog__field">
-        <span class="connection-dialog__label">{{ words.connectionType }}</span>
-        <Select
-          :model-value="form.state.typeId"
-          :choices="typeChoices"
-          :name="words.connectionType"
-          :search-name="words.searchConnectionTypes"
-          :is-disabled="form.isEditing"
-          is-searchable
-          @update:model-value="form.actions.chooseType"
-        />
-      </div>
-
-      <ConnectionFormFields
-        v-if="type"
-        v-model:name="form.state.name"
-        :type="type"
-        :view="form.view.value"
-        :values="form.state.values"
-        :secrets="form.state.secrets"
-        @update-value="form.actions.updateValue"
-        @update-secret="form.actions.updateSecret"
+    <div class="connection-dialog__field">
+      <span class="connection-dialog__label">{{ words.connectionType }}</span>
+      <Select
+        :model-value="form.state.typeId"
+        :choices="typeChoices"
+        :name="words.connectionType"
+        :search-name="words.searchConnectionTypes"
+        :is-disabled="form.isEditing"
+        is-searchable
+        @update:model-value="form.actions.chooseType"
       />
-      <p v-else class="connection-dialog__hint">{{ words.connectionsNoTypes }}</p>
+    </div>
 
-      <p v-if="form.state.problem !== ''" role="alert" class="connection-dialog__problem">
-        {{ form.state.problem }}
-      </p>
+    <ConnectionFormFields
+      v-if="type"
+      v-model:name="form.state.name"
+      :type="type"
+      :view="form.view.value"
+      :values="form.state.values"
+      :secrets="form.state.secrets"
+      @update-value="form.actions.updateValue"
+      @update-secret="form.actions.updateSecret"
+    />
+    <p v-else class="connection-dialog__hint">{{ words.connectionsNoTypes }}</p>
 
+    <p v-if="form.state.problem !== ''" role="alert" class="connection-dialog__problem">
+      {{ form.state.problem }}
+    </p>
+
+    <template #actions>
       <ConnectionDialogActions
         :can-delete="connection !== undefined"
         :can-save="type !== undefined && !form.state.isSaving"
         @cancel="emit('close')"
         @delete="onDelete"
       />
-    </form>
-  </div>
+    </template>
+  </Dialog>
 </template>
 
 <style scoped>
-.connection-dialog__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: var(--numen-lift-menu);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--numen-gutter);
-  background: color-mix(in oklab, var(--numen-surface), transparent 30%);
-}
-
-.connection-dialog {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-  box-sizing: border-box;
-  inline-size: 100%;
-  max-inline-size: 28rem;
-  max-block-size: 100%;
-  overflow-y: auto;
-  padding: 1rem 1.25rem;
-  background: var(--numen-raised);
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius);
-  color: var(--numen-ink);
-  font-family: var(--numen-font-sans);
-  font-size: var(--numen-text-2);
-}
-
-.connection-dialog__title {
-  margin: 0;
-  font-size: var(--numen-title-size);
-  font-weight: 500;
-}
-
 .connection-dialog__field {
   display: flex;
   flex-direction: column;
@@ -183,14 +114,14 @@ function onKeepFocus(event: KeyboardEvent): void {
 
 .connection-dialog__label {
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   font-weight: 500;
 }
 
 .connection-dialog__hint,
 .connection-dialog__problem {
   margin: 0;
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
 }
 
 .connection-dialog__hint {

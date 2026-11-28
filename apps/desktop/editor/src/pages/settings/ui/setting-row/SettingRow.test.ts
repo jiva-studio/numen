@@ -53,6 +53,18 @@ describe('SettingRow', () => {
     expect(document.activeElement).toBe(popover)
   })
 
+  it('renders over the page outside the row, so a card cannot clip it or grow around it', async () => {
+    const row = mountRow(DETAILS)
+    const before = row.element.children.length
+    getInfoButton().click()
+    await new Promise((resolve) => setTimeout(resolve))
+
+    const popover = getPopover()
+    expect(popover?.parentElement).toBe(document.body)
+    expect(row.element.contains(popover)).toBe(false)
+    expect(row.element.children.length).toBe(before)
+  })
+
   it('closes the details on Escape and gives the focus back to the info button', async () => {
     mountRow(DETAILS)
     getInfoButton().click()
@@ -70,7 +82,8 @@ describe('SettingRow', () => {
     getInfoButton().click()
     await new Promise((resolve) => setTimeout(resolve))
 
-    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    const outside = document.body.appendChild(document.createElement('div'))
+    outside.dispatchEvent(new Event('pointerdown', { bubbles: true }))
     await new Promise((resolve) => setTimeout(resolve))
 
     expect(getPopover()).toBeNull()

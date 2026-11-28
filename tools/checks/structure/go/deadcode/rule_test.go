@@ -1,6 +1,7 @@
 package deadcode
 
 import (
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -38,6 +39,7 @@ type scope struct {
 	root     string
 	patterns []string
 	env      []string
+	external []externalSymbol
 }
 
 // configuration is one platform the packages are read for. A file that a build constraint leaves out of
@@ -82,7 +84,7 @@ func newRepositoryScope(t *testing.T) scope {
 	if len(patterns) == 0 {
 		t.Fatal("go.work uses no module under libs, plugins or apps")
 	}
-	return scope{root: root, patterns: patterns}
+	return scope{root: root, patterns: patterns, external: readExternalSymbols(t, filepath.Join(load.RepoRootDir, "tools/checks/structure/go/deadcode/used-by-other-repositories.json"))}
 }
 
 func getRealDir(t *testing.T, dir string) string {
@@ -110,7 +112,7 @@ type testFile struct {
 	selectors map[[2]string]bool
 }
 
-func findUnreachableFunctions(t *testing.T, s scope) []load.Finding {
+func findUnreachableFunctions(t *testing.T, s scope) (dead []load.Finding, missing []string) {
 	t.Helper()
 	tests := readTestFiles(t, s.root)
 	bound := findBoundPackages(t, s.root)
@@ -128,11 +130,11 @@ func findUnreachableFunctions(t *testing.T, s scope) []load.Finding {
 	}
 	var found []load.Finding
 	for key, finding := range declared {
-		if !reached[key] && !isException(finding.Name) {
+		if !reached[key] && !isException(finding.Name) && !isExternal(s.external, finding.Name) {
 			found = append(found, finding)
 		}
 	}
-	return load.SortFindings(found)
+	return load.SortFindings(found), findMissingExternalSymbols(declared, s.external)
 }
 
 func listExceptions() []string {
@@ -589,4 +591,45 @@ func getRelative(root string, position token.Position) string {
 func isTestSupport(pkgPath string) bool {
 	base := path.Base(pkgPath)
 	return strings.HasSuffix(base, "test") || base == "testsupport" || strings.Contains(pkgPath+"/", "/internal/testsupport/")
+}
+
+// externalSymbol is a function that another repository calls, listed in used-by-other-repositories.json.
+type externalSymbol struct {
+	Package string `json:"package"`
+	Name    string `json:"name"`
+}
+
+func (e externalSymbol) getFullName() string { return e.Package + "." + e.Name }
+
+func readExternalSymbols(t *testing.T, file string) []externalSymbol {
+	t.Helper()
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var manifest struct {
+		Symbols []externalSymbol `json:"symbols"`
+	}
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		t.Fatalf("%s: %v", file, err)
+	}
+	return manifest.Symbols
+}
+
+func findMissingExternalSymbols(declared map[string]load.Finding, external []externalSymbol) []string {
+	names := map[string]bool{}
+	for _, finding := range declared {
+		names[finding.Name] = true
+	}
+	var missing []string
+	for _, one := range external {
+		if !names[one.getFullName()] {
+			missing = append(missing, one.getFullName())
+		}
+	}
+	return missing
+}
+
+func isExternal(external []externalSymbol, name string) bool {
+	return slices.ContainsFunc(external, func(one externalSymbol) bool { return one.getFullName() == name })
 }

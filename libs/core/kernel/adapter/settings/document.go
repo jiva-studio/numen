@@ -17,16 +17,15 @@ import (
 // `v` and the owners of settings: `app` holds the settings of the shell, and every other key is the
 // id of a plugin with the settings of that plugin below it.
 type File struct {
-	Version     int
-	Appearance  Appearance      `json:"appearance"`
-	Titles      Titles          `json:"naming"`
-	Editor      Editor          `json:"editor"`
-	Performance Performance     `json:"performance"`
-	Search      Search          `json:"search"`
-	Logging     LoggingSettings `json:"logging"`
+	Header      settings.Header
+	Appearance  Appearance  `json:"appearance"`
+	Titles      Titles      `json:"naming"`
+	Editor      Editor      `json:"editor"`
+	Performance Performance `json:"performance"`
+	Search      Search      `json:"search"`
+	Texts       Texts
 	Plugins     map[string]map[string]any
 	Connections []connection.Connection
-	Notices     []string
 }
 
 // appObject is the object of the owner app as the file lays it out.
@@ -37,6 +36,8 @@ type appObject struct {
 	Performance Performance      `json:"performance"`
 	Search      *Search          `json:"search"`
 	Logging     *LoggingSettings `json:"logging"`
+	Keys        *Keys            `json:"keys"`
+	Vaults      *Vaults          `json:"vaults"`
 }
 
 // appSections are the sections of the owner app that a read fills in place, so that a section the
@@ -48,18 +49,20 @@ type appSections struct {
 	Performance *Performance     `json:"performance"`
 	Search      *Search          `json:"search"`
 	Logging     *LoggingSettings `json:"logging"`
+	Keys        *Keys            `json:"keys"`
+	Vaults      *Vaults          `json:"vaults"`
 }
 
 const keyVersion = "v"
 
 // GetVersion returns a pointer to the file format version.
-func (f *File) GetVersion() *int { return &f.Version }
+func (f *File) GetVersion() *int { return &f.Header.Version }
 
 // GetAppearance returns a pointer to the appearance section.
 func (f *File) GetAppearance() *Appearance { return &f.Appearance }
 
 // AddNotice records one line about the file's contents, shown to the user.
-func (f *File) AddNotice(notice string) { f.Notices = append(f.Notices, notice) }
+func (f *File) AddNotice(notice string) { f.Header.Notices = append(f.Header.Notices, notice) }
 
 // Sync is whether a note's title and its filename are kept as one name.
 func (f *File) Sync() bool { return f.Titles.Sync() }
@@ -81,8 +84,11 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		key   string
 		value any
 	}{
-		{keyVersion, f.Version},
-		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &f.Logging}},
+		{keyVersion, f.Header.Version},
+		{settings.AppOwner, appObject{
+			f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search,
+			&LoggingSettings{f.Texts[keyLogLevel]}, &Keys{f.Texts[keyCredentialsFile]}, &Vaults{f.Texts[keyVaultsFolder]},
+		}},
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {
@@ -128,7 +134,7 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 	for _, key := range slices.Sorted(maps.Keys(root)) {
 		switch key {
 		case keyVersion:
-			if err := json.Unmarshal(root[key], &f.Version); err != nil {
+			if err := json.Unmarshal(root[key], &f.Header.Version); err != nil {
 				return err
 			}
 		case settings.AppOwner:
@@ -176,8 +182,11 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search, &f.Logging}
-	return hasInterfaceScale, json.Unmarshal(content, &sections)
+	logging, keys, vaults := LoggingSettings{f.Texts[keyLogLevel]}, Keys{f.Texts[keyCredentialsFile]}, Vaults{f.Texts[keyVaultsFolder]}
+	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search, &logging, &keys, &vaults}
+	err = json.Unmarshal(content, &sections)
+	f.Texts = Texts{keyLogLevel: logging.Level, keyCredentialsFile: keys.CredentialsFile, keyVaultsFolder: vaults.Folder}
+	return hasInterfaceScale, err
 }
 
 func decodeObject(raw json.RawMessage) (map[string]any, bool) {
@@ -268,13 +277,13 @@ func storePath(object map[string]any, path []string, value any) {
 // declaration of the shell gives.
 func DefaultFile() File {
 	return File{
-		Version:     DefaultVersion,
+		Header:      settings.Header{Version: DefaultVersion},
 		Appearance:  DefaultAppearance(),
 		Titles:      DefaultTitles(),
 		Editor:      DefaultEditor(),
 		Performance: DefaultPerformance(),
 		Search:      DefaultSearch(),
-		Logging:     DefaultLogging(),
+		Texts:       DefaultTexts(),
 		Plugins:     map[string]map[string]any{},
 	}
 }

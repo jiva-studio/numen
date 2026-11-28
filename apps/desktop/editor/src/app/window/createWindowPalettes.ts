@@ -95,7 +95,10 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
     plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
-    getVaultList: foundation.api.vault.listVaults,
+    vaultLists: {
+      listVaults: foundation.api.vault.listVaults,
+      cloudVaults: { list: vault.vaults.cloud.fresh, refresh: vault.vaults.cloud.refresh },
+    },
     searchCore: foundation.api.vault.search,
   })
   watchCommandLists(
@@ -111,6 +114,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
   return {
     palette,
     picker: plugins.picker,
+    dialogs: plugins.dialogs,
     commandDeps,
     pluginPalette,
     windowCommands: createHostConnection({

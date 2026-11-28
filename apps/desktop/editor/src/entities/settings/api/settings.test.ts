@@ -67,7 +67,8 @@ describe('every setting', () => {
               hasFrontend: true,
               hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
-              settingsViews: [{ id: 'floor', title: 'Floor' }],
+              settingsViews: [{ id: 'floor', title: 'Floor', page: '', tab: '' }],
+              settingsTabs: [],
               contributions: [
                 {
                   kind: PLUGIN_CONTRIBUTION_KIND.COMMANDS,
@@ -137,7 +138,8 @@ describe('every setting', () => {
         hasFrontend: true,
         hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
-        settingsViews: [{ id: 'floor', title: 'Floor' }],
+        settingsViews: [{ id: 'floor', title: 'Floor', page: '', tab: '' }],
+        settingsTabs: [],
         settingGroups: [{ id: 'run', title: 'Run' }],
         contributions: [
           {
@@ -301,6 +303,7 @@ describe('what the core resolved and declared', () => {
               hasBackend: false,
               readers: [],
               settingsViews: [],
+              settingsTabs: [],
               settings: [
                 {
                   key: 'model',
@@ -440,5 +443,50 @@ describe('the settings that change', () => {
     })().catch(() => undefined)
 
     expect(batches).toHaveLength(1)
+  })
+})
+
+describe('the page of a settings view', () => {
+  it('arrives with each view, empty for the form of the plugin and identity for the page of the identity', async () => {
+    const core = getCore()
+    request.getSettings.mockResolvedValue(
+      answer(
+        {},
+        {
+          plugins: [
+            {
+              id: 'md.numen.sample',
+              name: 'Sample',
+              version: '1.0.0',
+              description: '',
+              isActive: true,
+              isOffByDefault: false,
+              capabilities: [],
+              hasFrontend: true,
+              hasBackend: false,
+              readers: [],
+              settingsViews: [
+                { id: 'vaults', title: 'Vaults', page: '', tab: 'sync' },
+                { id: 'subscription', title: 'Subscription', page: 'identity', tab: '' },
+              ],
+              settingsTabs: [{ id: 'sync', title: 'Sync' }],
+              settingGroups: [],
+              contributions: [],
+              settings: [],
+            },
+          ],
+        },
+      ),
+    )
+
+    const configuration = await core.getSettings()
+
+    expect(configuration.plugins?.at(0)?.settingsViews).toStrictEqual([
+      { id: 'vaults', title: 'Vaults', page: '', tab: 'sync' },
+      { id: 'subscription', title: 'Subscription', page: 'identity', tab: '' },
+    ])
+    expect(configuration.plugins?.at(0)?.settingsTabs).toStrictEqual([
+      { id: 'sync', title: 'Sync' },
+    ])
   })
 })

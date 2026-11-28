@@ -3,7 +3,7 @@ title: Scanned books
 description: How a scan of paper becomes text you can search, and the settings that decide how it is read.
 ---
 
-A PDF that is scans of paper has no text. The Document OCR plugin reads its pages here, on your machine: three small models, one that divides a page into its parts, one that finds the lines in a part, one that reads the text of a line. Nothing is uploaded and no account is involved.
+A PDF that is scans of paper has no text. The Document OCR plugin reads its pages here, on your machine: three small models, one that divides a page into its parts, one that finds the lines in a part, one that reads the text of a line. Nothing is uploaded and no sign-up is involved.
 
 It reads a scan automatically: a `.pdf`, `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp` whose pages contain no text and that has no text yet. You can also start it yourself with **Recognise the text with Document OCR** in the [commands](/commands/), under **File**, or ask the [agent](/agent/) to read it.
 

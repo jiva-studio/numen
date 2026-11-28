@@ -10,10 +10,19 @@ export interface VaultSummary {
   readonly name: string
 }
 
-// VaultsState is the vaults the window can show and the one it shows.
+// CloudVaultSummary is a vault kept in the cloud that is not on this device yet. Its id goes to
+// switchTo, which starts getting the vault; detail is the line under the name, the size of the vault.
+export interface CloudVaultSummary {
+  readonly id: string
+  readonly name: string
+  readonly detail: string
+}
+
+// VaultsState is the vaults the window can show and the one it shows, and the cloud vaults it can get.
 export interface VaultsState {
   readonly vaults: readonly VaultSummary[]
   readonly current: VaultSummary | null
+  readonly cloud?: readonly CloudVaultSummary[]
 }
 
 export interface VaultsHost {

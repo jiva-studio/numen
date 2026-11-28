@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 )
 
 const (
@@ -19,9 +20,9 @@ func getMeasuredAt() time.Time {
 
 func newClock() *clocktest.Fake { return newFakeClock(getMeasuredAt()) }
 
-func newHost(hint float64) (*hosttest.Search, *hosttest.Vault) {
-	search := hosttest.NewSearch("physics", "chemistry")
-	search.SetModel(hosttest.SearchModel{Name: modelName, Recipe: modelRecipe, FloorHint: hint})
+func newHost(hint float64) (*searchtest.Search, *hosttest.Vault) {
+	search := searchtest.NewSearch("physics", "chemistry")
+	search.SetModel(searchtest.SearchModel{Name: modelName, Recipe: modelRecipe, FloorHint: hint})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
 	vault := hosttest.New("physics")
 	vault.LinkBeside(hosttest.New("chemistry"))
@@ -43,15 +44,15 @@ func setNotes(vault *hosttest.Vault, n int) {
 	}
 }
 
-func sampledChunksOf(n, sources int) []hosttest.SampledChunk {
-	out := make([]hosttest.SampledChunk, n)
+func sampledChunksOf(n, sources int) []searchtest.SampledChunk {
+	out := make([]searchtest.SampledChunk, n)
 	for i := range out {
-		out[i] = hosttest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
+		out[i] = searchtest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
 	}
 	return out
 }
 
-func fill(search *hosttest.Search, vault *hosttest.Vault, notes int, chunks []hosttest.SampledChunk) {
+func fill(search *searchtest.Search, vault *hosttest.Vault, notes int, chunks []searchtest.SampledChunk) {
 	setNotes(vault, notes)
 	search.SetSampledChunks(modelRecipe, chunks)
 	search.SetProgress(int64(len(chunks)), int64(len(chunks)))

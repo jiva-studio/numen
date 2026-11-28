@@ -1,0 +1,12 @@
+version: v2
+
+# Generated code is committed, as for libs/shared/protocol. An ordinary build needs none of these plugins;
+# only a change to the schema does. There is no TypeScript: no frontend calls the sync server.
+plugins:
+  - local: protoc-gen-go
+    out: gen
+    opt: paths=source_relative
+
+  - local: protoc-gen-connect-go
+    out: gen
+    opt: paths=source_relative

@@ -238,6 +238,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       move: requirePermissionsAsync(WRITE),
       createFolder: requirePermissionsAsync(WRITE),
       createNote: requirePermissionsAsync(WRITE),
+      watchDownloads: requirePermissions(READ),
     },
     texts: {
       readLiveText: requirePermissionsAsync(READ),
@@ -311,6 +312,13 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       open: requireNothing('it draws the list the plugin gives and holds no vault data'),
       promptText: requireNothing('it draws the question the plugin gives and holds no vault data'),
       selectOption: requireNothing('it draws the options the plugin gives and holds no vault data'),
+    },
+    dialogs: {
+      open: requireNothing('it draws the view the plugin gives and holds no vault data'),
+      saveText: requireNothing('the person chooses the file in the native dialog and it holds no vault data'),
+    },
+    vaultFlags: {
+      setFlag: requireNothing('it marks a vault for the menus of the window and holds no vault data'),
     },
     drops: {
       canDrop: requireNothing('it tells whether some plugin takes the types, nothing more'),

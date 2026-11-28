@@ -161,7 +161,7 @@ type Story = StoryObj<typeof meta>
 /** A connection of a missing type says so, and an incomplete one is marked. */
 export const ListMarksUnusableConnections: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByText('Type unavailable')).toBeVisible()
     await expect(canvas.getByText('Incomplete')).toBeVisible()
     await expect(canvas.getByText(/Plugins skip such a connection/)).toBeVisible()
@@ -172,7 +172,7 @@ export const ListMarksUnusableConnections: Story = {
 export const EmptyPage: Story = {
   render: render([], [SERVICE]),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(canvas.getByText('No connections yet.')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Add connection' })).toBeEnabled()
   },
@@ -182,7 +182,7 @@ export const EmptyPage: Story = {
 export const EmptyPageWithoutTypes: Story = {
   render: render([], []),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await expect(
       canvas.getByText('No installed plugin provides a kind of connection.'),
     ).toBeVisible()
@@ -191,7 +191,9 @@ export const EmptyPageWithoutTypes: Story = {
 }
 
 const openDialog = async (canvasElement: HTMLElement) => {
-  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Add connection' }))
+  await userEvent.click(
+    within(canvasElement.ownerDocument.body).getByRole('button', { name: 'Add connection' }),
+  )
   const dialog = within(document.body).getByRole('dialog', { name: 'Add connection' })
   await expect(dialog).toBeVisible()
   return within(dialog)
@@ -245,7 +247,7 @@ export const RequiredValueIsAsked: Story = {
 /** Deleting asks first, over the page. */
 export const DeletionAsksFirst: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const canvas = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('button', { name: 'Work' }))
     const edit = within(document.body).getByRole('dialog', { name: 'Edit connection' })
     await userEvent.click(within(edit).getByRole('button', { name: 'Delete' }))

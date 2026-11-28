@@ -1,0 +1,239 @@
+name: Live
+
+# The tests that need the real sync server, started from the newest images of its private packages
+# (tests/server): the Go tests of plugins/tools-sync and the acceptance scenarios tagged @live. They
+# do not run on a pull request. reports.yml calls this workflow at night, and the videos of its
+# scenarios go into the same report as the others; it can also be started by hand.
+# GitHub gives a run from a fork or from Dependabot no access to the private packages: the job then
+# runs no test and says so in its summary. It never uploads the images or prints the server log
+# unfiltered.
+# Two stacks run one after the other. The Go suite runs against the first; the tests that roll back its
+# database or age its records skip there. The second stack, with its own project name and ports, runs
+# those tests alone, one package at a time.
+on:
+  workflow_call:
+    inputs:
+      features:
+        description: feature files under features/ the scenarios run from, separated by spaces; empty is all
+        type: string
+        default: ''
+  workflow_dispatch:
+    inputs:
+      features:
+        description: feature files under features/ the scenarios run from, separated by spaces; empty is all
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    name: Live Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          reason=
+          if [ "$EVENT" = pull_request ] && [ "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
+            reason="the pull request is from a fork, which has no access to the private server images"
+          elif [ "$ACTOR" = "dependabot[bot]" ]; then
+            reason="the pull request is from Dependabot, which has no access to the private server images"
+          elif [ "$GITHUB_REPOSITORY" != jiva-studio/numen ]; then
+            reason="the repository is a fork, which has no access to the private server images"
+          fi
+          if [ -n "$reason" ]; then
+            echo "::warning title=Real server tests did not run::$reason"
+            echo "real server tests did not run: $reason" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.plan.outputs.run == 'true'
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: plugins/tools-sync/go.mod
+          cache-key: live
+
+      - name: Log in to the registry
+        if: steps.plan.outputs.run == 'true'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin <<< "$TOKEN"; then
+            echo "::error title=No access to the server images::The login to ghcr.io was denied. Add the repository jiva-studio/numen with Read in the package settings of both numen-sync and numen-sync-devtools (Packages, package settings, Manage Actions access)."
+            exit 1
+          fi
+
+      # Pulls the newest images tagged main, then starts them.
+      - name: Start the server
+        if: steps.plan.outputs.run == 'true'
+        run: make sync_stack_up
+
+      - name: Run the Go tests of the sync plugin
+        if: steps.plan.outputs.run == 'true'
+        env:
+          NUMEN_SYNC_TEST_REQUIRED: "1"
+        run: |
+          eval "$(make -s sync_stack_env)"
+          .github/scripts/live-go-tests.sh "Go tests of plugins/tools-sync against the real server" ./...
+
+      # The tests that roll back the database or age its records act on every account of their stack,
+      # so they get one that no other test uses, on other ports, and run one package at a time.
+      - name: Run the Go tests that need a stack of their own
+        if: steps.plan.outputs.run == 'true'
+        env:
+          NUMEN_SYNC_PORT_BASE: "18787"
+          NUMEN_SYNC_OWN_STACK: numen-sync-own
+          NUMEN_SYNC_OWN_STACK_REQUIRED: "1"
+          NUMEN_SYNC_TEST_REQUIRED: "1"
+        run: |
+          settings=$(bash tests/server/stack.sh fresh "$NUMEN_SYNC_OWN_STACK")
+          eval "$settings"
+          .github/scripts/live-go-tests.sh "Go tests of plugins/tools-sync against a stack of their own" -p 1 -count=1 -timeout 10m \
+            ./backend/internal/adapter/cloud/... ./backend/usecase/pull/... ./backend/usecase/restore/... ./backend/usecase/share/... ./backend/usecase/syncvault/...
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.plan.outputs.run == 'true'
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        if: steps.plan.outputs.run == 'true'
+        uses: ./.github/actions/install-node-modules
+
+      # The GTK and WebKitGTK runtime libraries the window links against, and the engine.
+      - if: steps.plan.outputs.run == 'true'
+        uses: ./.github/actions/setup-playwright
+        with:
+          browsers: chromium
+          packages: libgtk-4-1 libwebkitgtk-6.0-4
+
+      # The archive desktop-e2e.yml builds on main (the plugins and the debug binaries), found by the
+      # same key; a change that alters what the archive is made from builds it here the same way.
+      - id: key
+        if: steps.plan.outputs.run == 'true'
+        run: echo "key=e2e-build-${ImageOS:-unknown}-$(.github/scripts/hash-e2e-build.sh)-all" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Restore the build archive
+        if: steps.plan.outputs.run == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/e2e-build.tar
+          key: ${{ steps.key.outputs.key }}
+
+      - id: need
+        if: steps.plan.outputs.run == 'true'
+        run: |
+          if [ -s "$RUNNER_TEMP/e2e-build.tar" ]; then
+            tar -xf "$RUNNER_TEMP/e2e-build.tar"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.need.outputs.build == 'true'
+        uses: ./.github/actions/setup-webkit
+
+      - name: Build UI library
+        if: steps.need.outputs.build == 'true'
+        uses: ./.github/actions/build-ui
+        with:
+          shell: 'true'
+
+      - name: Build the plugins, the windows and the debug binaries
+        if: steps.need.outputs.build == 'true'
+        env:
+          BUILD_FLASHCARDS: "true"
+        run: .github/scripts/run-e2e-build.sh
+
+      - name: Build the account tool
+        if: steps.plan.outputs.run == 'true'
+        run: |
+          go build -C tools/syncaccount -o bin/syncaccount .
+          if ldd apps/desktop/numen-debug | grep 'not found'; then exit 1; fi
+
+      # The shared run selects @live and skips @stand. PLAYWRIGHT_VIDEO records every
+      # scenario. The blob report holds all the videos for the merged report of reports.yml; the failed ones are also
+      # collected below for a run started by hand.
+      - name: Run the shared acceptance scenarios
+        if: steps.plan.outputs.run == 'true'
+        working-directory: tests/acceptance/desktop
+        env:
+          FEATURES: ${{ inputs.features }}
+          NUMEN_SYNC_TEST_REQUIRED: "1"
+          PLAYWRIGHT_VIDEO: "1"
+          PWTEST_BLOB_DO_NOT_REMOVE: "1"
+          PLAYWRIGHT_BLOB_OUTPUT_DIR: ${{ github.workspace }}/tests/acceptance/desktop/acceptance-blobs
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: run-linux-sync.zip
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/acceptance.json
+        run: |
+          eval "$(make -C ../../.. -s sync_stack_env)"
+          status=0
+          read -ra features <<< "$FEATURES"
+          npm run acceptance:live -- --project=chromium --reporter=list,json,blob "${features[@]}" || status=$?
+          if [ -s "$PLAYWRIGHT_JSON_OUTPUT_NAME" ]; then
+            echo "Acceptance scenarios against the real server: $(jq -r '.stats | "\(.expected) passed, \(.unexpected) failed, \(.flaky) flaky, \(.skipped) skipped"' "$PLAYWRIGHT_JSON_OUTPUT_NAME")" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
+
+      # The blob report is named like the others, so that the report job of reports.yml merges it. It holds the
+      # videos, the traces of failed scenarios and, for each failed scenario, the log of the app's own server (invented
+      # data); the log of the sync server stays in its container.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() && steps.plan.outputs.run == 'true' }}
+        with:
+          name: acceptance-blobs-live-sync-linux
+          path: tests/acceptance/desktop/acceptance-blobs/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # Videos show the app with invented data.
+      - name: Collect the videos of the failed scenarios
+        if: ${{ failure() && steps.plan.outputs.run == 'true' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/failed-videos"
+          if [ -s "$RUNNER_TEMP/acceptance.json" ]; then
+            jq -r '.. | objects | select(.status? == "unexpected" or .status? == "flaky") | .results[]?.attachments[]? | select(.name == "video") | .path' "$RUNNER_TEMP/acceptance.json" | sort -u | while IFS= read -r video; do
+              cp --parents "$video" "$RUNNER_TEMP/failed-videos" || true
+            done
+          fi
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ failure() && steps.plan.outputs.run == 'true' }}
+        with:
+          name: live-acceptance-videos
+          path: ${{ runner.temp }}/failed-videos/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # Only the lines of the rpc log, never the raw log: the log of a public job is public.
+      - name: Print the rpc lines of the server log
+        if: ${{ failure() && steps.plan.outputs.run == 'true' }}
+        run: |
+          for project in numen-sync-test numen-sync-own; do
+            container=$(docker ps -aq --filter label=com.docker.compose.project=$project --filter label=com.docker.compose.service=sync)
+            if [ -n "$container" ]; then
+              docker logs --tail 5000 "$container" 2>&1 | grep -iE '\brpc\b' | tail -n 200 || true
+            fi
+          done
+
+      - name: Stop the servers
+        if: ${{ always() && steps.plan.outputs.run == 'true' }}
+        run: |
+          NUMEN_SYNC_PORT_BASE=18787 bash tests/server/stack.sh down numen-sync-own || true
+          make sync_stack_down

@@ -3,6 +3,7 @@ package vault
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -23,6 +24,7 @@ type (
 	lookupsCalls struct{ *calls }
 	arrangeCalls struct{ *calls }
 	vaultsCalls  struct{ *calls }
+	absentCalls  struct{ *calls }
 )
 
 // router serves the procedures of one service from the handler of each.
@@ -67,11 +69,13 @@ func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // Mount serves the vault services for the plugins that call the host, over the vault the source lends: one
 // router for each service, each answering its procedures from the group that holds them.
 func Mount(mux *http.ServeMux, auth Authority, source Source, options ...connect.HandlerOption) {
+	options = append(slices.Clone(options), getCallerOption(auth))
 	base := &calls{auth: auth, source: source}
 	files := &filesCalls{base}
 	watch, cache := &watchCalls{base}, &cacheCalls{base}
 	lookups, arrange := &lookupsCalls{base}, &arrangeCalls{base}
 	vaults := &vaultsCalls{base}
+	absent := &absentCalls{base}
 
 	vault := newRouter(v1.File_numen_v1_hostvault_proto, numenv1connect.HostVaultServiceName, options)
 	addUnary(vault, numenv1connect.HostVaultServiceGetHostVaultProcedure, "GetHostVault", files.GetHostVault)
@@ -81,6 +85,10 @@ func Mount(mux *http.ServeMux, auth Authority, source Source, options ...connect
 	addUnary(vault, numenv1connect.HostVaultServiceUnlockVaultProcedure, "UnlockVault", files.UnlockVault)
 	addUnary(vault, numenv1connect.HostVaultServiceListParseProblemsProcedure, "ListParseProblems", arrange.ListParseProblems)
 	addUnary(vault, numenv1connect.HostVaultServiceListVaultProblemsProcedure, "ListVaultProblems", arrange.ListVaultProblems)
+	addUnary(vault, numenv1connect.HostVaultServicePutAbsentFilesProcedure, "PutAbsentFiles", absent.PutAbsentFiles)
+	addUnary(vault, numenv1connect.HostVaultServiceListAbsentFilesProcedure, "ListAbsentFiles", absent.ListAbsentFiles)
+	addUnary(vault, numenv1connect.HostVaultServiceFillFileProcedure, "FillFile", absent.FillFile)
+	addUnary(vault, numenv1connect.HostVaultServiceEvictFileProcedure, "EvictFile", absent.EvictFile)
 	vault.mount(mux)
 
 	list := newRouter(v1.File_numen_v1_vaults_proto, numenv1connect.VaultsServiceName, options)
@@ -105,6 +113,10 @@ func mountDocuments(
 	addUnary(file, numenv1connect.HostFileServiceCreateFileProcedure, "CreateFile", files.CreateFile)
 	addUnary(file, numenv1connect.HostFileServiceScanFilesProcedure, "ScanFiles", files.ScanFiles)
 	addUnary(file, numenv1connect.HostFileServiceListFileChangesProcedure, "ListFileChanges", lookups.ListFileChanges)
+	addUnary(file, numenv1connect.HostFileServiceMoveFileProcedure, "MoveFile", files.MoveFile)
+	addUnary(file, numenv1connect.HostFileServiceRemoveFileProcedure, "RemoveFile", files.RemoveFile)
+	addUnary(file, numenv1connect.HostFileServiceReadFileRangeProcedure, "ReadFileRange", files.ReadFileRange)
+	addUnary(file, numenv1connect.HostFileServicePlaceFileProcedure, "PlaceFile", files.PlaceFile)
 	file.mount(mux)
 
 	note := newRouter(v1.File_numen_v1_hostnote_proto, numenv1connect.HostNoteServiceName, options)

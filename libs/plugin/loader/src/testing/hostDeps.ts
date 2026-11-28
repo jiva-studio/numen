@@ -47,8 +47,10 @@ const MEMBERS: GroupMembers = {
     getWorkspace: true,
     getCommands: true,
     getWindow: true,
+    getVaultFlags: true,
     getNotices: true,
     getPicker: true,
+    getDialogs: true,
     clearNotices: true,
   },
   plugins: {

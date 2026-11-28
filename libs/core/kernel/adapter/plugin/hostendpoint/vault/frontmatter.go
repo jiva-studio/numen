@@ -7,7 +7,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
@@ -16,7 +15,7 @@ import (
 func (e *lookupsCalls) ReadFrontmatter(
 	ctx context.Context, req *connect.Request[v1.ReadFrontmatterRequest],
 ) (*connect.Response[v1.ReadFrontmatterResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}

@@ -70,8 +70,10 @@
     "@tailwindcss/typography": "^0.5.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jsqr": "^1.4.0",
     "markdown-it": "^15.0.3",
     "reka-ui": "^2.10.3",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "uqr": "^0.1.2"
   }
 }

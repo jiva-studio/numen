@@ -86,6 +86,7 @@ jobs:
     permissions:
       contents: read
       actions: write
+      packages: read
       pages: write
       id-token: write
 

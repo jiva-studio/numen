@@ -75,7 +75,7 @@ func newTextClient(t *testing.T, fakeCallers *callers, token string) numenv1conn
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}, endpoint.newPermissionOption()))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewHostTextServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))

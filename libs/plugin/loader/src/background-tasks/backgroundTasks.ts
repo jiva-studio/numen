@@ -6,7 +6,7 @@ import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-sdk'
 import { computed, ref, watch, type Ref } from 'vue'
 import { createBackgroundTask, type WorkTask } from './backgroundTask'
 
-export interface BackgroundTaskHostDeps {
+interface BackgroundTaskHostDeps {
   readonly tasks: Readonly<Ref<readonly WorkTask[]>>
   /** Asks the core to stop the task; resolves once the core has cancelled it. */
   cancelTask(id: string): Promise<void>

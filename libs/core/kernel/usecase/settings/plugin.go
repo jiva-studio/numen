@@ -56,3 +56,10 @@ type PluginConfigPush interface {
 
 // ProfileResolver returns the limits the machine runs a profile setting with.
 type ProfileResolver func(profile string) plugin.Performance
+
+// PluginKeeper keeps the processes of the plugins that stay running: Keep starts one and holds it, Drop
+// stops keeping it so that its process may be stopped.
+type PluginKeeper interface {
+	Keep(ctx context.Context, pluginID string)
+	Drop(ctx context.Context, pluginID string)
+}

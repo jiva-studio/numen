@@ -1,3 +1,6 @@
+/** A key whose variable is not set on this machine: a scenario that needs it cannot run here. */
+export class MissingKeyError extends Error {}
+
 /** The keys of the person: each has a name and is read from an environment variable of the machine, so no key is written in a scenario or a report. */
 const NAME = 'key name'
 const VARIABLE = 'environment variable'
@@ -19,7 +22,7 @@ export class Keys {
       if (name === '' || variable === '')
         throw new Error(`a row of keys has no "${NAME}" or no "${VARIABLE}": fill both`)
       if ((process.env[variable] ?? '') === '')
-        throw new Error(`the environment variable ${variable} for the key "${name}" is not set or is empty: set it before the run`)
+        throw new MissingKeyError(`the environment variable ${variable} for the key "${name}" is not set or is empty: set it before the run`)
       this.variables.set(name, variable)
     }
   }

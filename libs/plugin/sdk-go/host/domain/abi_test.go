@@ -19,7 +19,7 @@ func getPinnedShapes() map[string]string {
 	return map[string]string{
 		"Address":    "struct{Scheme string; Value string}",
 		"ByteRange":  "struct{Start int; End int}",
-		"FileStat":   "struct{Path string; Kind domain.SourceKind; Size int64; ModTime time.Time; FileID domain.FileID; Hash string; Version uint64}",
+		"FileStat":   "struct{Path string; Kind domain.SourceKind; Size int64; ModTime time.Time; FileID domain.FileID; Hash string; Version uint64; IsAbsent bool}",
 		"Link":       "struct{Target domain.Address; Role domain.LinkRole; Type string; Why string; Label string; Marker domain.LinkMarker}",
 		"LinkMarker": "string",
 		"LinkRole":   "string",
@@ -37,7 +37,7 @@ func getPinnedShapes() map[string]string {
 		"TextVersion": "struct{Path string; PluginID string; Key string; Source domain.TextVersionID; SourceProperty domain.TextSourceProperty; " +
 			"Kind domain.TextKind; File string; InputHash string; TextHash string; CreateTime time.Time}",
 		"TextVersionID": "string",
-		"Vault":         "struct{ID domain.VaultID; Name string; Path string}",
+		"Vault":         "struct{ID domain.VaultID; Name string; Path string; ManagedBy string}",
 		"VaultID":       "string",
 		"VaultProblem":  "struct{Path string; Kind domain.Check; Detail string; Target domain.Address; Candidates []string}",
 		"VersionText":   "struct{version domain.TextVersion; Text string; segments []domain.TextSegment; offsets []int}",

@@ -9,11 +9,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
-func newFloors(t *testing.T, hint float64) (*relevance.Floors, *hosttest.Search, *hosttest.Vault) {
+func newFloors(t *testing.T, hint float64) (*relevance.Floors, *searchtest.Search, *hosttest.Vault) {
 	t.Helper()
 	search, vault := newHost(hint)
 	fill(search, vault, 25, sampledChunksOf(60, 3))
@@ -206,13 +207,13 @@ func TestTheRecordsAreStoredPerVaultAndPerRecipe(t *testing.T) {
 		t.Errorf("another vault read %+v, %v, want nothing kept", other, err)
 	}
 
-	search.SetModel(hosttest.SearchModel{Name: "other", Recipe: "other|recipe", FloorHint: 0.35})
+	search.SetModel(searchtest.SearchModel{Name: "other", Recipe: "other|recipe", FloorHint: 0.35})
 	changed, err := floors.Get(t.Context(), "")
 	if err != nil || changed.IsManual || changed.Floor != 0.35 || changed.Model != "other" {
 		t.Errorf("another model read %+v, %v, want its own hint", changed, err)
 	}
 
-	search.SetModel(hosttest.SearchModel{Name: modelName, Recipe: modelRecipe, FloorHint: 0.4})
+	search.SetModel(searchtest.SearchModel{Name: modelName, Recipe: modelRecipe, FloorHint: 0.4})
 	back, err := floors.Get(t.Context(), "")
 	if err != nil || !back.IsManual || back.ManualFloor != 0.6 {
 		t.Errorf("the first model read %+v, %v, want its manual floor again", back, err)
@@ -273,7 +274,7 @@ func TestProbeComparesTheBestChunkWithTheFloorInForce(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			floors, search, _ := newFloors(t, 0.5)
-			search.SetSampledChunks(modelRecipe, []hosttest.SampledChunk{{Path: notePath(1), Vector: tc.stored}})
+			search.SetSampledChunks(modelRecipe, []searchtest.SampledChunk{{Path: notePath(1), Vector: tc.stored}})
 
 			got, err := floors.Probe(t.Context(), "", "entropy")
 			if err != nil {
@@ -288,7 +289,7 @@ func TestProbeComparesTheBestChunkWithTheFloorInForce(t *testing.T) {
 
 func TestProbeUsesTheFloorInForce(t *testing.T) {
 	floors, search, _ := newFloors(t, 0.4)
-	search.SetSampledChunks(modelRecipe, []hosttest.SampledChunk{{Path: notePath(1), Vector: []float32{127, 20, 0, 0}}})
+	search.SetSampledChunks(modelRecipe, []searchtest.SampledChunk{{Path: notePath(1), Vector: []float32{127, 20, 0, 0}}})
 	if _, err := floors.Set(t.Context(), "", true, 0.99); err != nil {
 		t.Fatal(err)
 	}
@@ -529,7 +530,7 @@ func TestGetAndEnsureIgnoreNonPositiveStoredFloors(t *testing.T) {
 }
 
 type faultSearch struct {
-	*hosttest.Search
+	*searchtest.Search
 	failStateAt int
 	stateCalls  int
 	failGetAt   int
@@ -601,7 +602,7 @@ func (s *faultStore) Write(ctx context.Context, name string, content []byte) err
 }
 
 func TestFloorsPropagatesEveryHostAndStoreFailure(t *testing.T) {
-	newFaulty := func(configure func(s *faultSearch, st *faultStore, rawSearch *hosttest.Search)) *relevance.Floors {
+	newFaulty := func(configure func(s *faultSearch, st *faultStore, rawSearch *searchtest.Search)) *relevance.Floors {
 		rawSearch, vault := newHost(0.4)
 		fill(rawSearch, vault, 25, sampledChunksOf(60, 3))
 		s := &faultSearch{Search: rawSearch}
@@ -620,112 +621,112 @@ func TestFloorsPropagatesEveryHostAndStoreFailure(t *testing.T) {
 		}, newClock())
 	}
 
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failStateAt = 1
 	}).Get(t.Context(), ""); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Get state failure gave %v", err)
 	}
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failGetAt = 1
 	}).Get(t.Context(), ""); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Get floor failure gave %v", err)
 	}
 
-	if outcome, _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if outcome, _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failStateAt = 1
 	}).Calibrate(t.Context(), ""); outcome != 0 || !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Calibrate state failure gave %v, %v", outcome, err)
 	}
-	if outcome, _, err := newFaulty(func(_ *faultSearch, _ *faultStore, raw *hosttest.Search) {
+	if outcome, _, err := newFaulty(func(_ *faultSearch, _ *faultStore, raw *searchtest.Search) {
 		raw.FailEmbedding(errors.New("embed fail"))
 	}).Calibrate(t.Context(), ""); outcome != 0 || !errors.Is(err, host.ErrEmbeddingFailed) {
 		t.Errorf("Calibrate embed failure gave %v, %v", outcome, err)
 	}
-	if outcome, _, err := newFaulty(func(_ *faultSearch, st *faultStore, _ *hosttest.Search) {
+	if outcome, _, err := newFaulty(func(_ *faultSearch, st *faultStore, _ *searchtest.Search) {
 		st.failReadAt = 1
 	}).Calibrate(t.Context(), ""); outcome != 0 || !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Calibrate keep read failure gave %v, %v", outcome, err)
 	}
-	if outcome, _, err := newFaulty(func(_ *faultSearch, st *faultStore, _ *hosttest.Search) {
+	if outcome, _, err := newFaulty(func(_ *faultSearch, st *faultStore, _ *searchtest.Search) {
 		st.failWrite = host.ErrPermissionDenied
 	}).Calibrate(t.Context(), ""); outcome != 0 || !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Calibrate keep write failure gave %v, %v", outcome, err)
 	}
-	if outcome, _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if outcome, _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failGetAt = 1
 	}).Calibrate(t.Context(), ""); outcome != 0 || !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Calibrate apply get floor failure gave %v, %v", outcome, err)
 	}
-	if _, _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failGetAt = 2
 	}).Calibrate(t.Context(), ""); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Calibrate final getState failure gave %v", err)
 	}
 
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failStateAt = 1
 	}).Set(t.Context(), "", true, 0.5); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Set state failure gave %v", err)
 	}
-	if _, err := newFaulty(func(_ *faultSearch, st *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(_ *faultSearch, st *faultStore, _ *searchtest.Search) {
 		st.failReadAt = 1
 	}).Set(t.Context(), "", true, 0.5); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Set read failure gave %v", err)
 	}
-	if _, err := newFaulty(func(_ *faultSearch, st *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(_ *faultSearch, st *faultStore, _ *searchtest.Search) {
 		st.failWrite = host.ErrPermissionDenied
 	}).Set(t.Context(), "", true, 0.5); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Set write failure gave %v", err)
 	}
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failGetAt = 1
 	}).Set(t.Context(), "", true, 0.5); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Set apply get floor failure gave %v", err)
 	}
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failSet = host.ErrPermissionDenied
 	}).Set(t.Context(), "", true, 0.5); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Set apply set floor failure gave %v", err)
 	}
 
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failStateAt = 1
 	}).Probe(t.Context(), "", "q"); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Probe state failure gave %v", err)
 	}
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failGetAt = 1
 	}).Probe(t.Context(), "", "q"); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Probe get floor failure gave %v", err)
 	}
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.embedFn = func(context.Context, []string) (host.EmbeddedTexts, error) {
 			return host.EmbeddedTexts{Recipe: modelRecipe, Vectors: [][]float32{{1, 0, 0, 0}}}, host.ErrPermissionDenied
 		}
 	}).Probe(t.Context(), "", "q"); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Probe embed failure gave %v", err)
 	}
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.embedFn = func(context.Context, []string) (host.EmbeddedTexts, error) {
 			return host.EmbeddedTexts{Recipe: modelRecipe, Vectors: nil}, nil
 		}
 	}).Probe(t.Context(), "", "q"); !errors.Is(err, host.ErrEmbeddingFailed) {
 		t.Errorf("Probe empty vector list gave %v", err)
 	}
-	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
+	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *searchtest.Search) {
 		s.failBest = host.ErrPermissionDenied
 	}).Probe(t.Context(), "", "q"); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Probe best similarity failure gave %v", err)
 	}
 
-	if err := newFaulty(func(_ *faultSearch, st *faultStore, _ *hosttest.Search) {
+	if err := newFaulty(func(_ *faultSearch, st *faultStore, _ *searchtest.Search) {
 		st.failReadAt = 1
 	}).Ensure(t.Context(), ""); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Ensure read failure gave %v", err)
 	}
 }
 
-func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
+func searchOf(search *searchtest.Search) func(domain.VaultID) relevance.Search {
 	return func(id domain.VaultID) relevance.Search {
 		on := search.With(id)
 		return relevance.Search{Index: on, Policy: on}

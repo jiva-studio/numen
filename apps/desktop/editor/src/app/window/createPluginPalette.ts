@@ -35,7 +35,13 @@ interface PluginPaletteDeps {
 }
 
 export function createPluginPalette(deps: PluginPaletteDeps) {
-  const { pluginHost, commandDeclarations: declaredCommands, commandDeps, getTarget, windowSettings } = deps
+  const {
+    pluginHost,
+    commandDeclarations: declaredCommands,
+    commandDeps,
+    getTarget,
+    windowSettings,
+  } = deps
   const plugin = usePluginCommands(
     deps.registry,
     createCommandNoteReader(deps.itemLists),

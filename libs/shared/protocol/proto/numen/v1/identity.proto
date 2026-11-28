@@ -1,0 +1,298 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// IdentityService manages the account identity of this device. No secret key reaches the window; the
+// recovery words and sheets cross the wire only in the calls that take them, and the sheets of a new
+// kit never do.
+service IdentityService {
+  // GetIdentity returns the identity of this device, or none when the device holds no identity.
+  rpc GetIdentity(GetIdentityRequest) returns (GetIdentityResponse);
+
+  // GenerateRecoveryWords returns 12 new recovery words and keeps nothing.
+  rpc GenerateRecoveryWords(GenerateRecoveryWordsRequest) returns (GenerateRecoveryWordsResponse);
+
+  // CreateIdentity keeps an identity on this device for the 12 recovery words. The same words give
+  // the same account fingerprint on every device.
+  rpc CreateIdentity(CreateIdentityRequest) returns (CreateIdentityResponse);
+
+  // StartRestore starts to restore the account of 12 recovery words on this device. It keeps the words
+  // and a new device key in memory and writes nothing: the sync plugin joins the existing account of the
+  // words, or the core makes the identity of the words alone after 30 seconds. Poll GetIdentity until it
+  // returns an identity.
+  rpc StartRestore(StartRestoreRequest) returns (StartRestoreResponse);
+
+  // DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.
+  rpc DeleteIdentity(DeleteIdentityRequest) returns (DeleteIdentityResponse);
+
+  // SaveRecoveryKit makes a new kit of three sheets for the account of this device and saves it as a PDF
+  // in the file the person chooses in the save dialog of this machine. The caller proves the account
+  // with the 12 words or with two sheets of an earlier kit. Nothing is kept, and no sheet is answered.
+  rpc SaveRecoveryKit(SaveRecoveryKitRequest) returns (SaveRecoveryKitResponse);
+
+  // StartRestoreFromKit starts to restore the account of two sheets of a kit on this device the way
+  // StartRestore does for the 12 words. Poll GetIdentity until it returns an identity.
+  rpc StartRestoreFromKit(StartRestoreFromKitRequest) returns (StartRestoreFromKitResponse);
+
+  // StartLink starts a link of this device to another: this device shows a QR code or reads the text of one. A
+  // device that has the account is the host, a device with none is the joiner. Only one link runs at a time.
+  rpc StartLink(StartLinkRequest) returns (StartLinkResponse);
+
+  // GetLink returns the link in progress. Poll it while the link dialog is open.
+  rpc GetLink(GetLinkRequest) returns (GetLinkResponse);
+
+  // DecideLink is the answer of the person on the host to the new device.
+  rpc DecideLink(DecideLinkRequest) returns (DecideLinkResponse);
+
+  // ConfirmJoin is the answer of the person on the new device to the account it is offered.
+  rpc ConfirmJoin(ConfirmJoinRequest) returns (ConfirmJoinResponse);
+
+  // CancelLink ends the link in progress.
+  rpc CancelLink(CancelLinkRequest) returns (CancelLinkResponse);
+
+  // ListDevices lists the devices of the account: the active ones, then the revoked ones.
+  rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse);
+
+  // RevokeDevice removes a device from the account; its keys stop working for new notes.
+  rpc RevokeDevice(RevokeDeviceRequest) returns (RevokeDeviceResponse);
+}
+
+// IdentityInfo is what a person can see of the identity of this device.
+message IdentityInfo {
+  // account_fingerprint is the fingerprint of the account, the same on every device with the same words.
+  string account_fingerprint = 1;
+  // device_fingerprint is the fingerprint of this device.
+  string device_fingerprint = 2;
+  string device_name = 3;
+  // device_added_at is when this device joined the account, RFC 3339 in UTC.
+  string device_added_at = 4;
+  // is_revoked is true when the account revoked this device.
+  bool is_revoked = 5;
+  // key_epoch is the epoch of the account keys of this device, 0 until a device is revoked.
+  uint32 key_epoch = 6;
+}
+
+message GetIdentityRequest {}
+
+message GetIdentityResponse {
+  // identity is unset when this device holds no identity.
+  IdentityInfo identity = 1;
+  // error is CHAIN_OUTDATED while this device holds no identity because the restore it started was refused.
+  ErrorCode error = 2;
+  string detail = 3;
+}
+
+message GenerateRecoveryWordsRequest {}
+
+message GenerateRecoveryWordsResponse {
+  repeated string words = 1 [debug_redact = true];
+}
+
+message CreateIdentityRequest {
+  repeated string words = 1 [debug_redact = true];
+}
+
+message CreateIdentityResponse {
+  IdentityInfo identity = 1;
+  ErrorCode error = 2;
+  // detail names the first wrong position and never holds a word.
+  string detail = 3;
+}
+
+message StartRestoreRequest {
+  repeated string words = 1 [debug_redact = true];
+  // chain_mark is the chain mark printed on the recovery kit, or empty. A restore with a mark is refused when the chain of the server does
+  // not contain it.
+  string chain_mark = 2;
+  // confirm_unmarked is the confirmation of the person to restore without a chain mark: an empty answer of the server then makes a new
+  // identity of the words. Without a mark and without it the restore is refused (CHAIN_OUTDATED).
+  bool confirm_unmarked = 3;
+}
+
+message StartRestoreResponse {
+  ErrorCode error = 1;
+  // detail names the first wrong position and never holds a word.
+  string detail = 2;
+}
+
+message DeleteIdentityRequest {}
+
+message DeleteIdentityResponse {}
+
+// RecoverySheet is one sheet of a kit: 33 words of the SLIP-39 list in order.
+message RecoverySheet {
+  repeated string words = 1 [debug_redact = true];
+}
+
+message RecoveryWordsProof {
+  repeated string words = 1 [debug_redact = true];
+}
+
+message RecoverySheetsProof {
+  repeated RecoverySheet sheets = 1;
+}
+
+message SaveRecoveryKitRequest {
+  // proof is the 12 words or two sheets of an earlier kit. A request without a proof is invalid.
+  oneof proof {
+    RecoveryWordsProof words = 1;
+    RecoverySheetsProof sheets = 2;
+  }
+}
+
+message SaveRecoveryKitResponse {
+  // is_saved is false when the person closed the save dialog without choosing a file.
+  bool is_saved = 1;
+  ErrorCode error = 2;
+  // detail names a position and never holds a word.
+  string detail = 3;
+}
+
+message StartRestoreFromKitRequest {
+  repeated RecoverySheet sheets = 1;
+  // chain_mark is the chain mark printed on the sheets, or empty.
+  string chain_mark = 2;
+  // confirm_unmarked is the confirmation of the person to restore without a chain mark, as in StartRestoreRequest.
+  bool confirm_unmarked = 3;
+}
+
+message StartRestoreFromKitResponse {
+  ErrorCode error = 1;
+  // detail names a position and never holds a word.
+  string detail = 2;
+}
+
+enum LinkRole {
+  LINK_ROLE_UNSPECIFIED = 0;
+  // LINK_ROLE_HOST is a device that has the account and links another to it.
+  LINK_ROLE_HOST = 1;
+  // LINK_ROLE_JOINER is a device with no identity that joins an account.
+  LINK_ROLE_JOINER = 2;
+}
+
+enum LinkMode {
+  LINK_MODE_UNSPECIFIED = 0;
+  // LINK_MODE_SHOW is the device that shows the QR code.
+  LINK_MODE_SHOW = 1;
+  // LINK_MODE_SCAN is the device that reads the QR code.
+  LINK_MODE_SCAN = 2;
+}
+
+enum LinkPhase {
+  LINK_PHASE_UNSPECIFIED = 0;
+  LINK_PHASE_WAITING_FOR_CHANNEL = 1;
+  // LINK_PHASE_WAITING_FOR_PEER is the QR code on screen, or the first message sent.
+  LINK_PHASE_WAITING_FOR_PEER = 2;
+  // LINK_PHASE_CONFIRM_PEER is the host asking the person about the new device.
+  LINK_PHASE_CONFIRM_PEER = 3;
+  LINK_PHASE_WAITING_FOR_ACCEPT = 4;
+  LINK_PHASE_PUBLISHING = 5;
+  // LINK_PHASE_CONFIRM_ACCOUNT is the new device asking the person about the account; the host waits for the answer.
+  LINK_PHASE_CONFIRM_ACCOUNT = 6;
+  LINK_PHASE_LINKED = 7;
+  LINK_PHASE_FAILED = 8;
+}
+
+enum LinkReason {
+  LINK_REASON_UNSPECIFIED = 0;
+  LINK_REASON_DECLINED = 1;
+  LINK_REASON_DEVICE_HAS_IDENTITY = 2;
+  LINK_REASON_STALE_CHAIN = 3;
+  LINK_REASON_CANCELED = 4;
+  LINK_REASON_EXPIRED = 5;
+  LINK_REASON_INVALID = 6;
+}
+
+// LinkInfo is what a window shows of the link in progress. It holds no key.
+message LinkInfo {
+  LinkPhase phase = 1;
+  LinkMode mode = 2;
+  LinkRole role = 3;
+  // qr_text is the text of the QR code, set on the device that shows it.
+  string qr_text = 4;
+  string peer_name = 5;
+  string peer_fingerprint = 6;
+  string account_fingerprint = 7;
+  LinkReason reason = 8;
+  // device_name and device_fingerprint name this device.
+  string device_name = 9;
+  string device_fingerprint = 10;
+}
+
+message StartLinkRequest {
+  LinkRole role = 1;
+  LinkMode mode = 2;
+  // scanned_text is the text of the QR code in mode scan.
+  string scanned_text = 3;
+}
+
+message StartLinkResponse {
+  LinkInfo link = 1;
+  ErrorCode error = 2;
+  string detail = 3;
+}
+
+message GetLinkRequest {}
+
+message GetLinkResponse {
+  LinkInfo link = 1;
+  ErrorCode error = 2;
+  string detail = 3;
+}
+
+message DecideLinkRequest {
+  bool approve = 1;
+}
+
+message DecideLinkResponse {
+  ErrorCode error = 1;
+  string detail = 2;
+}
+
+message ConfirmJoinRequest {
+  bool approve = 1;
+}
+
+message ConfirmJoinResponse {
+  ErrorCode error = 1;
+  string detail = 2;
+}
+
+message CancelLinkRequest {}
+
+message CancelLinkResponse {
+  ErrorCode error = 1;
+  string detail = 2;
+}
+
+// DeviceInfo is one device of the account.
+message DeviceInfo {
+  string name = 1;
+  string fingerprint = 2;
+  // added_at is RFC 3339 in UTC.
+  string added_at = 3;
+  bool is_this = 4;
+  bool is_revoked = 5;
+}
+
+message ListDevicesRequest {}
+
+message ListDevicesResponse {
+  repeated DeviceInfo devices = 1;
+  ErrorCode error = 2;
+  string detail = 3;
+}
+
+message RevokeDeviceRequest {
+  // fingerprint is the fingerprint of the device to revoke, as ListDevices shows it.
+  string fingerprint = 1;
+}
+
+message RevokeDeviceResponse {
+  ErrorCode error = 1;
+  string detail = 2;
+}

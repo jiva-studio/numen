@@ -249,7 +249,8 @@
         "**/*.go",
         "**/go.mod",
         "go.work",
-        "**/Makefile"
+        "**/Makefile",
+        "tools/checks/structure/go/deadcode/used-by-other-repositories.json"
       ],
       "tags": [
         "structure",
@@ -1671,6 +1672,23 @@
         "sh",
         "-c",
         "node --test tools/checks/style/comments/check.test.mjs && cd tools/checks/style/comments && GOWORK=off go test ./..."
+      ]
+    },
+    {
+      "name": "style/tooltips",
+      "paths": [
+        "**/*.vue"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "fast"
+      ],
+      "selftest": "style/tooltips/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/checks/style/tooltips/check.mjs"
       ]
     },
     {

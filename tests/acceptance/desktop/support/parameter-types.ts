@@ -1,4 +1,14 @@
 import { defineParameterType } from 'playwright-bdd'
+import { parsePlans } from '../drivers/sync.js'
+import { parseReader } from '../drivers/shared-reader.js'
+import {
+  type ComputerName,
+  parseComputer,
+  parseHolder,
+  parseInside,
+  parseWait,
+  parseOwnedVault,
+} from '../drivers/computer.js'
 import {
   parseArrow,
   parseExtent,
@@ -8,6 +18,12 @@ import {
   parseTarget,
   parseVaultName,
 } from '../drivers/rules.js'
+
+defineParameterType({
+  name: 'plans',
+  regexp: /"[^"]+" with \d+ GB(?:(?:, | and )"[^"]+" with \d+ GB)*/,
+  transformer: (plans: string) => parsePlans(plans),
+})
 
 defineParameterType({
   name: 'actor',
@@ -123,4 +139,76 @@ defineParameterType({
   name: 'arrow',
   regexp: / with an arrow to "[^"]+"| without an arrow|/,
   transformer: (arrow: string) => parseArrow(arrow),
+})
+
+defineParameterType({
+  name: 'presence',
+  regexp: /an|no/,
+  transformer: (presence: string) => presence === 'an',
+})
+
+defineParameterType({
+  name: 'computer',
+  regexp: /the person|the second computer/,
+  transformer: (computer: string) => parseComputer(computer),
+})
+
+defineParameterType({
+  name: 'on',
+  regexp: / on the second computer|/,
+  transformer: (on: string): ComputerName => (on === '' ? 'first' : 'second'),
+})
+
+defineParameterType({
+  name: 'owned',
+  regexp: /(?:the|its) vault "[^"]+"/,
+  transformer: (vault: string) => parseOwnedVault(vault),
+})
+
+defineParameterType({
+  name: 'holder',
+  regexp: /the second computer|the vault "[^"]+"/,
+  transformer: (holder: string) => parseHolder(holder),
+})
+
+defineParameterType({
+  name: 'inside',
+  regexp: / in (?:the|its) vault "[^"]+"|/,
+  transformer: (inside: string) => parseInside(inside),
+})
+
+defineParameterType({
+  name: 'reader',
+  regexp: /the reader|the second reader/,
+  transformer: (reader: string) => parseReader(reader),
+})
+
+defineParameterType({
+  name: 'teller',
+  regexp: /the person|the second computer|the reader|the second reader/,
+  transformer: (teller: string) => teller,
+})
+
+defineParameterType({
+  name: 'wait',
+  regexp: /(?: within "\d+" seconds)?(?: in (?:the|its) vault "[^"]+")?/,
+  transformer: (wait: string) => parseWait(wait),
+})
+
+defineParameterType({
+  name: 'working',
+  regexp: /works|does not work/,
+  transformer: (working: string) => working === 'works',
+})
+
+defineParameterType({
+  name: 'telling',
+  regexp: / without telling the computers|/,
+  transformer: (telling: string) => telling === '',
+})
+
+defineParameterType({
+  name: 'signed',
+  regexp: /signed in|not signed in/,
+  transformer: (signed: string) => signed === 'signed in',
 })

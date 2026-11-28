@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// SubscriptionService tells the subscription of the account of the session, lists the plans and starts a payment.
+service SubscriptionService {
+  // GetSubscription returns the phase of the subscription of the account of the session, its plan and its times.
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+
+  // ListPlans returns the plans the server sells, ascending by quota, with the name and the price of each.
+  rpc ListPlans(ListPlansRequest) returns (ListPlansResponse);
+
+  // CreateCheckout returns the address of a payment page for the plan and the account of the session. It is
+  // ALREADY_EXISTS while the subscription is ACTIVE and INVALID_ARGUMENT for an empty or unknown plan.
+  rpc CreateCheckout(CreateCheckoutRequest) returns (CreateCheckoutResponse);
+
+  // ChangePlan moves the ACTIVE subscription of the account to another plan and returns the subscription after the
+  // change. It is FAILED_PRECONDITION without an active subscription bought by payment, ALREADY_EXISTS for the plan
+  // the account has, INVALID_ARGUMENT for an unknown plan and UNAVAILABLE when the payment provider fails.
+  rpc ChangePlan(ChangePlanRequest) returns (ChangePlanResponse);
+
+  // ListProducts returns the products the server sells that are no plans: those without a quota, such as a one-time purchase.
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+
+  // GetEntitlements returns every product the account of the session owns right now: the phase is ACTIVE or GRACE.
+  rpc GetEntitlements(GetEntitlementsRequest) returns (GetEntitlementsResponse);
+
+  // CreatePortalSession returns the address of the customer portal of the payment provider, where the person manages the subscription.
+  // It is FAILED_PRECONDITION for an account that never paid by payment and UNAVAILABLE when the payment provider fails.
+  rpc CreatePortalSession(CreatePortalSessionRequest) returns (CreatePortalSessionResponse);
+}
+
+enum SubscriptionPhase {
+  SUBSCRIPTION_PHASE_UNSPECIFIED = 0;
+  // NONE: the account never had a subscription.
+  SUBSCRIPTION_PHASE_NONE = 1;
+  // ACTIVE: the paid period runs and writes are allowed.
+  SUBSCRIPTION_PHASE_ACTIVE = 2;
+  // GRACE: the period ended and writes are allowed until writes_end_at.
+  SUBSCRIPTION_PHASE_GRACE = 3;
+  // READ_ONLY: writes are refused and reads are allowed until delete_at.
+  SUBSCRIPTION_PHASE_READ_ONLY = 4;
+  // DELETED: the server deleted the vaults of the account.
+  SUBSCRIPTION_PHASE_DELETED = 5;
+}
+
+message GetSubscriptionRequest {}
+
+// The times are unix seconds, and 0 is none.
+message GetSubscriptionResponse {
+  SubscriptionPhase phase = 1;
+  int64 period_end_at = 2;
+  int64 writes_end_at = 3;
+  int64 delete_at = 4;
+  // plan is the id of the plan, empty while the phase is NONE.
+  string plan = 5;
+  // quota_bytes is what the plan holds, 0 while the phase is NONE.
+  uint64 quota_bytes = 6;
+  // used_bytes is the space the account uses against the quota, 0 while the phase is NONE or DELETED. It may be
+  // above quota_bytes after a change to a smaller plan.
+  uint64 used_bytes = 7;
+  // is_trial is true while the subscription runs a trial that no payment has followed; period_end_at is then the end of the trial.
+  bool is_trial = 8;
+}
+
+message Plan {
+  // id is the external id or the slug of the product of the plan.
+  string id = 1;
+  uint64 quota_bytes = 2;
+  // name is the name of the plan as the seller shows it.
+  string name = 3;
+  // price_cents is the price for one period in the smallest unit of the currency, tax included. It is information:
+  // the payment page holds the price that is charged.
+  uint64 price_cents = 4;
+  // currency is the ISO 4217 code, such as USD.
+  string currency = 5;
+}
+
+message ListPlansRequest {}
+
+message ListPlansResponse {
+  repeated Plan plans = 1;
+}
+
+message CreateCheckoutRequest {
+  string plan = 1;
+}
+
+message CreateCheckoutResponse {
+  // checkout_url is an https address, or http for a server on a loopback host.
+  string checkout_url = 1;
+}
+
+message Product {
+  // id is the id of the product at the payment provider; CreateCheckout takes it.
+  string id = 1;
+  // slug is the short name of the product, such as link.
+  string slug = 2;
+  string name = 3;
+  uint64 price_cents = 4;
+  string currency = 5;
+  // one_time is true for a single payment and false for a subscription.
+  bool one_time = 6;
+}
+
+message ListProductsRequest {}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+}
+
+message Entitlement {
+  // product is the slug of the product.
+  string product = 1;
+  // valid_until is unix seconds: the end of the paid period or of the trial, and 100 years after the purchase for a one-time product.
+  int64 valid_until = 2;
+  // phase is ACTIVE or GRACE.
+  SubscriptionPhase phase = 3;
+  // quota_bytes is 0 for a product without a quota.
+  uint64 quota_bytes = 4;
+  bool is_trial = 5;
+}
+
+message GetEntitlementsRequest {}
+
+message GetEntitlementsResponse {
+  // entitlements are ordered by product.
+  repeated Entitlement entitlements = 1;
+}
+
+message CreatePortalSessionRequest {}
+
+message CreatePortalSessionResponse {
+  // portal_url is an https address.
+  string portal_url = 1;
+}
+
+message ChangePlanRequest {
+  string plan = 1;
+}
+
+message ChangePlanResponse {
+  GetSubscriptionResponse subscription = 1;
+}

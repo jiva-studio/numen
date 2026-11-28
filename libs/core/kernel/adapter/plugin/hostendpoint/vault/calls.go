@@ -13,13 +13,10 @@ import (
 // Header is the header of a call that names the vault it works, by identity.
 const Header = "Numen-Vault"
 
-// Authority tells which plugin made a call and whether it holds a permission.
+// Authority tells which plugin made a call.
 type Authority interface {
 	// Authenticate returns the id of the plugin the Authorization header names.
 	Authenticate(authorization string) (pluginID string, err error)
-	// Authorize returns the id of the plugin the Authorization header names, and refuses a plugin
-	// without the permission.
-	Authorize(authorization, permission string) (pluginID string, err error)
 	// IsTakingFile reports whether the plugin takes the file at the path: a plugin whose manifest declares
 	// onFilesChanged with a mask takes the types it matches, and one that declares none takes every file.
 	IsTakingFile(pluginID, path string, noteTypes []domain.NoteType) bool
@@ -50,13 +47,13 @@ type calls struct {
 	source Source
 }
 
-func (c *calls) begin(header http.Header, permission string) (*Access, error) {
-	_, access, err := c.beginAs(header, permission)
+func (c *calls) begin(header http.Header) (*Access, error) {
+	_, access, err := c.beginAs(header)
 	return access, err
 }
 
-func (c *calls) beginAs(header http.Header, permission string) (string, *Access, error) {
-	pluginID, err := c.auth.Authorize(header.Get("Authorization"), permission)
+func (c *calls) beginAs(header http.Header) (string, *Access, error) {
+	pluginID, err := c.auth.Authenticate(header.Get("Authorization"))
 	if err != nil {
 		return "", nil, err
 	}
@@ -80,10 +77,10 @@ func (c *calls) selectVault(pluginID string, header http.Header) (string, *Acces
 }
 
 func serve[Q, R any](
-	ctx context.Context, c *calls, req *connect.Request[Q], permission string,
+	ctx context.Context, c *calls, req *connect.Request[Q],
 	withCode func(code v1.ErrorCode) *R, work func(access *Access) (*R, error),
 ) (*connect.Response[R], error) {
-	access, err := c.begin(req.Header(), permission)
+	access, err := c.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}

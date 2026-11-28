@@ -54,6 +54,18 @@ const (
 	// HostVaultServiceWatchIndexChangesProcedure is the fully-qualified name of the HostVaultService's
 	// WatchIndexChanges RPC.
 	HostVaultServiceWatchIndexChangesProcedure = "/numen.v1.HostVaultService/WatchIndexChanges"
+	// HostVaultServicePutAbsentFilesProcedure is the fully-qualified name of the HostVaultService's
+	// PutAbsentFiles RPC.
+	HostVaultServicePutAbsentFilesProcedure = "/numen.v1.HostVaultService/PutAbsentFiles"
+	// HostVaultServiceListAbsentFilesProcedure is the fully-qualified name of the HostVaultService's
+	// ListAbsentFiles RPC.
+	HostVaultServiceListAbsentFilesProcedure = "/numen.v1.HostVaultService/ListAbsentFiles"
+	// HostVaultServiceFillFileProcedure is the fully-qualified name of the HostVaultService's FillFile
+	// RPC.
+	HostVaultServiceFillFileProcedure = "/numen.v1.HostVaultService/FillFile"
+	// HostVaultServiceEvictFileProcedure is the fully-qualified name of the HostVaultService's
+	// EvictFile RPC.
+	HostVaultServiceEvictFileProcedure = "/numen.v1.HostVaultService/EvictFile"
 )
 
 // HostVaultServiceClient is a client for the numen.v1.HostVaultService service.
@@ -79,6 +91,20 @@ type HostVaultServiceClient interface {
 	// until the caller disconnects. A message does not say what changed. The first
 	// message is sent at once, to confirm the watch is active.
 	WatchIndexChanges(context.Context, *connect.Request[v1.WatchIndexChangesRequest]) (*connect.ServerStreamForClient[v1.WatchIndexChangesResponse], error)
+	// PutAbsentFiles lists files whose bytes are not on this device, replacing the entry of each path.
+	// The tree shows them and a read of one fails with FILE_ABSENT. A path with a file of another
+	// content hash is refused. It needs vault:write.
+	PutAbsentFiles(context.Context, *connect.Request[v1.PutAbsentFilesRequest]) (*connect.Response[v1.PutAbsentFilesResponse], error)
+	// ListAbsentFiles lists the files put absent in the vault. It needs vault:read.
+	ListAbsentFiles(context.Context, *connect.Request[v1.ListAbsentFilesRequest]) (*connect.Response[v1.ListAbsentFilesResponse], error)
+	// FillFile places the bytes of a file of the plugin's store folder at an absent path, once their
+	// SHA-256 equals the hash of the entry. It writes no file change event the plugin would upload.
+	// It needs vault:write.
+	FillFile(context.Context, *connect.Request[v1.FillFileRequest]) (*connect.Response[v1.FillFileResponse], error)
+	// EvictFile deletes the bytes of a file whose SHA-256 equals the expected hash and lists the file as
+	// absent. It writes no removal event and no trash entry. A file of another hash is refused with
+	// CHANGED. It needs vault:write.
+	EvictFile(context.Context, *connect.Request[v1.EvictFileRequest]) (*connect.Response[v1.EvictFileResponse], error)
 }
 
 // NewHostVaultServiceClient constructs a client for the numen.v1.HostVaultService service. By
@@ -134,6 +160,30 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("WatchIndexChanges")),
 			connect.WithClientOptions(opts...),
 		),
+		putAbsentFiles: connect.NewClient[v1.PutAbsentFilesRequest, v1.PutAbsentFilesResponse](
+			httpClient,
+			baseURL+HostVaultServicePutAbsentFilesProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("PutAbsentFiles")),
+			connect.WithClientOptions(opts...),
+		),
+		listAbsentFiles: connect.NewClient[v1.ListAbsentFilesRequest, v1.ListAbsentFilesResponse](
+			httpClient,
+			baseURL+HostVaultServiceListAbsentFilesProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("ListAbsentFiles")),
+			connect.WithClientOptions(opts...),
+		),
+		fillFile: connect.NewClient[v1.FillFileRequest, v1.FillFileResponse](
+			httpClient,
+			baseURL+HostVaultServiceFillFileProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("FillFile")),
+			connect.WithClientOptions(opts...),
+		),
+		evictFile: connect.NewClient[v1.EvictFileRequest, v1.EvictFileResponse](
+			httpClient,
+			baseURL+HostVaultServiceEvictFileProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("EvictFile")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -146,6 +196,10 @@ type hostVaultServiceClient struct {
 	listParseProblems *connect.Client[v1.ListParseProblemsRequest, v1.ListParseProblemsResponse]
 	listVaultProblems *connect.Client[v1.ListVaultProblemsRequest, v1.ListVaultProblemsResponse]
 	watchIndexChanges *connect.Client[v1.WatchIndexChangesRequest, v1.WatchIndexChangesResponse]
+	putAbsentFiles    *connect.Client[v1.PutAbsentFilesRequest, v1.PutAbsentFilesResponse]
+	listAbsentFiles   *connect.Client[v1.ListAbsentFilesRequest, v1.ListAbsentFilesResponse]
+	fillFile          *connect.Client[v1.FillFileRequest, v1.FillFileResponse]
+	evictFile         *connect.Client[v1.EvictFileRequest, v1.EvictFileResponse]
 }
 
 // GetHostVault calls numen.v1.HostVaultService.GetHostVault.
@@ -183,6 +237,26 @@ func (c *hostVaultServiceClient) WatchIndexChanges(ctx context.Context, req *con
 	return c.watchIndexChanges.CallServerStream(ctx, req)
 }
 
+// PutAbsentFiles calls numen.v1.HostVaultService.PutAbsentFiles.
+func (c *hostVaultServiceClient) PutAbsentFiles(ctx context.Context, req *connect.Request[v1.PutAbsentFilesRequest]) (*connect.Response[v1.PutAbsentFilesResponse], error) {
+	return c.putAbsentFiles.CallUnary(ctx, req)
+}
+
+// ListAbsentFiles calls numen.v1.HostVaultService.ListAbsentFiles.
+func (c *hostVaultServiceClient) ListAbsentFiles(ctx context.Context, req *connect.Request[v1.ListAbsentFilesRequest]) (*connect.Response[v1.ListAbsentFilesResponse], error) {
+	return c.listAbsentFiles.CallUnary(ctx, req)
+}
+
+// FillFile calls numen.v1.HostVaultService.FillFile.
+func (c *hostVaultServiceClient) FillFile(ctx context.Context, req *connect.Request[v1.FillFileRequest]) (*connect.Response[v1.FillFileResponse], error) {
+	return c.fillFile.CallUnary(ctx, req)
+}
+
+// EvictFile calls numen.v1.HostVaultService.EvictFile.
+func (c *hostVaultServiceClient) EvictFile(ctx context.Context, req *connect.Request[v1.EvictFileRequest]) (*connect.Response[v1.EvictFileResponse], error) {
+	return c.evictFile.CallUnary(ctx, req)
+}
+
 // HostVaultServiceHandler is an implementation of the numen.v1.HostVaultService service.
 type HostVaultServiceHandler interface {
 	// GetHostVault names the vault the host is showing. A host showing none answers
@@ -206,6 +280,20 @@ type HostVaultServiceHandler interface {
 	// until the caller disconnects. A message does not say what changed. The first
 	// message is sent at once, to confirm the watch is active.
 	WatchIndexChanges(context.Context, *connect.Request[v1.WatchIndexChangesRequest], *connect.ServerStream[v1.WatchIndexChangesResponse]) error
+	// PutAbsentFiles lists files whose bytes are not on this device, replacing the entry of each path.
+	// The tree shows them and a read of one fails with FILE_ABSENT. A path with a file of another
+	// content hash is refused. It needs vault:write.
+	PutAbsentFiles(context.Context, *connect.Request[v1.PutAbsentFilesRequest]) (*connect.Response[v1.PutAbsentFilesResponse], error)
+	// ListAbsentFiles lists the files put absent in the vault. It needs vault:read.
+	ListAbsentFiles(context.Context, *connect.Request[v1.ListAbsentFilesRequest]) (*connect.Response[v1.ListAbsentFilesResponse], error)
+	// FillFile places the bytes of a file of the plugin's store folder at an absent path, once their
+	// SHA-256 equals the hash of the entry. It writes no file change event the plugin would upload.
+	// It needs vault:write.
+	FillFile(context.Context, *connect.Request[v1.FillFileRequest]) (*connect.Response[v1.FillFileResponse], error)
+	// EvictFile deletes the bytes of a file whose SHA-256 equals the expected hash and lists the file as
+	// absent. It writes no removal event and no trash entry. A file of another hash is refused with
+	// CHANGED. It needs vault:write.
+	EvictFile(context.Context, *connect.Request[v1.EvictFileRequest]) (*connect.Response[v1.EvictFileResponse], error)
 }
 
 // NewHostVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -257,6 +345,30 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("WatchIndexChanges")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostVaultServicePutAbsentFilesHandler := connect.NewUnaryHandler(
+		HostVaultServicePutAbsentFilesProcedure,
+		svc.PutAbsentFiles,
+		connect.WithSchema(hostVaultServiceMethods.ByName("PutAbsentFiles")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceListAbsentFilesHandler := connect.NewUnaryHandler(
+		HostVaultServiceListAbsentFilesProcedure,
+		svc.ListAbsentFiles,
+		connect.WithSchema(hostVaultServiceMethods.ByName("ListAbsentFiles")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceFillFileHandler := connect.NewUnaryHandler(
+		HostVaultServiceFillFileProcedure,
+		svc.FillFile,
+		connect.WithSchema(hostVaultServiceMethods.ByName("FillFile")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceEvictFileHandler := connect.NewUnaryHandler(
+		HostVaultServiceEvictFileProcedure,
+		svc.EvictFile,
+		connect.WithSchema(hostVaultServiceMethods.ByName("EvictFile")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostVaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostVaultServiceGetHostVaultProcedure:
@@ -273,6 +385,14 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceListVaultProblemsHandler.ServeHTTP(w, r)
 		case HostVaultServiceWatchIndexChangesProcedure:
 			hostVaultServiceWatchIndexChangesHandler.ServeHTTP(w, r)
+		case HostVaultServicePutAbsentFilesProcedure:
+			hostVaultServicePutAbsentFilesHandler.ServeHTTP(w, r)
+		case HostVaultServiceListAbsentFilesProcedure:
+			hostVaultServiceListAbsentFilesHandler.ServeHTTP(w, r)
+		case HostVaultServiceFillFileProcedure:
+			hostVaultServiceFillFileHandler.ServeHTTP(w, r)
+		case HostVaultServiceEvictFileProcedure:
+			hostVaultServiceEvictFileHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -308,4 +428,20 @@ func (UnimplementedHostVaultServiceHandler) ListVaultProblems(context.Context, *
 
 func (UnimplementedHostVaultServiceHandler) WatchIndexChanges(context.Context, *connect.Request[v1.WatchIndexChangesRequest], *connect.ServerStream[v1.WatchIndexChangesResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.WatchIndexChanges is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) PutAbsentFiles(context.Context, *connect.Request[v1.PutAbsentFilesRequest]) (*connect.Response[v1.PutAbsentFilesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.PutAbsentFiles is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) ListAbsentFiles(context.Context, *connect.Request[v1.ListAbsentFilesRequest]) (*connect.Response[v1.ListAbsentFilesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ListAbsentFiles is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) FillFile(context.Context, *connect.Request[v1.FillFileRequest]) (*connect.Response[v1.FillFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.FillFile is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) EvictFile(context.Context, *connect.Request[v1.EvictFileRequest]) (*connect.Response[v1.EvictFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.EvictFile is not implemented"))
 }

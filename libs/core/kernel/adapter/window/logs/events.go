@@ -21,3 +21,12 @@ func ReportError(record func(domainlogs.Entry), report func(error), message stri
 		}
 	}
 }
+
+// NewRecordFunc returns the function that records an entry and hands the failure of recording to report, where there is one.
+func NewRecordFunc(record Recorder, report func(error)) func(domainlogs.Entry) {
+	return func(entry domainlogs.Entry) {
+		if err := record.Execute(entry); err != nil && report != nil {
+			report(err)
+		}
+	}
+}

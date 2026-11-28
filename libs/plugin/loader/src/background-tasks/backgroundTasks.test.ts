@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref, type Ref } from 'vue'
 import type { BackgroundTask } from '@numen/plugin-sdk'
 import type { WorkTask as Task } from './backgroundTask'
-import { createBackgroundTaskHost, type BackgroundTaskHostDeps } from './backgroundTasks'
+import { createBackgroundTaskHost } from './backgroundTasks'
+
+type BackgroundTaskHostDeps = Parameters<typeof createBackgroundTaskHost>[0]
 
 const pick = <T>(list: readonly T[], pos: number): T => {
   const found = list[pos]

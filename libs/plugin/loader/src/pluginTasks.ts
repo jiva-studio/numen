@@ -6,7 +6,7 @@ import type { CoreTask } from '@numen/core-client'
 import type { PluginTaskStatus, TaskHost } from '@numen/plugin-sdk'
 
 /** One piece of work in the window's task list, as the window reports it. */
-export type WindowTask = Pick<CoreTask, 'id' | 'label' | 'about' | 'error'> & {
+type WindowTask = Pick<CoreTask, 'id' | 'label' | 'about' | 'error'> & {
   readonly progress: Pick<CoreTask['progress'], 'completedCount' | 'total'>
   readonly source: Pick<CoreTask['source'], 'pluginId' | 'pluginName'>
 }

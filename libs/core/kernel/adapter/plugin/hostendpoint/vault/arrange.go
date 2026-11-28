@@ -9,7 +9,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -53,7 +52,7 @@ func checkBatch(paths []string) error {
 func (e *arrangeCalls) ListVaultProblems(
 	ctx context.Context, req *connect.Request[v1.ListVaultProblemsRequest],
 ) (*connect.Response[v1.ListVaultProblemsResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +87,7 @@ func (e *arrangeCalls) ListVaultProblems(
 func (e *arrangeCalls) RenameNote(
 	ctx context.Context, req *connect.Request[v1.HostNoteServiceRenameNoteRequest],
 ) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +123,7 @@ func (e *arrangeCalls) MoveNotes(
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
 		return nil, err
 	}
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +169,7 @@ func (e *arrangeCalls) RemoveNotes(
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
 		return nil, err
 	}
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +215,7 @@ func isCanceled(ctx context.Context) bool {
 func (e *arrangeCalls) ListParseProblems(
 	ctx context.Context, req *connect.Request[v1.ListParseProblemsRequest],
 ) (*connect.Response[v1.ListParseProblemsResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}

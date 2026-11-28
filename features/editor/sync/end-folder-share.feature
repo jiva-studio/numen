@@ -1,0 +1,21 @@
+@live
+Feature: End the access to a shared folder
+
+  A person removes the access of a device to a folder. The reader keeps what it has and gets nothing more.
+
+  As a person who keeps notes in Numen
+  I want to stop another person from getting more of my notes of one folder
+  So that the notes I write later stay mine
+
+  Scenario: The reader keeps what it has and gets no more
+    Given the person has the synced vault "Test"
+    And the person writes the note "Food/Shopping list" with the text "milk" in the vault "Test"
+    And the person writes the note "Plan" with the text "tea" in the vault "Test"
+    And the reader sets up an identity
+    And the person shares the folder "Food" of the vault "Test" with the reader
+    And the reader has the note "Shopping list" with the text "milk" in the shared vault "Food"
+    When the person removes the access of the device of the reader to the folder "Food"
+    And the person writes the note "Food/Menu" with the text "soup" in the vault "Test"
+    Then the reader is told "The person stopped sharing this folder" in the shared vault "Food"
+    And the reader has the note "Shopping list" with the text "milk" in the shared vault "Food"
+    And the reader does not have the file "Menu.md" in the shared vault "Food"

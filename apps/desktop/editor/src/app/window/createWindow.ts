@@ -14,6 +14,7 @@ import { createWindowStart } from './createWindowStart'
 export const createWindow = (transports: WindowTransports) => {
   const base = createWindowBase(createWindowApi(transports))
   const { foundation, tabs, tabParts, vault, windowSettings, getTarget, appCommands } = base
+  const { picker } = base
   const { api, log, rest, frame, status, registry, connections, settingsRequests } = foundation
   const plugins = createWindowPlugins({
     foundation: { api, log, rest, frame, status, registry },
@@ -22,6 +23,7 @@ export const createWindow = (transports: WindowTransports) => {
     windowSettings,
     getTarget,
     appCommands,
+    picker,
   })
   const palettes = createWindowPalettes({
     foundation: { api, log, rest, registry, settingsRequests },

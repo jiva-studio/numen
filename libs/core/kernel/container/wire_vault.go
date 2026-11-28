@@ -22,15 +22,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func (c Config) openRegistry() (vaultregistry.Ports, error) {
-	return openVaultRegistry(c.RegistryPath)
-}
-
 // EnsureVault has the folder at root on the list of vaults and returns its vault. A folder that is on the list is
 // returned as it is; otherwise it is added under name, and it is recorded as the vault opened last when
 // isRecordedOpened is set.
 func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened bool) (domain.Vault, error) {
-	ports, err := c.openRegistry()
+	ports, err := openVaultRegistry(c.RegistryPath)
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -42,8 +38,11 @@ func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened 
 
 func (c Config) openIndex(res *Resources, ctx context.Context) (*vaultIndex, error) {
 	timer := GetClock(res)
-	record := openRecordLog(c.IndexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, timer)
-	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(timer, recordLogFunc(record, res.ErrorHandler)))
+	db, err := openIndexAt(ctx, c.IndexPath, index.WithQueryLog(timer, openOptionalRecordLog(c.IndexPath, res)))
+	if err == nil && c.Absent {
+		res.absentFiles = db.AbsentFiles()
+	}
+	return db, err
 }
 
 // vaultParts holds the filesystem ports and indexing callbacks of an installation.
@@ -54,15 +53,16 @@ type vaultParts struct {
 	Readers      vaultport.VaultReaders
 	Writers      vaultwriter.VaultWriters
 	Watcher      vaultwatch.Watcher
-	Clock        installationClock
+	Clock        timeSource
 	TextVersions *textVersions
 	SyncSetting  naming.SyncSetting
 	CutNotes     chunking.CutNotes
 	SetNoteCut   func(*indexing.Scan)
 	RecordLog    index.QueryLogFunc
+	AbsentFiles  vaultport.AbsentFiles
 }
 
-func openVaultAccess(paths Paths, timer installationClock, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultParts {
+func openVaultAccess(paths Paths, timer timeSource, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultParts {
 	options := vaultconfig.Options{ServiceDir: paths.ServiceDir}
 	return vaultParts{
 		IndexPath:    paths.IndexPath,

@@ -28,6 +28,7 @@ type Info struct {
 	HasBackend     bool
 	Readers        []ReaderInfo
 	SettingsViews  []manifest.SettingsView
+	SettingsTabs   []manifest.SettingsTab
 	SettingGroups  []manifest.SettingGroup
 	Contributions  []Contribution
 	IsOffByDefault bool

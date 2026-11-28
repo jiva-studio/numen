@@ -2,10 +2,14 @@ package hostendpoint
 
 import (
 	"context"
+	"errors"
+	"time"
+
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -45,22 +49,119 @@ type WorkQueue interface {
 	ClearPlugin(pluginID string)
 }
 
+// Account is what a plugin with the identity permission may ask of the identity of this device. The
+// seal and sign calls return identity.ErrNoIdentity when the device holds none.
+type Account interface {
+	// SignAsDevice signs message with the device key under the plugin id.
+	SignAsDevice(ctx context.Context, pluginID string, message []byte) ([]byte, error)
+	// GetPublicIdentity returns what is public of the identity of this device.
+	GetPublicIdentity(ctx context.Context) (identitydomain.Public, error)
+	// SealData seals plain for the plugin under the context with the account keys of this device.
+	SealData(ctx context.Context, pluginID string, dataContext, plain []byte) ([]byte, error)
+	// OpenData opens what SealData sealed for the plugin and the context; failure is identity.ErrCannotOpen.
+	OpenData(ctx context.Context, pluginID string, dataContext, sealed []byte) ([]byte, error)
+	// OpenSealedBox opens a box sealed to the account box key for the plugin and the context; failure is identity.ErrCannotOpen.
+	OpenSealedBox(ctx context.Context, pluginID string, boxContext, sealed []byte) ([]byte, error)
+}
+
+// AccountRestore is what a plugin with the identity permission may ask of the restore of an identity that waits
+// for the chain of the server. Its calls return identity.ErrNoPendingRestore when none is pending.
+type AccountRestore interface {
+	// GetPendingRestore returns the public keys of the restore that waits for a chain.
+	GetPendingRestore(ctx context.Context) (identitydomain.PendingRestore, error)
+	// SignAsRecovery signs with the recovery key of the pending restore.
+	SignAsRecovery(ctx context.Context, pluginID string, message []byte) ([]byte, error)
+	// CompleteRestore finishes the pending restore with the chain of the server, or with none.
+	CompleteRestore(ctx context.Context, pluginID string, chain []byte) error
+}
+
+// AccountLink is what a plugin with the identity permission may ask of the link in progress: it carries the blobs of the
+// link between the core and the relay of the sync server. Its calls return identity.ErrNoLink when no link is in progress.
+type AccountLink interface {
+	// GetLinkWork returns what the courier carries; it waits for a change when the version is the one given.
+	GetLinkWork(ctx context.Context, sinceVersion uint64, wait time.Duration) (identitydomain.LinkWork, error)
+	// SetLinkChannel gives the link the channel the courier made.
+	SetLinkChannel(ctx context.Context, id []byte) error
+	// PutLinkInbound hands the core a blob of the other side.
+	PutLinkInbound(ctx context.Context, blob []byte) error
+}
+
+// AccountChain is what a plugin with the identity permission may ask of the chain of this device: the chain the core
+// waits to have accepted by the server, and the chain the server holds.
+type AccountChain interface {
+	// GetChainPublish returns the chain the server must hold before the core goes on.
+	GetChainPublish(ctx context.Context) (identitydomain.ChainPublish, error)
+	// PutChainPublished tells the core the answer of the server.
+	PutChainPublished(ctx context.Context, accepted bool, latest []byte) error
+	// AdoptChain gives the core a chain the server holds.
+	AdoptChain(ctx context.Context, chain []byte) error
+}
+
+// Activation is what the host knows of a plugin that runs: who made a call and what that plugin may do, and the
+// leases that hold it from being stopped.
+type Activation interface {
+	Identity
+	Leases
+}
+
+// DependencyCalls is what a plugin may ask of the files the host provisions. A host without them answers that it
+// has no dependency service.
+type DependencyCalls interface {
+	// FetchModelFile returns the path of the model file at an address, fetching it when it is not on this machine.
+	FetchModelFile(ctx context.Context, address, digest string) (string, error)
+	// FetchDeclaredModel returns the path of the model that the manifest of pluginID declares under id.
+	FetchDeclaredModel(ctx context.Context, pluginID, id string) (string, error)
+}
+
+// errNoDependencyUseCase is a dependency call whose use case the host did not wire.
+var errNoDependencyUseCase = errors.New("the host has no dependency service")
+
+// DependencyUseCases serves DependencyCalls with the use cases that fetch a model file and a declared model.
+type DependencyUseCases struct {
+	Model    *plugindependency.Fetch
+	Declared *plugindependency.FetchDeclaredModel
+}
+
+func (d DependencyUseCases) FetchModelFile(ctx context.Context, address, digest string) (string, error) {
+	if d.Model == nil {
+		return "", errNoDependencyUseCase
+	}
+	return d.Model.Execute(ctx, address, digest)
+}
+
+func (d DependencyUseCases) FetchDeclaredModel(ctx context.Context, pluginID, id string) (string, error) {
+	if d.Declared == nil {
+		return "", errNoDependencyUseCase
+	}
+	return d.Declared.Execute(ctx, pluginID, id)
+}
+
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
-// plugin may do, and what the host lends the plugin to work with. Dependencies fetches a file by its address and
-// DeclaredDependencies a model the manifest of the plugin declares. Lent holds what exists only while a
+// plugin may do, and what the host lends the plugin to work with. Dependencies fetches the files the plugin asks for. Lent holds what exists only while a
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file. CallCancels holds the cancels of the calls of connections.
 type Callers struct {
-	Dependencies         *plugindependency.Fetch
-	DeclaredDependencies *plugindependency.FetchDeclaredModel
-	Identity             Identity
-	Leases               Leases
-	Lent                 *Services
-	GetTools             func() PluginTools
-	Health               HealthCalls
-	Processes            ProcessRelease
-	Files                FileTypes
-	CallCancels          *searchcancel.Searches
+	Dependencies DependencyCalls
+	Activation   Activation
+	Lent         *Services
+	GetTools     func() PluginTools
+	Health       HealthCalls
+	Processes    ProcessRelease
+	Files        FileTypes
+	CallCancels  *searchcancel.Searches
+}
+
+// AccountCalls is what a plugin with the identity permission may ask of the identity of this device. Each part is nil
+// where the host holds no identity.
+type AccountCalls struct {
+	Account Account
+	Restore AccountRestore
+	Link    AccountLink
+	Chain   AccountChain
+}
+
+func (c AccountCalls) isServed() bool {
+	return c.Account != nil || c.Restore != nil || c.Link != nil || c.Chain != nil
 }
 
 // LogWriter records a structured log entry reported by a plugin backend.
@@ -93,9 +194,23 @@ type HealthClear interface {
 
 // HealthCalls is what a plugin says about whether it works. A host without them answers that it keeps
 // no health items.
-type HealthCalls struct {
+type HealthCalls interface {
+	ReportHealth(pluginID string, item plugin.HealthItem) error
+	ClearHealth(pluginID, key string) error
+}
+
+// HealthUseCases serves HealthCalls with the use cases that report and clear a health item.
+type HealthUseCases struct {
 	Report HealthReport
 	Clear  HealthClear
+}
+
+func (h HealthUseCases) ReportHealth(pluginID string, item plugin.HealthItem) error {
+	return h.Report.Execute(pluginID, item)
+}
+
+func (h HealthUseCases) ClearHealth(pluginID, key string) error {
+	return h.Clear.Execute(pluginID, key)
 }
 
 // TextVersions is the text versions of the vaults, as the plugins that call the host work them.

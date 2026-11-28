@@ -80,7 +80,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	// baseline both pass the comparison.
 	w.lock.write.Lock()
 	defer w.lock.write.Unlock()
-	mode, err := getWriteMode(root, name, path, stat)
+	mode, err := getWriteMode(ctx, root, name, path, stat)
 	if err != nil {
 		return vault.WriteResult{}, err
 	}
@@ -97,7 +97,16 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	return vault.WriteResult{Stat: replaced, Version: version}, nil
 }
 
-func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
+func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
+	return movePath(ctx, w, from, to, nil)
+}
+
+// MoveFileWithHash compares the source hash and renames the file under one vault write lock.
+func (w *VaultWriter) MoveFileWithHash(ctx context.Context, from, to, hash string) error {
+	return movePath(ctx, w, from, to, &hash)
+}
+
+func movePath(ctx context.Context, w *VaultWriter, from, to string, hash *string) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -126,17 +135,30 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 	defer closeAndJoin(&err, root)
 	w.lock.write.Lock()
 	defer w.lock.write.Unlock()
-	leaves, err := w.getRelativeName(source)
+	leaves, err := getRelativeName(w.root, source)
 	if err != nil {
 		return err
 	}
 
+	if hash != nil {
+		if err := checkMoveHash(ctx, root, leaves, from, *hash); err != nil {
+			return err
+		}
+	}
 	if err := checkMoveTarget(root, leaves, arrives, from, to); err != nil {
 		return err
 	}
+	return renameToTarget(ctx, root, leaves, arrives, to, hash != nil)
+}
 
+func renameToTarget(ctx context.Context, root *os.Root, leaves, arrives, to string, hasBaseline bool) error {
 	if err := createParents(root, filepath.Dir(arrives), to); err != nil {
 		return err
+	}
+	if hasBaseline {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 	}
 	return atomicfile.Rename(ctx, root, leaves, arrives)
 }
@@ -162,7 +184,7 @@ func (w *VaultWriter) CheckMoveTarget(ctx context.Context, from, to string) (err
 		return err
 	}
 	defer closeAndJoin(&err, root)
-	leaves, err := w.getRelativeName(source)
+	leaves, err := getRelativeName(w.root, source)
 	if err != nil {
 		return err
 	}
@@ -215,8 +237,39 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) (err error) {
 	return nil
 }
 
+// RemoveUnchanged deletes the file at path when its size and modification time are the ones of was, and
+// returns vault.ErrChanged and keeps the file when they are not. The comparison and the deletion happen under
+// the write lock, so a save through the writer cannot come between them.
+func (w *VaultWriter) RemoveUnchanged(ctx context.Context, path string, was domain.FileStat) (err error) {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	target, err := w.resolvePath(path)
+	if err != nil {
+		return err
+	}
+	root, name, err := w.openRoot(target)
+	if err != nil {
+		return err
+	}
+	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
+	info, err := root.Lstat(name)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if info.IsDir() || info.Size() != was.Size || !info.ModTime().Equal(was.ModTime) {
+		return fmt.Errorf("remove %s: %w", path, vault.ErrChanged)
+	}
+	return root.Remove(name)
+}
+
 func (w *VaultWriter) resolveNotePath(path string) (string, error) {
-	target, err := w.getContainedPath(path)
+	target, err := vaultconfig.GetContainedPath(w.root, path, w.opts.GetServiceDir())
 	if err != nil {
 		return "", err
 	}
@@ -227,7 +280,7 @@ func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 }
 
 func (w *VaultWriter) resolvePath(path string) (string, error) {
-	target, err := w.getContainedPath(path)
+	target, err := vaultconfig.GetContainedPath(w.root, path, w.opts.GetServiceDir())
 	if err != nil {
 		return "", err
 	}
@@ -256,12 +309,8 @@ func (w *VaultWriter) resolveWritableFile(path string, isWritable func(string) b
 	return resolved, nil
 }
 
-func (w *VaultWriter) getContainedPath(path string) (string, error) {
-	return vaultconfig.GetContainedPath(w.root, path, w.opts.GetServiceDir())
-}
-
 func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
-	name, err := w.getRelativeName(target)
+	name, err := getRelativeName(w.root, target)
 	if err != nil {
 		return nil, "", err
 	}

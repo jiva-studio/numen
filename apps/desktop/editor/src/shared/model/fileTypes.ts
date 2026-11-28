@@ -30,6 +30,10 @@ export interface Entry {
   readonly type: NoteType
   readonly tabKind?: string
   readonly modifiedAt?: number
+  readonly isAbsent?: boolean
+  readonly provider?: string
+  readonly isDownloading?: boolean
+  readonly downloadProgress?: number
 }
 
 /** Where a note was filed, or why none was made. */

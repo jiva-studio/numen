@@ -36,6 +36,17 @@ func NewAdd(
 // directory is the caller's responsibility; a use case must not depend on where it
 // was invoked from.
 func (u Add) Execute(root, name string) (domain.Vault, error) {
+	return u.add(root, name, "")
+}
+
+// ExecuteManaged is Execute for a vault that only the plugin with the id managedBy writes. The attribute is stored
+// with the vault on the list. It is given only to a folder that is no vault yet: a folder that carries a vault
+// identity is refused with ErrManagedExisting, so a plugin cannot take a vault of the person.
+func (u Add) ExecuteManaged(root, name, managedBy string) (domain.Vault, error) {
+	return u.add(root, name, managedBy)
+}
+
+func (u Add) add(root, name, managedBy string) (domain.Vault, error) {
 	if !domain.IsAbsPath(root) {
 		return domain.Vault{}, fmt.Errorf("%s is not an absolute path", root)
 	}
@@ -55,6 +66,10 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 
+	if err := u.checkNew(root, managedBy); err != nil {
+		return domain.Vault{}, err
+	}
+
 	id, err := u.identity.EnsureIdentity(root, u.now.Now())
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("%s cannot be given a vault identity: %w", root, err)
@@ -71,13 +86,11 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	if found && existing.Path != root {
-		if err := u.checkNotCopy(id, root, existing.Path); err != nil {
-			return domain.Vault{}, err
-		}
+	if err := u.checkNotCopy(id, root, existing, found); err != nil {
+		return domain.Vault{}, err
 	}
 
-	v := domain.Vault{ID: id, Name: name, Path: root}
+	v := domain.Vault{ID: id, Name: name, Path: root, ManagedBy: getManager(existing, found, managedBy)}
 	if v.Name == "" {
 		// The folder name is what the user already calls this collection.
 		v.Name = domain.GetBasePath(root)
@@ -89,7 +102,25 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	return v, nil
 }
 
-func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
+func (u Add) checkNew(root, managedBy string) error {
+	if managedBy == "" {
+		return nil
+	}
+	_, carriesIt, err := u.identity.GetVaultID(root)
+	if err != nil {
+		return err
+	}
+	if carriesIt {
+		return domain.NewDetailError(fmt.Sprintf("%s is a vault already", root), vaultdomain.ErrManagedExisting)
+	}
+	return nil
+}
+
+func (u Add) checkNotCopy(id domain.VaultID, root string, existing domain.Vault, found bool) error {
+	if !found || existing.Path == root {
+		return nil
+	}
+	oldPath := existing.Path
 	stillThere, carriesIt, err := u.identity.GetVaultID(oldPath)
 	if err != nil {
 		return err
@@ -100,4 +131,11 @@ func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
 			root, oldPath, root), vaultdomain.ErrCopy)
 	}
 	return nil
+}
+
+func getManager(existing domain.Vault, found bool, managedBy string) string {
+	if managedBy == "" && found {
+		return existing.ManagedBy
+	}
+	return managedBy
 }

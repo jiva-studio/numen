@@ -1,5 +1,5 @@
 /** A key press as far as this module reads it: where it landed. */
-export interface Press {
+interface Press {
   readonly target: object | null
 }
 

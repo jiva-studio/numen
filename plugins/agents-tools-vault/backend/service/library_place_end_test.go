@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
@@ -36,7 +37,7 @@ func newRiverLibrary(t *testing.T) *tools.Registry {
 		{Text: riverPage, Selector: `{"page":1}`},
 	})
 
-	search := hosttest.NewSearch(testVault)
+	search := searchtest.NewSearch(testVault)
 	search.SetIndexedResults([]host.SearchResult{
 		{Path: riverTalkPath, Text: "The river bends at the mill.", PlaceLabel: "00:12", Start: 0, Length: 28, Selector: `{"t":[12.5,20]}`},
 		{Path: riverTalkPath, Text: "Otters live under the bank.", PlaceLabel: "00:20", Start: 29, Length: 27, Selector: `{"t":[20]}`},

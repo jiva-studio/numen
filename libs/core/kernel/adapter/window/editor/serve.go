@@ -13,11 +13,12 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// PathDialog is the native dialog the application gives the window to choose a file or a folder. It
-// answers the folder a person chose, and false when none was chosen.
+// PathDialog is the native dialog the application gives the window to choose a file or a folder, or
+// the file to save to. It answers the path a person chose, and false when none was chosen.
 type PathDialog interface {
 	ChooseFolder(ctx context.Context, title, startingAt string) (string, bool, error)
 	ChooseFile(ctx context.Context, title, startingAt string, accept []string) (string, bool, error)
+	ChooseSaveFile(ctx context.Context, title, name string, accept []string) (string, bool, error)
 }
 
 // Starter opens the first vault of the window and the passes behind it.

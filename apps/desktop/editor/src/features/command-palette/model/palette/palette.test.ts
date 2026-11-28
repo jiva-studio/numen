@@ -6,6 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
+import { Folder } from '@lucide/vue'
 import { runSupport } from './runSupport'
 import type { StepGroup } from '@/shared/model/command'
 import type { NoteLookup, PaletteLists } from '../../types'
@@ -62,6 +63,7 @@ const vault = (id: string, name: string, isMissing = false): Vault => ({
   name,
   path: `/vaults/${name}`,
   isMissing: isMissing,
+  isReadOnly: false,
 })
 
 const installation = (...vaults: readonly Vault[]): VaultList => ({
@@ -691,6 +693,14 @@ describe('a command that offers a list the window holds', () => {
     expect(commands.view.findItemIcon()).toBe(findIcon(THEME_ID))
   })
 
+  it('draws a vault of this device with the folder icon in the vault step', () => {
+    const { commands } = createPalette({}, [], target)
+
+    commands.palette.startCommand('app:vault.open', front())
+
+    expect(commands.view.findItemIcon()).toBe(Folder)
+  })
+
   it('offers each command the list it holds for that command', () => {
     const { commands } = createPalette({}, [], target)
     commands.palette.startCommand(MODE_ID, front())
@@ -923,6 +933,15 @@ describe('a command that asks for a vault', () => {
       'heat',
     ])
     expect(commands.view.groups.value[0]?.items[1]?.detail).toBe('/vaults/Heat')
+  })
+
+  it('marks the vault another plugin manages as read only', async () => {
+    const shared = { ...vault('food', 'Food'), isReadOnly: true }
+    const { commands } = createPalette({}, [], {}, installation(shared))
+    commands.palette.startCommand('app:vault.open', front())
+    await settle()
+
+    expect(commands.view.groups.value[0]?.items[0]?.detail).toBe(`${words.readOnly} · /vaults/Food`)
   })
 
   /** The folder may be on an unmounted volume, and the vault stays listed. */

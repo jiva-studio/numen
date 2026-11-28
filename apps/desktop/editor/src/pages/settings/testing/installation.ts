@@ -4,6 +4,24 @@ import { asFailure, asValue } from '@numen/result'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Installation, SettingsTabState } from '../types'
 import type { CatalogEntry } from '@/entities/plugin'
+import { createKeyFileStore } from '@/entities/key-file'
+
+export const createInertKeyFile = () =>
+  createKeyFileStore(
+    {
+      getState: () =>
+        Promise.resolve({
+          isInUse: false,
+          mode: 'unset',
+          isChoiceNeeded: false,
+          isLocked: false,
+          warning: '',
+        }),
+      choose: () => Promise.resolve(asValue(undefined)),
+      unlock: () => Promise.resolve(asValue(undefined)),
+    },
+    () => undefined,
+  )
 
 type Flat<T> = { [K in keyof T]: T[K] }
 
@@ -16,6 +34,7 @@ export type InstallationOverrides = Flat<
     Partial<Omit<Installation['connections'], 'edits'>> &
     Partial<Installation['connections']['edits']> & {
       readonly licenses?: Installation['licenses']
+      readonly identity?: Installation['identity']
     }
 >
 
@@ -36,6 +55,7 @@ const PLUGIN_KEYS = [
   'retryPlugin',
   'choosePath',
   'getSettingsViews',
+  'getIdentityViews',
   'getSlotGroups',
 ]
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
@@ -79,6 +99,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
       ...pickOf(overrides, HEALTH_KEYS),
     },
     getSettingsViews: () => new Map(),
+    getIdentityViews: () => [],
     files: {
       getPluginData: () => Promise.resolve(0),
       deletePluginData: () => Promise.resolve(''),
@@ -101,6 +122,19 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     listRowOptions: fn(() => Promise.resolve(asValue([]))),
     countNotes: fn(() => Promise.resolve(0)),
     ...pickOf(overrides, CONNECTIONS_KEYS),
+  },
+  identity: overrides.identity ?? {
+    keyFile: createInertKeyFile(),
+    identity: ref(undefined),
+    load: fn(() => Promise.resolve()),
+    create: fn(() => Promise.resolve(asFailure('Not kept.'))),
+    delete: fn(() => Promise.resolve(asFailure('Not deleted.'))),
+    recovery: {
+      generateWords: fn(() => Promise.resolve(asFailure('No words.'))),
+      restore: fn(() => Promise.resolve(asFailure('Not restored.'))),
+      saveKit: fn(() => Promise.resolve(asFailure('Not saved.'))),
+    },
+    devices: createInertDevices(),
   },
   licenses: overrides.licenses ?? {
     list: ref([]),
@@ -141,3 +175,20 @@ export const createSettingsState = (
   markedSetting: ref(null),
   ...overrides,
 })
+
+/** The devices and the link of an identity that does nothing: no device, and every call refused. */
+export function createInertDevices() {
+  const createRefusal = () => Promise.resolve(asFailure('Not done.'))
+  return {
+    list: ref([]),
+    load: fn(() => Promise.resolve()),
+    revoke: fn(createRefusal),
+    link: {
+      start: fn(createRefusal),
+      get: fn(createRefusal),
+      decide: fn(createRefusal),
+      confirmJoin: fn(createRefusal),
+      cancel: fn(createRefusal),
+    },
+  }
+}

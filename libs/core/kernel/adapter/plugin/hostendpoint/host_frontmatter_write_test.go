@@ -64,7 +64,7 @@ func newWritingClient(t *testing.T, vault *writingVault, granted ...string) Host
 	}
 	endpoint := &Endpoint{callers: hostCallers.over(nil, granted...)}
 	mux := http.NewServeMux()
-	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor("token-a")))

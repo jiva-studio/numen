@@ -21,6 +21,133 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type SaveTextFileRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What the dialog is titled. Empty takes the words the application chooses.
+	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	// The name the dialog proposes, with its extension.
+	FileName string `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	// The extension the dialog offers files of, with its dot, such as ".json". Empty offers every file.
+	Extension string `protobuf:"bytes,3,opt,name=extension,proto3" json:"extension,omitempty"`
+	// What the file holds.
+	Content       string `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveTextFileRequest) Reset() {
+	*x = SaveTextFileRequest{}
+	mi := &file_numen_v1_folderdialog_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveTextFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveTextFileRequest) ProtoMessage() {}
+
+func (x *SaveTextFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_folderdialog_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveTextFileRequest.ProtoReflect.Descriptor instead.
+func (*SaveTextFileRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_folderdialog_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *SaveTextFileRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *SaveTextFileRequest) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *SaveTextFileRequest) GetExtension() string {
+	if x != nil {
+		return x.Extension
+	}
+	return ""
+}
+
+func (x *SaveTextFileRequest) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+type SaveTextFileResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The file that was written, empty when none was.
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Set when the person chose a file and the text is in it. False is a dialog they closed, which is
+	// an ordinary answer.
+	IsSaved       bool `protobuf:"varint,2,opt,name=is_saved,json=isSaved,proto3" json:"is_saved,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveTextFileResponse) Reset() {
+	*x = SaveTextFileResponse{}
+	mi := &file_numen_v1_folderdialog_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveTextFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveTextFileResponse) ProtoMessage() {}
+
+func (x *SaveTextFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_folderdialog_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveTextFileResponse.ProtoReflect.Descriptor instead.
+func (*SaveTextFileResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_folderdialog_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *SaveTextFileResponse) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *SaveTextFileResponse) GetIsSaved() bool {
+	if x != nil {
+		return x.IsSaved
+	}
+	return false
+}
+
 type ChooseFolderRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the dialog is titled. Empty takes the words the application chooses.
@@ -34,7 +161,7 @@ type ChooseFolderRequest struct {
 
 func (x *ChooseFolderRequest) Reset() {
 	*x = ChooseFolderRequest{}
-	mi := &file_numen_v1_folderdialog_proto_msgTypes[0]
+	mi := &file_numen_v1_folderdialog_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +173,7 @@ func (x *ChooseFolderRequest) String() string {
 func (*ChooseFolderRequest) ProtoMessage() {}
 
 func (x *ChooseFolderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_folderdialog_proto_msgTypes[0]
+	mi := &file_numen_v1_folderdialog_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +186,7 @@ func (x *ChooseFolderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChooseFolderRequest.ProtoReflect.Descriptor instead.
 func (*ChooseFolderRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_folderdialog_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_folderdialog_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ChooseFolderRequest) GetTitle() string {
@@ -89,7 +216,7 @@ type ChooseFolderResponse struct {
 
 func (x *ChooseFolderResponse) Reset() {
 	*x = ChooseFolderResponse{}
-	mi := &file_numen_v1_folderdialog_proto_msgTypes[1]
+	mi := &file_numen_v1_folderdialog_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -101,7 +228,7 @@ func (x *ChooseFolderResponse) String() string {
 func (*ChooseFolderResponse) ProtoMessage() {}
 
 func (x *ChooseFolderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_folderdialog_proto_msgTypes[1]
+	mi := &file_numen_v1_folderdialog_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -114,7 +241,7 @@ func (x *ChooseFolderResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChooseFolderResponse.ProtoReflect.Descriptor instead.
 func (*ChooseFolderResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_folderdialog_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_folderdialog_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ChooseFolderResponse) GetPath() string {
@@ -135,15 +262,24 @@ var File_numen_v1_folderdialog_proto protoreflect.FileDescriptor
 
 const file_numen_v1_folderdialog_proto_rawDesc = "" +
 	"\n" +
-	"\x1bnumen/v1/folderdialog.proto\x12\bnumen.v1\"N\n" +
+	"\x1bnumen/v1/folderdialog.proto\x12\bnumen.v1\"\x85\x01\n" +
+	"\x13SaveTextFileRequest\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1b\n" +
+	"\tfile_name\x18\x02 \x01(\tR\bfileName\x12\x1c\n" +
+	"\textension\x18\x03 \x01(\tR\textension\x12\x1d\n" +
+	"\acontent\x18\x04 \x01(\tB\x03\x80\x01\x01R\acontent\"E\n" +
+	"\x14SaveTextFileResponse\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x19\n" +
+	"\bis_saved\x18\x02 \x01(\bR\aisSaved\"N\n" +
 	"\x13ChooseFolderRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12!\n" +
 	"\fstart_folder\x18\x02 \x01(\tR\vstartFolder\"G\n" +
 	"\x14ChooseFolderResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
-	"\tis_chosen\x18\x02 \x01(\bR\bisChosen2d\n" +
+	"\tis_chosen\x18\x02 \x01(\bR\bisChosen2\xb3\x01\n" +
 	"\x13FolderDialogService\x12M\n" +
-	"\fChooseFolder\x12\x1d.numen.v1.ChooseFolderRequest\x1a\x1e.numen.v1.ChooseFolderResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\fChooseFolder\x12\x1d.numen.v1.ChooseFolderRequest\x1a\x1e.numen.v1.ChooseFolderResponse\x12M\n" +
+	"\fSaveTextFile\x12\x1d.numen.v1.SaveTextFileRequest\x1a\x1e.numen.v1.SaveTextFileResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_folderdialog_proto_rawDescOnce sync.Once
@@ -157,16 +293,20 @@ func file_numen_v1_folderdialog_proto_rawDescGZIP() []byte {
 	return file_numen_v1_folderdialog_proto_rawDescData
 }
 
-var file_numen_v1_folderdialog_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_numen_v1_folderdialog_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_numen_v1_folderdialog_proto_goTypes = []any{
-	(*ChooseFolderRequest)(nil),  // 0: numen.v1.ChooseFolderRequest
-	(*ChooseFolderResponse)(nil), // 1: numen.v1.ChooseFolderResponse
+	(*SaveTextFileRequest)(nil),  // 0: numen.v1.SaveTextFileRequest
+	(*SaveTextFileResponse)(nil), // 1: numen.v1.SaveTextFileResponse
+	(*ChooseFolderRequest)(nil),  // 2: numen.v1.ChooseFolderRequest
+	(*ChooseFolderResponse)(nil), // 3: numen.v1.ChooseFolderResponse
 }
 var file_numen_v1_folderdialog_proto_depIdxs = []int32{
-	0, // 0: numen.v1.FolderDialogService.ChooseFolder:input_type -> numen.v1.ChooseFolderRequest
-	1, // 1: numen.v1.FolderDialogService.ChooseFolder:output_type -> numen.v1.ChooseFolderResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 0: numen.v1.FolderDialogService.ChooseFolder:input_type -> numen.v1.ChooseFolderRequest
+	0, // 1: numen.v1.FolderDialogService.SaveTextFile:input_type -> numen.v1.SaveTextFileRequest
+	3, // 2: numen.v1.FolderDialogService.ChooseFolder:output_type -> numen.v1.ChooseFolderResponse
+	1, // 3: numen.v1.FolderDialogService.SaveTextFile:output_type -> numen.v1.SaveTextFileResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -183,7 +323,7 @@ func file_numen_v1_folderdialog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_folderdialog_proto_rawDesc), len(file_numen_v1_folderdialog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

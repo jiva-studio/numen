@@ -28,7 +28,7 @@ export const EN: Record<string, string> = {
   yours_eyebrow: 'Privacy-First & Local-First',
   yours_title: 'Your thoughts are yours.',
   yours_lede:
-    'No account, no email, no telemetry, no vendor lock-in, and no proprietary database. Your vault is an ordinary folder of plain Markdown files on your disk — backed by on-device AI models that run on your own hardware.',
+    'No sign-up, no email, no telemetry, no vendor lock-in, and no proprietary database. Your vault is an ordinary folder of plain Markdown files on your disk — backed by on-device AI models that run on your own hardware.',
   yours_f1_t: 'Open Markdown files',
   yours_f1_p:
     'Plain .md files in your own folders. Open them in any editor, track them in Git, and keep them for decades without lock-in.',

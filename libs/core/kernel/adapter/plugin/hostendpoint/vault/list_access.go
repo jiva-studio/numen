@@ -28,9 +28,10 @@ func NewListAccess(
 	return ListAccess{add: add, rename: rename, remove: remove, open: open, missing: missing, getCurrentVault: getCurrentVault}
 }
 
-// AddVault adds the folder at the absolute root. An empty name means the folder's name.
-func (l ListAccess) AddVault(_ context.Context, root, name string) (domain.Vault, error) {
-	added, err := l.add.Execute(root, name)
+// AddVault adds the folder at the absolute root. An empty name means the folder's name. A managedBy that is not empty
+// makes the vault one that only the plugin with that id writes.
+func (l ListAccess) AddVault(_ context.Context, root, name, managedBy string) (domain.Vault, error) {
+	added, err := l.add.ExecuteManaged(root, name, managedBy)
 	return added.Vault, err
 }
 

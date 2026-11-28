@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   getFirstPluginTab,
+  isContributedTab,
   getPanelElementId,
   getPluginTabs,
   getTabElementId,
@@ -67,5 +68,47 @@ describe('the Slots tab', () => {
     expect(getPluginTabs({ hasSettings: true, hasData: false }).map((one) => one.id)).not.toContain(
       'slots',
     )
+  })
+})
+
+describe('the tabs a plugin contributes', () => {
+  const contributed = [{ id: 'sync', title: 'Sync' }]
+
+  it('follow Settings and come before Slots, About, Contributes and Data', () => {
+    expect(
+      getPluginTabs({ hasSettings: true, hasSlots: true, hasData: true, contributed }).map(
+        (one) => one.text,
+      ),
+    ).toStrictEqual(['Settings', 'Sync', 'Slots', 'About', 'Contributes', 'Data'])
+  })
+
+  it('come first where the plugin has no Settings tab', () => {
+    expect(
+      getPluginTabs({ hasSettings: false, hasData: false, contributed }).map((one) => one.id),
+    ).toStrictEqual(['sync', 'about', 'contributions'])
+  })
+
+  it('leave the tabs of a plugin that contributes none as they were', () => {
+    expect(
+      getPluginTabs({ hasSettings: true, hasData: false, contributed: [] }).map((one) => one.id),
+    ).toStrictEqual(['settings', 'about', 'contributions'])
+  })
+
+  it('get element ids from their own id', () => {
+    expect(getTabElementId('plugin-a', 'sync')).toBe('plugin-a-tab-sync')
+    expect(getPanelElementId('plugin-a', 'sync')).toBe('plugin-a-panel-sync')
+  })
+})
+
+describe('isContributedTab', () => {
+  const contributed = [{ id: 'chart', title: 'Chart' }] as never
+
+  it('is true for the id of a tab the plugin contributes', () => {
+    expect(isContributedTab(contributed, 'chart')).toBe(true)
+  })
+
+  it('is false for a built-in tab and where nothing is contributed', () => {
+    expect(isContributedTab(contributed, 'about')).toBe(false)
+    expect(isContributedTab([], 'chart')).toBe(false)
   })
 })

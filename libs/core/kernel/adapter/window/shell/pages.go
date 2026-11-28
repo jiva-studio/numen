@@ -39,6 +39,7 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", getPolicy())
+		w.Header().Set("Permissions-Policy", csp.PermissionsPolicy)
 		for _, rt := range routes {
 			if strings.HasPrefix(r.URL.Path, rt.prefix) {
 				rt.handler.ServeHTTP(w, r)

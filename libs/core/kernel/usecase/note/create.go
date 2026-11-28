@@ -61,7 +61,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if err != nil {
 		return CreateResult{}, err
 	}
-	return writeUnder(u.admission, func() (CreateResult, error) { return u.createTitledNote(ctx, v, in) })
+	return writeUnder(ctx, v, u.admission, func() (CreateResult, error) { return u.createTitledNote(ctx, v, in) })
 }
 
 func (u Create) resolveNamedNote(ctx context.Context, v domain.Vault, in NewNote) (NewNote, error) {

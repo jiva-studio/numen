@@ -1,5 +1,5 @@
 // Package manifest is the model of a plugin's manifest.json: the fields a plugin declares, the
-// rules between them, what a plugin requires of the application, and the order of versions.
+// rules between them and what a plugin requires of the application.
 //
 // The package reads no file and no JSON; manifestjson decodes the file into this model.
 package manifest
@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/semver"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -49,6 +50,15 @@ const (
 	// the database, the windows and the plugins.
 	PermissionLogsRead = "logs:read"
 
+	// PermissionIdentity allows asking the host to sign with the key of this device, under the id of the plugin,
+	// and reading what is public of the identity of this device. The plugin never holds a secret key.
+	PermissionIdentity = "identity"
+
+	// PermissionIdentityLink allows carrying the link of a new device, the revoke of a device and the restore of an identity between the core and the
+	// sync server: the relay channel, the sealed messages of a link, the chain to publish and the chain to adopt, and the restore of an identity: the pending restore, the signature of the recovery key and its completion. The
+	// plugin never sees the QR text or the confirmation code.
+	PermissionIdentityLink = "identity:link"
+
 	// PermissionConnectionsUse is the start of the permission connections:use:<operation>, which allows
 	// calling the operation through every connection that serves it, and listing those connections and the
 	// values of their row fields. No setting of rows of the plugin lists the operation.
@@ -65,7 +75,7 @@ func ListPluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
 		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead,
-		PermissionLogsRead,
+		PermissionLogsRead, PermissionIdentity, PermissionIdentityLink,
 	}
 }
 
@@ -109,8 +119,10 @@ func ListPluginActivationEvents() []string {
 // a plugin by.
 func ListPluginCapabilities() []string {
 	return []string{
+		"files.provider",
 		"search.source",
 		"tools",
+		"vault.provider",
 	}
 }
 
@@ -121,7 +133,6 @@ var (
 	ErrInvalidID    = errors.New(
 		"plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. org.example.sample)",
 	)
-	ErrInvalidVersion         = errors.New("plugin version is not valid semver (e.g. 1.0.0)")
 	ErrUnsupportedProtocol    = errors.New("unsupported plugin protocol")
 	ErrEmptySettingTitle      = errors.New("setting title cannot be empty")
 	ErrInvalidBackend         = errors.New("invalid backend")
@@ -162,9 +173,6 @@ var (
 	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
 	manifestServicePattern  = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
 	manifestNoteTypePattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	manifestVersionPattern  = regexp.MustCompile(
-		`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`,
-	)
 )
 
 // SettingTypeString is the type of a setting that holds a text string.
@@ -200,10 +208,34 @@ func listSettingTypes() []string {
 }
 
 // Backend describes the server-side executable of a plugin. A zero IdleStopSeconds takes the idle limit
-// of the host.
+// of the host. An empty Lifecycle is LifecycleOnDemand. Requires lists the host conditions the process runs under.
 type Backend struct {
 	Entrypoint      string
 	IdleStopSeconds int
+	Lifecycle       string
+	Requires        []string
+}
+
+const (
+	// LifecycleOnDemand starts the process when something uses the plugin and stops it after the idle limit.
+	LifecycleOnDemand = "onDemand"
+	// LifecyclePersistent keeps the process running while the plugin is enabled.
+	LifecyclePersistent = "persistent"
+)
+
+// IsPersistent reports whether the host keeps the process running.
+func (b Backend) IsPersistent() bool {
+	return b.Lifecycle == LifecyclePersistent
+}
+
+func (b Backend) listLifecycleIssues() []error {
+	switch {
+	case b.Lifecycle != "" && b.Lifecycle != LifecycleOnDemand && b.Lifecycle != LifecyclePersistent:
+		return []error{fmt.Errorf("%w: unknown lifecycle %q", ErrInvalidBackend, b.Lifecycle)}
+	case b.IsPersistent() && b.IdleStopSeconds != 0:
+		return []error{fmt.Errorf("%w: a persistent backend has no idle limit", ErrInvalidBackend)}
+	}
+	return nil
 }
 
 const (
@@ -276,6 +308,7 @@ type Manifest struct {
 	Settings         []Setting
 	Services         []string
 	SettingsViews    []SettingsView
+	SettingsTabs     []SettingsTab
 	SettingGroups    []SettingGroup
 	Contributes      Contributes
 	IsOffByDefault   bool
@@ -299,12 +332,15 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listBackendlessIssues()...)
 	issues = append(issues, m.Backend.listIdleStopIssues()...)
+	issues = append(issues, m.Backend.listLifecycleIssues()...)
+	issues = append(issues, m.Backend.listRequirementIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listDependencyIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
 	issues = append(issues, m.listSettingsViewIssues()...)
+	issues = append(issues, m.listSettingsTabIssues()...)
 	issues = append(issues, m.listSettingGroupIssues()...)
 	issues = append(issues, m.listContributionIssues()...)
 	issues = append(issues, m.listSettingLinkIssues()...)
@@ -340,14 +376,14 @@ func (m Manifest) listIdentityIssues() []error {
 	switch {
 	case strings.TrimSpace(m.Version) == "":
 		issues = append(issues, ErrEmptyVersion)
-	case !manifestVersionPattern.MatchString(m.Version):
-		issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidVersion, m.Version))
+	case !semver.IsValid(m.Version):
+		issues = append(issues, fmt.Errorf("%w: %q", semver.ErrInvalid, m.Version))
 	}
 	return issues
 }
 
 func (m Manifest) listEntrypointIssues() []error {
-	if m.Backend != (Backend{}) && strings.TrimSpace(m.Backend.Entrypoint) == "" {
+	if m.Backend.isDeclared() && strings.TrimSpace(m.Backend.Entrypoint) == "" {
 		return []error{fmt.Errorf("%w: entrypoint cannot be empty", ErrInvalidBackend)}
 	}
 	return nil
@@ -364,7 +400,7 @@ func (m Manifest) HasFrontend() bool {
 }
 
 func (m Manifest) listBackendlessIssues() []error {
-	if m.Backend != (Backend{}) {
+	if m.Backend.isDeclared() {
 		return nil
 	}
 	fields := []struct {
@@ -518,4 +554,34 @@ func isMatchingActivationEvent(declared, event string) bool {
 	}
 	vaultID, isScoped := strings.CutPrefix(event, declared+":")
 	return event == declared || (isScoped && vaultID != "")
+}
+
+// RequirementIdentity holds while this device has an identity or is restoring or joining one.
+const RequirementIdentity = "identity"
+
+// IsKnownRequirement reports whether the host can evaluate the requirement.
+func IsKnownRequirement(requirement string) bool {
+	return requirement == RequirementIdentity
+}
+
+// HasRequirement reports whether the backend requires the condition.
+func (b Backend) HasRequirement(requirement string) bool {
+	return slices.Contains(b.Requires, requirement)
+}
+
+func (b Backend) listRequirementIssues() []error {
+	var issues []error
+	for i, requirement := range b.Requires {
+		switch {
+		case !IsKnownRequirement(requirement):
+			issues = append(issues, fmt.Errorf("%w: unknown requirement %q", ErrInvalidBackend, requirement))
+		case slices.Contains(b.Requires[:i], requirement):
+			issues = append(issues, fmt.Errorf("%w: requirement %q is listed twice", ErrInvalidBackend, requirement))
+		}
+	}
+	return issues
+}
+
+func (b Backend) isDeclared() bool {
+	return b.Entrypoint != "" || b.IdleStopSeconds != 0 || b.Lifecycle != "" || len(b.Requires) > 0
 }

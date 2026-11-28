@@ -6,10 +6,15 @@
 package container
 
 import (
+	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/vaultabsent"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 
@@ -22,11 +27,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
+	keyfileusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/keyfile"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
@@ -60,6 +66,7 @@ type Config struct {
 	Paths
 	ShouldRebuildIndex bool
 	SafeMode           bool
+	Absent             bool
 	Scales             Scales
 	machine            Machine
 }
@@ -67,31 +74,49 @@ type Config struct {
 // Resources holds the services shared by the parts of one installation.
 type Resources struct {
 	PluginCatalog catalog.Config
-	KeyStore      pluginport.KeyStore
+	KeyFile       keyfileusecase.File
+	Stores        identity.Stores
 	ErrorHandler  window.ErrorHandler
-	Now           installationClock
+	Now           identity.Clock
 	Chunks        *note.ChunkTokens
 	TextReaders   textport.Readers
 
-	vaultLocks      *vaultwriter.Locks
-	watches         *vaultwatch.Hub
-	settingsFiles   *settingsadapter.Files
-	settingEvents   *settingevents.Events
-	pluginChanges   *settingsusecase.PluginChanges
-	subscribedHosts settingsusecase.HostSubscriptions
-	logEntries      *logsusecase.Entries
+	vault         sharedVault
+	settingFiles  *settingsadapter.Files
+	settingEvents *settingevents.Events
+	subscriptions settingsusecase.Subscriptions
+	logEntries    *logsusecase.Entries
+	progress      *identity.Progress
+	absentFiles   vaultport.AbsentFiles
 }
+
+// sharedVault holds what every vault of one installation shares: the write locks and the watches.
+type sharedVault struct {
+	locks   *vaultwriter.Locks
+	watches *vaultwatch.Hub
+}
+
+// SetKeys sets the key store of res. The identity record is read from store once and kept until it is
+// written through Resources.Stores.Keys.
+func SetKeys(res *Resources, store pluginport.KeyStore) { res.Stores.Keys = identity.CacheKeys(store) }
 
 func NewResources() *Resources {
 	return &Resources{
 		Chunks:        &note.ChunkTokens{},
-		vaultLocks:    vaultwriter.NewLocks(),
-		watches:       vaultwatch.NewHub(),
-		settingsFiles: settingsadapter.NewFiles(),
+		vault:         sharedVault{locks: vaultwriter.NewLocks(), watches: vaultwatch.NewHub()},
+		settingFiles:  settingsadapter.NewFiles(),
 		settingEvents: settingevents.New(),
-		pluginChanges: &settingsusecase.PluginChanges{},
+		subscriptions: settingsusecase.Subscriptions{Changes: settingsusecase.PluginChanges{}, Hosts: settingsusecase.HostSubscriptions{}},
 		logEntries:    logsusecase.NewEntries(),
+		progress:      identity.NewProgress(),
 	}
+}
+
+func getCreateGate(res *Resources) identity.CreateGate {
+	if res.progress == nil {
+		return nil
+	}
+	return res.progress.GetCreateGate()
 }
 
 func getLogEntries(res *Resources) *logsusecase.Entries {
@@ -140,7 +165,7 @@ func getRunningExecution(exec *PluginExecution, safeMode bool) *PluginExecution 
 }
 
 // GetClock returns the clock every use case assembled here is handed.
-func GetClock(res *Resources) installationClock {
+func GetClock(res *Resources) identity.Clock {
 	if res.Now != nil {
 		return res.Now
 	}
@@ -158,10 +183,10 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 		SettingsPath:    c.SettingsPath,
 		ThemesPath:      c.ThemesPath,
 		RegistryPath:    c.RegistryPath,
-		Watches:         res.watches,
-		SettingsFiles:   res.settingsFiles,
+		Watches:         res.vault.watches,
+		SettingsFiles:   res.settingFiles,
 		SettingEvents:   res.settingEvents,
-		PluginChanges:   res.pluginChanges,
+		PluginChanges:   &res.subscriptions.Changes,
 		Infos:           runtime.Listing,
 		Declarations:    prefs.Configuration.pluginSettingDeclarer,
 		ConnectionTypes: prefs.Views.Types,
@@ -172,25 +197,21 @@ func createSettingsWiring(c Config, exec *PluginExecution, prefs *PluginPreferen
 	}
 }
 
-func createVaultWiring(res *Resources, base vaultParts, settings settingsParts, chunks noteChunkPolicy) vaultParts {
-	base.SyncSetting = syncSetting(settings)
-	base = setVaultSearch(base, chunks)
-	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
-	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
-	return base
-}
-
 func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, texts *textVersions) (settingsParts, vaultIndexPlan, vaultParts) {
 	// texts are the text versions the open made over its index, or nil where it makes none.
 	exec = getPluginExecution(exec)
 	settings := createSettingsWiring(c, exec, prefs, res)
-	base := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
+	base := openVaultAccess(c.Paths, GetClock(res), res.vault.locks, res.vault.watches, texts)
+	base.Readers, base.AbsentFiles = vaultabsent.Wrap(base.Readers, res.absentFiles), res.absentFiles
 	plan := vaultIndexPlan{
 		ChunkPolicy: noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.Resolver},
 		ServiceDir:  c.ServiceDir, ShouldRebuildIndex: c.ShouldRebuildIndex,
 		VaultReaders: base.Readers, TextReaders: getTextReaders(res.TextReaders, texts), HandleError: settings.HandleError,
 	}
-	return settings, plan, createVaultWiring(res, base, settings, plan.ChunkPolicy)
+	base.SyncSetting = syncSetting(settings)
+	base = setVaultSearch(base, plan.ChunkPolicy)
+	base.RecordLog = openOptionalRecordLog(base.IndexPath, res)
+	return settings, plan, base
 }
 
 func setVaultSearch(v vaultParts, chunks noteChunkPolicy) vaultParts {
@@ -230,6 +251,11 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		SafeMode:        c.SafeMode,
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
-		KeyStore:        res.KeyStore,
+		Keys:            identity.SharedKeys{Store: res.Stores.Keys, CreateLock: getCreateGate(res)},
 	}
+}
+
+type timeSource interface {
+	Now() time.Time
+	StartTimer(d time.Duration) <-chan time.Time
 }

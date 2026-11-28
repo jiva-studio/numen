@@ -1,0 +1,13 @@
+{
+  "note": "Functions of the public protocol library that programs outside this repository use (for example servers that implement the protocol); the check skips them and fails when one is no longer declared here.",
+  "symbols": [
+    {"package": "github.com/jiva-studio/numen/libs/shared/identity", "name": "VerifyForRecovery"},
+    {"package": "github.com/jiva-studio/numen/libs/shared/syncprotocol/epochtrust", "name": "SignCert"},
+    {"package": "github.com/jiva-studio/numen/libs/shared/syncprotocol", "name": "NewVersionHandlerInterceptor"},
+    {"package": "github.com/jiva-studio/numen/libs/shared/syncprotocol", "name": "CheckReserveMultipart"},
+    {"package": "github.com/jiva-studio/numen/libs/shared/syncprotocol", "name": "(versionHandlerInterceptor).WrapUnary"},
+    {"package": "github.com/jiva-studio/numen/libs/shared/syncprotocol", "name": "(versionHandlerInterceptor).WrapStreamingClient"},
+    {"package": "github.com/jiva-studio/numen/libs/shared/syncprotocol", "name": "(versionHandlerInterceptor).WrapStreamingHandler"},
+    {"package": "github.com/jiva-studio/numen/libs/shared/syncprotocol", "name": "(versionHandlerInterceptor).check"}
+  ]
+}

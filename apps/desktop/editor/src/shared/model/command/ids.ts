@@ -18,6 +18,8 @@ export const COMMAND = {
   openFile: formatAppCommandId('file.open'),
   revealFile: formatAppCommandId('file.reveal'),
   moveFile: formatAppCommandId('file.move'),
+  downloadFile: formatAppCommandId('file.download'),
+  dropDownload: formatAppCommandId('file.dropDownload'),
   createFolder: formatAppCommandId('folder.create'),
   searchVault: formatAppCommandId('vault.search'),
   openCommands: formatAppCommandId('commands.open'),

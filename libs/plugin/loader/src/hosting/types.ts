@@ -15,6 +15,7 @@ import type {
   LogHost,
   NoticeHost,
   PickerHost,
+  DialogHost,
   ProcessHost,
   EditorSettings,
   CommandTarget,
@@ -24,6 +25,7 @@ import type {
   VaultRelations,
   VaultTexts,
   ConnectionHost,
+  VaultFlagsHost,
   VaultsHost,
   WindowHost,
   WorkspaceHost,
@@ -115,8 +117,10 @@ export interface HostWindow {
   readonly getWorkspace: () => WorkspaceHost | undefined
   readonly getCommands: () => CommandsHost | undefined
   readonly getWindow: () => WindowHost | undefined
+  readonly getVaultFlags: (pluginId: string) => VaultFlagsHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getPicker: () => PickerHost | undefined
+  readonly getDialogs: () => DialogHost | undefined
   readonly clearNotices: (pluginId: string) => void
 }
 
@@ -274,6 +278,7 @@ export interface NoteBuffer {
     readonly path: string
     readonly body: string
     readonly state: string
+    readonly isReadOnly?: boolean
   }
   getErrorMessage(id: string): string
 }

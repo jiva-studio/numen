@@ -96,6 +96,7 @@ export interface PluginInfo {
   readonly capabilities: readonly string[]
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
+  readonly settingsTabs?: readonly PluginSettingsTabInfo[]
   readonly settingGroups?: readonly PluginSettingGroupInfo[]
   readonly contributions?: readonly PluginContribution[]
   readonly isOffByDefault?: boolean
@@ -153,6 +154,14 @@ export interface PluginSettingGroupInfo {
 
 /** A view a plugin's frontend registers under `id` and the settings form mounts. */
 export interface PluginSettingsViewInfo {
+  readonly id: string
+  readonly title: string
+  readonly page?: string | undefined
+  readonly tab?: string | undefined
+}
+
+/** A tab of the settings page of a plugin besides the default tab "settings". */
+export interface PluginSettingsTabInfo {
   readonly id: string
   readonly title: string
 }

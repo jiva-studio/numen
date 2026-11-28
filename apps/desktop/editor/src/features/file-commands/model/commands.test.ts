@@ -4,6 +4,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { NOTE_ERROR_CODE } from '@numen/core-client'
+import { createLostConnection } from '@numen/core-client/testing'
+import type { CommandTarget as RowTarget } from '@numen/plugin-loader'
 import { createHandledApi } from '@/testing/coreAnswers'
 import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
@@ -26,6 +28,7 @@ interface Answers {
   readonly folder?: object
   readonly names?: readonly string[]
   readonly isAsking?: boolean
+  readonly offline?: boolean
 }
 
 const createWindow = (answers: Answers = {}) => {
@@ -55,9 +58,20 @@ const createWindow = (answers: Answers = {}) => {
       actions.push(`createFolder ${request.path}`)
       return answers.folder ?? {}
     },
+    fetchFile: (request: { path: string }) => {
+      actions.push(`fetch ${request.path}`)
+      if (answers.offline)
+        throw createLostConnection('Connect to the internet to download')
+      return {}
+    },
+    dropDownload: (request: { path: string }) => {
+      actions.push(`dropDownload ${request.path}`)
+      return {}
+    },
   })
   const deps = {
     files: api.vault.file,
+    downloads: api.vault.downloads,
     notes: {
       getTabAt: (path: string) => (path === 'physics/Ontology.md' ? 'active' : null),
       getPath: (id: string) => id,
@@ -86,6 +100,8 @@ describe('the commands over files', () => {
     const { set } = createWindow()
 
     expect(set.commands.map((one) => one.id)).toStrictEqual([
+      'app:file.download',
+      'app:file.dropDownload',
       'app:folder.create',
       'app:file.open#document',
     ])
@@ -94,7 +110,12 @@ describe('the commands over files', () => {
   it('carry out the commands that make a folder and move a file', () => {
     const { set } = createWindow()
 
-    expect(Object.keys(set.handlers).sort()).toStrictEqual(['app:file.move', 'app:folder.create'])
+    expect(Object.keys(set.handlers).sort()).toStrictEqual([
+      'app:file.download',
+      'app:file.dropDownload',
+      'app:file.move',
+      'app:folder.create',
+    ])
   })
 
   it('open a document by running the command that opens a file', () => {
@@ -241,5 +262,65 @@ describe('a folder made over a folder', () => {
 
     expect(made).toBe('')
     expect(one.notices).toStrictEqual([words.alreadyExists])
+  })
+})
+
+describe('the commands over a file kept on demand', () => {
+  it('download the bytes of the file the menu was opened on', async () => {
+    const { actions, carry } = createWindow()
+
+    await carry(invoke('app:file.download', front({ path: 'Lecture.mp4' })))
+
+    expect(actions).toStrictEqual(['fetch Lecture.mp4'])
+  })
+
+  it('report a failed download as a notice with no technical text', async () => {
+    const { notices, severities, carry } = createWindow({ offline: true })
+
+    await carry(invoke('app:file.download', front({ path: 'Lecture.mp4' })))
+
+    expect(notices).toHaveLength(1)
+    expect(notices[0]).not.toContain('boom')
+    expect(severities).toStrictEqual(['error'])
+  })
+
+  it('take the download of a file off the device', async () => {
+    const { actions, carry } = createWindow()
+
+    await carry(invoke('app:file.dropDownload', front({ path: 'Lecture.mp4' })))
+
+    expect(actions).toStrictEqual(['dropDownload Lecture.mp4'])
+  })
+
+  it('are offered in the palette over no file, only the slots draw them', () => {
+    const { set } = createWindow()
+    const rows = set.commands.filter(
+      (one) => one.id.endsWith('ownload') || one.id.endsWith('Download'),
+    )
+
+    expect(rows).toHaveLength(2)
+    for (const row of rows) expect(row.isAvailable(front(), {} as never)).toBe(false)
+  })
+
+  it('suit a row over an absent file, or over a present file of a provider', () => {
+    const { set } = createWindow()
+    const download = set.commands.find((one) => one.id === 'app:file.download')
+    const drop = set.commands.find((one) => one.id === 'app:file.dropDownload')
+    const row = (more: Partial<RowTarget>): RowTarget => ({
+      path: 'a',
+      title: 'a',
+      isFolder: false,
+      others: [],
+      tab: '',
+      ...more,
+    })
+
+    expect([
+      download?.canRunOver?.(row({ isAbsent: true, provider: 'p' })),
+      download?.canRunOver?.(row({ provider: 'p' })),
+      drop?.canRunOver?.(row({ isAbsent: true, provider: 'p' })),
+      drop?.canRunOver?.(row({ provider: 'p' })),
+      drop?.canRunOver?.(row({})),
+    ]).toStrictEqual([true, false, false, true, false])
   })
 })

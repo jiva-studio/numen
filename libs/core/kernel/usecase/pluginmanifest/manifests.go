@@ -216,7 +216,7 @@ func (m Manifests) ListFrontendPluginIDs() []string {
 func (m Manifests) ListSearchFunctions() []searchquery.Function {
 	var found []searchquery.Function
 	for _, plugin := range m.listUncontestedPlugins() {
-		found = append(found, searchquery.ConvertManifestFunctions(plugin.Manifest.ID, plugin.Manifest.Contributes.SearchFunctions)...)
+		found = append(found, convertSearchFunctions(plugin.Manifest.ID, plugin.Manifest.Contributes.SearchFunctions)...)
 	}
 	return found
 }

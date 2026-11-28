@@ -73,6 +73,18 @@ Two things are not settings and are not in here: which files count as notes, and
 | --- | --- | --- |
 | `level` | text | which entries are written to the application log. One of `error`, `warning`, `info`, `debug`. |
 
+### `app.vaults`
+
+| | | |
+| --- | --- | --- |
+| `folder` | text | a vault opened from the cloud gets a folder in it, named after the vault. Empty means the Documents folder of the system: the folder Documents in your home folder on macOS, the folder the system names for documents on Linux and the Documents known folder on Windows. |
+
+### `app.keys`
+
+| | | |
+| --- | --- | --- |
+| `credentialsFile` | text | without a reachable system keychain Numen keeps the keys in a file in its settings folder. Not chosen means Numen has not asked yet and will not store a key. Passphrase encrypts the file and asks for the passphrase at each start. Plain file leaves the keys readable by anyone who can read your files. Change it under Identity and licenses; a change applies after a restart. One of `unset`, `passphrase`, `plaintext`. |
+
 ### `md.numen.agents.acp`
 
 The settings of the plugin ACP Agents.
@@ -223,6 +235,20 @@ The settings of the plugin Saved Search.
 | --- | --- | --- |
 | `refreshMinutes` | a number | minutes a saved search whose tab is closed waits after its last run before an index change runs it again; 0 runs it at once. A saved search whose tab is open, and a change of its query, run at once. |
 | `defaultFolder` | text | folder of the vault, relative to the vault folder, that saved_search_create puts a note in when the agent names no folder; empty is the vault folder. |
+
+### `md.numen.tools.sync`
+
+The settings of the plugin Numen Sync.
+
+| | | |
+| --- | --- | --- |
+| `server` | text | address of the server this device signs in to. |
+| `syncIntervalSeconds` | a number | how often this device asks the server for changes. |
+| `removalDelaySeconds` | a number | how long a removed file is watched before the removal is sent. |
+| `epochRootKey` | text | 64 hex digits. The key vouches for the restore announcements of that server and never counts for the default server. |
+| `receivedFolder` | text | where the folders shared with you are kept. Empty means Numen Shared in your home folder. |
+| `syncOnlyWhileOpen` | yes or no | stops the sync when the app leaves the screen and starts it when it returns. |
+| `downloadOnDemand` | yes or no | notes and small images are still downloaded at once. Files already on this device stay. |
 
 ### `md.numen.tools.templates`
 

@@ -119,6 +119,7 @@ func NewWirePluginInfos(target []plugin.Info) []*v1.PluginInfo {
 			HasBackend:     one.HasBackend,
 			Readers:        newWireReaders(one.Readers),
 			SettingsViews:  newWireSettingsViews(one.SettingsViews),
+			SettingsTabs:   newWireSettingsTabs(one.SettingsTabs),
 			SettingGroups:  newWireSettingGroups(one.SettingGroups),
 			Contributions:  newWireContributions(one.Contributions),
 			IsOffByDefault: one.IsOffByDefault,
@@ -222,7 +223,15 @@ func newWireSettingGroups(groups []manifest.SettingGroup) []*v1.PluginSettingGro
 func newWireSettingsViews(views []manifest.SettingsView) []*v1.PluginSettingsView {
 	out := make([]*v1.PluginSettingsView, 0, len(views))
 	for _, one := range views {
-		out = append(out, &v1.PluginSettingsView{Id: one.ID, Title: one.Title})
+		out = append(out, &v1.PluginSettingsView{Id: one.ID, Title: one.Title, Page: one.Page, Tab: one.Tab})
+	}
+	return out
+}
+
+func newWireSettingsTabs(tabs []manifest.SettingsTab) []*v1.PluginSettingsTab {
+	out := make([]*v1.PluginSettingsTab, 0, len(tabs))
+	for _, one := range tabs {
+		out = append(out, &v1.PluginSettingsTab{Id: one.ID, Title: one.Title})
 	}
 	return out
 }

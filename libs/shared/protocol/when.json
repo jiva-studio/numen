@@ -90,6 +90,11 @@
       "name": "config",
       "type": "map",
       "about": "every setting by its dotted key, as config.editor.lineNumbers"
+    },
+    {
+      "name": "vault.flags",
+      "type": "map",
+      "about": "the flags the plugins set on the vault of the window, by the id of the plugin and the key, as vault.flags.org.example.isSynced; a condition that reads a flag the plugin has not set is false whichever way it compares, so a plugin sets a flag to false and does not leave it out"
     }
   ],
   "examples": [
@@ -268,6 +273,19 @@
               }
             }
           },
+          "value": false
+        }
+      ]
+    },
+    {
+      "when": "vault.flags.org.example.isSynced == true",
+      "values": [
+        {
+          "context": { "vault.flags": { "org": { "example": { "isSynced": true } } } },
+          "value": true
+        },
+        {
+          "context": { "vault.flags": { "org": { "example": { "isSynced": false } } } },
           "value": false
         }
       ]

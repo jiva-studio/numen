@@ -131,6 +131,7 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Settings:         settings,
 		Services:         wire.GetServices(),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
+		SettingsTabs:     newSettingsTabs(wire.GetSettingsTabs()),
 		SettingGroups:    newSettingGroups(wire.GetSettingGroups()),
 		Contributes:      contributes,
 		IsOffByDefault:   wire.GetIsOffByDefault(),
@@ -138,7 +139,7 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 }
 
 func newBackend(wire *v1.ManifestBackend) manifest.Backend {
-	return manifest.Backend{Entrypoint: wire.GetEntrypoint(), IdleStopSeconds: int(wire.GetIdleStopSeconds())}
+	return manifest.Backend{Entrypoint: wire.GetEntrypoint(), IdleStopSeconds: int(wire.GetIdleStopSeconds()), Lifecycle: wire.GetLifecycle(), Requires: wire.GetRequires()}
 }
 
 func newFrontend(wire *v1.ManifestFrontend) *manifest.Frontend {
@@ -291,7 +292,15 @@ func newOptionsBy(wire *v1.ManifestOptionsBy) (*manifest.OptionsBy, error) {
 func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 	var out []manifest.SettingsView
 	for _, one := range wire {
-		out = append(out, manifest.SettingsView{ID: one.GetId(), Title: one.GetTitle()})
+		out = append(out, manifest.SettingsView{ID: one.GetId(), Title: one.GetTitle(), Page: one.GetPage(), Tab: one.GetTab()})
+	}
+	return out
+}
+
+func newSettingsTabs(wire []*v1.ManifestSettingsTab) []manifest.SettingsTab {
+	var out []manifest.SettingsTab
+	for _, one := range wire {
+		out = append(out, manifest.SettingsTab{ID: one.GetId(), Title: one.GetTitle()})
 	}
 	return out
 }

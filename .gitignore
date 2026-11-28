@@ -58,6 +58,9 @@ refactoring-plan.md
 
 # output of a local e2e run
 /e2e-merged.out
+
+# The helper of the acceptance scenarios that works on the accounts of a real sync server.
+/tools/syncaccount/bin/
 # Scenarios of features/ as Playwright tests, written by bddgen.
 tests/acceptance/desktop/.features-gen/
 tests/acceptance/desktop/acceptance-report/

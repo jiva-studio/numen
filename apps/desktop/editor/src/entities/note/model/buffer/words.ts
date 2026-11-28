@@ -9,6 +9,7 @@ export const ERROR_MESSAGES: Record<NoteErrorCode, string> = {
   bodyUnwritable: 'text cannot start with frontmatter',
   unreadable: 'frontmatter unreadable',
   unreachable: 'vault unreachable, note not saved',
+  readOnly: 'This vault is read only',
 }
 
 export const STALE_CONFLICT = {

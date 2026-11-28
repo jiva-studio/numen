@@ -1,0 +1,62 @@
+package synctest
+
+import (
+	"context"
+	"crypto/rand"
+	"testing"
+	"time"
+
+	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/device"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/shareinvite"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/invitewire"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/sharewire"
+)
+
+const eventuallyLimit = 10 * time.Second
+
+// NewInviteDeps are the dependencies of the use cases of sharing a folder by a link, over the relay of the server of this
+// computer. They share the hub, so a link made through one set of use cases is found by the others.
+func (c *Computer) NewInviteDeps(hub *shareinvite.Hub) shareinvite.Deps {
+	return shareinvite.Deps{
+		Relay: syncclient.NewLinkClient(c.Server.URL, c.Server.NewHTTP()), Health: c.NewHealth(), Clock: c.Clock, Identity: c.Account,
+		Device: device.Host{}, Sharing: sharewire.NewFolderSharer(c.ShareDeps()), Receiving: sharewire.NewInvitationReceiver(c.ReceiveDeps()), Random: rand.Reader, Server: c.Server.URL, Hub: hub,
+	}
+}
+
+func (c *Computer) StartInviteCourier(t *testing.T) shareinvite.Deps {
+	t.Helper()
+	hub := shareinvite.NewHub()
+	deps := c.NewInviteDeps(hub)
+	ctx, stop := context.WithCancel(t.Context())
+	finished := make(chan struct{})
+	go func() {
+		defer close(finished)
+		if err := shareinvite.NewCourier(hub).Execute(ctx); err != nil && ctx.Err() == nil {
+			t.Error(err)
+		}
+	}()
+	t.Cleanup(func() {
+		stop()
+		<-finished
+	})
+	return deps
+}
+
+func (c *Computer) NewInvites(t *testing.T) *invitewire.Invites {
+	t.Helper()
+	return invitewire.New(c.StartInviteCourier(t))
+}
+
+func AwaitCondition(t *testing.T, what string, condition func() bool) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(t.Context(), eventuallyLimit)
+	defer cancel()
+	for !condition() {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("waited for %s and it did not happen", what)
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+}

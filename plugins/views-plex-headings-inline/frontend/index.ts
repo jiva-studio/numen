@@ -8,6 +8,7 @@ import {
   useSlotLoading,
   type HostServices,
   type PluginContext,
+  formatErrorMessage,
 } from '@numen/plugin-sdk'
 import { readSettings } from './model/settings'
 import { useInlineHeadings, type InlineSource } from './model/useInlineHeadings'
@@ -49,8 +50,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     settings: readSettings(plugin),
     open: (path, line) => workspace.files.open(path, { placement: 'current', line }),
     onVaultChange: host.events.onVaultChange,
-    reportFailure: (error: unknown) =>
-      notices.show(error instanceof Error ? error.message : String(error), 'error'),
+    reportFailure: (error: unknown) => notices.show(formatErrorMessage(error), 'error'),
   }
   plugin.register.slotView({ id: HEADINGS_VIEW, component: createHeadingsView(source) })
 }

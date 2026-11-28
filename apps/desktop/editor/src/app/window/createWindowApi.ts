@@ -5,7 +5,9 @@
  */
 import { createFrameRuntimeLoader } from '@numen/plugin-loader'
 import { createConnectionApi } from '@/entities/connection'
-import { createFileApi } from '@/entities/file'
+import { createDownloadApi, createDownloads, createFileApi } from '@/entities/file'
+import { createAccountApi, createDevicesApi, createDeviceLinkApi } from '@/entities/identity'
+import { createKeyFileApi } from '@/entities/key-file'
 import { createLicenseApi } from '@/entities/license'
 import { createLinkApi, createNoteApi, createRelations } from '@/entities/note'
 import {
@@ -19,7 +21,12 @@ import {
 } from '@/entities/plugin'
 import { createSettingsApi, createThemes } from '@/entities/settings'
 import { createSavedTabsApi, createTabKindPluginFinder } from '@/entities/tab'
-import { createVaultListReader, createVaults, createVaultStateApi } from '@/entities/vault'
+import {
+  createRemoteVaults,
+  createVaultListReader,
+  createVaults,
+  createVaultStateApi,
+} from '@/entities/vault'
 import {
   createFocusApi,
   createQuitApi,
@@ -37,6 +44,7 @@ import {
   createWindowLogClient,
   type WindowTransports,
 } from '@/shared/api/clients'
+import { createTextSaver } from '@/features/plugin-host'
 
 export function createWindowApi(transports: WindowTransports) {
   const { transport } = transports
@@ -47,18 +55,23 @@ export function createWindowApi(transports: WindowTransports) {
   const linkApi = createLinkApi(vaultClients.notes)
   const vaults = createVaults(vaultClients.vaultsService, vaultClients.folderDialog)
   const windowVaultApi = createShownVaultApi(workspaceClients.windowService)
+  const file = createFileApi(vaultClients.files)
+  const download = createDownloadApi(vaultClients.files)
   return {
     vault: {
       note: createNoteApi(vaultClients.notes),
       links: linkApi,
       relations: createRelations(vaultClients.notes, linkApi.resolveLinks),
-      file: createFileApi(vaultClients.files),
+      file: { ...file, ...download },
+      downloads: createDownloads(download),
       vaults,
+      remoteVaults: createRemoteVaults(vaultClients.remoteVaults),
       vaultState: createVaultStateApi(vaultClients.vault),
       search: createSearchCore(vaultClients.search),
       listVaults: createVaultListReader({ vaults, getShownVault: windowVaultApi.getShownVault }),
     },
     window: {
+      saveText: createTextSaver(vaultClients.folderDialog),
       logs: createWindowLogClient(workspaceClients.logService),
       focus: createFocusApi(workspaceClients.workspace),
       quit: createQuitApi(workspaceClients.windowService),
@@ -91,6 +104,12 @@ export function createWindowApi(transports: WindowTransports) {
     configuration: {
       connection: createConnectionApi(settingsClients.connections),
       license: createLicenseApi(settingsClients.licenses),
+      keyFile: createKeyFileApi(settingsClients.keyFile),
+      identity: {
+        account: createAccountApi(settingsClients.identity.account),
+        link: createDeviceLinkApi(settingsClients.identity.link),
+        devices: createDevicesApi(settingsClients.identity.devices),
+      },
       settings: createSettingsApi(
         settingsClients.settingsService,
         pluginClients.pluginProcessService,

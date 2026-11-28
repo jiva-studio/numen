@@ -56,8 +56,8 @@ func (e *queueEndpoint) EnqueueWork(
 	}
 	pluginID := caller.pluginID
 	holder := plugin.Holder{PluginID: pluginID, Why: "wait for a turn in the work queue"}
-	if e.endpoint.callers.Leases.AcquireOwn(pluginID, caller.token, holder) {
-		defer e.endpoint.callers.Leases.ReleaseOwn(pluginID, caller.token, holder)
+	if e.endpoint.callers.Activation.AcquireOwn(pluginID, caller.token, holder) {
+		defer e.endpoint.callers.Activation.ReleaseOwn(pluginID, caller.token, holder)
 	}
 	var waitErr error
 	turn, err := work.EnqueueWork(ctx, pluginID, req.Msg.GetIsUserStarted(), func() {
@@ -113,9 +113,9 @@ func (e *queueEndpoint) ReportTask(
 	})
 	if task.GetId() != "" {
 		if isTaskFinished(task) {
-			e.endpoint.tasks.release(e.endpoint.callers.Leases, pluginID, task.GetId())
+			e.endpoint.tasks.release(e.endpoint.callers.Activation, pluginID, task.GetId())
 		} else {
-			e.endpoint.tasks.hold(e.endpoint.callers.Leases, pluginID, caller.token, task.GetId(), task.GetTitle())
+			e.endpoint.tasks.hold(e.endpoint.callers.Activation, pluginID, caller.token, task.GetId(), task.GetTitle())
 		}
 	}
 	return connect.NewResponse(&v1.ReportTaskResponse{}), nil
@@ -129,7 +129,7 @@ func (e *queueEndpoint) FinishTask(
 		return nil, err
 	}
 	work.FinishTask(caller.pluginID, req.Msg.GetId())
-	e.endpoint.tasks.release(e.endpoint.callers.Leases, caller.pluginID, req.Msg.GetId())
+	e.endpoint.tasks.release(e.endpoint.callers.Activation, caller.pluginID, req.Msg.GetId())
 	return connect.NewResponse(&v1.FinishTaskResponse{}), nil
 }
 

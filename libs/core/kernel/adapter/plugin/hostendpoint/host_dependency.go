@@ -24,7 +24,10 @@ func (e *dependencyEndpoint) FetchModelFile(
 	if fetch == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("the host has no dependency service"))
 	}
-	file, err := fetch.Execute(ctx, req.Msg.GetUrl(), req.Msg.GetSha256())
+	file, err := fetch.FetchModelFile(ctx, req.Msg.GetUrl(), req.Msg.GetSha256())
+	if errors.Is(err, errNoDependencyUseCase) {
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	}
 	response := &v1.FetchModelFileResponse{}
 	if err != nil {
 		response.Error = v1.ErrorCode_ERROR_CODE_INTERNAL
@@ -42,11 +45,14 @@ func (e *dependencyEndpoint) FetchDependency(
 	if err != nil {
 		return nil, err
 	}
-	fetch := e.endpoint.callers.DeclaredDependencies
+	fetch := e.endpoint.callers.Dependencies
 	if fetch == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("the host has no dependency service"))
 	}
-	file, err := fetch.Execute(ctx, pluginID, req.Msg.GetId())
+	file, err := fetch.FetchDeclaredModel(ctx, pluginID, req.Msg.GetId())
+	if errors.Is(err, errNoDependencyUseCase) {
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	}
 	response := &v1.FetchDependencyResponse{}
 	switch {
 	case errors.Is(err, plugindependency.ErrUndeclaredDependency):

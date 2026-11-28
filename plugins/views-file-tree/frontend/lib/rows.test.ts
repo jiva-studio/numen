@@ -51,3 +51,34 @@ describe('the listing as rows', () => {
     })
   })
 })
+
+describe('the status of a row', () => {
+  it('is a cloud for a file not on this device, a loading ring while it is brought, and none for a file here', () => {
+    const rows = getRows([
+      { entry: { ...entry('a.mp4'), isAbsent: true }, rows: [] },
+      { entry: { ...entry('b.mp4'), isAbsent: true, isDownloading: true }, rows: [] },
+      createListingRow('c.png'),
+    ])
+
+    expect(rows.map((one) => one.status)).toStrictEqual([
+      { kind: 'cloud', label: 'Not on this device' },
+      { kind: 'loading', label: 'Downloading…' },
+      undefined,
+    ])
+  })
+
+  it('carries the progress of a download into its loading ring, and none where it is not known', () => {
+    const rows = getRows([
+      {
+        entry: { ...entry('a.mp4'), isAbsent: true, isDownloading: true, downloadProgress: 0.3 },
+        rows: [],
+      },
+      { entry: { ...entry('b.mp4'), isAbsent: true, isDownloading: true }, rows: [] },
+    ])
+
+    expect(rows.map((one) => one.status)).toStrictEqual([
+      { kind: 'loading', label: 'Downloading…', progress: 0.3 },
+      { kind: 'loading', label: 'Downloading…' },
+    ])
+  })
+})

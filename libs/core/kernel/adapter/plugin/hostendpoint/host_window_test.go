@@ -110,7 +110,7 @@ func newWindowClient(t *testing.T, window WindowControl, token string) (numenv1c
 	t.Helper()
 	fakeCallers := newCallers()
 	fakeCallers.window = window
-	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers())
+	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers(), AccountCalls{})
 	if err != nil {
 		t.Fatal(err)
 	}

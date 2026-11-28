@@ -63,6 +63,41 @@ export class World {
     fs.writeFileSync(target, text)
   }
 
+  /** Writes the bytes of a file of the vault at the path, with the folders above it. */
+  writeBytes(vault: string, filePath: string, content: Buffer): void {
+    assertVaultPath(filePath)
+    const target = path.join(this.getFolder(vault), filePath)
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.writeFileSync(target, content)
+  }
+
+  readBytes(vault: string, filePath: string): Buffer | undefined {
+    assertVaultPath(filePath)
+    const target = path.join(this.getFolder(vault), filePath)
+    return fs.existsSync(target) ? fs.readFileSync(target) : undefined
+  }
+
+  /** How many files lie below the folder, in its folders too; the folders a program keeps (their names begin with a dot) are left out. */
+  countFiles(vault: string, folder: string): number {
+    assertVaultPath(folder)
+    const count = (at: string): number =>
+      fs.readdirSync(at, { withFileTypes: true }).reduce((sum, entry) => {
+        if (entry.isDirectory()) return sum + (entry.name.startsWith('.') ? 0 : count(path.join(at, entry.name)))
+        return sum + 1
+      }, 0)
+    const root = path.join(this.getFolder(vault), folder)
+    return fs.existsSync(root) ? count(root) : 0
+  }
+
+  /** Moves a file of the vault to another path, with the folders above it, as a program that is not Numen does. */
+  moveFile(vault: string, from: string, to: string): void {
+    assertVaultPath(from)
+    assertVaultPath(to)
+    const target = path.join(this.getFolder(vault), to)
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.renameSync(path.join(this.getFolder(vault), from), target)
+  }
+
   removeFile(vault: string, filePath: string): void {
     assertVaultPath(filePath)
     fs.rmSync(path.join(this.getFolder(vault), filePath))

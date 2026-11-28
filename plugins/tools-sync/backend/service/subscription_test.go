@@ -1,0 +1,416 @@
+package service_test
+
+import (
+	"cmp"
+	"errors"
+	"slices"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
+	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/service"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
+)
+
+func newBillingWorld(t *testing.T) *world {
+	t.Helper()
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock)
+	words := synctest.NewWords(t)
+	return &world{server: server, clock: clock, words: words, c: synctest.NewUnsubscribedComputer(t, server, clock, "Test", words)}
+}
+
+func pay(t *testing.T, w *world, address string) {
+	t.Helper()
+	synctest.CompleteCheckout(t, w.server.Stack, address, w.clock.Now().Add(30*24*time.Hour))
+}
+
+func rfc3339(at time.Time) string { return at.UTC().Format(time.RFC3339) }
+
+func TestGetSubscription_ReportsNoPhaseAndAsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T) {
+	w := newBillingWorld(t)
+	w.c.Fake.RemoveIdentity()
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	got, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got != (api.GetSubscriptionResponse{}) {
+		t.Errorf("response = %+v, want no identity, no phase and no times", got)
+	}
+	if calls := w.server.CountCalls(syncv1connect.SubscriptionServiceGetSubscriptionProcedure); calls != 0 {
+		t.Errorf("the server ran %d subscription calls, want none", calls)
+	}
+}
+
+func TestGetSubscription_ReportsNoSubscriptionForANewAccount(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	got, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := (api.GetSubscriptionResponse{HasIdentity: true, Phase: api.PhaseNone}); got != want {
+		t.Errorf("response = %+v, want %+v", got, want)
+	}
+}
+
+func TestGetSubscription_ReportsTheActivePhaseWithTheTimesAsRFC3339(t *testing.T) {
+	w := newWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	got, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	periodEnd := w.clock.Now().Add(30 * 24 * time.Hour)
+	want := api.GetSubscriptionResponse{
+		HasIdentity: true, Phase: api.PhaseActive, PeriodEndAt: rfc3339(periodEnd),
+		WritesEndAt: rfc3339(periodEnd.Add(7 * 24 * time.Hour)), DeleteAt: rfc3339(periodEnd.Add(60 * 24 * time.Hour)),
+		Plan: "prod_basic", QuotaBytes: 10 << 30,
+	}
+	if got != want {
+		t.Errorf("response = %+v, want %+v", got, want)
+	}
+}
+
+func TestGetSubscription_ReportsEachPhaseTheServerSets(t *testing.T) {
+	for name, one := range map[string]struct {
+		admin string
+		want  api.Phase
+	}{
+		"grace":     {admin: "grace", want: api.PhaseGrace},
+		"read only": {admin: "read_only", want: api.PhaseReadOnly},
+		"deleted":   {admin: "deleted", want: api.PhaseDeleted},
+		"none":      {admin: "none", want: api.PhaseNone},
+	} {
+		w := newBillingWorld(t)
+		w.c.SetPhase(t, one.admin)
+		backend := service.NewBackend(w.c.SyncDeps())
+
+		got, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got.Phase != one.want || !got.HasIdentity {
+			t.Errorf("%s: response = %+v, want phase %s", name, got, one.want)
+		}
+		if one.want != api.PhaseNone && (got.PeriodEndAt == "" || got.WritesEndAt == "" || got.DeleteAt == "") {
+			t.Errorf("%s: response = %+v, want the three times", name, got)
+		}
+	}
+}
+
+func TestGetSubscription_ReturnsTheErrorOfAServerThatIsAway(t *testing.T) {
+	w := newBillingWorld(t)
+	w.server.SetDown(true)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	_, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+
+	if !errors.Is(err, syncprotocol.ErrUnreachable) && !errors.Is(err, sessiondomain.ErrUnreachable) {
+		t.Errorf("error = %v, want an unreachable server", err)
+	}
+}
+
+func TestCreateCheckout_ReturnsThePaymentPageAndTheSubscriptionIsActiveAfterPayment(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	got, err := backend.CreateCheckout(t.Context(), api.CreateCheckoutRequest{Plan: "prod_plus"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(got.CheckoutURL, "/pay/") {
+		t.Fatalf("checkout url = %q, want a page of the payment provider", got.CheckoutURL)
+	}
+	pay(t, w, got.CheckoutURL)
+	state, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Phase != api.PhaseActive {
+		t.Errorf("phase = %q, want active", state.Phase)
+	}
+}
+
+func TestCreateCheckout_ReturnsAlreadySubscribedWhileTheSubscriptionIsActive(t *testing.T) {
+	w := newBillingWorld(t)
+	w.c.SetPhase(t, "active")
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	_, err := backend.CreateCheckout(t.Context(), api.CreateCheckoutRequest{Plan: "prod_plus"})
+
+	if !errors.Is(err, syncprotocol.ErrAlreadySubscribed) {
+		t.Errorf("error = %v, want ErrAlreadySubscribed", err)
+	}
+}
+
+func TestCreateCheckout_ReturnsNoIdentityAndAsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T) {
+	w := newBillingWorld(t)
+	w.c.Fake.RemoveIdentity()
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	_, err := backend.CreateCheckout(t.Context(), api.CreateCheckoutRequest{Plan: "prod_plus"})
+
+	if !errors.Is(err, sessiondomain.ErrNoIdentity) {
+		t.Errorf("error = %v, want ErrNoIdentity", err)
+	}
+	if calls := w.server.CountCalls(syncv1connect.SubscriptionServiceCreateCheckoutProcedure); calls != 0 {
+		t.Errorf("the server ran %d checkout calls, want none", calls)
+	}
+}
+
+func TestGetStatus_ReportsNoSubscriptionItem(t *testing.T) {
+	w := newBillingWorld(t)
+	w.c.SetPhase(t, "read_only")
+	before := w.server.CountCalls(syncv1connect.SubscriptionServiceGetSubscriptionProcedure)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	status, err := backend.GetStatus(t.Context(), api.GetStatusRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(status.Items) != 0 {
+		t.Errorf("items = %+v, want none", status.Items)
+	}
+	if calls := w.server.CountCalls(syncv1connect.SubscriptionServiceGetSubscriptionProcedure) - before; calls != 0 {
+		t.Errorf("GetStatus ran %d subscription calls, want none", calls)
+	}
+}
+
+const gib = 1 << 30
+
+func payFor(t *testing.T, w *world, backend *service.Backend, plan string) {
+	t.Helper()
+	got, err := backend.CreateCheckout(t.Context(), api.CreateCheckoutRequest{Plan: plan})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pay(t, w, got.CheckoutURL)
+}
+
+func TestListPlans_ReturnsThePlansOfTheServerAscendingByQuota(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	got, err := backend.ListPlans(t.Context(), api.ListPlansRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []api.Plan{
+		{ID: "prod_basic", Name: "Basic", QuotaBytes: 10 * gib, PriceCents: 500, Currency: "USD"},
+		{ID: "prod_plus", Name: "Plus", QuotaBytes: 100 * gib, PriceCents: 1500, Currency: "USD"},
+		{ID: "prod_pro", Name: "Pro", QuotaBytes: 250 * gib, PriceCents: 3000, Currency: "USD"},
+	}
+	for _, plan := range want {
+		if !slices.Contains(got.Plans, plan) {
+			t.Errorf("plans = %+v, want the plan %+v among them", got.Plans, plan)
+		}
+	}
+	if !slices.IsSortedFunc(got.Plans, func(a, b api.Plan) int { return cmp.Compare(a.QuotaBytes, b.QuotaBytes) }) {
+		t.Errorf("plans = %+v, want them ascending by quota", got.Plans)
+	}
+}
+
+func TestListPlans_ReturnsNoIdentityAndAsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T) {
+	w := newBillingWorld(t)
+	w.c.Fake.RemoveIdentity()
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	_, err := backend.ListPlans(t.Context(), api.ListPlansRequest{})
+
+	if !errors.Is(err, sessiondomain.ErrNoIdentity) {
+		t.Errorf("error = %v, want ErrNoIdentity", err)
+	}
+	if calls := w.server.CountCalls(syncv1connect.SubscriptionServiceListPlansProcedure); calls != 0 {
+		t.Errorf("the server ran %d plan calls, want none", calls)
+	}
+}
+
+func TestGetSubscription_ReportsThePlanAfterThePersonPaidForIt(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	payFor(t, w, backend, "prod_plus")
+
+	got, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Plan != "prod_plus" || got.QuotaBytes != 100*gib || got.UsedBytes != 0 {
+		t.Errorf("response = %+v, want the plan plus with 100 GiB and nothing used", got)
+	}
+}
+
+func TestGetSubscription_ReportsTheUsedBytes(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+	payFor(t, w, backend, "prod_plus")
+	w.c.Connect(t, "Test")
+	w.c.WriteFileOfSize("Test", "Notes/Big.md", 1<<20)
+	if err := w.c.Sync(t.Context(), "Test"); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.UsedBytes == 0 || got.QuotaBytes != 100*gib {
+		t.Errorf("response = %+v, want some bytes used of 100 GiB", got)
+	}
+}
+
+func TestCreateCheckout_RefusesAnUnknownPlan(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	_, err := backend.CreateCheckout(t.Context(), api.CreateCheckoutRequest{Plan: "gold"})
+
+	if !errors.Is(err, syncprotocol.ErrUnknownPlan) {
+		t.Errorf("error = %v, want ErrUnknownPlan", err)
+	}
+}
+
+func TestChangePlan_ReturnsTheSubscriptionOnTheNewPlan(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+	payFor(t, w, backend, "prod_basic")
+
+	got, err := backend.ChangePlan(t.Context(), api.ChangePlanRequest{Plan: "prod_pro"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.Subscription.Plan != "prod_pro" || got.Subscription.QuotaBytes != 250*gib || got.Subscription.Phase != api.PhaseActive || !got.Subscription.HasIdentity {
+		t.Errorf("subscription = %+v, want active on the plan pro with 250 GiB", got.Subscription)
+	}
+	state, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Plan != "prod_pro" {
+		t.Errorf("GetSubscription plan = %q, want pro", state.Plan)
+	}
+}
+
+func TestChangePlan_RefusesThePlanTheAccountHas(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+	payFor(t, w, backend, "prod_plus")
+
+	_, err := backend.ChangePlan(t.Context(), api.ChangePlanRequest{Plan: "prod_plus"})
+
+	if !errors.Is(err, syncprotocol.ErrSamePlan) {
+		t.Errorf("error = %v, want ErrSamePlan", err)
+	}
+}
+
+func TestChangePlan_RefusesAnAccountWithoutAnActiveSubscription(t *testing.T) {
+	for _, phase := range []string{"none", "grace", "read_only"} {
+		w := newBillingWorld(t)
+		backend := service.NewBackend(w.c.SyncDeps())
+		w.c.SetPhase(t, phase)
+
+		_, err := backend.ChangePlan(t.Context(), api.ChangePlanRequest{Plan: "prod_pro"})
+
+		if !errors.Is(err, syncprotocol.ErrNoActiveSubscription) {
+			t.Errorf("phase %s: error = %v, want ErrNoActiveSubscription", phase, err)
+		}
+	}
+}
+
+func TestChangePlan_ReturnsNoIdentityAndAsksNoServerWhenThisDeviceHasNoIdentity(t *testing.T) {
+	w := newBillingWorld(t)
+	w.c.Fake.RemoveIdentity()
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	_, err := backend.ChangePlan(t.Context(), api.ChangePlanRequest{Plan: "prod_plus"})
+
+	if !errors.Is(err, sessiondomain.ErrNoIdentity) {
+		t.Errorf("error = %v, want ErrNoIdentity", err)
+	}
+	if calls := w.server.CountCalls(syncv1connect.SubscriptionServiceChangePlanProcedure); calls != 0 {
+		t.Errorf("the server ran %d change calls, want none", calls)
+	}
+}
+
+func TestCreatePortalSession_ReturnsThePortalPageOfTheServerAfterPayment(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+	payFor(t, w, backend, "prod_basic")
+
+	got, err := backend.CreatePortalSession(t.Context(), api.CreatePortalSessionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.HasPrefix(got.PortalURL, "http") {
+		t.Errorf("portal url = %q, want the address of the portal page", got.PortalURL)
+	}
+}
+
+func TestCreatePortalSession_RefusesAnAccountThatNeverPaid(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	_, err := backend.CreatePortalSession(t.Context(), api.CreatePortalSessionRequest{})
+
+	if !errors.Is(err, syncprotocol.ErrNoActiveSubscription) {
+		t.Errorf("error = %v, want ErrNoActiveSubscription", err)
+	}
+}
+
+func TestGetSubscription_ShowsTheSecondDeviceOfTheAccountTheSubscriptionTheFirstOneBought(t *testing.T) {
+	w := newBillingWorld(t)
+	first := service.NewBackend(w.c.SyncDeps())
+	other := synctest.NewSecondComputer(t, w.server, w.clock, "Other", w.words)
+	second := service.NewBackend(other.SyncDeps())
+	checkout, err := first.CreateCheckout(t.Context(), api.CreateCheckoutRequest{Plan: "prod_plus"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pay(t, w, checkout.CheckoutURL)
+
+	got, err := second.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.Phase != api.PhaseActive || got.Plan != "prod_plus" {
+		t.Errorf("the second device sees phase %q and plan %q, want active and prod_plus", got.Phase, got.Plan)
+	}
+}
+
+func TestListPlans_ListsThePlansOfAnAccountThatHasNoSubscription(t *testing.T) {
+	w := newBillingWorld(t)
+	backend := service.NewBackend(w.c.SyncDeps())
+
+	subscription, err := backend.GetSubscription(t.Context(), api.GetSubscriptionRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	plans, err := backend.ListPlans(t.Context(), api.ListPlansRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if subscription.Phase != api.PhaseNone || len(plans.Plans) == 0 {
+		t.Errorf("phase %q with %d plans, want none with the plans of the server", subscription.Phase, len(plans.Plans))
+	}
+}

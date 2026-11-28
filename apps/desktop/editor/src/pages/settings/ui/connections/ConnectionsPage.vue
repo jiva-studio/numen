@@ -6,12 +6,11 @@
  */
 import { nextTick, useTemplateRef } from 'vue'
 import { SettingsPage } from '@numen/plugin-manager'
-import { runInBackground } from '@numen/ui'
+import { ConfirmDialog, runInBackground } from '@numen/ui'
 import type { ConnectionInfo } from '@/entities/connection'
 import type { InstallationConnections } from '../../types'
 import { useConnectionsPage } from '../../model/useConnectionsPage'
 import { WORDS as words } from '../../words'
-import { ConfirmDialog } from '../confirm-dialog'
 import ConnectionDialog from './ConnectionDialog.vue'
 import ConnectionList from './ConnectionList.vue'
 

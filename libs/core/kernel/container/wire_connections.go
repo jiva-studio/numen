@@ -12,16 +12,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
 
-func hasPluginHost(settingsDeps settingsParts) bool {
-	return settingsDeps.ConnectionTypes != nil
-}
-
 func openConnectionRepository(c settingsParts) *settingsadapter.ConnectionRepository {
 	return settingsadapter.NewConnectionRepository(
 		c.SettingsFiles,
 		func() (string, error) { return getSettingsFile(c) },
-		func() (settingsadapter.File, error) { return readCheckedSettings(c) },
-		func() { refreshSettingEvents(c) },
+		func() (settingsadapter.File, error) { return createSettingsStore(c).ReadCheckedFile() },
+		func() { getFeed(c).Refresh() },
 	)
 }
 
@@ -40,10 +36,10 @@ func openConnectionRows(install pluginInstall, exec *PluginExecution, settingsDe
 }
 
 func openConnectionDeps(install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts) (connection.Deps, bool) {
-	if !hasPluginHost(settingsDeps) {
+	if settingsDeps.ConnectionTypes == nil {
 		return connection.Deps{}, false
 	}
-	deps := connection.NewDeps(openConnectionRepository(settingsDeps), settingsDeps.ConnectionTypes, install.KeyStore,
+	deps := connection.NewDeps(openConnectionRepository(settingsDeps), settingsDeps.ConnectionTypes, install.Keys.Store,
 		openConnectionRows(install, exec, settingsDeps, vaultDeps), openDetection(install, exec, settingsDeps, vaultDeps))
 	if options := openRowOptions(install, exec, deps); options != nil {
 		deps = deps.AddOptionLists(options)
@@ -57,7 +53,7 @@ func openDetection(install pluginInstall, exec *PluginExecution, settingsDeps se
 		source := providerbridge.NewQuestionSource(exec.Runtime.Activator)
 		return providerbridge.NewDetection(settingsDeps.ConnectionTypes, source, vaultDeps.Clock)
 	}
-	detection.Follow(func() { refreshSettingEvents(settingsDeps) }, settingsDeps.HandleError)
+	detection.Follow(func() { getFeed(settingsDeps).Refresh() }, settingsDeps.HandleError)
 	return detection
 }
 
@@ -78,10 +74,6 @@ func openConnectionUseCases(install pluginInstall, exec *PluginExecution, settin
 	}
 }
 
-func openModelCalls(install pluginInstall, settingsDeps settingsParts) connectionport.ModelCalls {
-	return getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
-}
-
 func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps settingsParts, vaultDeps vaultParts, notices connection.ReportSetAside) {
 	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
@@ -93,7 +85,7 @@ func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps se
 			Rows:   connection.NewListRows(deps, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute,
 			Titles: install.OperationTitles,
 		},
-		openCallSource(install, exec, deps), vaultDeps.Clock, vaultDeps.Clock.Wait, notices,
+		openCallSource(install, exec, deps), vaultDeps.Clock, connection.NewWait(vaultDeps.Clock.StartTimer), notices,
 	)
 	lists := openRowLists(install, exec, settingsDeps, vaultDeps)
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) {
@@ -102,13 +94,6 @@ func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps se
 			l.RowLists = lists
 		}
 	})
-}
-
-func getConnectionCalls(prefs *PluginPreferences, endpoints *PluginEndpoints) connectionport.ModelCalls {
-	if prefs == nil || endpoints == nil {
-		return nil
-	}
-	return getForwardedCalls(prefs.Views.Types, endpoints.Endpoint)
 }
 
 func getForwardedCalls(types connectionport.Types, endpoint *hostendpoint.Services) connectionport.ModelCalls {

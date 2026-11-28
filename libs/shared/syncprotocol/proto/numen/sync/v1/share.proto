@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+import "numen/sync/v1/blob.proto";
+import "numen/sync/v1/revision.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// ShareService keeps the signed member log of a shared folder and serves its files to readers.
+service ShareService {
+  // AppendShareLogEntry adds an entry to the signed, append-only member log of a share root. The owner account only,
+  // and it needs write entitlement. Kind CREATE makes the share root.
+  rpc AppendShareLogEntry(AppendShareLogEntryRequest) returns (AppendShareLogEntryResponse);
+  // ListShares lists the share roots of the account of the session (as owner).
+  rpc ListShares(ListSharesRequest) returns (ListSharesResponse);
+  // GetShareLog returns the entries after a version and the chain of the owner account. The owner and every reader
+  // that is a member, up to and including the entry that removed it. It needs no entitlement.
+  rpc GetShareLog(GetShareLogRequest) returns (GetShareLogResponse);
+  // GetShareChanges returns the head revisions of the files of a share root that changed after a cursor. Readers
+  // only. It needs no entitlement.
+  rpc GetShareChanges(GetShareChangesRequest) returns (GetShareChangesResponse);
+  // GetShareBlobUrls returns presigned GETs for the blobs of the current share heads. Readers only. Rate limited.
+  rpc GetShareBlobUrls(GetShareBlobUrlsRequest) returns (GetShareBlobUrlsResponse);
+}
+
+enum ShareLogKind {
+  SHARE_LOG_KIND_UNSPECIFIED = 0;
+  // SHARE_LOG_KIND_CREATE is version 1: the share root exists, in vault_id, epoch 0, no reader.
+  SHARE_LOG_KIND_CREATE = 1;
+  // SHARE_LOG_KIND_ADD_READER makes subject_root_sign_key a reader; epoch unchanged; one seal, for the subject.
+  SHARE_LOG_KIND_ADD_READER = 2;
+  // SHARE_LOG_KIND_REMOVE_READER removes the subject; epoch + 1; one seal for each remaining reader; prev_key_seal.
+  SHARE_LOG_KIND_REMOVE_READER = 3;
+  // SHARE_LOG_KIND_ROTATE changes no member; epoch + 1; one seal for each reader; prev_key_seal.
+  SHARE_LOG_KIND_ROTATE = 4;
+  // SHARE_LOG_KIND_UPDATE changes enc_owner_body or enc_share_body; epoch unchanged; no seal.
+  SHARE_LOG_KIND_UPDATE = 5;
+  // SHARE_LOG_KIND_CLOSE stops the share; every reader is removed; no seal; the log accepts nothing after it.
+  SHARE_LOG_KIND_CLOSE = 6;
+}
+
+message ShareLogEntry {
+  // share_root_id is 16 bytes.
+  bytes share_root_id = 1;
+  // version is 1 for CREATE, then head + 1.
+  uint64 version = 2;
+  // prev_hash is the entry id of the previous entry, 32 bytes; empty for version 1.
+  bytes prev_hash = 3;
+  ShareLogKind kind = 4;
+  // vault_id is 16 bytes, CREATE only.
+  bytes vault_id = 5;
+  // epoch is the epoch after this entry.
+  uint32 epoch = 6;
+  // subject_root_sign_key is 32 bytes, ADD_READER and REMOVE_READER only.
+  bytes subject_root_sign_key = 7;
+  // enc_owner_body is SealData of the owner account, at most 16 KiB.
+  bytes enc_owner_body = 8;
+  // enc_share_body is XChaCha20-Poly1305 under the share key of epoch, at most 1 KiB.
+  bytes enc_share_body = 9;
+  // seals holds at most 1000 seals.
+  repeated ShareSeal seals = 10;
+  // prev_key_seal is the key of epoch - 1 sealed under the key of epoch (REMOVE_READER, ROTATE); else empty.
+  bytes prev_key_seal = 11;
+  // author_device_sign_key is 32 bytes, a device of the chain of the owner account.
+  bytes author_device_sign_key = 12;
+  // signature is 64 bytes over syncprotocol.GetShareLogEntryMessage, under the plugin domain.
+  bytes signature = 13;
+}
+
+message ShareSeal {
+  // reader_root_sign_key is 32 bytes.
+  bytes reader_root_sign_key = 1;
+  // sealed is a box to the account box key of the reader, at most 256 bytes.
+  bytes sealed = 2;
+}
+
+message AppendShareLogEntryRequest {
+  ShareLogEntry entry = 1;
+}
+
+message AppendShareLogEntryResponse {
+  bool committed = 1;
+  // head is the entry at the top when not committed.
+  ShareLogEntry head = 2;
+}
+
+message ListSharesRequest {}
+
+message ListSharesResponse {
+  repeated ShareSummary shares = 1;
+}
+
+message ShareSummary {
+  bytes share_root_id = 1;
+  bytes vault_id = 2;
+  uint64 head_version = 3;
+  uint32 epoch = 4;
+  bool is_closed = 5;
+}
+
+message GetShareLogRequest {
+  bytes share_root_id = 1;
+  uint64 since_version = 2;
+  // limit 0 means 200; at most 1000.
+  uint32 limit = 3;
+}
+
+message GetShareLogResponse {
+  repeated ShareLogEntry entries = 1;
+  bool has_more = 2;
+  // owner_chain is the longest chain the server stores for the owner account.
+  bytes owner_chain = 3;
+}
+
+message GetShareChangesRequest {
+  bytes share_root_id = 1;
+  uint64 since_seq = 2;
+  // limit 0 means 200; at most 1000.
+  uint32 limit = 3;
+}
+
+message GetShareChangesResponse {
+  // changes are ordered by seq, then file_id; a batch is never split.
+  repeated ShareChange changes = 1;
+  // next_seq is the highest seq in the page, or since_seq for an empty page.
+  uint64 next_seq = 2;
+  bool has_more = 3;
+}
+
+message ShareChange {
+  // change has an empty enc_meta when left is true.
+  StoredRevision change = 1;
+  // enc_meta_hash is the SHA-256 of the enc_meta the owner signed; always set.
+  bytes enc_meta_hash = 2;
+  // left means the file left the share root: the head has another share_root_id or none.
+  bool left = 3;
+}
+
+message GetShareBlobUrlsRequest {
+  bytes share_root_id = 1;
+  // blob_ids holds 1 to 100 ids.
+  repeated bytes blob_ids = 2;
+}
+
+message GetShareBlobUrlsResponse {
+  repeated BlobDownload downloads = 1;
+}
+
+// ShareEnded is the detail of PERMISSION_DENIED: the version of the entry that removed the caller.
+message ShareEnded {
+  uint64 version = 1;
+}
+
+// RateLimited is the detail of RESOURCE_EXHAUSTED.
+message RateLimited {
+  uint32 retry_after_seconds = 1;
+}

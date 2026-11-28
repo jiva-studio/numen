@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedchunks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -139,11 +140,11 @@ func (s *session) openIndexedSession(
 		Texts: testsupport.Texts{Readers: readers}, ShouldRebuildIndex: options.Rebuild,
 	})
 	// No vectors: a test uses no model, and a vault is searched by words alone.
-	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, testsupport.Texts{Readers: readers}, none.SearchSource{})
+	embed := embedchunks.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, testsupport.Texts{Readers: readers}, none.SearchSource{})
 
 	indexed := parts.indexedOver(rows)
 	indexed.Scan = cli.Scan{
-		Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, preparingRead(indexing.NewReadWholeVault(notes, books, embed))), db.NoteQueries()),
+		Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, preparingRead(indexing.NewReadWholeVault(notes, books, embed.EmbedWithProgress))), db.NoteQueries()),
 		Now:  clockOf(parts.now),
 	}
 	// No embedder: a test uses no model, so a query is answered by words alone.

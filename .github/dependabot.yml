@@ -21,6 +21,8 @@ updates:
       - /libs/plugin/sdk-go
       - /libs/plugin/sdk-go/wasm
       - /libs/plugin/sdk-go/models
+      - /libs/shared/identity
+      - /libs/shared/syncprotocol
       - /libs/shared/licensing
       - /libs/shared/onnx
       - /libs/shared/rerank
@@ -50,6 +52,7 @@ updates:
       - /plugins/tools-saved-search
       - /plugins/tools-search-relevance
       - /plugins/tools-taxonomy
+      - /plugins/tools-sync
       - /plugins/tools-templates
       - /plugins/tools-updater
       - /plugins/views-flashcards-studio

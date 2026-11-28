@@ -110,6 +110,49 @@ const (
 	ErrorCode_ERROR_CODE_RECIPE_MISMATCH ErrorCode = 37
 	// The call exceeds the allowed count or size limit.
 	ErrorCode_ERROR_CODE_LIMIT_EXCEEDED ErrorCode = 38
+	// The staged file does not have the hash the caller expected.
+	ErrorCode_ERROR_CODE_HASH_MISMATCH ErrorCode = 39
+	// A byte range is not one the file can give: a length outside 1 to 4194304 or a negative start.
+	ErrorCode_ERROR_CODE_INVALID_RANGE ErrorCode = 40
+	// The vault is read only for this caller: another plugin manages it. Nothing is written.
+	ErrorCode_ERROR_CODE_READ_ONLY ErrorCode = 41
+	// The file is listed and its bytes are not on this device.
+	ErrorCode_ERROR_CODE_FILE_ABSENT ErrorCode = 42
+	// A file with other content is already at the path of an absent file.
+	ErrorCode_ERROR_CODE_FILE_PRESENT ErrorCode = 43
+	// The file has changes that are not the content the call named. It is left as it is.
+	ErrorCode_ERROR_CODE_CHANGED ErrorCode = 44
+	// A set of words that is not 12 recovery words, or whose checksum fails.
+	ErrorCode_ERROR_CODE_INVALID_WORDS ErrorCode = 45
+	// A sheet with a wrong or unknown word, sheets of two kits, or one sheet entered twice.
+	ErrorCode_ERROR_CODE_INVALID_SHEETS ErrorCode = 46
+	// Fewer than two sheets.
+	ErrorCode_ERROR_CODE_NOT_ENOUGH_SHEETS ErrorCode = 47
+	// A proof that belongs to another account than this device.
+	ErrorCode_ERROR_CODE_OTHER_ACCOUNT ErrorCode = 48
+	// A device that holds no identity, or a call that needs one on a device with none.
+	ErrorCode_ERROR_CODE_NO_IDENTITY ErrorCode = 49
+	// A link already runs on this device.
+	ErrorCode_ERROR_CODE_LINK_ACTIVE ErrorCode = 50
+	// A call that needs a link finds none.
+	ErrorCode_ERROR_CODE_NO_LINK ErrorCode = 51
+	// A revoke that would leave the account with no device.
+	ErrorCode_ERROR_CODE_LAST_DEVICE ErrorCode = 52
+	// A revoke that was dropped because the device to revoke added a device.
+	ErrorCode_ERROR_CODE_REVOKE_RACED ErrorCode = 53
+	// A revoke of the device it was asked on.
+	ErrorCode_ERROR_CODE_NOT_ALLOWED_THIS_DEVICE ErrorCode = 54
+	// A call that the account does not allow a revoked device.
+	ErrorCode_ERROR_CODE_DEVICE_REVOKED ErrorCode = 55
+	// A restore that the server answered with a chain that does not contain the chain mark of the
+	// kit: older, or another history, or none. The restore is over; nothing was kept.
+	ErrorCode_ERROR_CODE_CHAIN_OUTDATED ErrorCode = 56
+	// A passphrase that does not open the key file.
+	ErrorCode_ERROR_CODE_WRONG_PASSPHRASE ErrorCode = 57
+	// A passphrase of no characters, or a choice of a passphrase that gives none.
+	ErrorCode_ERROR_CODE_EMPTY_PASSPHRASE ErrorCode = 58
+	// A text that is not the text of a QR code of a link.
+	ErrorCode_ERROR_CODE_LINK_TEXT_INVALID ErrorCode = 59
 )
 
 // Enum value maps for ErrorCode.
@@ -154,6 +197,27 @@ var (
 		36: "ERROR_CODE_NO_MODEL",
 		37: "ERROR_CODE_RECIPE_MISMATCH",
 		38: "ERROR_CODE_LIMIT_EXCEEDED",
+		39: "ERROR_CODE_HASH_MISMATCH",
+		40: "ERROR_CODE_INVALID_RANGE",
+		41: "ERROR_CODE_READ_ONLY",
+		42: "ERROR_CODE_FILE_ABSENT",
+		43: "ERROR_CODE_FILE_PRESENT",
+		44: "ERROR_CODE_CHANGED",
+		45: "ERROR_CODE_INVALID_WORDS",
+		46: "ERROR_CODE_INVALID_SHEETS",
+		47: "ERROR_CODE_NOT_ENOUGH_SHEETS",
+		48: "ERROR_CODE_OTHER_ACCOUNT",
+		49: "ERROR_CODE_NO_IDENTITY",
+		50: "ERROR_CODE_LINK_ACTIVE",
+		51: "ERROR_CODE_NO_LINK",
+		52: "ERROR_CODE_LAST_DEVICE",
+		53: "ERROR_CODE_REVOKE_RACED",
+		54: "ERROR_CODE_NOT_ALLOWED_THIS_DEVICE",
+		55: "ERROR_CODE_DEVICE_REVOKED",
+		56: "ERROR_CODE_CHAIN_OUTDATED",
+		57: "ERROR_CODE_WRONG_PASSPHRASE",
+		58: "ERROR_CODE_EMPTY_PASSPHRASE",
+		59: "ERROR_CODE_LINK_TEXT_INVALID",
 	}
 	ErrorCode_value = map[string]int32{
 		"ERROR_CODE_UNSPECIFIED":              0,
@@ -195,6 +259,27 @@ var (
 		"ERROR_CODE_NO_MODEL":                 36,
 		"ERROR_CODE_RECIPE_MISMATCH":          37,
 		"ERROR_CODE_LIMIT_EXCEEDED":           38,
+		"ERROR_CODE_HASH_MISMATCH":            39,
+		"ERROR_CODE_INVALID_RANGE":            40,
+		"ERROR_CODE_READ_ONLY":                41,
+		"ERROR_CODE_FILE_ABSENT":              42,
+		"ERROR_CODE_FILE_PRESENT":             43,
+		"ERROR_CODE_CHANGED":                  44,
+		"ERROR_CODE_INVALID_WORDS":            45,
+		"ERROR_CODE_INVALID_SHEETS":           46,
+		"ERROR_CODE_NOT_ENOUGH_SHEETS":        47,
+		"ERROR_CODE_OTHER_ACCOUNT":            48,
+		"ERROR_CODE_NO_IDENTITY":              49,
+		"ERROR_CODE_LINK_ACTIVE":              50,
+		"ERROR_CODE_NO_LINK":                  51,
+		"ERROR_CODE_LAST_DEVICE":              52,
+		"ERROR_CODE_REVOKE_RACED":             53,
+		"ERROR_CODE_NOT_ALLOWED_THIS_DEVICE":  54,
+		"ERROR_CODE_DEVICE_REVOKED":           55,
+		"ERROR_CODE_CHAIN_OUTDATED":           56,
+		"ERROR_CODE_WRONG_PASSPHRASE":         57,
+		"ERROR_CODE_EMPTY_PASSPHRASE":         58,
+		"ERROR_CODE_LINK_TEXT_INVALID":        59,
 	}
 )
 
@@ -526,7 +611,7 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
 	"\x05group\x18\x03 \x01(\tR\x05group\x12\x16\n" +
 	"\x06detail\x18\x04 \x01(\tR\x06detail\x12\x12\n" +
-	"\x04when\x18\x05 \x01(\tR\x04when*\xc7\b\n" +
+	"\x04when\x18\x05 \x01(\tR\x04when*\xbe\r\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ERROR_CODE_NOT_FOUND\x10\x01\x12\x19\n" +
@@ -567,7 +652,28 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x1bERROR_CODE_TYPE_UNAVAILABLE\x10#\x12\x17\n" +
 	"\x13ERROR_CODE_NO_MODEL\x10$\x12\x1e\n" +
 	"\x1aERROR_CODE_RECIPE_MISMATCH\x10%\x12\x1d\n" +
-	"\x19ERROR_CODE_LIMIT_EXCEEDED\x10&BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x19ERROR_CODE_LIMIT_EXCEEDED\x10&\x12\x1c\n" +
+	"\x18ERROR_CODE_HASH_MISMATCH\x10'\x12\x1c\n" +
+	"\x18ERROR_CODE_INVALID_RANGE\x10(\x12\x18\n" +
+	"\x14ERROR_CODE_READ_ONLY\x10)\x12\x1a\n" +
+	"\x16ERROR_CODE_FILE_ABSENT\x10*\x12\x1b\n" +
+	"\x17ERROR_CODE_FILE_PRESENT\x10+\x12\x16\n" +
+	"\x12ERROR_CODE_CHANGED\x10,\x12\x1c\n" +
+	"\x18ERROR_CODE_INVALID_WORDS\x10-\x12\x1d\n" +
+	"\x19ERROR_CODE_INVALID_SHEETS\x10.\x12 \n" +
+	"\x1cERROR_CODE_NOT_ENOUGH_SHEETS\x10/\x12\x1c\n" +
+	"\x18ERROR_CODE_OTHER_ACCOUNT\x100\x12\x1a\n" +
+	"\x16ERROR_CODE_NO_IDENTITY\x101\x12\x1a\n" +
+	"\x16ERROR_CODE_LINK_ACTIVE\x102\x12\x16\n" +
+	"\x12ERROR_CODE_NO_LINK\x103\x12\x1a\n" +
+	"\x16ERROR_CODE_LAST_DEVICE\x104\x12\x1b\n" +
+	"\x17ERROR_CODE_REVOKE_RACED\x105\x12&\n" +
+	"\"ERROR_CODE_NOT_ALLOWED_THIS_DEVICE\x106\x12\x1d\n" +
+	"\x19ERROR_CODE_DEVICE_REVOKED\x107\x12\x1d\n" +
+	"\x19ERROR_CODE_CHAIN_OUTDATED\x108\x12\x1f\n" +
+	"\x1bERROR_CODE_WRONG_PASSPHRASE\x109\x12\x1f\n" +
+	"\x1bERROR_CODE_EMPTY_PASSPHRASE\x10:\x12 \n" +
+	"\x1cERROR_CODE_LINK_TEXT_INVALID\x10;BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once

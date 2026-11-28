@@ -14,6 +14,7 @@ PLUGIN_LOADER := libs/plugin/loader
 PLUGIN_MANAGER := libs/plugin/manager
 PROTOCOL := libs/shared/protocol
 RERANK := libs/shared/rerank
+SYNC_PROTOCOL := libs/shared/syncprotocol
 RESULT := libs/shared/result
 PLUGIN_SDK := libs/plugin/sdk-ts
 PLUGIN_SDK_GO := libs/plugin/sdk-go
@@ -253,6 +254,7 @@ lib_plugin_catalog_lint: ## run linters for the plugin catalog
 lib_protocol_generate: ## generate protocol and rerank message code and the lists of slots, when variables, shared commands and events
 	cd $(PROTOCOL) && buf generate
 	cd $(RERANK) && buf generate
+	cd $(SYNC_PROTOCOL) && buf generate
 	node $(PROTOCOL)/tools/slots.mjs
 	node $(PROTOCOL)/tools/when.mjs
 	node $(PROTOCOL)/tools/commands.mjs
@@ -262,8 +264,8 @@ protocol_gen: lib_protocol_generate ## alias for lib_protocol_generate
 
 .PHONY: lib_protocol_generate_check
 lib_protocol_generate_check: lib_protocol_generate ## verify protocol schema is up to date
-	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src $(RERANK)/rerank.pb.go $(RERANK)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
-	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src $(RERANK)/rerank.pb.go $(RERANK)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
+	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src $(RERANK)/rerank.pb.go $(RERANK)/src $(SYNC_PROTOCOL)/gen libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
+	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src $(RERANK)/rerank.pb.go $(RERANK)/src $(SYNC_PROTOCOL)/gen libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
 
 .PHONY: lib_protocol_compile
 lib_protocol_compile: ## compile protocol Go packages
@@ -276,6 +278,7 @@ lib_protocol_test: lib_protocol_compile
 lib_protocol_lint: ## lint protocol definitions
 	cd $(PROTOCOL) && buf lint
 	cd $(RERANK) && buf lint
+	cd $(SYNC_PROTOCOL) && buf lint
 	cd $(PROTOCOL) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 
 .PHONY: lib_protocol_vulncheck
@@ -556,12 +559,36 @@ app_desktop_e2e: lib_workbench_build app_desktop_editor_build app_desktop_flashc
 	cd $(TESTS)/e2e/desktop && npm test
 	cd $(TESTS)/e2e/desktop && npm run test:flashcards
 
+.PHONY: sync_stack_up
+sync_stack_up: ## start the real sync server of the tests (tests/server), optionally with PROJECT=name
+	bash $(TESTS)/server/stack.sh up "$(PROJECT)"
+
+.PHONY: sync_stack_down
+sync_stack_down: ## stop the real sync server of the tests and drop its data, optionally with PROJECT=name
+	bash $(TESTS)/server/stack.sh down "$(PROJECT)"
+
+.PHONY: sync_stack_fresh
+sync_stack_fresh: ## recreate a stand empty after a full run: make sync_stack_fresh PROJECT=name [COMPOSE=file]
+	@test -n "$(PROJECT)" || { echo "give the project to recreate: make sync_stack_fresh PROJECT=name [COMPOSE=file]" >&2; exit 2; }
+	bash $(TESTS)/server/stack.sh fresh "$(PROJECT)" $(COMPOSE)
+
+.PHONY: sync_stack_env
+sync_stack_env: ## print the settings of the running stack: eval "$$(make -s sync_stack_env)", optionally with PROJECT=name
+	@bash $(TESTS)/server/stack.sh env "$(PROJECT)"
+
 .PHONY: app_desktop_acceptance
 app_desktop_acceptance: lib_workbench_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run the acceptance scenarios
 	cd $(DESKTOP) && go build -tags numen_debug -ldflags "-X 'github.com/jiva-studio/numen/apps/desktop/internal/version.version=1.0.0 (build 1000, commit acceptance)'" -o numen-debug ./cmd/numen
 	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
 	cd plugins/connections-llm && go build -o bin/fakeopenai ./backend/cmd/fakeopenai
 	cd $(TESTS)/acceptance/desktop && npm run acceptance:test
+
+.PHONY: app_desktop_acceptance_live
+app_desktop_acceptance_live: lib_workbench_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run shared @live scenarios, excluding @stand (set up the sync stack and set NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY for the real model)
+	cd $(DESKTOP) && go build -tags numen_debug -ldflags "-X 'github.com/jiva-studio/numen/apps/desktop/internal/version.version=1.0.0 (build 1000, commit acceptance)'" -o numen-debug ./cmd/numen
+	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
+	cd tools/syncaccount && go build -o bin/syncaccount .
+	cd $(TESTS)/acceptance/desktop && npm run acceptance:live
 
 .PHONY: app_desktop_acceptance_lint
 app_desktop_acceptance_lint: ## lint the acceptance scenarios, steps and driver

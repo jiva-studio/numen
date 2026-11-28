@@ -1,0 +1,58 @@
+package settings
+
+import (
+	"errors"
+	"io/fs"
+	"os"
+	"slices"
+
+	domainkeyfile "github.com/jiva-studio/numen/libs/core/kernel/domain/keyfile"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+)
+
+// The values of keys.credentialsFile.
+const (
+	CredentialsFileUnset      = "unset"
+	CredentialsFilePassphrase = "passphrase"
+	CredentialsFilePlaintext  = "plaintext"
+)
+
+// Keys is the settings section for where the keys are kept on a computer without a system keychain.
+type Keys struct {
+	CredentialsFile string `json:"credentialsFile"`
+}
+
+// ReadCredentialsFile reads keys.credentialsFile from the settings file at path without writing
+// anything. A file that is not there, cannot be read or holds another value gives CredentialsFileUnset.
+func ReadCredentialsFile(path string) string {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return CredentialsFileUnset
+	}
+	file, err := (&Store{files: NewFiles()}).ReadUncheckedAt(path)
+	if err != nil {
+		return CredentialsFileUnset
+	}
+	value := file.Texts[keyCredentialsFile]
+	if !slices.Contains([]string{CredentialsFilePassphrase, CredentialsFilePlaintext}, value) {
+		return CredentialsFileUnset
+	}
+	return value
+}
+
+// WriteCredentialsFile writes value to keys.credentialsFile; the other settings of the file are kept. The caller passes one of the CredentialsFile constants.
+func WriteCredentialsFile(path, value string) error {
+	store := NewStore(NewFiles(), func() (string, error) { return path, nil }, nil, nil)
+	return store.Write([]settingsdomain.Setting{{
+		Path: []string{settingsdomain.AppOwner, "keys", "credentialsFile"},
+		JSON: `"` + value + `"`,
+	}})
+}
+
+// WriteKeyFileMode writes the chosen mode to keys.credentialsFile of the settings file of the installation.
+func WriteKeyFileMode(mode domainkeyfile.Mode) error {
+	path, err := GetPath()
+	if err != nil {
+		return err
+	}
+	return WriteCredentialsFile(path, string(mode))
+}

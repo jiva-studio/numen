@@ -62,8 +62,8 @@ func (f *ManualClock) Advance(d time.Duration) time.Time {
 	return f.now
 }
 
-// After returns a channel that receives the time once the clock has moved d past the time it reads now.
-func (f *ManualClock) After(d time.Duration) <-chan time.Time {
+// StartTimer returns a channel that receives the time once the clock has moved d past the time it reads now.
+func (f *ManualClock) StartTimer(d time.Duration) <-chan time.Time {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	fired := make(chan time.Time, 1)
@@ -78,7 +78,7 @@ func (f *ManualClock) Wait(ctx context.Context, d time.Duration) error {
 	if d <= 0 || ctx.Err() != nil {
 		return ctx.Err()
 	}
-	fired := f.After(d)
+	fired := f.StartTimer(d)
 	select {
 	case <-ctx.Done():
 		f.drop(fired)

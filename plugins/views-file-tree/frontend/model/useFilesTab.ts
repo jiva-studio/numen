@@ -75,7 +75,12 @@ const getMenuEntry = (list: FileTree, path: string): Entry =>
 const getPathTarget = (list: FileTree, path: string, others: readonly string[]): CommandTarget => {
   const entry = getMenuEntry(list, path)
   const target = { path, title: entry.name, isFolder: entry.isFolder, others, tab: '' }
-  return entry.isNote ? { ...target, noteType: entry.type } : target
+  const marked = {
+    ...target,
+    ...(entry.isAbsent ? { isAbsent: true } : {}),
+    ...(entry.provider ? { provider: entry.provider } : {}),
+  }
+  return entry.isNote ? { ...marked, noteType: entry.type } : marked
 }
 
 const getMenuTarget = (

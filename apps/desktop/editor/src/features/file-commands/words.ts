@@ -10,5 +10,7 @@ export const FILE_WORDS = {
   untitledFolder: 'New folder',
   errors: WORDS.errors,
   alreadyExists: WORDS.alreadyExists,
+  download: WORDS.downloadFile,
+  dropDownload: WORDS.dropDownload,
   unanswered: WORDS.unanswered,
 }

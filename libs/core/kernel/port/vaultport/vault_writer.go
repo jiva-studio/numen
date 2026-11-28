@@ -17,15 +17,23 @@ type NoteWriter interface {
 type FolderWriter interface {
 	MakeFolder(ctx context.Context, path string) error
 	Import(ctx context.Context, path string, content io.Reader) error
+	// Replace streams content over the file at path, whole or not at all. A baseline that is not the zero stat must have the
+	// hash of the file at the rename, or the file is left as it is and edit.ErrStale is returned.
+	Replace(ctx context.Context, path string, content io.Reader, baseline domain.FileStat) error
 }
 
 type FileMover interface {
 	Move(ctx context.Context, from, to string) error
+	// MoveFileWithHash moves a regular file when its hash matches, under the vault write lock.
+	MoveFileWithHash(ctx context.Context, from, to, hash string) error
 	// CheckMoveTarget returns vault.ErrAlreadyExists when a file other than the one at from is at to. On
 	// a filesystem that ignores case or Unicode normalization, a path that differs from from only in
 	// case or normalization is the same file.
 	CheckMoveTarget(ctx context.Context, from, to string) error
 	Remove(ctx context.Context, path string) error
+	// RemoveUnchanged deletes the file at path only when its size and modification time are those of was, under the
+	// write lock of the vault, and returns vault.ErrChanged and keeps the file when they are not.
+	RemoveUnchanged(ctx context.Context, path string, was domain.FileStat) error
 }
 
 // TrashEmptier deletes what a vault keeps in its trash.

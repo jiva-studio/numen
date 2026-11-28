@@ -14,3 +14,12 @@ html {
   font-family: var(--numen-font-sans);
   font-size: var(--numen-font-size);
 }
+
+/* A picture is taken of a still page: nothing moves while it is taken. */
+*,
+*::before,
+*::after {
+  animation: none !important;
+  transition: none !important;
+  caret-color: transparent !important;
+}

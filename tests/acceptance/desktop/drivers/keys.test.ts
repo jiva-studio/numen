@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { Keys } from './keys.js'
+import { Keys, MissingKeyError } from './keys.js'
 
 const VARIABLE = 'NUMEN_ACCEPTANCE_TESTS_KEYS_TEST_VARIABLE'
 const TABLE = [
@@ -32,6 +32,11 @@ describe('Keys', () => {
 
   it('names the variable that is not set, and not a value', () => {
     expect(() => new Keys().declare(TABLE)).toThrow(VARIABLE)
+  })
+
+  it('separates a missing variable from a malformed table', () => {
+    expect(() => new Keys().declare(TABLE)).toThrow(MissingKeyError)
+    expect(() => new Keys().declare([['key name'], ['Main']])).not.toThrow(MissingKeyError)
   })
 
   it('names the variable that is empty', () => {

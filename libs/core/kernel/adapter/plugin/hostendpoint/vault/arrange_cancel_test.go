@@ -26,8 +26,6 @@ type anyCaller struct{}
 
 func (anyCaller) Authenticate(string) (string, error) { return "md.numen.a", nil }
 
-func (anyCaller) Authorize(string, string) (string, error) { return "md.numen.a", nil }
-
 func (anyCaller) IsTakingFile(string, string, []domain.NoteType) bool { return true }
 
 type shownAccess struct{ access *Access }

@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
@@ -60,6 +61,8 @@ type launchServices interface {
 // Processes starts the process of a plugin, or the handler of a built-in one, and holds the pipes it
 // opened for the process until the process exits.
 type Processes struct {
+	Output OutputLog
+
 	sups     processTable
 	clock    machineport.Clock
 	report   func(error)
@@ -242,9 +245,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	}
 
 	go func() {
-		if _, err := io.Copy(io.Discard, stdout); err != nil && !errors.Is(err, os.ErrClosed) {
-			p.report(fmt.Errorf("read output of plugin %s: %w", plug.Manifest.ID, err))
-		}
+		forwardOutput(stdout, p.Output.get(), plug.Manifest.ID, domainlogs.LevelInfo)
 		closeResource(p.report, "stdout of plugin "+plug.Manifest.ID, stdout)
 	}()
 
@@ -317,8 +318,13 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, errors.Join(fmt.Errorf("pipe stdout: %w", err), stdin.Close())
 	}
 
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, nil, errors.Join(fmt.Errorf("pipe stderr: %w", err), stdin.Close(), stdout.Close())
+	}
+
 	if err := process.HideInheritedFiles(); err != nil {
-		return nil, nil, errors.Join(fmt.Errorf("hide inherited files: %w", err), stdin.Close(), stdout.Close())
+		return nil, nil, errors.Join(fmt.Errorf("hide inherited files: %w", err), stdin.Close(), stdout.Close(), stderr.Close())
 	}
 	// A failed Start has closed both pipes already.
 	if err := p.starter.Start(cmd); err != nil {
@@ -333,6 +339,7 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, errors.Join(fmt.Errorf("apply process limits: %w", err), stdin.Close(), stdout.Close())
 	}
 
+	go forwardOutput(stderr, p.Output.get(), plug.Manifest.ID, domainlogs.LevelWarning)
 	p.HoldStdin(plug.Manifest.ID, cmd.Process.Pid, stdin)
 	return cmd.Process, stdout, nil
 }

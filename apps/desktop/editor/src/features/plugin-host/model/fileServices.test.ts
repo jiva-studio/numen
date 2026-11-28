@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { Folder, FolderOpen } from '@lucide/vue'
 import { COMMAND, findIcon } from '@/shared/model/command'
+import { createDownloads } from '@/entities/file'
+import { asValue } from '@numen/result'
 import { createIconHost, createVaultFiles } from './fileServices'
 
 const target = {
@@ -19,6 +21,8 @@ const target = {
   source: null,
 }
 
+const readUnknownProgress = async () => asValue({ isKnown: false, bytesDone: 0, bytesTotal: 0 })
+
 const api = createAnsweredApi({
   files: {
     listFiles: (request) => ({
@@ -30,15 +34,20 @@ const api = createAnsweredApi({
 })
 
 const setup = () => {
+  const downloads = createDownloads({
+    fetchFile: async () => undefined,
+    getDownloadProgress: readUnknownProgress,
+  })
   const createUntitledNote = vi.fn()
   const runCommand = vi.fn(() => Promise.resolve())
   const files = createVaultFiles({
     listFiles: api.vault.file.listFiles,
+    downloads,
     making: { createUntitledNote } as never,
     getTarget: () => target as never,
     runCommand,
   })
-  return { files, createUntitledNote, runCommand }
+  return { files, createUntitledNote, runCommand, downloads }
 }
 
 beforeEach(() => {
@@ -109,5 +118,96 @@ describe('the icons the window draws with', () => {
     expect(host.getCommand('nothing at all')).toBeNull()
     expect(host.getEntry(entry('physics', true, true), false)).toBe(Folder)
     expect(host.getEntry(entry('physics', true, true), true)).toBe(FolderOpen)
+  })
+})
+
+describe('the files kept on demand', () => {
+  const listed = (entries: object[]) => ({
+    listFiles: async () => entries as never,
+  })
+  const absent = {
+    path: 'a.mp4',
+    name: 'a.mp4',
+    isFolder: false,
+    isNote: false,
+    type: 'note',
+    isAbsent: true,
+    provider: 'p',
+  }
+  const here = { path: 'b.mp4', name: 'b.mp4', isFolder: false, isNote: false, type: 'note' }
+  const folder = { path: 'dir', name: 'dir', isFolder: true, isNote: false, type: 'note' }
+  const createFiles = (
+    entries: object[],
+    downloads = createDownloads({
+      fetchFile: async () => undefined,
+      getDownloadProgress: readUnknownProgress,
+    }),
+  ) => ({
+    downloads,
+    files: createVaultFiles({
+      ...listed(entries),
+      downloads,
+      making: {} as never,
+      getTarget: () => target as never,
+      runCommand: vi.fn(),
+    }),
+  })
+
+  it('give a file that is here the provider the listing showed, a folder and an absent file none', async () => {
+    const { files } = createFiles([absent, here, folder])
+
+    const [a, b, c] = await files.list('')
+
+    expect([a?.provider, b?.provider, c?.provider]).toStrictEqual(['p', 'p', undefined])
+    expect(a?.isAbsent).toBe(true)
+  })
+
+  it('give no provider before a listing showed an absent file', async () => {
+    const { files } = createFiles([here])
+
+    expect((await files.list(''))[0]?.provider).toBeUndefined()
+  })
+
+  it('list a download that is running as downloading, and tell the plugin when one starts or ends', async () => {
+    let finish: () => void = () => undefined
+    const downloads = createDownloads({
+      fetchFile: () => new Promise<void>((done) => (finish = done)),
+      getDownloadProgress: readUnknownProgress,
+    })
+    const { files } = createFiles([absent], downloads)
+    const told: (readonly string[])[] = []
+    files.watchDownloads?.((paths) => told.push(paths))
+
+    const download = downloads.fetch('a.mp4')
+    expect((await files.list(''))[0]?.isDownloading).toBe(true)
+    finish()
+    await download
+
+    expect((await files.list(''))[0]?.isDownloading).toBeUndefined()
+    expect(told).toStrictEqual([['a.mp4'], ['a.mp4']])
+  })
+
+  it('give a download that runs the share of the file brought, once its size is known', async () => {
+    let finish: () => void = () => undefined
+    let tick: () => void = () => undefined
+    const downloads = createDownloads(
+      {
+        fetchFile: () => new Promise<void>((done) => (finish = done)),
+        getDownloadProgress: async () => asValue({ isKnown: true, bytesDone: 12, bytesTotal: 48 }),
+      },
+      { every: (task) => ((tick = task), () => undefined) },
+    )
+    const { files } = createFiles([absent], downloads)
+    const told: (readonly string[])[] = []
+    files.watchDownloads?.((paths) => told.push(paths))
+
+    const download = downloads.fetch('a.mp4')
+    expect((await files.list(''))[0]?.downloadProgress).toBeUndefined()
+    tick()
+    await vi.waitFor(() => expect(told).toHaveLength(2))
+
+    expect((await files.list(''))[0]?.downloadProgress).toBe(0.25)
+    finish()
+    await download
   })
 })

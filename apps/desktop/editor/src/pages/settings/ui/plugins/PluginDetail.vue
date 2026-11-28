@@ -18,6 +18,7 @@ import type {
 import PluginConnectionSections from './PluginConnectionSections.vue'
 import PluginSettings from './PluginSettings.vue'
 import PluginSlots from './PluginSlots.vue'
+import SettingsViews from './SettingsViews.vue'
 import { getManagedHealth, getMarkedSettings } from '../../lib/pluginHealth'
 import { keepEqual } from '../../lib/keepEqual'
 
@@ -57,6 +58,9 @@ const slotsLayout = computed<JsonValue | undefined>((held) =>
   keepEqual(held, slotsKey.value === undefined ? undefined : fields.getValue(slotsKey.value)),
 )
 const hasSlots = computed(() => slotsKey.value !== undefined && slotGroups.value.length > 0)
+const contributedTabs = computed(() =>
+  (props.plugin.settingsTabs ?? []).map((one) => ({ id: one.id, title: one.title })),
+)
 const fields = usePluginFields({
   getSettings: () => props.settings,
   getHost: () => props.manager,
@@ -96,6 +100,7 @@ function onRunAction(key: string): void {
     :can-install="false"
     :has-settings="hasSettings"
     :has-slots="hasSlots"
+    :contributed-tabs="contributedTabs"
     :health="health"
     :is-apple="isApple"
     @back="onBack"
@@ -112,6 +117,14 @@ function onRunAction(key: string): void {
         :plugin="props.plugin"
         :marked="marked"
         :focused="props.markedSetting ?? null"
+      />
+    </template>
+    <template #tab="{ id }">
+      <SettingsViews
+        :settings="props.settings"
+        :host="props.manager"
+        :plugin="props.plugin"
+        :tab="id"
       />
     </template>
     <template #slots>

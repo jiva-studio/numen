@@ -11,6 +11,7 @@ export interface SettingsViewsDeps {
   readonly getSettings: () => InstallationSettings
   readonly getHost: () => Pick<PluginFieldsHost, 'getSettingsViews'>
   readonly getPlugin: () => PluginInfo
+  readonly getTab?: () => string
 }
 
 export function useSettingsViews(deps: SettingsViewsDeps) {
@@ -22,6 +23,7 @@ export function useSettingsViews(deps: SettingsViewsDeps) {
     getRegisteredViews(
       deps.getPlugin().settingsViews ?? [],
       deps.getHost().getSettingsViews(deps.getPlugin().id),
+      deps.getTab?.(),
     ),
   )
   const values = computed(() =>

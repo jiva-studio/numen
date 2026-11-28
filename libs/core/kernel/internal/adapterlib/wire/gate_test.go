@@ -164,3 +164,31 @@ func TestAStreamOpenedAfterCloseIsRefused(t *testing.T) {
 		t.Fatalf("code = %v, want %v", got, connect.CodeUnavailable)
 	}
 }
+
+func answerWithFailure(t *testing.T, procedure string, failure error) []logs.Entry {
+	t.Helper()
+	var gate Gate
+	var entries []logs.Entry
+	gate.SetCallTrace(fixedClock{}, func(entry logs.Entry) { entries = append(entries, entry) })
+	if err := gate.answer(t.Context(), procedure, func(context.Context) error { return failure }); err == nil {
+		t.Fatal("the call did not fail")
+	}
+	return entries
+}
+
+func TestCallTraceOfInternalIdentityFailureRecordsTheErrorText(t *testing.T) {
+	failure := connect.NewError(connect.CodeInternal, errors.New("the key store failed: read the identity"))
+	entries := answerWithFailure(t, "/numen.v1.IdentityService/GetIdentity", failure)
+	if got := entries[0].Properties["detail"]; got != `"internal: the key store failed: read the identity"` {
+		t.Errorf("detail = %s, want the error text", got)
+	}
+}
+
+func TestCallTraceOfInternalFailureOfAnotherServiceRecordsNoErrorText(t *testing.T) {
+	failure := connect.NewError(connect.CodeInternal, errors.New("rejected key "+harborPhrase))
+	entries := answerWithFailure(t, numenv1connect.ProviderConnectionServiceCreateProviderConnectionProcedure, failure)
+	assertNoSecret(t, entries)
+	if _, found := entries[0].Properties["detail"]; found {
+		t.Error("a detail is recorded, want none")
+	}
+}

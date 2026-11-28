@@ -10,7 +10,7 @@ import {
   type WindowControls,
   type WindowHost,
 } from '@numen/plugin-loader'
-import type { FileApi } from '@/entities/file'
+import type { DownloadRegistry, FileApi } from '@/entities/file'
 import { getNoteInFocus, type WindowTabs } from '@/entities/tab'
 import { formatError } from '@/shared/api/errors'
 import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
@@ -69,12 +69,12 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps): PluginServic
 export interface VaultAccessDeps {
   readonly notes: VaultNotesDeps['notes']
   readonly files: Pick<FileApi, 'getFileKinds' | 'listFiles'>
+  readonly downloads: DownloadRegistry
   readonly relations: VaultRelations
   readonly search: VaultNotesDeps['search']
   readonly making: VaultNotesDeps['making']
   readonly pluginNotes: VaultNotesDeps['pluginNotes']
-  readonly getTarget: VaultFilesDeps['getTarget']
-  readonly runInvocation: VaultFilesDeps['runCommand']
+  readonly invoking: Pick<VaultFilesDeps, 'getTarget' | 'runCommand'>
 }
 
 /** The notes, the links and the files of the vault. */
@@ -92,9 +92,9 @@ export function createVaultAccess(
     relations: deps.relations,
     files: createVaultFiles({
       listFiles: deps.files.listFiles,
+      downloads: deps.downloads,
       making: deps.making,
-      getTarget: deps.getTarget,
-      runCommand: deps.runInvocation,
+      ...deps.invoking,
     }),
   }
 }

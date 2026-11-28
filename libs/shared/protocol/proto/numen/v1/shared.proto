@@ -128,6 +128,70 @@ enum ErrorCode {
 
   // The call exceeds the allowed count or size limit.
   ERROR_CODE_LIMIT_EXCEEDED = 38;
+
+  // The staged file does not have the hash the caller expected.
+  ERROR_CODE_HASH_MISMATCH = 39;
+
+  // A byte range is not one the file can give: a length outside 1 to 4194304 or a negative start.
+  ERROR_CODE_INVALID_RANGE = 40;
+
+  // The vault is read only for this caller: another plugin manages it. Nothing is written.
+  ERROR_CODE_READ_ONLY = 41;
+
+  // The file is listed and its bytes are not on this device.
+  ERROR_CODE_FILE_ABSENT = 42;
+
+  // A file with other content is already at the path of an absent file.
+  ERROR_CODE_FILE_PRESENT = 43;
+
+  // The file has changes that are not the content the call named. It is left as it is.
+  ERROR_CODE_CHANGED = 44;
+
+  // A set of words that is not 12 recovery words, or whose checksum fails.
+  ERROR_CODE_INVALID_WORDS = 45;
+
+  // A sheet with a wrong or unknown word, sheets of two kits, or one sheet entered twice.
+  ERROR_CODE_INVALID_SHEETS = 46;
+
+  // Fewer than two sheets.
+  ERROR_CODE_NOT_ENOUGH_SHEETS = 47;
+
+  // A proof that belongs to another account than this device.
+  ERROR_CODE_OTHER_ACCOUNT = 48;
+
+  // A device that holds no identity, or a call that needs one on a device with none.
+  ERROR_CODE_NO_IDENTITY = 49;
+
+  // A link already runs on this device.
+  ERROR_CODE_LINK_ACTIVE = 50;
+
+  // A call that needs a link finds none.
+  ERROR_CODE_NO_LINK = 51;
+
+  // A revoke that would leave the account with no device.
+  ERROR_CODE_LAST_DEVICE = 52;
+
+  // A revoke that was dropped because the device to revoke added a device.
+  ERROR_CODE_REVOKE_RACED = 53;
+
+  // A revoke of the device it was asked on.
+  ERROR_CODE_NOT_ALLOWED_THIS_DEVICE = 54;
+
+  // A call that the account does not allow a revoked device.
+  ERROR_CODE_DEVICE_REVOKED = 55;
+
+  // A restore that the server answered with a chain that does not contain the chain mark of the
+  // kit: older, or another history, or none. The restore is over; nothing was kept.
+  ERROR_CODE_CHAIN_OUTDATED = 56;
+
+  // A passphrase that does not open the key file.
+  ERROR_CODE_WRONG_PASSPHRASE = 57;
+
+  // A passphrase of no characters, or a choice of a passphrase that gives none.
+  ERROR_CODE_EMPTY_PASSPHRASE = 58;
+
+  // A text that is not the text of a QR code of a link.
+  ERROR_CODE_LINK_TEXT_INVALID = 59;
 }
 
 // FileStat is which file this is: where it is filed, how big it is, and when

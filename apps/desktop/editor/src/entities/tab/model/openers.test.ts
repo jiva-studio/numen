@@ -373,3 +373,4 @@ describe('an editor registered twice', () => {
     expect(activeEditors).toStrictEqual(['second'])
   })
 })
+

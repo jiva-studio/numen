@@ -11,6 +11,13 @@ import {
   type SettingsStore,
 } from '@/entities/settings'
 import type { ConnectionApi, ConnectionStore } from '@/entities/connection'
+import {
+  createIdentityStore,
+  type IdentityApi,
+  type IdentityStore,
+  type KitProof,
+} from '@/entities/identity'
+import { createKeyFileStore, type KeyFileApi, type KeyFileStore } from '@/entities/key-file'
 import { createLicenseStore, type LicenseApi, type LicenseStore } from '@/entities/license'
 import { countNotes, type FileApi } from '@/entities/file'
 import {
@@ -22,6 +29,7 @@ import {
 } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
+import { getIdentityViews } from '../lib/settingsViews'
 import { useSettingsTabKind } from '../useSettingsTabKind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -40,6 +48,8 @@ interface SettingsPageApi {
     'choosePluginPath' | 'getPluginData' | 'deletePluginData' | 'retryPlugin'
   >
   readonly license: LicenseApi
+  readonly identity: IdentityApi
+  readonly keyFile: KeyFileApi
   readonly listFiles: FileApi['listFiles']
   readonly listCatalog: CatalogReader
   readonly readReadme: ReadmeReader
@@ -99,6 +109,8 @@ interface SettingsTabConfigDeps {
   plugin: InstallationPluginDeps
   connections: ConnectionStore
   licenses: LicenseStore
+  identity: IdentityStore
+  keyFile: KeyFileStore
   api: Pick<SettingsPageApi, 'listFiles' | 'listRowOptions'>
 }
 
@@ -205,6 +217,7 @@ function createInstallationPlugin(deps: InstallationPluginDeps) {
     files: createInstallationPluginFiles(settings, readReadme),
     plugins: rest.state.plugins,
     getSettingsViews,
+    getIdentityViews: () => getIdentityViews(rest.state.plugins.value, getSettingsViews),
   }
 }
 
@@ -245,6 +258,28 @@ function createInstallationLicenses(licenses: LicenseStore) {
   }
 }
 
+function createInstallationIdentity(
+  identity: Pick<
+    IdentityStore,
+    'identity' | 'devices' | 'load' | 'generateWords' | 'create' | 'restore' | 'delete' | 'saveKit'
+  >,
+  keyFile: KeyFileStore,
+) {
+  return {
+    keyFile,
+    identity: identity.identity,
+    devices: identity.devices,
+    load: () => identity.load(),
+    create: (words: readonly string[]) => identity.create(words),
+    delete: () => identity.delete(),
+    recovery: {
+      generateWords: () => identity.generateWords(),
+      restore: (proof: KitProof, signal?: AbortSignal) => identity.restore(proof, signal),
+      saveKit: (proof: KitProof) => identity.saveKit(proof),
+    },
+  }
+}
+
 function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
   return {
     settings: createInstallationSettings(deps.settings),
@@ -255,6 +290,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
     },
     connections: createInstallationConnections(deps.connections, deps.api),
     licenses: createInstallationLicenses(deps.licenses),
+    identity: createInstallationIdentity(deps.identity, deps.keyFile),
   }
 }
 
@@ -275,9 +311,20 @@ export function createSettingsPage({
   const licenses = createLicenseStore(api.license, (text, level) =>
     log.getWriter('licenses')(text, level),
   )
+  const keyFile = createKeyFileStore(api.keyFile, (text, level) =>
+    log.getWriter('keyFile')(text, level),
+  )
+  const identity = createIdentityStore(
+    api.identity,
+    (text, level) => log.getWriter('identity')(text, level),
+    keyFile.retryAfterAsking,
+  )
   const retry = createPluginRetry({
     askPluginRetry: api.settings.retryPlugin,
-    words: { formatStopped: PLUGIN_FAILURE_WORDS.stopped, retryFailed: PLUGIN_FAILURE_WORDS.retryFailed },
+    words: {
+      formatStopped: PLUGIN_FAILURE_WORDS.stopped,
+      retryFailed: PLUGIN_FAILURE_WORDS.retryFailed,
+    },
     notify: log.getWriter('plugins'),
     refresh: () => rest.refresh(),
     getName: getPluginName,
@@ -301,6 +348,8 @@ export function createSettingsPage({
       },
       connections,
       licenses,
+      identity,
+      keyFile,
       api,
     }),
     reportError,

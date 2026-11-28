@@ -8,7 +8,8 @@ import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
 import { Palette } from '@numen/workbench'
 import { SlotViewHost } from '@numen/plugin-loader'
-import { LoadingIndicator } from '@numen/ui'
+import { LoadingIndicator, provideDialogHost } from '@numen/ui'
+import { useTemplateRef } from 'vue'
 import { APPEARANCE_WORDS } from '@/features/appearance'
 import { VaultChooser } from '@/pages/vault-chooser'
 import type { WindowParts } from './window/createWindow'
@@ -23,6 +24,10 @@ const props = defineProps<{
 const { tabs, vaults, plugins, mountView, appearance } = props.parts
 const { titleBar: titleBarView, styles } = props.parts.views
 const { front, tab, openTab } = tabs
+
+/** Dialogs cover the area below the title bar, not the bar. */
+const content = useTemplateRef<HTMLElement>('content')
+provideDialogHost(content)
 </script>
 
 <template>
@@ -32,6 +37,7 @@ const { front, tab, openTab } = tabs
   <SlotViewHost v-else :view="titleBarView" :styles="styles" />
   <main
     v-if="plugins.isStarted.value"
+    ref="content"
     class="window"
     :class="{ 'window--below-bar': titleBarView }"
   >
@@ -65,6 +71,7 @@ const { front, tab, openTab } = tabs
 
 <style scoped>
 .window {
+  position: relative;
   display: flex;
   flex-direction: column;
   block-size: 100vh;

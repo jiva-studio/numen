@@ -30,18 +30,20 @@ import (
 type Core struct {
 	mu      sync.Mutex
 	running *runningCore
+	keys    KeyVault
 }
 
 // NewCore returns a core with no server running.
 func NewCore() *Core { return &Core{} }
 
 type runningCore struct {
-	port   int
-	token  string
-	isDown atomic.Bool
-	stop   context.CancelFunc
-	opened *editor.Installation
-	server *http.Server
+	lifecycles []lifecycleCall
+	port       int
+	token      string
+	isDown     atomic.Bool
+	stop       context.CancelFunc
+	opened     *editor.Installation
+	server     *http.Server
 }
 
 // Start opens the vault under dir and serves it. It returns the port, which the
@@ -67,6 +69,9 @@ func (c *Core) Start(dir string) (int, error) {
 
 	cfg := makeConfig(dir)
 	res := makeResources(os.Stderr)
+	if keys := c.getKeyStore(); keys != nil {
+		container.SetKeys(res, keys)
+	}
 	execution, preferences, endpoints := container.PreparePluginHost(nil, nil, nil, cfg.SafeMode)
 
 	// The list holds a folder under the name it resolves to, and that is the
@@ -94,9 +99,9 @@ func (c *Core) Start(dir string) (int, error) {
 		return 0, errors.Join(err, opened.Close())
 	}
 
-	// The phone shows the vault, its notes and the tree they are filed in, and
-	// the health items of the plugins. The socket is reachable by every process
-	// on the phone, so only those four services are mounted. The settings and
+	// The phone shows the vault, its notes and the tree they are filed in, the
+	// health items of the plugins and the services of the plugins of the phone. The socket is reachable by every process
+	// on the phone, so only those are mounted. The settings and
 	// the files on disk next to the notes are not served.
 	handler, token, err := opened.NewLocalHandler(
 		http.NotFoundHandler(),
@@ -104,6 +109,7 @@ func (c *Core) Start(dir string) (int, error) {
 		numenv1connect.NoteServiceName,
 		numenv1connect.FileServiceName,
 		numenv1connect.PluginHealthServiceName,
+		editor.AllPluginServices,
 	)
 	if err != nil {
 		stop()
@@ -202,7 +208,10 @@ func (c *Core) Port() int {
 }
 
 func makeConfig(dir string) container.Config {
-	return container.Config{Paths: container.Paths{IndexPath: filepath.Join(dir, "index.db"), RegistryPath: filepath.Join(dir, "vaults.json"), ThemesPath: filepath.Join(dir, "themes")}}
+	return container.Config{
+		Paths:  container.Paths{IndexPath: filepath.Join(dir, "index.db"), RegistryPath: filepath.Join(dir, "vaults.json"), ThemesPath: filepath.Join(dir, "themes")},
+		Absent: true,
+	}
 }
 
 func makeResources(out io.Writer) *container.Resources {

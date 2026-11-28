@@ -83,6 +83,16 @@ describe('a question session', () => {
     await choosing
   })
 
+  it('keeps the question out of the placeholder of a choice, which only filters its options', async () => {
+    const session = createPromptSession()
+    const choosing = session.selectOption({ title: 'Level', options: OPTIONS })
+
+    expect(session.view.value?.heading).toBe('Level')
+    expect(session.view.value?.placeholder).not.toBe('Level')
+    session.dismiss()
+    await choosing
+  })
+
   it('resolves a choice with the value of the option picked', async () => {
     const session = createPromptSession()
     const choosing = session.selectOption({ title: 'Level', options: OPTIONS })

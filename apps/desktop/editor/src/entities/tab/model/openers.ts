@@ -27,6 +27,7 @@ interface OpenPlacement {
 type FileOpener = (path: string, title: string, options?: FilePlacement | OpenPlacement) => void
 
 import type { SourceReader } from '../lib/kinds'
+import type { DownloadTabs } from './createDownloadTabs'
 export type { SourceReader }
 
 /**
@@ -38,6 +39,11 @@ export interface FileOpenerDeps {
   reconcileTab?(path: string, newKind: string): void
   startTabKind?(kind: string): Promise<void>
   startExtensionReader?(extension: string): Promise<void>
+  /** Whether the bytes of the file are not on this device. */
+  isFileAbsent?(path: string): Promise<boolean>
+  /** Brings the bytes of an absent file onto this device; rejects with the reason to show. */
+  fetchFile?(path: string): Promise<void>
+  downloadTabs?: DownloadTabs
 }
 
 /** A reader registered for an extension, with the icon its files carry. */
@@ -56,6 +62,39 @@ const getExtension = (path: string): string => {
 
 const fetchFileKind = async (vault: FileOpenerDeps, path: string): Promise<FileKind | null> => {
   return (await vault.readFileKinds([path])).get(path) ?? null
+}
+
+const downloadFile = async (
+  vault: FileOpenerDeps,
+  path: string,
+  title: string,
+): Promise<boolean> => {
+  if (!vault.fetchFile || !(await vault.isFileAbsent?.(path))) return true
+  const { downloadTabs } = vault
+  if (downloadTabs && !(await downloadTabs.start(path, title))) return false
+  try {
+    await vault.fetchFile(path)
+  } catch (error) {
+    downloadTabs?.fail(path, error)
+    return false
+  }
+  if (!downloadTabs || downloadTabs.isOpen(path)) return true
+  downloadTabs.finish(path)
+  return false
+}
+
+const openDownloadedFile = async (
+  vault: FileOpenerDeps,
+  path: string,
+  open: () => Promise<void>,
+): Promise<void> => {
+  try {
+    await open()
+  } catch (error) {
+    vault.downloadTabs?.fail(path, error)
+    throw error
+  }
+  vault.downloadTabs?.finish(path)
 }
 
 export function createFileOpeners(vault: FileOpenerDeps) {
@@ -138,16 +177,22 @@ export function createFileOpeners(vault: FileOpenerDeps) {
     options?: FilePlacement | OpenPlacement,
   ): Promise<void> => {
     const placement = typeof options === 'string' ? { where: options } : options
-    const kind = await fetchFileKind(vault, path)
-    if (kind && (await openNote(path, kind, title, placement))) return
-    await readFile(path, placement?.selector ?? null)
+    if (!(await downloadFile(vault, path, title))) return
+    await openDownloadedFile(vault, path, async () => {
+      const kind = await fetchFileKind(vault, path)
+      if (kind && (await openNote(path, kind, title, placement))) return
+      await readFile(path, placement?.selector ?? null)
+    })
   }
 
   /** Opens a file at ranges of its text: a note in its editor, whole, any other file in its reader. */
   const openFileAt = async (path: string, spans: readonly TextRange[]): Promise<void> => {
-    const kind = await fetchFileKind(vault, path)
-    if (kind && (await openNote(path, kind, ''))) return
-    await readFile(path, null, spans)
+    if (!(await downloadFile(vault, path, ''))) return
+    await openDownloadedFile(vault, path, async () => {
+      const kind = await fetchFileKind(vault, path)
+      if (kind && (await openNote(path, kind, ''))) return
+      await readFile(path, null, spans)
+    })
   }
 
   return {

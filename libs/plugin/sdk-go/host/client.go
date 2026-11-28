@@ -96,10 +96,16 @@ func getHostVaultErrors() map[v1.ErrorCode]error {
 		v1.ErrorCode_ERROR_CODE_CONFLICT:       ErrStale,
 		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS: ErrAlreadyExists,
 		v1.ErrorCode_ERROR_CODE_LOCKED:         ErrLockedByAnother,
+		v1.ErrorCode_ERROR_CODE_READ_ONLY:      ErrReadOnly,
 		v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:     ErrNotANote,
 		v1.ErrorCode_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
 		v1.ErrorCode_ERROR_CODE_NOT_TEXT:       ErrNotText,
 		v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED:  ErrNotAttempted,
+		v1.ErrorCode_ERROR_CODE_HASH_MISMATCH:  ErrHashMismatch,
+		v1.ErrorCode_ERROR_CODE_INVALID_RANGE:  ErrInvalidRange,
+		v1.ErrorCode_ERROR_CODE_FILE_ABSENT:    ErrFileAbsent,
+		v1.ErrorCode_ERROR_CODE_FILE_PRESENT:   ErrFilePresent,
+		v1.ErrorCode_ERROR_CODE_CHANGED:        ErrChanged,
 	}
 }
 

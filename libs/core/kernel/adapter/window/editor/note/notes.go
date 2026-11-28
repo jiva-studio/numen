@@ -29,6 +29,9 @@ func (h *Prose) ReadNote(
 		return nil, err
 	}
 	found, err := h.read.Execute(ctx, showing, r.Msg.GetPath())
+	if reason, ok := wire.GetErrorCode(err); ok {
+		return connect.NewResponse(&v1.ReadNoteResponse{Error: reason}), nil
+	}
 	if err != nil {
 		return nil, wire.NewInternalError(err)
 	}

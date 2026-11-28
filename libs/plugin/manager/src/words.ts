@@ -7,13 +7,15 @@ const countFiles = (files: number): string => (files === 1 ? '1 file' : `${files
 const PERMISSION_MEANINGS: Readonly<Record<string, string>> = {
   'vault:read': 'Read your notes, files and tabs.',
   'vault:write': 'Change your notes and files, and act for you.',
-  'vault:manage': 'Add, rename, remove and open vaults.',
+  'vault:manage': 'Add, rename, remove and open vaults, and add a vault only it writes to.',
   'link:open': 'Open links in your browser.',
   'index:read': 'Read the titles and the search index of your notes.',
   'search:policy': 'Read and change how strict semantic search is.',
   'window:focus': 'Bring a note or a file into view, and list the open tabs.',
   'plugins:read': 'List the running plugins and their health.',
   'logs:read': 'Read the application log.',
+  identity: 'Use the identity of this device to sign in to Numen services.',
+  'identity:link': 'Carry the link of a new device, the removal of a device and the restore of an identity between this device and the sync server.',
 }
 
 const CONNECTION_PERMISSION = 'connections:use:'
@@ -100,8 +102,8 @@ export const PLUGIN_WORDS = {
   searchSettingsDetail: 'Reranking, limits and results',
   connections: 'Connections',
   connectionsDetail: 'Services and programs for plugins',
-  licenses: 'Licenses',
-  licensesDetail: 'Subscriptions and license keys',
+  identityAndLicenses: 'Identity and licenses',
+  identityAndLicensesDetail: 'Identity, this device and license keys',
   /** The sections of a plugin page, in the order of its tabs. */
   pluginTabs: {
     settings: 'Settings',

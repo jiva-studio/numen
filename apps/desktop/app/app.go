@@ -172,6 +172,7 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	}
 
 	app := makeApplication(installation, pages, shutdownSeq, going, observed)
+	enableMediaCapture(app)
 	app.Menu.SetApplicationMenu(makeApplicationMenu())
 	window = makeWindow(app, installation)
 	tracker.addWindow()
@@ -235,7 +236,15 @@ func getMainWindowOptions(opened *editor.Installation) application.WebviewWindow
 		Height:         860,
 		URL:            "/",
 		EnableFileDrop: true,
+		Permissions:    getMediaPermissions(application.PermissionAllow, application.PermissionAllow),
 	})
+}
+
+func getMediaPermissions(camera, microphone application.Permission) map[application.PermissionType]application.Permission {
+	return map[application.PermissionType]application.Permission{
+		application.PermissionCamera:     camera,
+		application.PermissionMicrophone: microphone,
+	}
 }
 
 func getSecondaryWindowURL(tab windowdomain.DetachedTab) string {
@@ -265,6 +274,7 @@ func getSecondaryWindowOptions(opened *editor.Installation, tab windowdomain.Det
 		Height:         secondaryWindowHeight,
 		URL:            getSecondaryWindowURL(tab),
 		EnableFileDrop: true,
+		Permissions:    getMediaPermissions(application.PermissionDeny, application.PermissionDeny),
 	})
 	if tab.Width > 0 && tab.Height > 0 {
 		opts.Width = tab.Width
@@ -312,6 +322,13 @@ func (f *windowFrame) ChooseFile(ctx context.Context, title, startingAt string, 
 		return "", false, machine.ErrNoFolderDialog
 	}
 	return f.dialog.ChooseFile(ctx, title, startingAt, accept)
+}
+
+func (f *windowFrame) ChooseSaveFile(ctx context.Context, title, name string, accept []string) (string, bool, error) {
+	if f.dialog == nil {
+		return "", false, machine.ErrNoFolderDialog
+	}
+	return f.dialog.ChooseSaveFile(ctx, title, name, accept)
 }
 
 func (f *windowFrame) DetachTab(_ context.Context, tab windowdomain.DetachedTab) error {

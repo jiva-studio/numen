@@ -13,6 +13,10 @@ import {
   createContributionRpc,
   createFileRpc,
   createFolderDialogRpc,
+  createIdentityClient,
+  createIdentityRpc,
+  createKeyFileClient,
+  createKeyFileRpc,
   createLogClient,
   createLogRpc,
   createLicenseClient,
@@ -23,6 +27,7 @@ import {
   createPluginHealthRpc,
   createPluginProcessRpc,
   createProviderConnectionRpc,
+  createRemoteVaultRpc,
   createSearchRpc,
   createSettingsRpc,
   createTextRpc,
@@ -55,6 +60,7 @@ export const createVaultClients = (transport: Transport) => {
     search: createSearchRpc(createCallerTransport('search', transport)),
     vaultsService: createVaultsRpc(transport),
     folderDialog: createFolderDialogRpc(transport),
+    remoteVaults: createRemoteVaultRpc(transport),
   }
 }
 
@@ -66,13 +72,15 @@ export const createWorkspaceClients = ({ transport, keepalive }: WindowTransport
   logService: createLogRpc(transport),
 })
 
-/** The clients of the settings, the connections, the licenses and the themes. */
+/** The clients of the settings, the connections, the licenses, the identity and the themes. */
 export const createSettingsClients = (transport: Transport) => {
   const settings = createCallerTransport('settings', transport)
   return {
     settingsService: createSettingsRpc(settings),
     connections: createConnectionClient(createProviderConnectionRpc(settings)),
     licenses: createLicenseClient(createLicenseRpc(settings)),
+    identity: createIdentityClient(createIdentityRpc(settings)),
+    keyFile: createKeyFileClient(createKeyFileRpc(settings)),
     pluginData: createPluginDataRpc(settings),
     theme: createThemeRpc(transport),
   }

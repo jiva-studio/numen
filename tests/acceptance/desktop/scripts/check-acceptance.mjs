@@ -44,7 +44,11 @@ const rel = (file) => path.relative(root, file).split(path.sep).join('/')
 
 // The scenarios and their steps.
 const parser = new Parser(new AstBuilder(IdGenerator.uuid()), new GherkinClassicTokenMatcher())
-const features = walk(featuresDir, '.feature').map((file) => {
+// The phone features (features/mobile) are proven by Go integration tests and the emulator script, not by this harness.
+const featureFiles = walk(featuresDir, '.feature').filter(
+  (file) => !path.relative(featuresDir, file).startsWith(`mobile${path.sep}`),
+)
+const features = featureFiles.map((file) => {
   const doc = parser.parse(fs.readFileSync(file, 'utf8'))
   // A Rule groups scenarios and may hold a background of its own: read them with the feature's.
   const children = (doc.feature?.children ?? []).flatMap((child) =>

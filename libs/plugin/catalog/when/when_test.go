@@ -56,6 +56,9 @@ func TestEveryVariableOfWhenJSONMayBeNamed(t *testing.T) {
 		if variable.Name == "config" {
 			text = "config.editor.lineNumbers == true"
 		}
+		if variable.Name == "vault.flags" {
+			text = "vault.flags.org.example.isSynced == true"
+		}
 		if _, err := when.Parse(text); err != nil {
 			t.Errorf("%s: %v", variable.Name, err)
 		}

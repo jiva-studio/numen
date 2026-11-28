@@ -39,8 +39,8 @@ func TestAConnectionIsReadFromTheFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(cfg.Connections) != 1 || len(cfg.Notices) != 0 {
-		t.Fatalf("connections = %+v, notices = %q", cfg.Connections, cfg.Notices)
+	if len(cfg.Connections) != 1 || len(cfg.Header.Notices) != 0 {
+		t.Fatalf("connections = %+v, notices = %q", cfg.Connections, cfg.Header.Notices)
 	}
 	one := cfg.Connections[0]
 	if one.ID != "c0a1b2c3d" || one.TypeID != "md.numen.connections.llm/openrouter" || one.Name != "OpenRouter" || one.Revision != 3 {
@@ -63,11 +63,11 @@ func TestAMalformedConnectionsSectionIsReadWithANotice(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the file was refused: %v", err)
 			}
-			if len(cfg.Connections) != 0 || !hasNotice(cfg.Notices, "connections") {
-				t.Errorf("connections = %+v, notices = %q", cfg.Connections, cfg.Notices)
+			if len(cfg.Connections) != 0 || !hasNotice(cfg.Header.Notices, "connections") {
+				t.Errorf("connections = %+v, notices = %q", cfg.Connections, cfg.Header.Notices)
 			}
-			if hasNotice(cfg.Notices, "plugin id") {
-				t.Errorf("the section was read as a plugin: %q", cfg.Notices)
+			if hasNotice(cfg.Header.Notices, "plugin id") {
+				t.Errorf("the section was read as a plugin: %q", cfg.Header.Notices)
 			}
 		})
 	}
@@ -93,8 +93,8 @@ func TestInvalidConnectionsAreLeftOutOfForceAndTheFileIsNotTouched(t *testing.T)
 	if len(cfg.Connections) != 1 || cfg.Connections[0].Name != "Good" {
 		t.Errorf("connections = %+v", cfg.Connections)
 	}
-	if len(cfg.Notices) != 6 {
-		t.Errorf("notices = %q, want one for each of the six invalid entries", cfg.Notices)
+	if len(cfg.Header.Notices) != 6 {
+		t.Errorf("notices = %q, want one for each of the six invalid entries", cfg.Header.Notices)
 	}
 	if readFile(t, path) != body {
 		t.Error("the bytes of the file changed")
@@ -109,8 +109,8 @@ func TestAConnectionWhoseTypeIsNotInstalledOrWhoseFieldIsNotDeclaredStaysInForce
 
 	cfg.DropInvalidConnections()
 
-	if len(cfg.Connections) != 1 || cfg.Connections[0].Fields["removedField"] != "v" || len(cfg.Notices) != 0 {
-		t.Errorf("connections = %+v, notices = %q", cfg.Connections, cfg.Notices)
+	if len(cfg.Connections) != 1 || cfg.Connections[0].Fields["removedField"] != "v" || len(cfg.Header.Notices) != 0 {
+		t.Errorf("connections = %+v, notices = %q", cfg.Connections, cfg.Header.Notices)
 	}
 }
 

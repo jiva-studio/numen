@@ -24,8 +24,10 @@ export const NO_WINDOW: Omit<HostWindow, 'target'> = {
   getWorkspace: () => undefined,
   getCommands: () => undefined,
   getWindow: () => undefined,
+  getVaultFlags: () => undefined,
   getNotices: () => DISCARDING_NOTICES,
   getPicker: () => undefined,
+  getDialogs: () => undefined,
   clearNotices: () => undefined,
 }
 

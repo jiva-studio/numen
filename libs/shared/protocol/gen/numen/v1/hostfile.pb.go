@@ -848,6 +848,484 @@ func (x *FileChange) GetMtime() int64 {
 	return 0
 }
 
+// HostFileServiceMoveFileRequest names a file or folder and where it goes. The links to a
+// note that moved are repaired as for a move in the window.
+type HostFileServiceMoveFileRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	From  string                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To    string                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	// baseline is what the file was when the caller last saw it. Set, from names
+	// a file and the file changed since: CONFLICT. Not allowed for a folder.
+	Baseline      *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostFileServiceMoveFileRequest) Reset() {
+	*x = HostFileServiceMoveFileRequest{}
+	mi := &file_numen_v1_hostfile_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostFileServiceMoveFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostFileServiceMoveFileRequest) ProtoMessage() {}
+
+func (x *HostFileServiceMoveFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostfile_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostFileServiceMoveFileRequest.ProtoReflect.Descriptor instead.
+func (*HostFileServiceMoveFileRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostfile_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *HostFileServiceMoveFileRequest) GetFrom() string {
+	if x != nil {
+		return x.From
+	}
+	return ""
+}
+
+func (x *HostFileServiceMoveFileRequest) GetTo() string {
+	if x != nil {
+		return x.To
+	}
+	return ""
+}
+
+func (x *HostFileServiceMoveFileRequest) GetBaseline() *FileStat {
+	if x != nil {
+		return x.Baseline
+	}
+	return nil
+}
+
+type HostFileServiceMoveFileResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// NOT_FOUND (from), ALREADY_EXISTS (to), OUTSIDE_VAULT, CONFLICT, LOCKED.
+	Error ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	// The number of files under to now: 1 for a file.
+	MovedCount    int32 `protobuf:"varint,2,opt,name=moved_count,json=movedCount,proto3" json:"moved_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostFileServiceMoveFileResponse) Reset() {
+	*x = HostFileServiceMoveFileResponse{}
+	mi := &file_numen_v1_hostfile_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostFileServiceMoveFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostFileServiceMoveFileResponse) ProtoMessage() {}
+
+func (x *HostFileServiceMoveFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostfile_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostFileServiceMoveFileResponse.ProtoReflect.Descriptor instead.
+func (*HostFileServiceMoveFileResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostfile_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *HostFileServiceMoveFileResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *HostFileServiceMoveFileResponse) GetMovedCount() int32 {
+	if x != nil {
+		return x.MovedCount
+	}
+	return 0
+}
+
+type HostFileServiceRemoveFileRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// baseline is as for MoveFile; not allowed for a folder.
+	Baseline      *FileStat `protobuf:"bytes,2,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostFileServiceRemoveFileRequest) Reset() {
+	*x = HostFileServiceRemoveFileRequest{}
+	mi := &file_numen_v1_hostfile_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostFileServiceRemoveFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostFileServiceRemoveFileRequest) ProtoMessage() {}
+
+func (x *HostFileServiceRemoveFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostfile_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostFileServiceRemoveFileRequest.ProtoReflect.Descriptor instead.
+func (*HostFileServiceRemoveFileRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostfile_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *HostFileServiceRemoveFileRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *HostFileServiceRemoveFileRequest) GetBaseline() *FileStat {
+	if x != nil {
+		return x.Baseline
+	}
+	return nil
+}
+
+type HostFileServiceRemoveFileResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// NOT_FOUND, OUTSIDE_VAULT, CONFLICT, LOCKED.
+	Error         ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	RemovedCount  int32     `protobuf:"varint,2,opt,name=removed_count,json=removedCount,proto3" json:"removed_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostFileServiceRemoveFileResponse) Reset() {
+	*x = HostFileServiceRemoveFileResponse{}
+	mi := &file_numen_v1_hostfile_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostFileServiceRemoveFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostFileServiceRemoveFileResponse) ProtoMessage() {}
+
+func (x *HostFileServiceRemoveFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostfile_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostFileServiceRemoveFileResponse.ProtoReflect.Descriptor instead.
+func (*HostFileServiceRemoveFileResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostfile_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *HostFileServiceRemoveFileResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *HostFileServiceRemoveFileResponse) GetRemovedCount() int32 {
+	if x != nil {
+		return x.RemovedCount
+	}
+	return 0
+}
+
+// ReadFileRangeRequest asks for start, then at most length bytes, 1 to
+// 4194304. A range past the end returns the bytes that are there; start at or
+// past the end returns none.
+type ReadFileRangeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Start         int64                  `protobuf:"varint,2,opt,name=start,proto3" json:"start,omitempty"`
+	Length        int64                  `protobuf:"varint,3,opt,name=length,proto3" json:"length,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReadFileRangeRequest) Reset() {
+	*x = ReadFileRangeRequest{}
+	mi := &file_numen_v1_hostfile_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReadFileRangeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadFileRangeRequest) ProtoMessage() {}
+
+func (x *ReadFileRangeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostfile_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadFileRangeRequest.ProtoReflect.Descriptor instead.
+func (*ReadFileRangeRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostfile_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ReadFileRangeRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *ReadFileRangeRequest) GetStart() int64 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *ReadFileRangeRequest) GetLength() int64 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
+}
+
+type ReadFileRangeResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// NOT_FOUND (also a folder), OUTSIDE_VAULT, INVALID_RANGE.
+	Error   ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Content []byte    `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	// What the file was when it was read, with its hash.
+	Stat          *FileStat `protobuf:"bytes,3,opt,name=stat,proto3" json:"stat,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReadFileRangeResponse) Reset() {
+	*x = ReadFileRangeResponse{}
+	mi := &file_numen_v1_hostfile_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReadFileRangeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReadFileRangeResponse) ProtoMessage() {}
+
+func (x *ReadFileRangeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostfile_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReadFileRangeResponse.ProtoReflect.Descriptor instead.
+func (*ReadFileRangeResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostfile_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ReadFileRangeResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *ReadFileRangeResponse) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *ReadFileRangeResponse) GetStat() *FileStat {
+	if x != nil {
+		return x.Stat
+	}
+	return nil
+}
+
+type PlaceFileRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// A store file name as in HostStoreService.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	// The SHA-256 of the staged content, lowercase hex. The host hashes the
+	// file and refuses another content.
+	ExpectedHash string `protobuf:"bytes,3,opt,name=expected_hash,json=expectedHash,proto3" json:"expected_hash,omitempty"`
+	// baseline is the file at path as the caller last saw it. Unset: the path
+	// must be free (ALREADY_EXISTS otherwise). Set: the file must be unchanged
+	// (CONFLICT otherwise) and is replaced.
+	Baseline      *FileStat `protobuf:"bytes,4,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlaceFileRequest) Reset() {
+	*x = PlaceFileRequest{}
+	mi := &file_numen_v1_hostfile_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlaceFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlaceFileRequest) ProtoMessage() {}
+
+func (x *PlaceFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostfile_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlaceFileRequest.ProtoReflect.Descriptor instead.
+func (*PlaceFileRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostfile_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *PlaceFileRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PlaceFileRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *PlaceFileRequest) GetExpectedHash() string {
+	if x != nil {
+		return x.ExpectedHash
+	}
+	return ""
+}
+
+func (x *PlaceFileRequest) GetBaseline() *FileStat {
+	if x != nil {
+		return x.Baseline
+	}
+	return nil
+}
+
+type PlaceFileResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// NOT_FOUND (staged file), ALREADY_EXISTS, CONFLICT, HASH_MISMATCH,
+	// OUTSIDE_VAULT, LOCKED.
+	Error ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	// The placed file, with its hash.
+	Stat          *FileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlaceFileResponse) Reset() {
+	*x = PlaceFileResponse{}
+	mi := &file_numen_v1_hostfile_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlaceFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlaceFileResponse) ProtoMessage() {}
+
+func (x *PlaceFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostfile_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlaceFileResponse.ProtoReflect.Descriptor instead.
+func (*PlaceFileResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostfile_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *PlaceFileResponse) GetError() ErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *PlaceFileResponse) GetStat() *FileStat {
+	if x != nil {
+		return x.Stat
+	}
+	return nil
+}
+
 var File_numen_v1_hostfile_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostfile_proto_rawDesc = "" +
@@ -905,7 +1383,40 @@ const file_numen_v1_hostfile_proto_rawDesc = "" +
 	"\x03seq\x18\x04 \x01(\x03R\x03seq\x12\x12\n" +
 	"\x04hash\x18\x05 \x01(\tR\x04hash\x12\x12\n" +
 	"\x04size\x18\x06 \x01(\x03R\x04size\x12\x14\n" +
-	"\x05mtime\x18\a \x01(\x03R\x05mtime2\xc4\x03\n" +
+	"\x05mtime\x18\a \x01(\x03R\x05mtime\"\x86\x01\n" +
+	"\x1eHostFileServiceMoveFileRequest\x12\x12\n" +
+	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\x123\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"m\n" +
+	"\x1fHostFileServiceMoveFileResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x1f\n" +
+	"\vmoved_count\x18\x02 \x01(\x05R\n" +
+	"movedCount\"x\n" +
+	" HostFileServiceRemoveFileRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x123\n" +
+	"\bbaseline\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"s\n" +
+	"!HostFileServiceRemoveFileResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12#\n" +
+	"\rremoved_count\x18\x02 \x01(\x05R\fremovedCount\"X\n" +
+	"\x14ReadFileRangeRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
+	"\x05start\x18\x02 \x01(\x03R\x05start\x12\x16\n" +
+	"\x06length\x18\x03 \x01(\x03R\x06length\"\x84\x01\n" +
+	"\x15ReadFileRangeResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x18\n" +
+	"\acontent\x18\x02 \x01(\fR\acontent\x12&\n" +
+	"\x04stat\x18\x03 \x01(\v2\x12.numen.v1.FileStatR\x04stat\"\xa1\x01\n" +
+	"\x10PlaceFileRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12#\n" +
+	"\rexpected_hash\x18\x03 \x01(\tR\fexpectedHash\x123\n" +
+	"\bbaseline\x18\x04 \x01(\v2\x12.numen.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"f\n" +
+	"\x11PlaceFileResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12&\n" +
+	"\x04stat\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x04stat2\xa4\x06\n" +
 	"\x0fHostFileService\x12A\n" +
 	"\bStatFile\x12\x19.numen.v1.StatFileRequest\x1a\x1a.numen.v1.StatFileResponse\x12A\n" +
 	"\bReadFile\x12\x19.numen.v1.ReadFileRequest\x1a\x1a.numen.v1.ReadFileResponse\x12D\n" +
@@ -913,7 +1424,12 @@ const file_numen_v1_hostfile_proto_rawDesc = "" +
 	"\n" +
 	"CreateFile\x12\x1b.numen.v1.CreateFileRequest\x1a\x1c.numen.v1.CreateFileResponse\x12D\n" +
 	"\tScanFiles\x12\x1a.numen.v1.ScanFilesRequest\x1a\x1b.numen.v1.ScanFilesResponse\x12V\n" +
-	"\x0fListFileChanges\x12 .numen.v1.ListFileChangesRequest\x1a!.numen.v1.ListFileChangesResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0fListFileChanges\x12 .numen.v1.ListFileChangesRequest\x1a!.numen.v1.ListFileChangesResponse\x12_\n" +
+	"\bMoveFile\x12(.numen.v1.HostFileServiceMoveFileRequest\x1a).numen.v1.HostFileServiceMoveFileResponse\x12e\n" +
+	"\n" +
+	"RemoveFile\x12*.numen.v1.HostFileServiceRemoveFileRequest\x1a+.numen.v1.HostFileServiceRemoveFileResponse\x12P\n" +
+	"\rReadFileRange\x12\x1e.numen.v1.ReadFileRangeRequest\x1a\x1f.numen.v1.ReadFileRangeResponse\x12D\n" +
+	"\tPlaceFile\x12\x1a.numen.v1.PlaceFileRequest\x1a\x1b.numen.v1.PlaceFileResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_hostfile_proto_rawDescOnce sync.Once
@@ -927,56 +1443,81 @@ func file_numen_v1_hostfile_proto_rawDescGZIP() []byte {
 	return file_numen_v1_hostfile_proto_rawDescData
 }
 
-var file_numen_v1_hostfile_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_numen_v1_hostfile_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_numen_v1_hostfile_proto_goTypes = []any{
-	(*StatFileRequest)(nil),         // 0: numen.v1.StatFileRequest
-	(*StatFileResponse)(nil),        // 1: numen.v1.StatFileResponse
-	(*ReadFileRequest)(nil),         // 2: numen.v1.ReadFileRequest
-	(*ReadFileResponse)(nil),        // 3: numen.v1.ReadFileResponse
-	(*WriteFileRequest)(nil),        // 4: numen.v1.WriteFileRequest
-	(*WriteFileResponse)(nil),       // 5: numen.v1.WriteFileResponse
-	(*CreateFileRequest)(nil),       // 6: numen.v1.CreateFileRequest
-	(*CreateFileResponse)(nil),      // 7: numen.v1.CreateFileResponse
-	(*ScanFilesRequest)(nil),        // 8: numen.v1.ScanFilesRequest
-	(*ScanFilesResponse)(nil),       // 9: numen.v1.ScanFilesResponse
-	(*FileChangeCursor)(nil),        // 10: numen.v1.FileChangeCursor
-	(*ListFileChangesRequest)(nil),  // 11: numen.v1.ListFileChangesRequest
-	(*ListFileChangesResponse)(nil), // 12: numen.v1.ListFileChangesResponse
-	(*FileChange)(nil),              // 13: numen.v1.FileChange
-	(ErrorCode)(0),                  // 14: numen.v1.ErrorCode
-	(*FileStat)(nil),                // 15: numen.v1.FileStat
+	(*StatFileRequest)(nil),                   // 0: numen.v1.StatFileRequest
+	(*StatFileResponse)(nil),                  // 1: numen.v1.StatFileResponse
+	(*ReadFileRequest)(nil),                   // 2: numen.v1.ReadFileRequest
+	(*ReadFileResponse)(nil),                  // 3: numen.v1.ReadFileResponse
+	(*WriteFileRequest)(nil),                  // 4: numen.v1.WriteFileRequest
+	(*WriteFileResponse)(nil),                 // 5: numen.v1.WriteFileResponse
+	(*CreateFileRequest)(nil),                 // 6: numen.v1.CreateFileRequest
+	(*CreateFileResponse)(nil),                // 7: numen.v1.CreateFileResponse
+	(*ScanFilesRequest)(nil),                  // 8: numen.v1.ScanFilesRequest
+	(*ScanFilesResponse)(nil),                 // 9: numen.v1.ScanFilesResponse
+	(*FileChangeCursor)(nil),                  // 10: numen.v1.FileChangeCursor
+	(*ListFileChangesRequest)(nil),            // 11: numen.v1.ListFileChangesRequest
+	(*ListFileChangesResponse)(nil),           // 12: numen.v1.ListFileChangesResponse
+	(*FileChange)(nil),                        // 13: numen.v1.FileChange
+	(*HostFileServiceMoveFileRequest)(nil),    // 14: numen.v1.HostFileServiceMoveFileRequest
+	(*HostFileServiceMoveFileResponse)(nil),   // 15: numen.v1.HostFileServiceMoveFileResponse
+	(*HostFileServiceRemoveFileRequest)(nil),  // 16: numen.v1.HostFileServiceRemoveFileRequest
+	(*HostFileServiceRemoveFileResponse)(nil), // 17: numen.v1.HostFileServiceRemoveFileResponse
+	(*ReadFileRangeRequest)(nil),              // 18: numen.v1.ReadFileRangeRequest
+	(*ReadFileRangeResponse)(nil),             // 19: numen.v1.ReadFileRangeResponse
+	(*PlaceFileRequest)(nil),                  // 20: numen.v1.PlaceFileRequest
+	(*PlaceFileResponse)(nil),                 // 21: numen.v1.PlaceFileResponse
+	(ErrorCode)(0),                            // 22: numen.v1.ErrorCode
+	(*FileStat)(nil),                          // 23: numen.v1.FileStat
 }
 var file_numen_v1_hostfile_proto_depIdxs = []int32{
-	14, // 0: numen.v1.StatFileResponse.error:type_name -> numen.v1.ErrorCode
-	15, // 1: numen.v1.StatFileResponse.stat:type_name -> numen.v1.FileStat
-	14, // 2: numen.v1.ReadFileResponse.error:type_name -> numen.v1.ErrorCode
-	15, // 3: numen.v1.ReadFileResponse.stat:type_name -> numen.v1.FileStat
-	15, // 4: numen.v1.WriteFileRequest.baseline:type_name -> numen.v1.FileStat
-	14, // 5: numen.v1.WriteFileResponse.error:type_name -> numen.v1.ErrorCode
-	15, // 6: numen.v1.WriteFileResponse.stat:type_name -> numen.v1.FileStat
-	14, // 7: numen.v1.CreateFileResponse.error:type_name -> numen.v1.ErrorCode
-	14, // 8: numen.v1.ScanFilesResponse.error:type_name -> numen.v1.ErrorCode
+	22, // 0: numen.v1.StatFileResponse.error:type_name -> numen.v1.ErrorCode
+	23, // 1: numen.v1.StatFileResponse.stat:type_name -> numen.v1.FileStat
+	22, // 2: numen.v1.ReadFileResponse.error:type_name -> numen.v1.ErrorCode
+	23, // 3: numen.v1.ReadFileResponse.stat:type_name -> numen.v1.FileStat
+	23, // 4: numen.v1.WriteFileRequest.baseline:type_name -> numen.v1.FileStat
+	22, // 5: numen.v1.WriteFileResponse.error:type_name -> numen.v1.ErrorCode
+	23, // 6: numen.v1.WriteFileResponse.stat:type_name -> numen.v1.FileStat
+	22, // 7: numen.v1.CreateFileResponse.error:type_name -> numen.v1.ErrorCode
+	22, // 8: numen.v1.ScanFilesResponse.error:type_name -> numen.v1.ErrorCode
 	10, // 9: numen.v1.ListFileChangesRequest.since:type_name -> numen.v1.FileChangeCursor
-	14, // 10: numen.v1.ListFileChangesResponse.error:type_name -> numen.v1.ErrorCode
+	22, // 10: numen.v1.ListFileChangesResponse.error:type_name -> numen.v1.ErrorCode
 	13, // 11: numen.v1.ListFileChangesResponse.changes:type_name -> numen.v1.FileChange
 	10, // 12: numen.v1.ListFileChangesResponse.next:type_name -> numen.v1.FileChangeCursor
-	0,  // 13: numen.v1.HostFileService.StatFile:input_type -> numen.v1.StatFileRequest
-	2,  // 14: numen.v1.HostFileService.ReadFile:input_type -> numen.v1.ReadFileRequest
-	4,  // 15: numen.v1.HostFileService.WriteFile:input_type -> numen.v1.WriteFileRequest
-	6,  // 16: numen.v1.HostFileService.CreateFile:input_type -> numen.v1.CreateFileRequest
-	8,  // 17: numen.v1.HostFileService.ScanFiles:input_type -> numen.v1.ScanFilesRequest
-	11, // 18: numen.v1.HostFileService.ListFileChanges:input_type -> numen.v1.ListFileChangesRequest
-	1,  // 19: numen.v1.HostFileService.StatFile:output_type -> numen.v1.StatFileResponse
-	3,  // 20: numen.v1.HostFileService.ReadFile:output_type -> numen.v1.ReadFileResponse
-	5,  // 21: numen.v1.HostFileService.WriteFile:output_type -> numen.v1.WriteFileResponse
-	7,  // 22: numen.v1.HostFileService.CreateFile:output_type -> numen.v1.CreateFileResponse
-	9,  // 23: numen.v1.HostFileService.ScanFiles:output_type -> numen.v1.ScanFilesResponse
-	12, // 24: numen.v1.HostFileService.ListFileChanges:output_type -> numen.v1.ListFileChangesResponse
-	19, // [19:25] is the sub-list for method output_type
-	13, // [13:19] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	23, // 13: numen.v1.HostFileServiceMoveFileRequest.baseline:type_name -> numen.v1.FileStat
+	22, // 14: numen.v1.HostFileServiceMoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	23, // 15: numen.v1.HostFileServiceRemoveFileRequest.baseline:type_name -> numen.v1.FileStat
+	22, // 16: numen.v1.HostFileServiceRemoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	22, // 17: numen.v1.ReadFileRangeResponse.error:type_name -> numen.v1.ErrorCode
+	23, // 18: numen.v1.ReadFileRangeResponse.stat:type_name -> numen.v1.FileStat
+	23, // 19: numen.v1.PlaceFileRequest.baseline:type_name -> numen.v1.FileStat
+	22, // 20: numen.v1.PlaceFileResponse.error:type_name -> numen.v1.ErrorCode
+	23, // 21: numen.v1.PlaceFileResponse.stat:type_name -> numen.v1.FileStat
+	0,  // 22: numen.v1.HostFileService.StatFile:input_type -> numen.v1.StatFileRequest
+	2,  // 23: numen.v1.HostFileService.ReadFile:input_type -> numen.v1.ReadFileRequest
+	4,  // 24: numen.v1.HostFileService.WriteFile:input_type -> numen.v1.WriteFileRequest
+	6,  // 25: numen.v1.HostFileService.CreateFile:input_type -> numen.v1.CreateFileRequest
+	8,  // 26: numen.v1.HostFileService.ScanFiles:input_type -> numen.v1.ScanFilesRequest
+	11, // 27: numen.v1.HostFileService.ListFileChanges:input_type -> numen.v1.ListFileChangesRequest
+	14, // 28: numen.v1.HostFileService.MoveFile:input_type -> numen.v1.HostFileServiceMoveFileRequest
+	16, // 29: numen.v1.HostFileService.RemoveFile:input_type -> numen.v1.HostFileServiceRemoveFileRequest
+	18, // 30: numen.v1.HostFileService.ReadFileRange:input_type -> numen.v1.ReadFileRangeRequest
+	20, // 31: numen.v1.HostFileService.PlaceFile:input_type -> numen.v1.PlaceFileRequest
+	1,  // 32: numen.v1.HostFileService.StatFile:output_type -> numen.v1.StatFileResponse
+	3,  // 33: numen.v1.HostFileService.ReadFile:output_type -> numen.v1.ReadFileResponse
+	5,  // 34: numen.v1.HostFileService.WriteFile:output_type -> numen.v1.WriteFileResponse
+	7,  // 35: numen.v1.HostFileService.CreateFile:output_type -> numen.v1.CreateFileResponse
+	9,  // 36: numen.v1.HostFileService.ScanFiles:output_type -> numen.v1.ScanFilesResponse
+	12, // 37: numen.v1.HostFileService.ListFileChanges:output_type -> numen.v1.ListFileChangesResponse
+	15, // 38: numen.v1.HostFileService.MoveFile:output_type -> numen.v1.HostFileServiceMoveFileResponse
+	17, // 39: numen.v1.HostFileService.RemoveFile:output_type -> numen.v1.HostFileServiceRemoveFileResponse
+	19, // 40: numen.v1.HostFileService.ReadFileRange:output_type -> numen.v1.ReadFileRangeResponse
+	21, // 41: numen.v1.HostFileService.PlaceFile:output_type -> numen.v1.PlaceFileResponse
+	32, // [32:42] is the sub-list for method output_type
+	22, // [22:32] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostfile_proto_init() }
@@ -986,13 +1527,16 @@ func file_numen_v1_hostfile_proto_init() {
 	}
 	file_numen_v1_shared_proto_init()
 	file_numen_v1_hostfile_proto_msgTypes[2].OneofWrappers = []any{}
+	file_numen_v1_hostfile_proto_msgTypes[14].OneofWrappers = []any{}
+	file_numen_v1_hostfile_proto_msgTypes[16].OneofWrappers = []any{}
+	file_numen_v1_hostfile_proto_msgTypes[20].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostfile_proto_rawDesc), len(file_numen_v1_hostfile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

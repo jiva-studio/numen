@@ -58,7 +58,7 @@ func newFindSearchResults(
 }
 
 func readSearchLimits(settingsDeps settingsParts, errorHandler func(error)) (searchquerydomain.Limits, searchquerydomain.StageLimits) {
-	file, err := readCheckedSettings(settingsDeps)
+	file, err := createSettingsStore(settingsDeps).ReadCheckedFile()
 	if err != nil {
 		reportSearchFallback(errorHandler, err)
 		return searchquerydomain.DefaultLimits(), searchquerydomain.DefaultStageLimits()
@@ -83,9 +83,8 @@ func openQueryPorts(install pluginInstall, exec *PluginExecution, settingsDeps s
 	if !ok {
 		return ports
 	}
-	resolve := connection.NewResolve(connections).Execute
-	ports.resolve = resolve
-	ports.rows = connection.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, nil)
-	ports.calls = openModelCalls(install, settingsDeps)
+	ports.resolve = connection.NewResolve(connections).Execute
+	ports.rows = connection.NewRows(ports.resolve, connection.NewListRows(connections, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, nil)
+	ports.calls = getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 	return ports
 }

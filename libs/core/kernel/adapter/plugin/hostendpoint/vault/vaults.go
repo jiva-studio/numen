@@ -8,7 +8,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -18,8 +17,10 @@ import (
 )
 
 var (
-	errNoVaultList = errors.New("this host has no list of vaults to change")
-	errNoTrash     = errors.New("a plugin removes a vault from the list and leaves its folder")
+	errNoVaultList      = errors.New("this host has no list of vaults to change")
+	errNoTrash          = errors.New("a plugin removes a vault from the list and leaves its folder")
+	errManagerNotCaller = errors.New("a vault is managed by the plugin that adds it")
+	errNotManager       = errors.New("a plugin removes only the vaults it manages")
 )
 
 func getVaultsErrorCode(err error) (v1.ErrorCode, bool) {
@@ -55,18 +56,27 @@ func getVaultsResult(err error) (code v1.ErrorCode, detail string, callErr error
 	if errors.Is(err, domain.ErrUnavailable) {
 		return 0, "", connect.NewError(connect.CodeUnavailable, err)
 	}
+	if errors.Is(err, vaultdomain.ErrManagedExisting) {
+		return 0, "", connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	return 0, "", connect.NewError(connect.CodeInternal, err)
 }
 
 func (e *vaultsCalls) beginList(header http.Header) (List, error) {
-	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionVaultManage); err != nil {
-		return nil, err
+	_, list, err := e.beginListAs(header)
+	return list, err
+}
+
+func (e *vaultsCalls) beginListAs(header http.Header) (string, List, error) {
+	pluginID, err := e.auth.Authenticate(header.Get("Authorization"))
+	if err != nil {
+		return "", nil, err
 	}
 	list := e.source.GetPluginVaultList()
 	if list == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errNoVaultList)
+		return "", nil, connect.NewError(connect.CodeUnavailable, errNoVaultList)
 	}
-	return list, nil
+	return pluginID, list, nil
 }
 
 func (e *vaultsCalls) findVault(id domain.VaultID) (domain.Vault, error) {
@@ -87,14 +97,14 @@ func (e *vaultsCalls) findVault(id domain.VaultID) (domain.Vault, error) {
 }
 
 func writeVault(v domain.Vault) *v1.Vault {
-	return &v1.Vault{Id: string(v.ID), Name: v.Name, Path: v.Path}
+	return &v1.Vault{Id: string(v.ID), Name: v.Name, Path: v.Path, ManagedBy: v.ManagedBy}
 }
 
 // ListVaults lists every vault of the installation. A host with no vault lends lists none.
 func (e *vaultsCalls) ListVaults(
 	_ context.Context, req *connect.Request[v1.ListVaultsRequest],
 ) (*connect.Response[v1.ListVaultsResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +118,9 @@ func (e *vaultsCalls) ListVaults(
 	list := e.source.GetPluginVaultList()
 	out := make([]*v1.Vault, 0, len(recognized))
 	for _, one := range recognized {
-		out = append(out, &v1.Vault{Id: string(one.ID), Name: one.Name, Path: one.Path, IsMissing: list != nil && list.IsMissing(one)})
+		out = append(out, &v1.Vault{
+			Id: string(one.ID), Name: one.Name, Path: one.Path, IsMissing: list != nil && list.IsMissing(one), ManagedBy: one.ManagedBy,
+		})
 	}
 	return connect.NewResponse(&v1.ListVaultsResponse{Vaults: out}), nil
 }
@@ -116,11 +128,15 @@ func (e *vaultsCalls) ListVaults(
 func (e *vaultsCalls) AddVault(
 	ctx context.Context, req *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
-	list, err := e.beginList(req.Header())
+	pluginID, list, err := e.beginListAs(req.Header())
 	if err != nil {
 		return nil, err
 	}
-	vault, addErr := list.AddVault(ctx, req.Msg.GetPath(), req.Msg.GetName())
+	managedBy := req.Msg.GetManagedBy()
+	if managedBy != "" && managedBy != pluginID {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errManagerNotCaller)
+	}
+	vault, addErr := list.AddVault(ctx, req.Msg.GetPath(), req.Msg.GetName(), managedBy)
 	code, detail, err := getVaultsResult(addErr)
 	if err != nil {
 		return nil, err
@@ -152,7 +168,7 @@ func (e *vaultsCalls) RenameVault(
 func (e *vaultsCalls) RemoveVault(
 	ctx context.Context, req *connect.Request[v1.RemoveVaultRequest],
 ) (*connect.Response[v1.RemoveVaultResponse], error) {
-	list, err := e.beginList(req.Header())
+	pluginID, list, err := e.beginListAs(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -162,6 +178,9 @@ func (e *vaultsCalls) RemoveVault(
 	id := domain.VaultID(req.Msg.GetId())
 	// The folder is read from the list before the vault leaves it.
 	entry, err := e.findVault(id)
+	if err == nil && entry.ManagedBy != pluginID {
+		return nil, connect.NewError(connect.CodePermissionDenied, errNotManager)
+	}
 	if err == nil {
 		err = list.RemoveVault(ctx, id)
 	}

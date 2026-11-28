@@ -1298,7 +1298,7 @@ func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 		}
 	})
 	for _, address := range []string{":0", "0.0.0.0:0", "[::]:0", "localhost:0", "192.168.1.5:0", "127.0.0.1", ""} {
-		endpoint, err := hostendpoint.Open(t.Context(), address, lentCallers(host))
+		endpoint, err := hostendpoint.Open(t.Context(), address, lentCallers(host), hostendpoint.AccountCalls{})
 		if err == nil {
 			if closeErr := endpoint.Close(t.Context()); closeErr != nil {
 				t.Error(closeErr)
@@ -1314,7 +1314,7 @@ func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 	if hostendpoint.Address != "127.0.0.1:0" {
 		t.Errorf("a host listens on %q by default", hostendpoint.Address)
 	}
-	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, lentCallers(host))
+	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, lentCallers(host), hostendpoint.AccountCalls{})
 	if err != nil {
 		t.Fatal(err)
 	}

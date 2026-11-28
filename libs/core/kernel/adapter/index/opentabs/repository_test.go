@@ -23,7 +23,7 @@ func openRepository(t *testing.T) *opentabs.Repository {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	return db.OpenTabs()
+	return index.NewOpenTabs(db)
 }
 
 func TestReadOpenTabsReturnsNoneForANewVault(t *testing.T) {

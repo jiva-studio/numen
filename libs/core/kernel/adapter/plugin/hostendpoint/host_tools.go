@@ -7,7 +7,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
@@ -36,7 +35,7 @@ type toolEndpoint struct {
 var _ numenv1connect.PluginToolServiceHandler = (*toolEndpoint)(nil)
 
 func (e *toolEndpoint) begin(header http.Header) (string, PluginTools, error) {
-	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionVaultRead)
+	pluginID, err := e.endpoint.Authenticate(header.Get("Authorization"))
 	if err != nil {
 		return "", nil, err
 	}

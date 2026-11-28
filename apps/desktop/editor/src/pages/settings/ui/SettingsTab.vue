@@ -9,7 +9,7 @@ import { groupManagedHealth } from '../lib/pluginHealth'
 import { useSettingsTab } from '../model/useSettingsTab'
 import SystemDetail from './SystemDetail.vue'
 import ConnectionsPage from './connections/ConnectionsPage.vue'
-import LicensesPage from './licenses/LicensesPage.vue'
+import IdentityAndLicensesPage from './identity/IdentityAndLicensesPage.vue'
 import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -59,9 +59,11 @@ const {
           :connections="installation.connections"
           @back="goBack"
         />
-        <LicensesPage
-          v-else-if="selectedPluginId === 'licenses'"
+        <IdentityAndLicensesPage
+          v-else-if="selectedPluginId === 'identity'"
+          :identity="installation.identity"
           :licenses="installation.licenses"
+          :plugin="installation.plugin"
           @back="goBack"
         />
         <PluginDetail
@@ -75,11 +77,7 @@ const {
           @back="goBack"
           @open-connections="selectPlugin('connections')"
         />
-        <AvailablePluginDetail
-          v-else-if="uninstalled"
-          :plugin="uninstalled"
-          @back="goBack"
-        />
+        <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="goBack" />
         <PluginsList
           v-else
           :settings="installation.settings"

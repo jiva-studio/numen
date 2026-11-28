@@ -34,7 +34,7 @@ func writeSettings(t *testing.T, output string) (TestInstallation, string) {
 func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	cfg, path := writeSettings(t, `{"app": {"appearance": {"theme": "mine:sea"}}}`)
 
-	snapshot, err := readSettings(cfg.buildSettingsWiring())()
+	snapshot, err := createSettingsStore(cfg.buildSettingsWiring()).ReadJSON()
 	content, response := snapshot.Content, snapshot.Path
 	if err != nil {
 		t.Fatal(err)
@@ -172,8 +172,8 @@ func TestSettings_AddNoticeAccumulatesNotices(t *testing.T) {
 	var target settings.File
 	target.AddNotice("first")
 	target.AddNotice("second")
-	if !slices.Equal(target.Notices, []string{"first", "second"}) {
-		t.Errorf("said %v", target.Notices)
+	if !slices.Equal(target.Header.Notices, []string{"first", "second"}) {
+		t.Errorf("said %v", target.Header.Notices)
 	}
 }
 

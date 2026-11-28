@@ -1,4 +1,5 @@
 import type { DataTable } from 'playwright-bdd'
+import { parseTabKind } from '../drivers/rules.js'
 import { Then, When } from '../support/bdd.js'
 
 When('the person sets the setting {string} to {string}', async ({ person }, name: string, value: string) => {
@@ -62,4 +63,8 @@ Then(
 
 Then('the setting {string} of the plugin {string} has no rows', async ({ person }, name: string, plugin: string) => {
   await person.connections.expectRows(name, plugin, [])
+})
+
+Then('the settings list the page {string}', async ({ person }, name: string) => {
+  await person.tab.expectHasText(parseTabKind('Settings tab'), 'titled', 'Settings', name)
 })

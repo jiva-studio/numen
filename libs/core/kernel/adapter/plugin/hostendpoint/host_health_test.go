@@ -25,7 +25,7 @@ func (noPlugins) GetPlugin(string) (manifest.DiscoveredPlugin, bool) {
 func newHealthClient(t *testing.T, items *pluginhealth.Items, token string) numenv1connect.PluginHealthServiceClient {
 	t.Helper()
 	callers := newCallers().asCallers()
-	callers.Health = HealthCalls{Report: pluginhealth.NewReport(items, noPlugins{}), Clear: pluginhealth.NewClear(items)}
+	callers.Health = HealthUseCases{Report: pluginhealth.NewReport(items, noPlugins{}), Clear: pluginhealth.NewClear(items)}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginHealthServiceHandler(&healthEndpoint{endpoint: &Endpoint{callers: callers}}))
 	server := httptest.NewServer(mux)

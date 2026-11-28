@@ -1,0 +1,276 @@
+/**
+ * What the person sees and does in the files of a vault on the phone: which files are not downloaded, what
+ * a tap does to them, and what removing a download does.
+ */
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import type { Core, FileRow } from '@/entities/core'
+import FileTreePage from './FileTreePage.vue'
+
+const NOT_DOWNLOADED = 'Not downloaded'
+
+const start = vi.hoisted(() => ({ startCore: vi.fn() }))
+
+vi.mock('@/entities/core', () => start)
+
+const guide: FileRow = {
+  path: 'Books/Guide.pdf',
+  name: 'Guide.pdf',
+  isFolder: false,
+  isAbsent: true,
+}
+const list: FileRow = {
+  path: 'Shopping list.md',
+  name: 'Shopping list.md',
+  isFolder: false,
+  isAbsent: false,
+}
+
+function coreWith(
+  rows: FileRow[],
+  answers: Partial<Pick<Core, 'fetchFile' | 'dropDownload'>> = {},
+) {
+  const core = {
+    listFiles: vi.fn(async (_path: string) => rows),
+    fetchFile: vi.fn(async () => ({ ok: true as const, value: null })),
+    dropDownload: vi.fn(async () => ({ ok: true as const, value: null })),
+    ...answers,
+  }
+  start.startCore.mockResolvedValue(core)
+  return core
+}
+
+async function showFiles() {
+  const page = mount(FileTreePage)
+  await flushPromises()
+  return page
+}
+
+const rowOf = (page: Awaited<ReturnType<typeof showFiles>>, name: string) =>
+  page.findAll('[data-testid="file-row"]').find((row) => row.text().includes(name))
+
+beforeEach(() => {
+  start.startCore.mockReset()
+})
+
+describe('the files of the vault', () => {
+  it('lists every file and marks the one that is not downloaded in words', async () => {
+    coreWith([list, guide])
+    const page = await showFiles()
+
+    expect(page.findAll('[data-testid="file-row"]')).toHaveLength(2)
+    expect(rowOf(page, 'Guide.pdf')?.text()).toContain(NOT_DOWNLOADED)
+    expect(rowOf(page, 'Shopping list.md')?.text()).not.toContain(NOT_DOWNLOADED)
+  })
+})
+
+describe('tapping a file', () => {
+  it('opens a downloaded file without downloading anything', async () => {
+    const core = coreWith([list, guide])
+    const page = await showFiles()
+
+    await rowOf(page, 'Shopping list.md')?.get('[data-testid="row-tap"]').trigger('click')
+    await flushPromises()
+
+    expect(core.fetchFile).not.toHaveBeenCalled()
+    expect(page.emitted('open')).toStrictEqual([['Shopping list.md']])
+  })
+
+  it('downloads a file that is not downloaded and opens it once it is there', async () => {
+    const core = coreWith([guide])
+    const page = await showFiles()
+
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
+    await flushPromises()
+
+    expect(core.fetchFile).toHaveBeenCalledExactlyOnceWith('Books/Guide.pdf')
+    expect(page.emitted('open')).toStrictEqual([['Books/Guide.pdf']])
+  })
+
+  it('shows that the file is downloading until the download ends and opens nothing before', async () => {
+    let finish: () => void = () => undefined
+    const core = coreWith([guide], {
+      fetchFile: vi.fn(
+        () =>
+          new Promise<{ ok: true; value: null }>((resolve) => {
+            finish = () => resolve({ ok: true, value: null })
+          }),
+      ),
+    })
+    const page = await showFiles()
+
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
+
+    expect(rowOf(page, 'Guide.pdf')?.text()).toContain('Downloading')
+    expect(page.emitted('open')).toBeUndefined()
+    finish()
+    await flushPromises()
+    expect(core.fetchFile).toHaveBeenCalledTimes(1)
+    expect(page.emitted('open')).toHaveLength(1)
+  })
+
+  it('downloads once for two taps on the same file', async () => {
+    const core = coreWith([guide], {
+      fetchFile: vi.fn(() => new Promise<{ ok: true; value: null }>(() => undefined)),
+    })
+    const page = await showFiles()
+
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
+
+    expect(core.fetchFile).toHaveBeenCalledTimes(1)
+  })
+
+  it('warns in words and opens nothing when the download fails', async () => {
+    coreWith([guide], {
+      fetchFile: vi.fn(async () => ({
+        ok: false as const,
+        error: 'Could not reach the sync server',
+      })),
+    })
+    const page = await showFiles()
+
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
+    await flushPromises()
+
+    expect(page.find('[data-testid="error"]').text()).toContain('Could not reach the sync server')
+    expect(page.emitted('open')).toBeUndefined()
+    expect(rowOf(page, 'Guide.pdf')?.text()).toContain(NOT_DOWNLOADED)
+  })
+})
+
+describe('removing the download of a file', () => {
+  it('is offered for a downloaded file and not for one that is not downloaded', async () => {
+    coreWith([list, guide])
+    const page = await showFiles()
+
+    expect(rowOf(page, 'Shopping list.md')?.find('[data-testid="drop-download"]').exists()).toBe(
+      true,
+    )
+    expect(rowOf(page, 'Guide.pdf')?.find('[data-testid="drop-download"]').exists()).toBe(false)
+  })
+
+  it('turns the row to not downloaded', async () => {
+    const core = coreWith([list])
+    const page = await showFiles()
+
+    await rowOf(page, 'Shopping list.md')?.find('[data-testid="drop-download"]').trigger('click')
+    await flushPromises()
+
+    expect(core.dropDownload).toHaveBeenCalledExactlyOnceWith('Shopping list.md')
+    expect(rowOf(page, 'Shopping list.md')?.text()).toContain(NOT_DOWNLOADED)
+    expect(page.emitted('open')).toBeUndefined()
+  })
+
+  it('warns in words and keeps the row downloaded when the file has changes that are not sent', async () => {
+    coreWith([list], {
+      dropDownload: vi.fn(async () => ({
+        ok: false as const,
+        error: 'The file has changes that are not sent',
+      })),
+    })
+    const page = await showFiles()
+
+    await rowOf(page, 'Shopping list.md')?.find('[data-testid="drop-download"]').trigger('click')
+    await flushPromises()
+
+    expect(page.find('[data-testid="error"]').text()).toContain(
+      'The file has changes that are not sent',
+    )
+    expect(rowOf(page, 'Shopping list.md')?.text()).not.toContain(NOT_DOWNLOADED)
+  })
+})
+
+describe('a failure that is thrown', () => {
+  it('stops showing a download that threw and shows why', async () => {
+    coreWith([guide], { fetchFile: vi.fn(() => Promise.reject(new Error('the link broke'))) })
+    const page = await showFiles()
+
+    await rowOf(page, 'Guide.pdf')?.get('[data-testid="row-tap"]').trigger('click')
+    await flushPromises()
+
+    expect(rowOf(page, 'Guide.pdf')?.text()).not.toContain('Downloading')
+    expect(rowOf(page, 'Guide.pdf')?.text()).toContain(NOT_DOWNLOADED)
+    expect(page.find('[data-testid="error"]').exists()).toBe(true)
+    expect(page.emitted('open')).toBeUndefined()
+  })
+
+  it('shows why a removal of a download threw and keeps the row downloaded', async () => {
+    coreWith([list], { dropDownload: vi.fn(() => Promise.reject(new Error('the link broke'))) })
+    const page = await showFiles()
+
+    await rowOf(page, 'Shopping list.md')?.find('[data-testid="drop-download"]').trigger('click')
+    await flushPromises()
+
+    expect(page.find('[data-testid="error"]').exists()).toBe(true)
+    expect(rowOf(page, 'Shopping list.md')?.text()).not.toContain(NOT_DOWNLOADED)
+  })
+})
+
+describe('moving between folders', () => {
+  const books: FileRow = { path: 'Books', name: 'Books', isFolder: true, isAbsent: false }
+  const notes: FileRow = { path: 'Notes', name: 'Notes', isFolder: true, isAbsent: false }
+  const inBooks: FileRow = {
+    path: 'Books/Atlas.md',
+    name: 'Atlas.md',
+    isFolder: false,
+    isAbsent: false,
+  }
+  const inNotes: FileRow = {
+    path: 'Notes/Diary.md',
+    name: 'Diary.md',
+    isFolder: false,
+    isAbsent: false,
+  }
+
+  it('shows the folder the person tapped last when the answers come in the other order', async () => {
+    const answers = new Map<string, (rows: FileRow[]) => void>()
+    const core = coreWith([books, notes])
+    core.listFiles.mockImplementation((path: string) =>
+      path === ''
+        ? Promise.resolve([books, notes])
+        : new Promise<FileRow[]>((resolve) => answers.set(path, resolve)),
+    )
+    const page = await showFiles()
+
+    await rowOf(page, 'Books')?.get('[data-testid="row-tap"]').trigger('click')
+    await rowOf(page, 'Notes')?.get('[data-testid="row-tap"]').trigger('click')
+    answers.get('Notes')?.([inNotes])
+    await flushPromises()
+    answers.get('Books')?.([inBooks])
+    await flushPromises()
+
+    expect(
+      page.findAll('[data-testid="file-row"]').map((row) => row.get('span').text()),
+    ).toStrictEqual(['Diary.md'])
+  })
+
+  it('clears the warning when a folder shows', async () => {
+    const core = coreWith([books])
+    core.listFiles.mockImplementationOnce(() => Promise.resolve([books]))
+    core.listFiles.mockImplementationOnce(() => Promise.reject(new Error('the link broke')))
+    core.listFiles.mockImplementationOnce(() => Promise.resolve([inBooks]))
+    const page = await showFiles()
+
+    await rowOf(page, 'Books')?.get('[data-testid="row-tap"]').trigger('click')
+    await flushPromises()
+    expect(page.find('[data-testid="error"]').exists()).toBe(true)
+
+    await rowOf(page, 'Books')?.get('[data-testid="row-tap"]').trigger('click')
+    await flushPromises()
+    expect(page.find('[data-testid="error"]').exists()).toBe(false)
+  })
+
+  it('draws nothing from a list that arrives after the page is unmounted', async () => {
+    let answer: (rows: FileRow[]) => void = () => undefined
+    const core = coreWith([books])
+    core.listFiles.mockImplementation(() => new Promise<FileRow[]>((resolve) => (answer = resolve)))
+    const page = mount(FileTreePage)
+    await flushPromises()
+    page.unmount()
+    answer([inBooks])
+    await flushPromises()
+
+    expect(page.findAll('[data-testid="file-row"]')).toHaveLength(0)
+  })
+})

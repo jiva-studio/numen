@@ -109,7 +109,7 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 			}
 			worker := NewWorker(Config{
 				Reading: func(context.Context, searchsourceport.Source, domain.Vault, bool) (ReadWholeVault, error) {
-					return NewReadWholeVault(nil, nil, script), nil
+					return NewReadWholeVault(nil, nil, script.EmbedWithProgress), nil
 				},
 				Source:      sourcefake.Wrap(&fakeEmbedder{dims: 8}),
 				Events:      events,

@@ -7,6 +7,8 @@ use (
 	./apps/mobile
 	./libs/shared/atomicfile
 	./libs/shared/licensing
+	./libs/shared/identity
+	./libs/shared/syncprotocol
 	./libs/core/kernel
 	./libs/shared/note
 	./libs/plugin/catalog
@@ -40,18 +42,23 @@ use (
 	./plugins/tools-search-relevance
 	./plugins/tools-taxonomy
 	./plugins/tools-templates
+	./plugins/tools-sync
 	./plugins/tools-updater
 	./plugins/views-flashcards-studio
 	./plugins/views-media-viewer
 	./tools/checks/structure/go
 	./tools/checks/style/comments
+	./tools/epochkey
 	./tools/plugin-registry/gosource
 	./tools/plugin-registry/licenses
+	./tools/syncaccount
 )
 
 replace (
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0 => ./libs/shared/atomicfile
 	github.com/jiva-studio/numen/libs/shared/licensing v0.0.0 => ./libs/shared/licensing
+	github.com/jiva-studio/numen/libs/shared/identity v0.0.0 => ./libs/shared/identity
+	github.com/jiva-studio/numen/libs/shared/syncprotocol v0.0.0 => ./libs/shared/syncprotocol
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0 => ./libs/core/kernel
 	github.com/jiva-studio/numen/libs/shared/note v0.0.0 => ./libs/shared/note
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0 => ./libs/plugin/catalog

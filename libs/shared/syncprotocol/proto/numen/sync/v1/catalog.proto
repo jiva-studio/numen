@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// CatalogService keeps the signed, append-only catalog of the vaults of an account. Every call needs the
+// session bearer and the protocol version.
+service CatalogService {
+  // AppendCatalogEntry adds one entry to the catalog.
+  rpc AppendCatalogEntry(AppendCatalogEntryRequest) returns (AppendCatalogEntryResponse);
+
+  // GetCatalog returns the entries after a version, page by page.
+  rpc GetCatalog(GetCatalogRequest) returns (GetCatalogResponse);
+
+  // GetVaultUsage returns the stored size of every vault of the account of the session, also of a vault that no
+  // device of the account syncs any more. A vault with no stored byte is listed with 0; a deleted vault is not
+  // listed. The bytes are counted as the used_bytes of GetSubscriptionResponse is (the reserved and committed
+  // blobs), so the sizes add up to it. It needs the session bearer and no write entitlement.
+  rpc GetVaultUsage(GetVaultUsageRequest) returns (GetVaultUsageResponse);
+
+  // DeleteVault removes one vault of the account of the session from the server: its revisions, tombstones, blobs
+  // (and the stored objects), multipart uploads and share roots, and gives its bytes back to the quota. The vault id
+  // stays in the catalog log, which is append-only and is never rewritten.
+  //
+  // The catalog interplay is the caller's: before it calls DeleteVault the client appends a CatalogEntry for the
+  // vault with creates_vault false whose enc_body says the vault was removed (the body is client-defined and the
+  // server never reads it, so there is no new entry kind and no change of the signed layout). Other devices read
+  // that newest body, drop their link to the vault and stop pushing to it; the server does not check that the
+  // entry exists. The client also closes every share root of the vault first (ShareService.AppendShareLogEntry,
+  // kind CLOSE); a reader that is left reads the deleted share as NOT_FOUND.
+  //
+  // Any active device of the account may call it; there is no role below the account. It is allowed in every
+  // subscription phase but DELETED, also READ_ONLY, because it only frees space. It is idempotent: a vault that is
+  // not stored, or that belongs to another account, answers OK with deleted false, so a retry after a dropped
+  // answer succeeds and no caller learns whether a foreign vault exists. A reserve or a commit that races with it
+  // is refused with NOT_FOUND, which the client reads as ErrNoVault. The deletion is one transaction: the vault is
+  // whole or gone. It needs the session bearer and, as DeleteAccount does,
+  // a challenge asked with the device key of the session as device_sign_key, signed under syncprotocol.GetVaultDeleteMessage.
+  rpc DeleteVault(DeleteVaultRequest) returns (DeleteVaultResponse);
+}
+
+message CatalogEntry {
+  // version is 1 for the first entry of the account, then the head version plus one.
+  uint64 version = 1;
+  // prev_hash is the entry id of the previous entry, 32 bytes; empty for version 1.
+  bytes prev_hash = 2;
+  // vault_id is 16 random bytes, the remote id of the vault.
+  bytes vault_id = 3;
+  // creates_vault is true for the entry that makes the vault, false for a rename or a re-wrap.
+  bool creates_vault = 4;
+  // enc_body is ciphertext the server never reads, at most 16 KiB.
+  bytes enc_body = 5;
+  // author_device_sign_key is a device of the chain of the account, 32 bytes.
+  bytes author_device_sign_key = 6;
+  // signature is 64 bytes over syncprotocol.GetCatalogEntryMessage, under the plugin domain.
+  bytes signature = 7;
+}
+
+message AppendCatalogEntryRequest {
+  CatalogEntry entry = 1;
+}
+
+message AppendCatalogEntryResponse {
+  bool committed = 1;
+  // head is the entry at the top of the log after the call: the new entry when committed, the other entry when not.
+  CatalogEntry head = 2;
+}
+
+message GetCatalogRequest {
+  uint64 since_version = 1;
+  // limit 0 means 200; at most 1000.
+  uint32 limit = 2;
+}
+
+message GetCatalogResponse {
+  repeated CatalogEntry entries = 1;
+  bool has_more = 2;
+}
+
+message VaultUsage {
+  // vault_id is 16 bytes.
+  bytes vault_id = 1;
+  // used_bytes is the stored (padded) size of the reserved and committed blobs of the vault.
+  uint64 used_bytes = 2;
+}
+
+message GetVaultUsageRequest {}
+
+message GetVaultUsageResponse {
+  // vaults are all the vaults the server stores for the account, ordered by vault_id.
+  repeated VaultUsage vaults = 1;
+}
+
+message DeleteVaultRequest {
+  // vault_id is 16 bytes.
+  bytes vault_id = 1;
+  // challenge_id is 16 bytes: the id of a challenge asked with the device key of the session as device_sign_key.
+  bytes challenge_id = 2;
+  // signature is 64 bytes over syncprotocol.GetVaultDeleteMessage of the challenge and vault_id, by the device key of the session.
+  bytes signature = 3;
+}
+
+message DeleteVaultResponse {
+  // deleted is true when the call removed the vault and false when the server stored no such vault of the account.
+  bool deleted = 1;
+  // freed_bytes is what the call gave back to the quota, 0 when deleted is false.
+  uint64 freed_bytes = 2;
+}

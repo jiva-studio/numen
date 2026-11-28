@@ -114,3 +114,29 @@ describe('renaming', () => {
     scope.stop()
   })
 })
+
+describe('a row status', () => {
+  it('is a named cloud or a named loading ring at the end of the row, and none otherwise', async () => {
+    const row = mountRow()
+    expect(row.find('[data-status]').exists()).toBe(false)
+
+    await row.setProps({ row: { ...ROW, status: { kind: 'cloud', label: 'Not here' } } })
+    expect(row.get('[data-status="cloud"]').attributes('aria-label')).toBe('Not here')
+
+    await row.setProps({ row: { ...ROW, status: { kind: 'loading', label: 'Coming' } } })
+    expect(row.get('[data-status="loading"]').attributes('aria-label')).toBe('Coming')
+    expect(row.find('[data-status="cloud"]').exists()).toBe(false)
+  })
+
+  it('draws the one progress ring for a loading row, filled where the progress is known', async () => {
+    const row = mountRow({ row: { ...ROW, status: { kind: 'loading', label: 'Coming' } } })
+    expect(row.get('[data-status="loading"] .progress-ring').attributes('data-known')).toBe('false')
+
+    await row.setProps({
+      row: { ...ROW, status: { kind: 'loading', label: 'Coming', progress: 0.4 } },
+    })
+    const ring = row.get('[data-status="loading"] .progress-ring')
+    expect(ring.attributes('data-known')).toBe('true')
+    expect(ring.get('.progress-ring__arc').attributes('stroke-dasharray')).toBe('40 100')
+  })
+})

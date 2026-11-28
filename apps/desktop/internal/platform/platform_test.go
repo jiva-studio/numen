@@ -9,6 +9,8 @@ import (
 
 	"github.com/zalando/go-keyring"
 
+	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/indexsource"
 )
 
@@ -34,7 +36,7 @@ func TestNewPluginServices(t *testing.T) {
 
 func TestPluginServicesUseTheSystemKeychain(t *testing.T) {
 	services := NewPluginServices(TargetFlashcards)
-	if services.Resources.KeyStore == nil {
+	if services.Resources.Stores.Keys == nil {
 		t.Error("the desktop configuration names no key store")
 	}
 
@@ -45,6 +47,7 @@ func TestPluginServicesUseTheSystemKeychain(t *testing.T) {
 	if withDir == nil {
 		t.Fatal("expected non-nil key store when settings path is available")
 	}
+	withDir.UsePlaintextFile()
 	if err := withDir.SetKey(t.Context(), "test-key", "test-val"); err != nil {
 		t.Fatalf("SetKey with configured fallback dir failed: %v", err)
 	}
@@ -122,5 +125,44 @@ func TestGetConfigListsThePluginsOfTheIndex(t *testing.T) {
 	t.Setenv("NUMEN_DEV", "1")
 	if list, err := getIndexSource(nil).List(t.Context()); err != nil || len(list) != 1 {
 		t.Errorf("expected dev manifest fallback in dev mode, got %+v (%v)", list, err)
+	}
+}
+
+func TestCredentialsFileChoiceIsAppliedToTheKeyStore(t *testing.T) {
+	keyring.MockInitWithError(keyring.ErrUnsupportedPlatform)
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	path, err := settings.GetPath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.WriteCredentialsFile(path, settings.CredentialsFilePlaintext); err != nil {
+		t.Fatal(err)
+	}
+	store := getKeyStore()
+
+	applyCredentialsFile(store, &keychain.Passphrase{})
+
+	if err := store.SetKey(t.Context(), "test-key", "test-val"); err != nil {
+		t.Fatalf("SetKey after the plaintext choice: %v", err)
+	}
+}
+
+func TestACredentialsFileWithoutAChoiceRefusesKeys(t *testing.T) {
+	keyring.MockInitWithError(keyring.ErrUnsupportedPlatform)
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	store := getKeyStore()
+
+	applyCredentialsFile(store, &keychain.Passphrase{})
+
+	if err := store.SetKey(t.Context(), "test-key", "test-val"); !errors.Is(err, keychain.ErrFileBackendNotConfirmed) {
+		t.Fatalf("SetKey = %v, want ErrFileBackendNotConfirmed", err)
+	}
+}
+
+func TestTheDesktopCoreKeepsTheRegistryOfAbsentFiles(t *testing.T) {
+	if !GetConfig().Absent {
+		t.Error("the desktop config does not open the registry of absent files")
 	}
 }

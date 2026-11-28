@@ -422,7 +422,7 @@ describe('a question of a plugin', () => {
     await flushPromises()
 
     const palette = field.findComponent(Palette)
-    expect(palette.props('placeholder')).toBe('Level')
+    expect(palette.props('placeholder')).toBe('Search')
     expect(palette.props('heading')).toBe('Level')
     expect(palette.props('groups')?.[0]?.items.map((one) => one.id)).toEqual(['high'])
 

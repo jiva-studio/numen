@@ -260,6 +260,20 @@ export const USECASE_SDK_PACKAGES = [
   'tools',
 ]
 
+/**
+ * The libraries of `libs/shared` a use case may import: they are value and crypto code that reach no file, process or
+ * network. `identity` is the keys and the device chain, `syncprotocol` the messages, limits and errors of the sync
+ * protocol, `syncprotocol/blobcipher` the sealing of a blob and `syncprotocol/gen/numen/sync/v1` the generated
+ * messages. The clients of the protocol live in `syncprotocol/client` and `syncv1connect`, which are not on the list: a
+ * use case reaches the server through a port.
+ */
+export const USECASE_SHARED_PACKAGES = [
+  `${GO_MODULE_ROOT}libs/shared/identity`,
+  `${GO_MODULE_ROOT}libs/shared/syncprotocol`,
+  `${GO_MODULE_ROOT}libs/shared/syncprotocol/blobcipher`,
+  `${GO_MODULE_ROOT}libs/shared/syncprotocol/gen/numen/sync/v1`,
+]
+
 /** Whether `value` is a standard library import: its first element names no host. */
 const isStandardImport = (value) => !value.split('/')[0].includes('.')
 
@@ -286,6 +300,7 @@ function isAllowedUseCaseImport(value, plugin) {
   const sdk = `${GO_MODULE_ROOT}${SDK_GO_DIR}/`
   if (value.startsWith(sdk))
     return USECASE_SDK_PACKAGES.includes(value.slice(sdk.length).split('/')[0])
+  if (USECASE_SHARED_PACKAGES.includes(value)) return true
   const inner = getOwnBackendPath(value, plugin)
   if (inner === undefined) return false
   return inner === 'ports' || inner.startsWith('ports/') || isDomainPath(inner)
@@ -307,7 +322,7 @@ function isAllowedAdapterImport(value, plugin, adapterPath) {
 /**
  * Finds the imports that run against the layers of a plugin backend. Each layer has an allow list:
  * - a use case (`backend/usecase/...`) imports its plugin's `ports` and domain packages, the standard library packages
- *   of `USECASE_STANDARD_IMPORTS`, the SDK packages of `USECASE_SDK_PACKAGES` and third-party modules; never another use
+ *   of `USECASE_STANDARD_IMPORTS`, the SDK packages of `USECASE_SDK_PACKAGES`, the shared libraries of `USECASE_SHARED_PACKAGES` and third-party modules; never another use
  *   case, `api`, `wire`, `service`, `engine` or an adapter;
  * - an adapter (`backend/internal/adapter/<technology>/...`) imports, of its own backend, the `ports`, the domain, the
  *   use case package that declares the interface it satisfies and the packages of its own technology folder; never
@@ -329,7 +344,7 @@ export function findPluginBackendLayerInversions(files) {
         if (!isAllowedUseCaseImport(value, plugin))
           refuse(
             line,
-            `use case ${dir} imports ${value} in plugins/${plugin}; a use case imports its plugin's ports and domain, the standard library that reaches no machine, the SDK's domain types and clients, and third-party modules`,
+            `use case ${dir} imports ${value} in plugins/${plugin}; a use case imports its plugin's ports and domain, the standard library that reaches no machine, the SDK's domain types and clients, the pure shared libraries and third-party modules`,
           )
       }
       continue

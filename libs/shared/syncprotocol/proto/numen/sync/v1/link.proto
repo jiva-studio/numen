@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// LinkService relays sealed messages between two devices that hold the one-time secret of a QR code. It needs no
+// session, only the protocol version header. The server stores the messages, forwards them and deletes them; it reads
+// none and learns no account, device or key. Knowing the channel id is the right to post and read. Every refusal of a
+// channel call (unknown id, expired, closed) is NOT_FOUND with no detail.
+service LinkService {
+  // CreateChannel makes a channel of 16 random bytes that lives ten minutes.
+  rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse);
+
+  // SendMessage stores a message of 1 to 262144 bytes for the other side. The channel holds 24 messages and closes with the last.
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+
+  // WaitMessages returns the messages for the reader after after_seq, or waits up to wait_seconds (at most 20) for
+  // one. A second wait on the same side of a channel is ABORTED. On a closed channel one wait returns is_closed.
+  rpc WaitMessages(WaitMessagesRequest) returns (WaitMessagesResponse);
+
+  // CloseChannel ends the channel at once.
+  rpc CloseChannel(CloseChannelRequest) returns (CloseChannelResponse);
+}
+
+enum LinkSide {
+  LINK_SIDE_UNSPECIFIED = 0;
+  // LINK_SIDE_DISPLAYER is the device that shows the QR code.
+  LINK_SIDE_DISPLAYER = 1;
+  // LINK_SIDE_SCANNER is the device that reads it.
+  LINK_SIDE_SCANNER = 2;
+}
+
+message CreateChannelRequest {}
+
+message CreateChannelResponse {
+  // channel_id is 16 bytes.
+  bytes channel_id = 1;
+  // expires_at is unix seconds.
+  int64 expires_at = 2;
+}
+
+message SendMessageRequest {
+  bytes channel_id = 1;
+  // to is the side that reads the message.
+  LinkSide to = 2;
+  bytes body = 3;
+}
+
+message SendMessageResponse {
+  uint32 seq = 1;
+}
+
+message WaitMessagesRequest {
+  bytes channel_id = 1;
+  LinkSide reader = 2;
+  uint32 after_seq = 3;
+  uint32 wait_seconds = 4;
+}
+
+message WaitMessagesResponse {
+  repeated LinkMessage messages = 1;
+  bool is_closed = 2;
+}
+
+message LinkMessage {
+  uint32 seq = 1;
+  bytes body = 2;
+}
+
+message CloseChannelRequest {
+  bytes channel_id = 1;
+}
+
+message CloseChannelResponse {}

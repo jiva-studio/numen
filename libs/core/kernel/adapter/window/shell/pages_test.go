@@ -219,3 +219,15 @@ func TestAWindowWithNoPluginsListsNone(t *testing.T) {
 		t.Errorf("a window with no plugins lists %v", got)
 	}
 }
+
+func TestHandler_PermitsTheCameraOfItsOwnPagesAndNoMicrophone(t *testing.T) {
+	handler := (&API{}).NewHandler(http.NotFoundHandler())
+	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
+	out := httptest.NewRecorder()
+
+	handler.ServeHTTP(out, r)
+
+	if got := out.Header().Get("Permissions-Policy"); got != "camera=(self), microphone=()" {
+		t.Errorf("the permissions policy reads %q", got)
+	}
+}

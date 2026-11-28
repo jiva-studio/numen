@@ -27,6 +27,8 @@ const (
 	keyProfile               = "performance.profile"
 	keyDisableDmabufRenderer = "performance.disableDmabufRenderer"
 	keyLogLevel              = "logging.level"
+	keyCredentialsFile       = "keys.credentialsFile"
+	keyVaultsFolder          = "vaults.folder"
 )
 
 func listDetectedConnectionIDs(detected connectionport.DetectedConnections) []string {

@@ -22,6 +22,8 @@ export {
   createConnectionCallRpc,
   createLogRpc,
   createLicenseRpc,
+  createIdentityRpc,
+  createKeyFileRpc,
   NAME_SOURCE,
   type NameSourceCode,
   NOTE_MARKER,
@@ -103,6 +105,12 @@ export {
   createConnectionCallClient,
 } from './connectioncalls'
 export {
+  type DownloadProgress,
+  type DownloadRpc,
+  type DownloadClient,
+  createDownloadClient,
+} from './downloads'
+export {
   type LicenseInfo,
   type LicenseErrorCode,
   type LicenseFailure,
@@ -110,6 +118,25 @@ export {
   type LicenseClient,
   createLicenseClient,
 } from './licenses'
+export {
+  type IdentityInfo,
+  type IdentityFailure,
+  type KitProof,
+  type LinkInfo,
+  type AccountClient,
+  type LinkClient,
+  type DevicesClient,
+  type IdentityClient,
+  createIdentityClient,
+} from './identity'
+export {
+  type KeyFileClient,
+  type KeyFileFailure,
+  type KeyFileMode,
+  type KeyFileRpc,
+  type KeyFileState,
+  createKeyFileClient,
+} from './keyfile'
 export {
   NoteGraphSchema,
   type Entry,
@@ -183,3 +210,13 @@ export {
 } from './logs'
 export { findErrorCode, isStaleAnswer, parseFingerprint, ERRORS, getKnownErrorCode } from './errors'
 export { createStreamReader } from './stream'
+export {
+  type RemoteVault,
+  type RemoteVaultCalls,
+  type RemoteVaultErrorCode,
+  type RemoteVaultFailure,
+  type RemoteVaultRpc,
+  type VaultPathSuggestion,
+  createRemoteVaultClient,
+  createRemoteVaultRpc,
+} from './remotevaults'

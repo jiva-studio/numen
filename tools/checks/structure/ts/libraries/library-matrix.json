@@ -4,11 +4,13 @@
     "libs/shared/note": [],
     "libs/shared/protocol": [],
     "libs/plugin/catalog": ["libs/shared/atomicfile", "libs/shared/note", "libs/shared/protocol"],
-    "libs/plugin/sdk-go": ["libs/shared/atomicfile", "libs/shared/note", "libs/shared/protocol", "libs/shared/rerank"],
-    "libs/core/kernel": ["libs/shared/atomicfile", "libs/shared/licensing", "libs/shared/note", "libs/plugin/catalog", "libs/shared/protocol", "libs/shared/rerank"],
+    "libs/plugin/sdk-go": ["libs/shared/atomicfile", "libs/shared/identity", "libs/shared/note", "libs/shared/protocol", "libs/shared/rerank"],
+    "libs/core/kernel": ["libs/shared/atomicfile", "libs/shared/identity", "libs/shared/licensing", "libs/shared/note", "libs/plugin/catalog", "libs/shared/protocol", "libs/shared/rerank"],
+    "libs/shared/identity": [],
     "libs/shared/licensing": [],
     "libs/shared/onnx": [],
     "libs/shared/rerank": [],
+    "libs/shared/syncprotocol": [],
     "libs/shared/tokenizer": []
   },
   "packages": {

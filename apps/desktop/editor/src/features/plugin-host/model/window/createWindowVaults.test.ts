@@ -14,6 +14,7 @@ const vault = (id: string, name: string) => ({
   name,
   path: `/vaults/${name}`,
   isMissing: false,
+  isReadOnly: false,
 })
 
 const LIST: VaultList = {
@@ -91,5 +92,35 @@ describe('switching the vault of the window', () => {
     await vaults.switchTo('lost')
 
     expect(openVault).not.toHaveBeenCalled()
+  })
+})
+
+describe('the cloud vaults of the window', () => {
+  const HARE = { remoteId: 'r1', name: 'Hare Krishna', sizeBytes: 2040109466, vaultId: '' }
+
+  it('list them with the size under the name, and none where there is none', () => {
+    const vaultList = ref(LIST)
+    const cloud = ref([HARE])
+    const vaults = createWindowVaults({ vaultList, cloud, openVault: async () => undefined })
+
+    expect(vaults.getState().cloud).toStrictEqual([
+      { id: 'cloud:r1', name: 'Hare Krishna', detail: '1.9 GB' },
+    ])
+
+    cloud.value = []
+    expect(vaults.getState().cloud).toBeUndefined()
+  })
+
+  it('start getting the vault when its row is switched to', async () => {
+    const openVault = vi.fn<(vault: VaultRef) => Promise<void>>(async () => undefined)
+    const vaults = createWindowVaults({
+      vaultList: ref(LIST),
+      cloud: ref([HARE]),
+      openVault,
+    })
+
+    await vaults.switchTo('cloud:r1')
+
+    expect(openVault).toHaveBeenCalledWith({ id: 'cloud:r1', name: 'Hare Krishna' })
   })
 })

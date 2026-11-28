@@ -25,6 +25,7 @@ type fakeArrangeHost struct {
 	noteError    v1.ErrorCode
 	vaultsError  v1.ErrorCode
 	vaultsDetail string
+	managedBy    string
 	requests     []string
 }
 
@@ -109,6 +110,7 @@ func (a *fakeArrangeHost) AddVault(
 	_ context.Context, req *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
 	a.record("add " + req.Msg.GetPath() + " " + req.Msg.GetName())
+	a.setManagedBy(req.Msg.GetManagedBy())
 	if a.vaultsError != 0 {
 		return connect.NewResponse(&v1.AddVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
 	}

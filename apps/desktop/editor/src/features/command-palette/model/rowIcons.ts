@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
-import { File, Undo2 } from '@lucide/vue'
+import { Cloud, File, Undo2 } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
+import { findCloudRemoteId } from '@/entities/vault'
 import { findIcon } from '@/shared/model/command'
 import { KEEP_SUFFIX } from './view/stepGroups'
 import type { Commands } from './palette/palette'
@@ -12,13 +13,19 @@ export interface FileIcons {
   findFileIcon?(this: void, path: string): Component | undefined
 }
 
+const findMarkIcon = (id: string): Component | undefined => {
+  if (id.endsWith(KEEP_SUFFIX)) return Undo2
+  return findCloudRemoteId(id) ? Cloud : undefined
+}
+
 export function findRowIcon(
   id: string,
   commands: Commands,
   search: SearchState,
   findFileIcon?: (path: string) => Component | undefined,
 ) {
-  if (id.endsWith(KEEP_SUFFIX)) return Undo2
+  const mark = findMarkIcon(id)
+  if (mark) return mark
   if (commands.palette.open.value) {
     const picked = commands.view.findTabKind(id)
     return picked === null

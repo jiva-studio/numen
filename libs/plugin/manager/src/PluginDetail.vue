@@ -3,7 +3,7 @@
  * The page of one plugin: the toolbar with the path Settings, the category and the plugin and with
  * the state and the enabled switch or the install button, the header, the failure of a suspended
  * plugin or the bar of its worst health item, then the tabs Settings (only where the plugin has settings, then the tab the page opens on), Slots (only where views are placed in its slots), About,
- * Contributes and Data. The application draws the card or the islands of the settings in the `settings` slot and the sections under them in `sections`;
+ * Contributes and Data; the tabs the plugin contributes follow Settings and their panels are the `tab` slot. The application draws the card or the islands of the settings in the `settings` slot and the sections under them in `sections`;
  * Data is there only while the plugin keeps files in the vault or their deletion failed.
  */
 import { computed, ref, watch, type VNode } from 'vue'
@@ -19,7 +19,13 @@ import { isInstalled } from './plugins'
 import SettingsPage from './SettingsPage.vue'
 import { getReadmeText } from './readme'
 import { getPluginState, getStartItem, getWorstItem, hasConnectionSettings } from './state'
-import { getFirstPluginTab, getPanelElementId, getPluginTabs, getTabElementId } from './tabs'
+import {
+  getFirstPluginTab,
+  getPanelElementId,
+  getPluginTabs,
+  getTabElementId,
+  isContributedTab,
+} from './tabs'
 import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -37,6 +43,8 @@ const emit = defineEmits<{
 defineSlots<{
   /** The settings of the plugin, drawn by the application. */
   settings?(): VNode[]
+  /** The panel of a tab the plugin contributes, drawn by the application. */
+  tab?(props: { id: string }): VNode[]
   /** The islands of the Slots tab, drawn by the application. */
   slots?(): VNode[]
   /** Sections of the settings tab under the card of the settings, drawn by the application. */
@@ -64,9 +72,11 @@ const tabs = computed(() =>
     hasSettings: hasSettingsTab.value,
     hasSlots: props.hasSlots === true,
     hasData: props.dataFileCount > 0 || props.problem !== '',
+    contributed: props.contributedTabs ?? [],
   }),
 )
 const activeTab = ref(getFirstPluginTab(hasSettingsTab.value))
+const isContributed = computed(() => isContributedTab(props.contributedTabs ?? [], activeTab.value))
 const idBase = computed(() => `plugin-${props.plugin.id.replaceAll('.', '-')}`)
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -160,6 +170,7 @@ function onRunAction(key: string): void {
       <slot v-if="activeTab === 'settings' && props.hasSettings" name="settings" />
       <slot v-if="activeTab === 'settings'" name="sections" />
       <slot v-if="activeTab === 'slots'" name="slots" />
+      <slot v-if="isContributed" name="tab" :id="activeTab" />
 
       <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
         <Prose :text="readmeText" />
@@ -228,6 +239,37 @@ function onRunAction(key: string): void {
 
 .plugin-detail__readme :deep(.prose) {
   max-inline-size: 36rem;
+  font-size: var(--numen-font-size);
+  line-height: var(--numen-line-height);
+}
+
+.plugin-detail__readme :deep(.prose :where(p, ul, ol, li, blockquote, pre, table)) {
+  font-size: var(--numen-font-size);
+  line-height: var(--numen-line-height);
+}
+
+.plugin-detail__readme :deep(.prose :where(h1, h2)) {
+  margin-block: 1.25em 0.5em;
+  font-size: var(--numen-title-size);
+  line-height: var(--numen-line-height);
+}
+
+.plugin-detail__readme :deep(.prose :where(h3, h4, h5, h6)) {
+  margin-block: 1em 0.375em;
+  font-size: var(--numen-font-size);
+  line-height: var(--numen-line-height);
+}
+
+.plugin-detail__readme :deep(.prose :where(p, ul, ol, pre, blockquote, table)) {
+  margin-block: 0.5em;
+}
+
+.plugin-detail__readme :deep(.prose :where(li)) {
+  margin-block: 0.125em;
+}
+
+.plugin-detail__readme :deep(.prose :where(code, pre code)) {
+  font-size: var(--numen-text-1);
 }
 
 .plugin-detail__readme :deep(.prose > :first-child) {

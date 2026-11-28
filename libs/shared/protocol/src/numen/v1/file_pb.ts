@@ -15,7 +15,7 @@ import type { JsonObject, Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5IoEBCgVFbnRyeRIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJaXNfZm9sZGVyGAMgASgIEg8KB2lzX25vdGUYBiABKAgSDAoEdHlwZRgFIAEoCRIQCgh0YWJfa2luZBgHIAEoCRIYChBtb2RpZmllZF91bml4X21zGAggASgDIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kInYKCEZpbGVLaW5kEgwKBHBhdGgYASABKAkSDwoHaXNfbm90ZRgFIAEoCBIMCgR0eXBlGAMgASgJEisKCnByb3BlcnRpZXMYBiABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0EhAKCHRhYl9raW5kGAcgASgJIisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIpEBChBNb3ZlRmlsZVJlc3BvbnNlEi4KC21vdmVfcmVzdWx0GAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEiIKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEhkKEWlzX2luZGV4X291dGRhdGVkGAMgASgIQg4KDF9tb3ZlX3Jlc3VsdCJWCgpNb3ZlUmVzdWx0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSFgoOcmVwYWlyZWRfbm90ZXMYAyADKAkSFgoOZGFuZ2xpbmdfbm90ZXMYBCADKAkiIQoRUmVtb3ZlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCSITChFFbXB0eVRyYXNoUmVxdWVzdCIqChJFbXB0eVRyYXNoUmVzcG9uc2USFAoMZmFpbGVkX3BhdGhzGAEgAygJIn8KElJlbW92ZUZpbGVSZXNwb25zZRISCgp0cmFzaF9wYXRoGAEgASgJEhYKDmRhbmdsaW5nX25vdGVzGAIgAygJEiIKBWVycm9yGAMgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEhkKEWlzX2luZGV4X291dGRhdGVkGAQgASgIIiMKE0NyZWF0ZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSI6ChRDcmVhdGVGb2xkZXJSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZTLJAwoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEkcKCkVtcHR5VHJhc2gSGy5udW1lbi52MS5FbXB0eVRyYXNoUmVxdWVzdBocLm51bWVuLnYxLkVtcHR5VHJhc2hSZXNwb25zZRJNCgxDcmVhdGVGb2xkZXISHS5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_google_protobuf_struct, file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5IqYBCgVFbnRyeRIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJaXNfZm9sZGVyGAMgASgIEg8KB2lzX25vdGUYBiABKAgSDAoEdHlwZRgFIAEoCRIQCgh0YWJfa2luZBgHIAEoCRIYChBtb2RpZmllZF91bml4X21zGAggASgDEhEKCWlzX2Fic2VudBgJIAEoCBIQCghwcm92aWRlchgKIAEoCSIlChRMaXN0RmlsZUtpbmRzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI6ChVMaXN0RmlsZUtpbmRzUmVzcG9uc2USIQoFa2luZHMYASADKAsyEi5udW1lbi52MS5GaWxlS2luZCJ2CghGaWxlS2luZBIMCgRwYXRoGAEgASgJEg8KB2lzX25vdGUYBSABKAgSDAoEdHlwZRgDIAEoCRIrCgpwcm9wZXJ0aWVzGAYgASgLMhcuZ29vZ2xlLnByb3RvYnVmLlN0cnVjdBIQCgh0YWJfa2luZBgHIAEoCSIrCg9Nb3ZlRmlsZVJlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSKRAQoQTW92ZUZpbGVSZXNwb25zZRIuCgttb3ZlX3Jlc3VsdBgBIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgDIAEoCEIOCgxfbW92ZV9yZXN1bHQiVgoKTW92ZVJlc3VsdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhYKDnJlcGFpcmVkX25vdGVzGAMgAygJEhYKDmRhbmdsaW5nX25vdGVzGAQgAygJIiEKEVJlbW92ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiEwoRRW1wdHlUcmFzaFJlcXVlc3QiKgoSRW1wdHlUcmFzaFJlc3BvbnNlEhQKDGZhaWxlZF9wYXRocxgBIAMoCSJ/ChJSZW1vdmVGaWxlUmVzcG9uc2USEgoKdHJhc2hfcGF0aBgBIAEoCRIWCg5kYW5nbGluZ19ub3RlcxgCIAMoCRIiCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIZChFpc19pbmRleF9vdXRkYXRlZBgEIAEoCCIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiOgoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiIAoQRmV0Y2hGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJIhMKEUZldGNoRmlsZVJlc3BvbnNlIiMKE0Ryb3BEb3dubG9hZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSIWChREcm9wRG93bmxvYWRSZXNwb25zZSIqChpHZXREb3dubG9hZFByb2dyZXNzUmVxdWVzdBIMCgRwYXRoGAEgASgJIlgKG0dldERvd25sb2FkUHJvZ3Jlc3NSZXNwb25zZRIQCghpc19rbm93bhgBIAEoCBISCgpieXRlc19kb25lGAIgASgDEhMKC2J5dGVzX3RvdGFsGAMgASgDMsIFCgtGaWxlU2VydmljZRJECglMaXN0RmlsZXMSGi5udW1lbi52MS5MaXN0RmlsZXNSZXF1ZXN0GhsubnVtZW4udjEuTGlzdEZpbGVzUmVzcG9uc2USUAoNTGlzdEZpbGVLaW5kcxIeLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1Jlc3BvbnNlEkEKCE1vdmVGaWxlEhkubnVtZW4udjEuTW92ZUZpbGVSZXF1ZXN0GhoubnVtZW4udjEuTW92ZUZpbGVSZXNwb25zZRJHCgpSZW1vdmVGaWxlEhsubnVtZW4udjEuUmVtb3ZlRmlsZVJlcXVlc3QaHC5udW1lbi52MS5SZW1vdmVGaWxlUmVzcG9uc2USRwoKRW1wdHlUcmFzaBIbLm51bWVuLnYxLkVtcHR5VHJhc2hSZXF1ZXN0GhwubnVtZW4udjEuRW1wdHlUcmFzaFJlc3BvbnNlEk0KDENyZWF0ZUZvbGRlchIdLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlcXVlc3QaHi5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXNwb25zZRJECglGZXRjaEZpbGUSGi5udW1lbi52MS5GZXRjaEZpbGVSZXF1ZXN0GhsubnVtZW4udjEuRmV0Y2hGaWxlUmVzcG9uc2USTQoMRHJvcERvd25sb2FkEh0ubnVtZW4udjEuRHJvcERvd25sb2FkUmVxdWVzdBoeLm51bWVuLnYxLkRyb3BEb3dubG9hZFJlc3BvbnNlEmIKE0dldERvd25sb2FkUHJvZ3Jlc3MSJC5udW1lbi52MS5HZXREb3dubG9hZFByb2dyZXNzUmVxdWVzdBolLm51bWVuLnYxLkdldERvd25sb2FkUHJvZ3Jlc3NSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_google_protobuf_struct, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
@@ -116,6 +116,20 @@ export type Entry = Message<"numen.v1.Entry"> & {
    * @generated from field: int64 modified_unix_ms = 8;
    */
   modifiedUnixMs: bigint;
+
+  /**
+   * Whether the file is listed and its bytes are not on this device. Only a synced phone sets it.
+   *
+   * @generated from field: bool is_absent = 9;
+   */
+  isAbsent: boolean;
+
+  /**
+   * The id of the plugin that can fill an absent file. Empty for a file that is not absent.
+   *
+   * @generated from field: string provider = 10;
+   */
+  provider: string;
 };
 
 /**
@@ -430,6 +444,122 @@ export const CreateFolderResponseSchema: GenMessage<CreateFolderResponse> = /*@_
   messageDesc(file_numen_v1_file, 14);
 
 /**
+ * @generated from message numen.v1.FetchFileRequest
+ */
+export type FetchFileRequest = Message<"numen.v1.FetchFileRequest"> & {
+  /**
+   * The absent file to fill, as the vault calls it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.FetchFileRequest.
+ * Use `create(FetchFileRequestSchema)` to create a new message.
+ */
+export const FetchFileRequestSchema: GenMessage<FetchFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 15);
+
+/**
+ * @generated from message numen.v1.FetchFileResponse
+ */
+export type FetchFileResponse = Message<"numen.v1.FetchFileResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.FetchFileResponse.
+ * Use `create(FetchFileResponseSchema)` to create a new message.
+ */
+export const FetchFileResponseSchema: GenMessage<FetchFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 16);
+
+/**
+ * @generated from message numen.v1.DropDownloadRequest
+ */
+export type DropDownloadRequest = Message<"numen.v1.DropDownloadRequest"> & {
+  /**
+   * The downloaded file to take off this device, as the vault calls it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.DropDownloadRequest.
+ * Use `create(DropDownloadRequestSchema)` to create a new message.
+ */
+export const DropDownloadRequestSchema: GenMessage<DropDownloadRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 17);
+
+/**
+ * @generated from message numen.v1.DropDownloadResponse
+ */
+export type DropDownloadResponse = Message<"numen.v1.DropDownloadResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.DropDownloadResponse.
+ * Use `create(DropDownloadResponseSchema)` to create a new message.
+ */
+export const DropDownloadResponseSchema: GenMessage<DropDownloadResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 18);
+
+/**
+ * @generated from message numen.v1.GetDownloadProgressRequest
+ */
+export type GetDownloadProgressRequest = Message<"numen.v1.GetDownloadProgressRequest"> & {
+  /**
+   * The file whose download to ask about, as the vault calls it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.GetDownloadProgressRequest.
+ * Use `create(GetDownloadProgressRequestSchema)` to create a new message.
+ */
+export const GetDownloadProgressRequestSchema: GenMessage<GetDownloadProgressRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 19);
+
+/**
+ * @generated from message numen.v1.GetDownloadProgressResponse
+ */
+export type GetDownloadProgressResponse = Message<"numen.v1.GetDownloadProgressResponse"> & {
+  /**
+   * False when no download of the file runs; the two sizes are then zero.
+   *
+   * @generated from field: bool is_known = 1;
+   */
+  isKnown: boolean;
+
+  /**
+   * The bytes of the file that are on this device so far.
+   *
+   * @generated from field: int64 bytes_done = 2;
+   */
+  bytesDone: bigint;
+
+  /**
+   * The size of the whole file in bytes.
+   *
+   * @generated from field: int64 bytes_total = 3;
+   */
+  bytesTotal: bigint;
+};
+
+/**
+ * Describes the message numen.v1.GetDownloadProgressResponse.
+ * Use `create(GetDownloadProgressResponseSchema)` to create a new message.
+ */
+export const GetDownloadProgressResponseSchema: GenMessage<GetDownloadProgressResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 20);
+
+/**
  * FileService answers what the vault holds at a path, and moves it about.
  *
  * @generated from service numen.v1.FileService
@@ -504,6 +634,40 @@ export const FileService: GenService<{
     methodKind: "unary";
     input: typeof CreateFolderRequestSchema;
     output: typeof CreateFolderResponseSchema;
+  },
+  /**
+   * FetchFile brings the bytes of an absent file onto this device, by the plugin that provides files. The
+   * call returns once the file is filled. A file no enabled plugin can fill is a failed call that says why.
+   *
+   * @generated from rpc numen.v1.FileService.FetchFile
+   */
+  fetchFile: {
+    methodKind: "unary";
+    input: typeof FetchFileRequestSchema;
+    output: typeof FetchFileResponseSchema;
+  },
+  /**
+   * DropDownload takes the bytes of a downloaded file off this device and lists the file as absent again,
+   * by the plugin that provides files. A file whose changes that plugin has not kept is a failed
+   * precondition that says so, and its bytes stay.
+   *
+   * @generated from rpc numen.v1.FileService.DropDownload
+   */
+  dropDownload: {
+    methodKind: "unary";
+    input: typeof DropDownloadRequestSchema;
+    output: typeof DropDownloadResponseSchema;
+  },
+  /**
+   * GetDownloadProgress says how much of the file at the path the provider has downloaded so far. It is
+   * not known when the provider runs no download of that path.
+   *
+   * @generated from rpc numen.v1.FileService.GetDownloadProgress
+   */
+  getDownloadProgress: {
+    methodKind: "unary";
+    input: typeof GetDownloadProgressRequestSchema;
+    output: typeof GetDownloadProgressResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_file, 0);

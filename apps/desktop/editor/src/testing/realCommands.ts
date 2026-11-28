@@ -22,6 +22,7 @@ import {
 } from '@numen/plugin-loader'
 import {
   createCommandDeps,
+  createPickerSession,
   createSearchRequests,
   createWindowPalette,
   runSupport,
@@ -47,7 +48,7 @@ import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/feature
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/ui/words'
 import { createNoteWriter } from '@/entities/note'
-import { createVaultListReader } from '@/entities/vault'
+import { createVaultListReader, useCloudVaults } from '@/entities/vault'
 import { createAppCommands } from './appCommands'
 import { createAnsweredApi } from './coreAnswers'
 
@@ -205,10 +206,12 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
-    getVaultList: createVaultListReader({
-      vaults: api.vault.vaults,
-      getShownVault: api.window.shownVault.getShownVault,
-    }),
+    vaultLists: {
+      listVaults: createVaultListReader({
+        vaults: api.vault.vaults,
+        getShownVault: api.window.shownVault.getShownVault,
+      }),
+    },
     searchCore: api.vault.search,
   })
   watchCommandLists(
@@ -314,10 +317,20 @@ export function createRealWindow(parts: RealWindowParts) {
         },
         writeMessage: options.writeMessage,
       },
-      files: { files: api.vault.file, notes: options.reached, writeMessage: options.writeMessage },
+      files: {
+        files: api.vault.file,
+        downloads: api.vault.downloads,
+        notes: options.reached,
+        writeMessage: options.writeMessage,
+      },
       vaults: {
         vaults: api.vault.vaults,
         clearTrash: api.vault.file.emptyTrash,
+        cloud: {
+          known: useCloudVaults(api.vault.remoteVaults),
+          remote: api.vault.remoteVaults,
+          ask: createPickerSession(),
+        },
         tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
         setVaultName: () => undefined,
         reload: () => undefined,

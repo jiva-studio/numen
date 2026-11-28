@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
@@ -115,9 +116,9 @@ func coreCosine(query, stored []float32) float64 {
 	return dot / math.Sqrt(remaining*right)
 }
 
-func hostOf(fixture goldenFixture) (*hosttest.Search, *hosttest.Vault) {
-	search := hosttest.NewSearch("physics")
-	search.SetModel(hosttest.SearchModel{Name: modelName, Recipe: modelRecipe})
+func hostOf(fixture goldenFixture) (*searchtest.Search, *hosttest.Vault) {
+	search := searchtest.NewSearch("physics")
+	search.SetModel(searchtest.SearchModel{Name: modelName, Recipe: modelRecipe})
 	vault := hosttest.New("physics")
 	vectors := map[string][]float32{}
 	for _, one := range fixture.Titles {
@@ -125,13 +126,13 @@ func hostOf(fixture goldenFixture) (*hosttest.Search, *hosttest.Vault) {
 		vault.WriteFile(sourcePath(one.Source), fmt.Sprintf("---\ntitle: %s\n---\n", one.Text))
 	}
 	search.SetEmbedder(func(text string) []float32 { return vectors[text] })
-	chunks := make([]hosttest.SampledChunk, len(fixture.Chunks))
+	chunks := make([]searchtest.SampledChunk, len(fixture.Chunks))
 	for i, one := range fixture.Chunks {
 		values := make([]float32, len(one.Vector))
 		for j, b := range one.Vector {
 			values[j] = float32(int8(b))
 		}
-		chunks[i] = hosttest.SampledChunk{Path: sourcePath(one.Source), Vector: values}
+		chunks[i] = searchtest.SampledChunk{Path: sourcePath(one.Source), Vector: values}
 	}
 	search.SetSampledChunks(modelRecipe, chunks)
 	search.SetCosine(coreCosine)

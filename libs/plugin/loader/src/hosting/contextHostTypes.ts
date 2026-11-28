@@ -21,6 +21,7 @@ import type {
   MountedView,
   NoticeHost,
   PickerHost,
+  DialogHost,
   ProcessHost,
   ReaderRegistration,
   SettingsViewRegistration,
@@ -32,6 +33,7 @@ import type {
   VaultFiles,
   VaultNotes,
   VaultRelations,
+  VaultFlagsHost,
   VaultsHost,
   VaultTexts,
   WindowHost,
@@ -148,8 +150,14 @@ export interface ContextUiHost {
     readonly getPermission?: (command: string) => string | undefined
   }
   readonly getWindow: () => WindowHost | undefined
-  readonly getNotices: (pluginId: string) => NoticeHost
-  readonly getPicker: () => PickerHost | undefined
+  readonly forPlugin: {
+    readonly getVaultFlags: (pluginId: string) => VaultFlagsHost | undefined
+    readonly getNotices: (pluginId: string) => NoticeHost
+  }
+  readonly prompts: {
+    readonly getPicker: () => PickerHost | undefined
+    readonly getDialogs: () => DialogHost | undefined
+  }
   readonly getSlots: () => SlotHost
 }
 

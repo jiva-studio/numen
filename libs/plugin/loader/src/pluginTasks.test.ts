@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
-import { createPluginTasks, type WindowTask } from './pluginTasks'
+import { createPluginTasks } from './pluginTasks'
+
+type WindowTask = Parameters<typeof createPluginTasks>[0]['value'][number]
 
 const createTask = (id: string, pluginId: string): WindowTask => ({
   id,

@@ -187,7 +187,7 @@ function createNoteOpening(context: NoteStoreContext) {
   }
 }
 
-function createNoteQueries(context: NoteStoreContext) {
+function createNoteQueries(context: NoteStoreContext, isReadOnly: () => boolean) {
   const { tabs, bodies } = context
 
   return {
@@ -201,6 +201,7 @@ function createNoteQueries(context: NoteStoreContext) {
         body: bodies.get(id) ?? '',
         state: tab ? getState(tab) : 'loading',
         error: tab?.error ?? null,
+        isReadOnly: isReadOnly(),
       }
     },
     getOpenIds: (): readonly string[] => [...tabs.keys()],
@@ -248,7 +249,7 @@ export function useOpenNotes(api: NoteBufferApi, how: OpenNotesOptions = {}) {
   })
 
   const noteOpening = createNoteOpening(context)
-  const noteQueries = createNoteQueries(context)
+  const noteQueries = createNoteQueries(context, how.isReadOnly ?? (() => false))
   const noteEditing = createNoteEditing(context, noteQueries.getOpenIds, now)
   const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id), noteQueries.getOpenIds)
 

@@ -15,6 +15,9 @@ import type {
   OperationTitles,
   RowOption,
 } from '@/entities/connection'
+import type { IdentityInfo, KitProof } from '@/entities/identity'
+import type { KeyFileStore } from '@/entities/key-file'
+import type { DeviceCalls } from '@/features/identity-link'
 import type { LicenseInfo } from '@/entities/license'
 import type {
   PluginInfo,
@@ -31,6 +34,7 @@ export interface Installation {
   readonly settings: InstallationSettings
   readonly plugin: InstallationPlugin
   readonly connections: InstallationConnections
+  readonly identity: InstallationIdentity
   readonly licenses: InstallationLicenses
 }
 
@@ -41,6 +45,12 @@ export interface Installation {
 /** The component a plugin registered for a view of its settings page. */
 export interface ViewComponent {
   readonly component: Component
+}
+
+/** A view a plugin registered for the page "Identity and licenses", and the plugin it belongs to. */
+export interface IdentityView extends ViewComponent {
+  readonly pluginId: string
+  readonly id: string
 }
 
 export interface InstallationSettings {
@@ -94,6 +104,8 @@ export interface InstallationPlugin {
    */
   choosePath(pluginId: string, key: string): Promise<string>
   getSettingsViews(pluginId: string): ReadonlyMap<string, ViewComponent>
+  /** The views of the enabled plugins that belong to the page "Identity and licenses", in the order of the plugins. */
+  getIdentityViews(): readonly IdentityView[]
   /** The slots a plugin draws, with what is placed in each; absent where the window offers none. */
   getSlotGroups?(pluginId: string): readonly SlotGroup[]
   readonly files: InstallationPluginFiles
@@ -149,6 +161,24 @@ export interface ConnectionEdits {
   readonly create: (draft: ConnectionDraft) => Promise<Result<ConnectionInfo, string>>
   readonly update: (change: ConnectionChange) => Promise<Result<ConnectionInfo, string>>
   readonly delete: (id: string) => Promise<Result<undefined, string>>
+}
+
+/**
+ * The identity of this device. The recovery words and the sheets of a kit pass through the calls that
+ * take them and are not held here; the sheets of a new kit stay in the core.
+ */
+export interface InstallationIdentity {
+  readonly keyFile: KeyFileStore
+  readonly identity: Readonly<Ref<IdentityInfo | undefined>>
+  readonly devices: DeviceCalls
+  load(): Promise<void>
+  create(words: readonly string[]): Promise<Result<IdentityInfo, string>>
+  delete(): Promise<Result<void, string>>
+  readonly recovery: {
+    generateWords(): Promise<Result<readonly string[], string>>
+    restore(proof: KitProof, signal?: AbortSignal): Promise<Result<IdentityInfo, string>>
+    saveKit(proof: KitProof): Promise<Result<boolean, string>>
+  }
 }
 
 /**

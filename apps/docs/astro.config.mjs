@@ -71,6 +71,8 @@ export default defineConfig({
             { slug: 'themes' },
             { slug: 'semantic-search' },
             { slug: 'reader' },
+            { slug: 'cancel-sync' },
+            { slug: 'sync' },
           ],
         },
         {

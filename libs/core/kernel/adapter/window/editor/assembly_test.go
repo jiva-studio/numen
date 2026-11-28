@@ -6,6 +6,7 @@ import (
 	"io"
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedchunks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -115,8 +116,8 @@ type testIndex struct {
 		Lexical       search.LexicalQueries
 		Nearest       search.NearestQueries
 		Progress      indexing.IndexProgress
-		Vectors       indexing.VectorRepository
-		VectorQueries indexing.VectorQueries
+		Vectors       embedchunks.VectorRepository
+		VectorQueries embedchunks.VectorQueries
 	}
 	Source struct {
 		Sources       sourceport.SourceRepository
@@ -220,8 +221,8 @@ func (w readingParts) ReadWholeVault(
 	if embedder == nil {
 		embedder = none.SearchSource{}
 	}
-	embed := indexing.NewEmbed(w.GetVaultReaders(), db.Chunks.VectorQueries, db.Chunks.Vectors, store.NewIndexClaim(derivedCoreFolder+"/indexing"), w.texts, embedder)
-	return indexing.NewReadWholeVault(w.scan(db, rebuild), texts, embed), nil
+	embed := embedchunks.NewEmbed(w.GetVaultReaders(), db.Chunks.VectorQueries, db.Chunks.Vectors, store.NewIndexClaim(derivedCoreFolder+"/indexing"), w.texts, embedder)
+	return indexing.NewReadWholeVault(w.scan(db, rebuild), texts, embed.EmbedWithProgress), nil
 }
 
 func openThemes(registryPath string, interfaceScale, textScale float64, say func(string)) (*theme.Service, error) {
@@ -283,6 +284,6 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 			themeusecase.Bounds{Min: textBounds.Min, Max: textBounds.Max}),
 		themeusecase.NewReadTheme(sources),
 		themeusecase.NewWriteAppearance(sources, appearance, appearance, scales),
-		themeusecase.NewWatchThemes(sources, files, 0),
+		themeusecase.NewWatchThemes(sources, files, 0, nil),
 	), err
 }

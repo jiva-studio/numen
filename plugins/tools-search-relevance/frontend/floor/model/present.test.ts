@@ -13,6 +13,8 @@ import {
   getSourceLabel,
 } from './present'
 
+const reported = (text: string): Error => Object.assign(new Error(text), { name: 'ReportedError' })
+
 describe('present', () => {
   it('names each source', () => {
     expect(getSourceLabel(FLOOR_SOURCE.CALIBRATED)).toBe('Calibrated on your vault')
@@ -66,8 +68,8 @@ describe('present', () => {
     expect(describeProbe(0, false)).toBe('The vault has no indexed passages yet.')
   })
 
-  it('reads the message of any thrown value', () => {
-    expect(getErrorMessage(new Error('x'))).toBe('x')
-    expect(getErrorMessage('y')).toBe('y')
+  it('shows the words of a thrown value, not its text', () => {
+    expect(getErrorMessage(reported('x'))).toBe('x')
+    expect(getErrorMessage('y')).toBe('Numen is not responding; retrying')
   })
 })

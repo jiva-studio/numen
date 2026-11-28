@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/vault_provider.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// RemoteVaultService is how a window opens a vault that a plugin keeps remotely: it lists them next to
+// the local vaults, and one call makes the local folder, registers the vault and connects it. The core
+// calls the enabled plugin that declares the vault.provider capability, and names no plugin to do so.
+service RemoteVaultService {
+  // ListRemoteVaults lists the remote vaults the provider offers. The list is empty when no enabled plugin
+  // provides remote vaults or the provider cannot answer; that is not an error.
+  rpc ListRemoteVaults(RemoteVaultServiceListRemoteVaultsRequest) returns (RemoteVaultServiceListRemoteVaultsResponse);
+
+  // SuggestVaultPath names the folder a new vault of the name is made in.
+  rpc SuggestVaultPath(SuggestVaultPathRequest) returns (SuggestVaultPathResponse);
+
+  // OpenRemoteVault makes the folder at the path, registers it as a vault and connects the remote vault
+  // to it. A failed call leaves the list of vaults as it was and removes the folder only when the call
+  // made it.
+  rpc OpenRemoteVault(OpenRemoteVaultRequest) returns (OpenRemoteVaultResponse);
+}
+
+message RemoteVaultServiceListRemoteVaultsRequest {}
+
+message RemoteVaultServiceListRemoteVaultsResponse {
+  repeated RemoteVault vaults = 1;
+}
+
+message SuggestVaultPathRequest {
+  string name = 1;
+  // The folder to make the vault in. When empty, the setting Folder for new vaults, or the Documents
+  // folder of the system when the setting is empty.
+  string folder = 2;
+}
+
+message SuggestVaultPathResponse {
+  // The folder new vaults are made in: the setting Folder for new vaults, or the Documents folder of
+  // the system when the setting is empty.
+  string folder = 1;
+  // The folder of the vault: the name in the folder, or the name with the lowest free number from 2
+  // when the name is taken.
+  string path = 2;
+  // Whether the name alone is taken in the folder.
+  bool is_taken = 3;
+}
+
+message OpenRemoteVaultRequest {
+  string remote_id = 1;
+  // The absolute path of the folder of the vault. It is new, or exists and is empty.
+  string path = 2;
+}
+
+message OpenRemoteVaultResponse {
+  // The vault of this device the remote vault is connected to.
+  string vault_id = 1;
+}

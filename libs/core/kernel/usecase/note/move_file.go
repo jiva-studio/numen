@@ -18,7 +18,7 @@ import (
 // inside its own folder is called by that name, where a title and a filename are one name.
 type MoveFile struct {
 	notes     Move
-	queries   SourcesUnder
+	queries   MovedFiles
 	admission vaultport.WriteAdmission
 	follow    IndexFollow
 }
@@ -29,7 +29,7 @@ type MoveFile struct {
 // files them, what the index holds about the files under the path, and the
 // admission and the index follow of a write.
 func NewMoveFile(notes Move, queries SourcesUnder, admission vaultport.WriteAdmission, follow IndexFollow) MoveFile {
-	return MoveFile{notes: notes, queries: queries, admission: admission, follow: follow}
+	return MoveFile{notes: notes, queries: movedFiles{sources: queries, absent: nil}, admission: admission, follow: follow}
 }
 
 // Execute moves the file or folder from from to to, repairs what pointed at the
@@ -39,13 +39,16 @@ func NewMoveFile(notes Move, queries SourcesUnder, admission vaultport.WriteAdmi
 // A link repair that fails afterwards leaves that link broken and visible as a
 // problem.
 func (u MoveFile) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, bool, error) {
+	if err := vaultport.CheckWrite(ctx, v); err != nil {
+		return domain.MoveResult{From: from, To: to}, false, err
+	}
 	release, err := u.admission.Begin()
 	if err != nil {
 		return domain.MoveResult{}, false, err
 	}
 	defer release()
 	moved, err := u.move(ctx, v, from, to)
-	if u.follow.IsIndexOutdated(err) {
+	if isIndexOutdated(u.follow, err) {
 		return moved, true, nil
 	}
 	return moved, false, err
@@ -68,15 +71,7 @@ func (u MoveFile) move(ctx context.Context, v domain.Vault, from, to string) (do
 		return res, err
 	}
 
-	mover, err := u.notes.writers.OpenFileMover(v)
-	if err != nil {
-		return res, err
-	}
-	// Only the core reports a path as holding nothing: the writer returns the same
-	// error for a vault it cannot reach at all.
-	if err := mover.Move(ctx, from, to); errors.Is(err, edit.ErrNotExist) {
-		return res, edit.ErrNoNote
-	} else if err != nil {
+	if err := u.moveFiles(ctx, v, from, to); err != nil {
 		return res, err
 	}
 	res.IsMoved = true
@@ -101,6 +96,27 @@ func (u MoveFile) move(ctx context.Context, v domain.Vault, from, to string) (do
 		return res, err
 	}
 	return res, called
+}
+
+func (u MoveFile) moveFiles(ctx context.Context, v domain.Vault, from, to string) error {
+	mover, err := u.notes.writers.OpenFileMover(v)
+	if err != nil {
+		return err
+	}
+	// Only the core reports a path as holding nothing: the writer returns the same
+	// error for a vault it cannot reach at all.
+	moveErr := mover.Move(ctx, from, to)
+	if moveErr != nil && !errors.Is(moveErr, edit.ErrNotExist) {
+		return moveErr
+	}
+	listed, err := u.queries.MoveAbsent(ctx, v, from, to)
+	if err != nil {
+		return err
+	}
+	if moveErr != nil && listed == 0 {
+		return edit.ErrNoNote
+	}
+	return nil
 }
 
 func (u MoveFile) getBacklinksByPath(

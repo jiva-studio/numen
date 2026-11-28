@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef, type VNode } from 'vue'
+import { Cloud } from '@lucide/vue'
+import { ProgressRing } from '@/shared/ui/progress-ring'
 import { useRenameFocus } from '../model/useRenameFocus'
 import type { RowId } from '../lib/row'
 import type { TreeRowProps } from './TreeRow.types'
@@ -63,6 +65,17 @@ useRenameFocus(() => props.isRenaming, field)
     />
     <span v-else class="tree__name min-w-0 truncate">{{ row.name }}</span>
 
+    <span
+      v-if="row.status"
+      class="tree__status flex shrink-0 items-center justify-center"
+      role="img"
+      :aria-label="row.status.label"
+      :data-status="row.status.kind"
+    >
+      <ProgressRing v-if="row.status.kind === 'loading'" :value="row.status.progress" />
+      <Cloud v-else class="tree__cloud" aria-hidden="true" />
+    </span>
+
     <span class="tree__end flex shrink-0 items-center">
       <slot name="end" :id="row.id">
         <component :is="end" v-if="end" :id="row.id" />
@@ -125,7 +138,34 @@ useRenameFocus(() => props.isRenaming, field)
   background: var(--numen-ring);
 }
 
+.tree__status {
+  --status: 1rem;
+  box-sizing: content-box;
+  inline-size: var(--status);
+  margin-inline-start: auto;
+  padding-inline-start: var(--gap);
+  color: var(--numen-hushed);
+}
+
+.tree__status + .tree__end {
+  margin-inline-start: 0;
+}
+
+.tree__status[data-status='loading'] {
+  color: var(--numen-accent);
+}
+
+.tree__row[data-selected] .tree__status {
+  color: var(--numen-accent-ink);
+}
+
+.tree__cloud {
+  inline-size: var(--status);
+  block-size: var(--status);
+}
+
 .tree__icon {
+  position: relative;
   margin-inline-end: var(--gap);
 }
 

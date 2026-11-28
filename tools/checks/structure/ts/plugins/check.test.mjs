@@ -487,6 +487,28 @@ test('a use case imports its ports and domain, the listed standard and SDK packa
   )
 })
 
+test('a use case imports the pure shared libraries but not the clients of the sync protocol', () => {
+  const own = 'github.com/jiva-studio/numen/plugins/a/backend'
+  const shared = 'github.com/jiva-studio/numen/libs/shared'
+  assert.deepEqual(
+    refusedImports('plugins/a/backend/usecase/cards/x.go', [
+      `${shared}/identity`,
+      `${shared}/syncprotocol`,
+      `${shared}/syncprotocol/blobcipher`,
+      `${shared}/syncprotocol/gen/numen/sync/v1`,
+      `${shared}/syncprotocol/client`,
+      `${shared}/syncprotocol/gen/numen/sync/v1/syncv1connect`,
+      `${shared}/onnx`,
+      `${own}/ports`,
+    ]),
+    [
+      `use case usecase/cards imports ${shared}/syncprotocol/client`,
+      `use case usecase/cards imports ${shared}/syncprotocol/gen/numen/sync/v1/syncv1connect`,
+      `use case usecase/cards imports ${shared}/onnx`,
+    ],
+  )
+})
+
 test('a use case importing crypto/rand or runtime is refused: the entropy and the cores come through its inputs', () => {
   assert.deepEqual(
     refusedImports('plugins/a/backend/usecase/cards/x.go', ['crypto/rand', 'runtime']),

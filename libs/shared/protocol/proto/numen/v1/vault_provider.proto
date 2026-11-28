@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// VaultProviderService is what a plugin that declares the vault.provider capability serves: the vaults it
+// keeps remotely, which this device can connect to a local folder. The core calls it for
+// RemoteVaultService, and names no plugin to do so.
+service VaultProviderService {
+  // ListRemoteVaults lists the remote vaults the provider offers this device.
+  rpc ListRemoteVaults(ListRemoteVaultsRequest) returns (ListRemoteVaultsResponse);
+
+  // ConnectRemoteVault connects the remote vault to the vault of this device with the id, whose folder
+  // exists and is registered. It returns once the connection is made. A failure leaves the vault of this
+  // device unconnected.
+  rpc ConnectRemoteVault(ConnectRemoteVaultRequest) returns (ConnectRemoteVaultResponse);
+}
+
+// RemoteVault is a vault the provider keeps remotely.
+message RemoteVault {
+  // The identity the provider gives the remote vault.
+  string remote_id = 1;
+  string name = 2;
+  // How many bytes the remote vault holds.
+  int64 size_bytes = 3;
+  // The vault of this device the remote vault is connected to. Empty when it is connected to none.
+  string vault_id = 4;
+}
+
+message ListRemoteVaultsRequest {}
+
+message ListRemoteVaultsResponse {
+  repeated RemoteVault vaults = 1;
+}
+
+message ConnectRemoteVaultRequest {
+  string remote_id = 1;
+  // The vault of this device to connect the remote vault to.
+  string vault_id = 2;
+}
+
+message ConnectRemoteVaultResponse {}

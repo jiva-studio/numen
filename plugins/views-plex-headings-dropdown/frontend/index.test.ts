@@ -14,6 +14,8 @@ import {
 import { activate } from './index'
 import { HOVER_WAIT, LEAVE_GRACE } from './model/useHeadings'
 
+const reported = (text: string): Error => Object.assign(new Error(text), { name: 'ReportedError' })
+
 const HEAT = 'physics/Heat.md'
 const WORK = 'physics/Work.md'
 const WINDOW = { width: 1200, height: 800 }
@@ -465,7 +467,7 @@ describe('a failure to read the headings', () => {
   it('is shown to the person as an error, and no list is shown', async () => {
     vi.useFakeTimers()
     const { show, notices, answers } = setup()
-    answers.set(HEAT, Promise.reject(new Error('the vault is closed')))
+    answers.set(HEAT, Promise.reject(reported('the vault is closed')))
     const wrapper = show(HEAT)
 
     await rest(wrapper)

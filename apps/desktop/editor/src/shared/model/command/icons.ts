@@ -9,6 +9,8 @@ import { getCommandOwner } from '@numen/plugin-loader'
 import { COMMAND, COMMANDS_ROW, ROW, SETTING_COMMAND_PREFIX } from './ids'
 import {
   AppWindow,
+  CloudDownload,
+  CloudOff,
   ArrowRightLeft,
   Command,
   Copy,
@@ -59,6 +61,8 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.renameNote, Type],
   [COMMAND.copyFilePath, Copy],
   [COMMAND.removeFile, Trash2],
+  [COMMAND.downloadFile, CloudDownload],
+  [COMMAND.dropDownload, CloudOff],
   [COMMAND.deleteText, FileX],
   // tab
   [COMMAND.closeTab, SquareX],

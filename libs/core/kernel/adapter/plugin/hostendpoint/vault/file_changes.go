@@ -6,7 +6,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
@@ -15,7 +14,7 @@ import (
 func (e *lookupsCalls) ListFileChanges(
 	ctx context.Context, req *connect.Request[v1.ListFileChangesRequest],
 ) (*connect.Response[v1.ListFileChangesResponse], error) {
-	pluginID, vault, err := e.beginAs(req.Header(), manifest.PermissionVaultRead)
+	pluginID, vault, err := e.beginAs(req.Header())
 	if err != nil {
 		return nil, err
 	}

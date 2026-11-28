@@ -24,6 +24,7 @@ export interface OpenNote {
   readonly body: string
   readonly state: State
   readonly error: NoteErrorCode | null
+  readonly isReadOnly: boolean
 }
 
 export interface ConflictWords {
@@ -37,6 +38,8 @@ export interface OpenNotesOptions {
   limits?: typeof DEFAULT_WRITE_LIMITS
   /** Called when a note on screen is replaced by the content of its file. */
   onReplaced?(this: void, path: string): void
+  /** Whether the vault the notes are in cannot be written. */
+  isReadOnly?(this: void): boolean
   /** When it is now. */
   now?(this: void): number
 }

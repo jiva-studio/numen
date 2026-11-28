@@ -19,6 +19,11 @@ export const createFileApi = (files: WindowClients['files']) => ({
     return asValue({ trashed: answer.trashPath, dangling: answer.danglingNotes })
   },
 
+  /** Takes the bytes of a downloaded file off this device; the file is listed as absent again. */
+  dropDownload: async (path: string): Promise<void> => {
+    await files.dropDownload({ path })
+  },
+
   /** Deletes everything the vault's trash holds for good; how many paths could not be deleted. */
   emptyTrash: async (): Promise<number> => (await files.emptyTrash({})).failedPaths.length,
 

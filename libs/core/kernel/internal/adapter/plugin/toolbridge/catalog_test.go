@@ -388,3 +388,18 @@ func TestToolListingFile(t *testing.T) {
 		t.Errorf("tools of a plugin that listed none = %v", got)
 	}
 }
+
+func TestListItems_Labels(t *testing.T) {
+	files := filesIn(t, t.TempDir())
+	files.WriteToolListing(gardenPlugin, []byte(`{"version":"1.0.0+","listing":{"tools":[{"name":"water","title":"Water the beds"},{"name":"weed"}]}}`))
+
+	items := toolbridge.ListKeptItems(files)(gardenPlugin)
+
+	want := []plugin.ContributionItem{{Text: "Water the beds", Detail: "water"}, {Text: "weed", Detail: "weed"}}
+	if !slices.Equal(items, want) {
+		t.Errorf("items = %v, want %v", items, want)
+	}
+	if got := toolbridge.ListKeptItems(files)(orchardPlugin); len(got) != 0 {
+		t.Errorf("items of a plugin that listed none = %v", got)
+	}
+}

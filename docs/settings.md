@@ -135,6 +135,26 @@ Typing a new `# Heading` into a note does not rename its file. A save writes the
 
 `Sync title and filename` is a command in the palette, made from this declaration. Choosing `On` or `Off` writes this field, and the next rename uses the value written.
 
+## Where new vaults go
+
+`app.vaults.folder` is the folder in which the folder of a vault opened from the cloud is made, named after the vault.
+
+```json
+{
+  "app": {
+    "vaults": {
+      "folder": ""
+    }
+  }
+}
+```
+
+|          |                                                                                                                                                                         |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `folder` | an absolute path. Empty means the Documents folder of the system: `~/Documents` on macOS, the folder `XDG_DOCUMENTS_DIR` names in `user-dirs.dirs` on Linux (`~/Documents` without it) and the Documents known folder on Windows. |
+
+The window that adds a vault by hand does not start in this folder.
+
 ## Performance profiles
 
 `app.performance` sets how much of the machine the core's CPU-bound work and the Go runtime use. Settings of a plugin's own work, such as OCR or embedding, are that plugin's settings.

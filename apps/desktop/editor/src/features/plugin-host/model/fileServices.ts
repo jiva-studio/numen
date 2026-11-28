@@ -4,7 +4,7 @@
  */
 import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceIcons } from '@numen/plugin-loader'
-import type { FileApi } from '@/entities/file'
+import type { DownloadBytes, DownloadRegistry, Entry, FileApi } from '@/entities/file'
 import { COMMAND, findIcon, type CommandTarget } from '@/shared/model/command'
 import type { NoteCreator } from '@/entities/note'
 import { getEntryIcon } from './window/entryIcon'
@@ -12,15 +12,47 @@ import { getEntryIcon } from './window/entryIcon'
 /** What the files of the vault are listed, made and moved through. */
 export interface VaultFilesDeps {
   readonly listFiles: FileApi['listFiles']
+  readonly downloads: DownloadRegistry
   readonly making: NoteCreator
   readonly getTarget: () => CommandTarget
   readonly runCommand: (id: string, target: CommandTarget, name: string) => Promise<void>
 }
 
+const markEntry = (
+  one: Entry,
+  provider: string,
+  isDownloading: boolean,
+  progress: DownloadBytes | undefined,
+): Entry => ({
+  ...one,
+  ...(!one.isFolder && !one.isAbsent && provider ? { provider } : {}),
+  ...(isDownloading ? { isDownloading: true } : {}),
+  ...(isDownloading && progress
+    ? { downloadProgress: progress.bytesDone / progress.bytesTotal }
+    : {}),
+})
+
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
   const { making, getTarget, runCommand: run } = deps
+  /** The plugin that fills the absent files of the vault, once a listing has shown one. */
+  let provider = ''
   return {
-    list: (folder) => deps.listFiles(folder),
+    list: async (folder) => {
+      const listed = await deps.listFiles(folder)
+      provider = listed.find((one) => one.isAbsent && one.provider)?.provider ?? provider
+      return listed.map((one) =>
+        markEntry(
+          one,
+          provider,
+          deps.downloads.isRunning(one.path),
+          deps.downloads.getProgress(one.path),
+        ),
+      )
+    },
+    watchDownloads: (handler) => {
+      const stop = deps.downloads.watch((path) => handler([path]))
+      return { dispose: stop }
+    },
     move: (from, to) => run(COMMAND.moveFile, { ...getTarget(), path: from }, to),
     createFolder: (path) => run(COMMAND.createFolder, getTarget(), path),
     createNote: (folder) => making.createUntitledNote(folder),

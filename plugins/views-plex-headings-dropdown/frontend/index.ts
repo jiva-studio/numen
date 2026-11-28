@@ -8,6 +8,7 @@ import {
   type HostServices,
   type NoteHeading,
   type PluginContext,
+  formatErrorMessage,
 } from '@numen/plugin-sdk'
 import { readSettings } from './model/settings'
 import { HOVER_WAIT, LEAVE_GRACE, sleep, type HeadingsSource } from './model/useHeadings'
@@ -72,8 +73,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     },
     settings: readSettings(plugin),
     open: (path, line) => workspace.files.open(path, { placement: 'current', line }),
-    reportFailure: (error: unknown) =>
-      notices.show(error instanceof Error ? error.message : String(error), 'error'),
+    reportFailure: (error: unknown) => notices.show(formatErrorMessage(error), 'error'),
     wait: sleep,
     hoverWait: HOVER_WAIT,
     leaveGrace: LEAVE_GRACE,

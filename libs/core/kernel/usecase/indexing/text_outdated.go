@@ -105,5 +105,8 @@ func (u outdatedSources) statIfOutdated(
 	if err != nil {
 		return domain.FileStat{}, false, fmt.Errorf("stat %s: %w", source.Path, err)
 	}
+	if ref.IsAbsent {
+		return domain.FileStat{}, false, nil
+	}
 	return ref, true, nil
 }

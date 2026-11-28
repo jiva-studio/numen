@@ -147,6 +147,7 @@ describe('the facts of the window the conditions read', () => {
         appCommands: [],
         getTarget: () => one,
         isPaletteOpen: () => isPaletteOpen,
+        getVaultFlags: () => ({}),
       }).getValues()
 
     expect(read(target({}), true)).toStrictEqual({
@@ -155,6 +156,7 @@ describe('the facts of the window the conditions read', () => {
       'window.isTabOpen': true,
       'window.isFieldFocused': false,
       'window.isPaletteOpen': true,
+      'vault.flags': {},
     })
     expect(
       read(target({ vault: { id: '', name: '' }, tab: '', isReady: false }), false),

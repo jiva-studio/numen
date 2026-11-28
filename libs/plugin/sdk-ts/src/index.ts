@@ -107,6 +107,13 @@ export type {
   ConnectionRowOptionsRequest,
   ConnectionHost,
 } from './connections'
+export type {
+  DialogOptions,
+  DialogHandle,
+  DialogHost,
+  SaveTextOptions,
+  SavedText,
+} from './dialogs'
 export type { Severity, NoticeTask, NoticeHost } from './notices'
 export type {
   PickerItem,
@@ -176,7 +183,15 @@ export type {
   SlotLoadingEntry,
   PlexBoardViewProps,
 } from './slots'
-export type { VaultSummary, VaultsState, VaultsHost, WindowState, WindowHost } from './window'
+export type { VaultFlagsHost } from './vaultFlags'
+export type {
+  CloudVaultSummary,
+  VaultSummary,
+  VaultsState,
+  VaultsHost,
+  WindowState,
+  WindowHost,
+} from './window'
 export type { DroppedData, DropRegistration, DropHost, DropRegistry } from './drops'
 export { editorNotePath } from './editorExtensions'
 export type {
@@ -191,6 +206,7 @@ export {
   asFailure,
   asValue,
   formatErrorMessage,
+  ReportedError,
   type ErrorCode,
   type Failure,
   type Result,

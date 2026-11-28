@@ -2,6 +2,7 @@
  * The tabs of the window: the tabs, the links between them, the files they open, the sync of their
  * paths and the session that keeps their links with the core.
  */
+import { runInBackground } from '@numen/ui'
 import type { PluginStatus } from '@numen/plugin-loader'
 import type { SettingsStore } from '@/entities/settings'
 import {
@@ -9,7 +10,10 @@ import {
   createTabPluginStarts,
   createTabSync,
   createWindowTabs,
+  type WindowTabs,
+  createDownloadTabs,
   createFileOpeners,
+  DownloadPane,
   RestoreFailedPane,
   UnavailablePane,
 } from '@/entities/tab'
@@ -58,12 +62,7 @@ export function createTabsPart(deps: TabsPartDeps) {
     isMain,
     writeMessage,
   })
-  const tabOpeners = createFileOpeners({
-    readFileKinds: api.vault.file.getFileKinds,
-    reconcileTab: windowTabs.panes.reconcileTab,
-    startTabKind: pluginStarts.startTabKind,
-    startExtensionReader: pluginStarts.startExtensionReader,
-  })
+  const { tabOpeners } = createFileTabs(deps, windowTabs, pluginStarts)
   const tabSync = createTabSync({
     windowTabs,
     tabLinks,
@@ -98,4 +97,32 @@ export function createTabsPart(deps: TabsPartDeps) {
     openMovedTab,
     linkSession,
   }
+}
+
+function createFileTabs(
+  deps: TabsPartDeps,
+  windowTabs: WindowTabs,
+  pluginStarts: ReturnType<typeof createTabPluginStarts>,
+) {
+  const { api, writeMessage } = deps
+  const downloadPart = createDownloadTabs(
+    DownloadPane,
+    windowTabs,
+    (path, title) =>
+      runInBackground(tabOpeners.openFile(path, title), (error) =>
+        writeMessage(formatError(error), 'error'),
+      ),
+    api.vault.downloads.getProgress,
+  )
+  windowTabs.kinds.registerKind(downloadPart.kind)
+  const tabOpeners = createFileOpeners({
+    readFileKinds: api.vault.file.getFileKinds,
+    isFileAbsent: api.vault.file.isFileAbsent,
+    fetchFile: api.vault.downloads.fetch,
+    downloadTabs: downloadPart.tabs,
+    reconcileTab: windowTabs.panes.reconcileTab,
+    startTabKind: pluginStarts.startTabKind,
+    startExtensionReader: pluginStarts.startExtensionReader,
+  })
+  return { tabOpeners }
 }

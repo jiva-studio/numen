@@ -34,13 +34,13 @@ func (c Config) ApplySettings(exec *PluginExecution, prefs *PluginPreferences, r
 	if err != nil {
 		return c, nil, err
 	}
-	return applySettingsFile(c, exec, prefs, res, selected), selected.Notices, nil
+	return applySettingsFile(c, exec, prefs, res, selected), selected.Header.Notices, nil
 }
 
 func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, s settingsadapter.File) Config {
 	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
 	prefs = getPluginPreferences(prefs)
-	configurePluginHost(createSettingsWiring(c, exec, prefs, res), prefs, &res.subscribedHosts, s, c.machine.ResolvedCompute)
+	configurePluginHost(createSettingsWiring(c, exec, prefs, res), prefs, &res.subscriptions.Hosts, s, c.machine.ResolvedCompute)
 	return c
 }
 
@@ -71,10 +71,6 @@ func createSettings(c settingsParts) (settingsadapter.File, error) {
 	return createSettingsStore(c).ReadCheckedAt(path)
 }
 
-func readCheckedSettings(c settingsParts) (settingsadapter.File, error) {
-	return createSettingsStore(c).ReadCheckedFile()
-}
-
 func configurePluginHost(c settingsParts, prefs *PluginPreferences, hosts *settingsusecase.HostSubscriptions, s settingsadapter.File, compute machinedomain.ResolvedCompute) {
 	var subscribe settingsusecase.ChangeSubscriber
 	if c.SettingEvents != nil {
@@ -99,19 +95,15 @@ func getRegistries(c settingsParts) settingsdomain.Registries {
 	themes := getThemeRegistry(c).GetNames()
 	return settingsadapter.AddDetectedRegistries(func(name string) ([]string, bool) {
 		if name == settingsdomain.RegistryConnections {
-			return listConnectionIDs(c)
+			ids, err := createSettingsStore(c).ListConnectionIDs()
+			if err != nil {
+				c.HandleError(err)
+				return nil, false
+			}
+			return ids, true
 		}
 		return themes(name)
 	}, c.ConnectionTypes, c.Detection)
-}
-
-func listConnectionIDs(c settingsParts) ([]string, bool) {
-	ids, err := createSettingsStore(c).ListConnectionIDs()
-	if err != nil {
-		c.HandleError(err)
-		return nil, false
-	}
-	return ids, true
 }
 
 func getThemeRegistry(c settingsParts) settingsadapter.RegistryOptions {
@@ -131,10 +123,6 @@ func listAppSettings(c settingsParts) []plugindomain.Setting {
 		settingsadapter.JSONCodec{}, createSettingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{},
 		getThemeRegistry(c),
 	).Execute()
-}
-
-func refreshSettingEvents(c settingsParts) {
-	getFeed(c).Refresh()
 }
 
 func syncSetting(c settingsParts) naming.SyncSetting {
@@ -157,10 +145,6 @@ func writeLogLevel(c settingsParts) func(domainlogs.Level) error {
 	}
 }
 
-func readSettings(c settingsParts) func() (settingsdomain.Snapshot, error) {
-	return createSettingsStore(c).ReadJSON
-}
-
 func getSettingsWriter(c settingsParts) func(entries []settingsdomain.Setting) error {
 	return openWriteSettings(c).Execute
 }
@@ -173,10 +157,6 @@ func openWatchSettings(c settingsParts) *settingsusecase.WatchSettingChanges {
 	return settingsusecase.NewWatchSettingChanges(func() (<-chan []settingsdomain.Setting, func()) { return getFeed(c).Subscribe() })
 }
 
-func openChoosePluginPath(c settingsParts, dialog settingsusecase.PathDialog) *settingsusecase.ChoosePluginPath {
-	return settingsusecase.NewChoosePluginPath(dialog, c.Infos.GetPluginInfos, getSettingsWriter(c))
-}
-
 func createSettingsStore(c settingsParts) *settingsadapter.Store {
 	var declared settingsdomain.Declarations
 	if c.PluginInfos != nil {
@@ -186,7 +166,9 @@ func createSettingsStore(c settingsParts) *settingsadapter.Store {
 }
 
 func getFeed(c settingsParts) settingevents.Feed {
-	list := listSettingValues(c)
+	list := settingsusecase.NewListSettingValues(
+		settingsadapter.JSONCodec{}, createSettingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, cmp.Or[settingsusecase.PluginInfos](c.PluginInfos, none.PluginInfos{}),
+	)
 	return settingevents.Feed{
 		Events:  c.SettingEvents,
 		GetPath: func() (string, error) { return getSettingsFile(c) },
@@ -207,12 +189,6 @@ func getFeed(c settingsParts) settingevents.Feed {
 	}
 }
 
-func listSettingValues(c settingsParts) *settingsusecase.ListSettingValues {
-	return settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, createSettingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, cmp.Or[settingsusecase.PluginInfos](c.PluginInfos, none.PluginInfos{}),
-	)
-}
-
 func openWriteSettings(c settingsParts) *settingsusecase.WriteSettings {
 	check := settingsusecase.NewCheckSettings(
 		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), cmp.Or[settingsusecase.PluginSettings](c.Checks, none.PluginSettings{}),
@@ -221,10 +197,9 @@ func openWriteSettings(c settingsParts) *settingsusecase.WriteSettings {
 }
 
 func notifyPlugins(c settingsParts, prefs *PluginPreferences) *settingsusecase.NotifyPlugins {
-	signal := c.PluginChanges.Signal
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Apply: prefs.ApplySetting, Config: prefs.Configuration,
-		ResolveProfile: resolveProfile, Signal: signal,
+		ResolveProfile: resolveProfile, Signal: c.PluginChanges.Signal,
 		Report: func(err error) { c.HandleError(err) },
 	})
 }
@@ -242,14 +217,13 @@ func createThemeService(c settingsParts, scales Scales, say func(string)) (*them
 		say,
 	)
 	sizes := themeusecase.NewScales(scales.InterfaceScale, scales.TextScale)
-	interfaceScale, textScale := settingsadapter.GetInterfaceScaleBounds(), settingsadapter.GetTextScaleBounds()
 	return theme.NewService(
 		themeusecase.NewGetThemes(sources, store, store, sizes,
-			themeusecase.Bounds{Min: interfaceScale.Min, Max: interfaceScale.Max},
-			themeusecase.Bounds{Min: textScale.Min, Max: textScale.Max}),
+			themeusecase.Bounds(settingsadapter.GetInterfaceScaleBounds()),
+			themeusecase.Bounds(settingsadapter.GetTextScaleBounds())),
 		themeusecase.NewReadTheme(sources),
 		themeusecase.NewWriteAppearance(sources, store, store, sizes),
-		themeusecase.NewWatchThemes(sources, files, 0),
+		themeusecase.NewWatchThemes(sources, files, 0, getPluginChangeSubscriber(c)),
 	), err
 }
 
@@ -284,4 +258,11 @@ func (c Config) openThemes(settingsDeps settingsParts, tasks *run.Tasks) *theme.
 		settingsDeps.HandleError(err)
 	}
 	return service
+}
+
+func getPluginChangeSubscriber(c settingsParts) themeusecase.PluginChangeSubscriber {
+	if c.PluginChanges == nil {
+		return nil
+	}
+	return c.PluginChanges.Subscribe
 }

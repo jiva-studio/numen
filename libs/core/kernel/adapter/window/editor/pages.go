@@ -11,6 +11,7 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/csp"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
@@ -53,6 +54,10 @@ func NewRoute(path string, handler http.Handler) Route {
 	return Route{path: path, handler: handler}
 }
 
+// AllPluginServices is the name that makes a narrow build serve the services of the enabled plugins, which
+// the plugin catalog of the app limits to the plugins that target it.
+const AllPluginServices = "plugins"
+
 // pageSet is what answers the requests that reach a window: the routes of its
 // services and the services beside them.
 type pageSet struct {
@@ -68,7 +73,7 @@ type pageSet struct {
 // are served by one handler.
 // named lists the services this build serves, by the names the schema gives
 // them. A service left out is not mounted, so a call to it is unanswered.
-// Naming none builds the whole schema.
+// AllPluginServices among them also serves every service of an enabled plugin. Naming none builds the whole schema.
 func (o *Installation) NewHandler(files http.Handler, named ...string) http.Handler {
 	return o.pages.newHandler(files, named...)
 }
@@ -94,14 +99,16 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 	played := s.window.Media.playing.Load().getPlayOrigins()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
+		w.Header().Set("Permissions-Policy", csp.EditorPermissionsPolicy)
 		// A window being taken away answers nothing.
 		if s.window.Gate.IsClosed() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
 		r = r.WithContext(plugindomain.WithCaller(r.Context(), getWindowCaller(r.Header)))
-		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
-		if isWhole && s.plugins != nil && s.plugins.CanServe(r.URL.Path) {
+		// A service served by an enabled plugin takes precedence in a build that answers the whole schema, and in
+		// a narrow build that names the service.
+		if s.plugins != nil && (isWhole || isNamedService(named, r.URL.Path)) && s.plugins.CanServe(r.URL.Path) {
 			s.setRequestVault(r)
 			s.plugins.ServeHTTP(w, r)
 			return
@@ -114,6 +121,13 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 		}
 		s.serveAdjacent(w, r, isWhole, files)
 	})
+}
+
+func isNamedService(named []string, urlPath string) bool {
+	if slices.Contains(named, AllPluginServices) {
+		return true
+	}
+	return slices.ContainsFunc(named, func(name string) bool { return strings.HasPrefix(urlPath, "/"+name+"/") })
 }
 
 func isServed(named []string, route Route) bool {

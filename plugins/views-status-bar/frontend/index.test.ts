@@ -14,6 +14,8 @@ import {
 } from '@numen/plugin-sdk/testing'
 import { activate, STATUS_BAR_VIEW } from './index'
 
+const reported = (text: string): Error => Object.assign(new Error(text), { name: 'ReportedError' })
+
 const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
 ) as {
@@ -152,7 +154,7 @@ describe('a command', () => {
     activate(context, host)
     const view = context.getRegisteredSlotViews()[0]!.component as Component
     host.ui.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
-    vi.spyOn(host.ui.commands, 'run').mockRejectedValueOnce(new Error('the words are gone'))
+    vi.spyOn(host.ui.commands, 'run').mockRejectedValueOnce(reported('the words are gone'))
     const wrapper = mountBar(view)
 
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
@@ -365,7 +367,7 @@ describe('a command with items', () => {
     const notices = createMockNoticeHost()
     const context = createMockPluginContext({ pluginId: manifest.id })
     const host = createMockHostServices({ notices })
-    vi.spyOn(host.ui.commands, 'listItems').mockRejectedValue(new Error('the languages are gone'))
+    vi.spyOn(host.ui.commands, 'listItems').mockRejectedValue(reported('the languages are gone'))
     activate(context, host)
     host.ui.slots.setEntries('statusBar.right', [LANGUAGE])
     const wrapper = mountBar(context.getRegisteredSlotViews()[0]!.component as Component)

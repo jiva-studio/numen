@@ -1,0 +1,473 @@
+package receive
+
+import (
+	"bytes"
+	"context"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"slices"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/shared/identity"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
+	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
+	domainshare "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+)
+
+var (
+	errNotReceived     = errors.New("the vault is not a received share")
+	errUnverified      = errors.New("the change does not verify")
+	errRateLimited     = errors.New("the server limits the downloads of the share")
+	errBlobMissing     = errors.New("the server has no blob for a revision")
+	errCorruptBlob     = errors.New("the blob of a revision is damaged")
+	errBadHead         = errors.New("the head of the share log kept in the link is not an entry id")
+	errChainRolledBack = errors.New("the server serves an owner chain shorter than the one stored")
+)
+
+func getStatus(result restore.PullResult, now time.Time) ports.Status {
+	return ports.Status{LastSyncedAt: now, ConflictCount: len(result.Conflicts)}
+}
+
+// PullShare brings the files of a received share into its vault.
+type PullShare struct{ base }
+
+// NewPullShare returns the use case over the dependencies.
+func NewPullShare(deps Deps) *PullShare { return &PullShare{base: base{deps: deps}} }
+
+// Execute reads the share log after the entry it verified last, then the changes of the share, and applies them by
+// the rule of three hashes: a file that differs from its base is left as it is and counted. It writes nothing to the
+// server. A share the owner ended stops the pass with ErrEnded and keeps the files.
+func (u *PullShare) Execute(ctx context.Context, id domain.VaultID) (restore.PullResult, error) {
+	link, isReceived, err := u.readReceivedLink(ctx, id)
+	if err != nil {
+		return restore.PullResult{}, err
+	}
+	if !isReceived {
+		return restore.PullResult{}, errNotReceived
+	}
+	if link.Received.IsEnded {
+		return restore.PullResult{}, domainshare.ErrEnded
+	}
+	r, err := u.prepare(ctx, id, link)
+	if err != nil {
+		return restore.PullResult{}, err
+	}
+	err = r.execute(ctx)
+	if ended, isEnded := errors.AsType[syncprotocol.ShareEndedError](err); isEnded {
+		err = r.end(ctx, ended.Version)
+	}
+	return r.result, err
+}
+
+type pullRun struct {
+	deps    Deps
+	id      domain.VaultID
+	files   ports.Files
+	shareID []byte
+	reader  []byte
+	link    vaultlink.Link
+	keys    domainshare.Keys
+	authors trust.Authors
+	records []transfer.FileRecord
+	result  restore.PullResult
+	holdSeq uint64
+	isHeld  bool
+}
+
+func (u *PullShare) prepare(ctx context.Context, id domain.VaultID, link vaultlink.Link) (*pullRun, error) {
+	shareID, err := hex.DecodeString(link.Received.ShareRootID)
+	if err != nil {
+		return nil, fmt.Errorf("read the share id of the link: %w", err)
+	}
+	plain, err := u.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(shareID), link.Received.SealedKeys)
+	if err != nil {
+		return nil, fmt.Errorf("open the keys of the share: %w", err)
+	}
+	keys, err := domainshare.ParseKeys(plain)
+	if err != nil {
+		return nil, err
+	}
+	own, err := u.deps.Identity.GetPublicIdentity(ctx)
+	if err != nil {
+		return nil, err
+	}
+	chain, err := identity.ParseChain(own.Chain)
+	if err != nil {
+		return nil, err
+	}
+	records, err := u.deps.Records.ReadRecords(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &pullRun{
+		deps: u.deps, id: id, files: u.deps.Host.GetFiles(id), shareID: shareID, reader: chain.Root().Sign, link: link, keys: keys,
+		authors: trust.Authors{}, records: records, result: restore.PullResult{Verdict: restore.Same, EpochID: nil, Applied: nil, Conflicts: nil, Unverified: 0, Resolved: nil}, holdSeq: 0, isHeld: false,
+	}, nil
+}
+
+func (r *pullRun) execute(ctx context.Context) error {
+	if err := r.followLog(ctx); err != nil {
+		return err
+	}
+	since := r.link.ServerSeq
+	for pages := 1; ; pages++ {
+		page, err := r.deps.Shares.GetShareChanges(ctx, r.shareID, since, 0)
+		if err != nil {
+			return err
+		}
+		isStopped, err := r.applyPage(ctx, page)
+		if err != nil {
+			return err
+		}
+		if err := r.save(ctx, page.GetNextSeq()); err != nil {
+			return err
+		}
+		if isStopped || !page.GetHasMore() {
+			return nil
+		}
+		if err := syncprotocol.CheckPage(pages, since, page.GetNextSeq(), page.GetHasMore()); err != nil {
+			return err
+		}
+		since = page.GetNextSeq()
+	}
+}
+
+func (r *pullRun) applyPage(ctx context.Context, page *syncv1.GetShareChangesResponse) (bool, error) {
+	for _, change := range page.GetChanges() {
+		err := r.apply(ctx, change)
+		if errors.Is(err, errRateLimited) {
+			return true, nil
+		}
+		if err != nil {
+			return false, err
+		}
+	}
+	return false, nil
+}
+
+func (r *pullRun) followLog(ctx context.Context) error {
+	received := r.link.Received
+	headID, err := toEntryID(received.HeadID)
+	if err != nil {
+		return err
+	}
+	entries, chain, err := r.deps.Shares.GetShareLog(ctx, r.shareID, received.ServerVersion-1)
+	if err != nil {
+		return err
+	}
+	if entries, err = domainshare.ListEntriesAfter(entries, received.ServerVersion, headID); err != nil {
+		return err
+	}
+	if err := refuseShorterChain(received.OwnerChain, chain); err != nil {
+		return err
+	}
+	if r.authors, err = trust.NewAuthors(received.OwnerChain, chain); err != nil {
+		return err
+	}
+	rules := domainshare.Rules{ShareRootID: r.shareID, Reader: r.reader, Authors: r.authors, Open: r.deps.Box.OpenBox}
+	follower := domainshare.NewFollower(rules, domainshare.Position{
+		VaultID: received.VaultID, Version: received.ServerVersion, HeadID: headID, Epoch: received.Epoch, Keys: r.keys, Name: received.Name,
+		IsActive: true, IsEnded: false,
+	})
+	if err := follower.Follow(ctx, entries); err != nil {
+		return err
+	}
+	position := follower.GetPosition()
+	if len(position.Keys) != len(r.keys) {
+		if err := r.sealKeys(ctx, position.Keys); err != nil {
+			return err
+		}
+	}
+	r.keys = position.Keys
+	received.ServerVersion, received.HeadID, received.Epoch, received.Name = position.Version, position.HeadID[:], position.Epoch, position.Name
+	received.OwnerChain, received.IsEnded = chain, position.IsEnded
+	if err := r.writeLink(ctx); err != nil {
+		return err
+	}
+	if position.IsEnded {
+		return domainshare.ErrEnded
+	}
+	return nil
+}
+
+func (r *pullRun) sealKeys(ctx context.Context, keys domainshare.Keys) error {
+	plain, err := keys.Encode()
+	if err != nil {
+		return err
+	}
+	sealed, err := r.deps.Crypto.SealData(ctx, vaultlink.GetStateKeyContext(r.shareID), plain)
+	if err != nil {
+		return fmt.Errorf("seal the keys of the share: %w", err)
+	}
+	r.link.Received.SealedKeys = sealed
+	return nil
+}
+
+func (r *pullRun) end(ctx context.Context, version uint64) error {
+	r.link.Received.IsEnded = true
+	if err := r.writeLink(ctx); err != nil {
+		return err
+	}
+	return fmt.Errorf("%w at version %d", domainshare.ErrEnded, version)
+}
+
+func toEntryID(raw []byte) ([32]byte, error) {
+	if len(raw) != len([32]byte{}) {
+		return [32]byte{}, errBadHead
+	}
+	return [32]byte(raw), nil
+}
+
+func (r *pullRun) save(ctx context.Context, next uint64) error {
+	if err := r.deps.Records.WriteRecords(ctx, r.id, r.records); err != nil {
+		return err
+	}
+	r.link.ServerSeq = next
+	if r.isHeld {
+		r.link.ServerSeq = r.holdSeq
+	}
+	return r.writeLink(ctx)
+}
+
+func (r *pullRun) hold(seq uint64) {
+	if !r.isHeld || seq-1 < r.holdSeq {
+		r.holdSeq, r.isHeld = seq-1, true
+	}
+}
+
+func (r *pullRun) addConflict(path string, seq uint64) {
+	if !slices.Contains(r.result.Conflicts, path) {
+		r.result.Conflicts = append(r.result.Conflicts, path)
+	}
+	r.hold(seq)
+}
+
+func (r *pullRun) apply(ctx context.Context, change *syncv1.ShareChange) error {
+	if err := r.verify(change); err != nil {
+		if errors.Is(err, domainshare.ErrRolledBack) {
+			return err
+		}
+		r.result.Unverified++
+		return nil
+	}
+	stored := change.GetChange()
+	rev := stored.GetRevision()
+	if r.link.Received.IsRegressed(rev.GetFileId(), stored.GetRevId(), rev.GetFileVersion()) {
+		return fmt.Errorf("%w: a file is served at a revision older than the one this reader has seen", domainshare.ErrRolledBack)
+	}
+	r.link.Received.RecordRevision(rev.GetFileId(), stored.GetRevId(), rev.GetFileVersion())
+	if change.GetLeft() || rev.GetDeleted() {
+		return r.remove(ctx, rev.GetFileId(), stored.GetSeq())
+	}
+	return r.place(ctx, stored)
+}
+
+func (r *pullRun) verify(change *syncv1.ShareChange) error {
+	if err := syncprotocol.CheckShareRevision(change); err != nil {
+		return err
+	}
+	metaHash, err := getMetaHash(change)
+	if err != nil {
+		return err
+	}
+	if !r.isSigned(change.GetChange(), metaHash) {
+		return errUnverified
+	}
+	return r.checkMembership(change)
+}
+
+func getMetaHash(change *syncv1.ShareChange) ([32]byte, error) {
+	if len(change.GetEncMetaHash()) != len([32]byte{}) {
+		return [32]byte{}, errUnverified
+	}
+	metaHash := [32]byte(change.GetEncMetaHash())
+	if !change.GetLeft() && domainshare.GetMetaHash(change.GetChange().GetRevision().GetEncMeta()) != metaHash {
+		return [32]byte{}, errUnverified
+	}
+	return metaHash, nil
+}
+
+func (r *pullRun) isSigned(stored *syncv1.StoredRevision, metaHash [32]byte) bool {
+	rev := stored.GetRevision()
+	id := syncprotocol.GetRevisionIDWithMetaHash(rev, metaHash)
+	author := rev.GetAuthorDeviceSignKey()
+	return len(rev.GetSignature()) == 64 && bytes.Equal(stored.GetRevId(), id[:]) && r.authors.IsTrusted(author) &&
+		bytes.Equal(rev.GetVaultId(), r.link.Received.VaultID) &&
+		identity.VerifyForPlugin(author, syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessageWithMetaHash(rev, metaHash), [64]byte(rev.GetSignature()))
+}
+
+func (r *pullRun) checkMembership(change *syncv1.ShareChange) error {
+	rev := change.GetChange().GetRevision()
+	isOfShare := bytes.Equal(rev.GetShareRootId(), r.shareID)
+	if change.GetLeft() == isOfShare {
+		return errUnverified
+	}
+	if isOfShare && rev.GetEpoch() > r.link.Received.Epoch {
+		return fmt.Errorf("%w: a revision has epoch %d and the share log held ends at epoch %d", domainshare.ErrRolledBack, rev.GetEpoch(), r.link.Received.Epoch)
+	}
+	return nil
+}
+
+func (r *pullRun) openMeta(rev *syncv1.Revision) (note.Meta, bool) {
+	key, isKnown := r.keys.Get(rev.GetEpoch())
+	if !isKnown {
+		return note.Meta{}, false
+	}
+	meta, err := domainshare.OpenMeta[note.Meta](key, r.shareID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
+	if err != nil || len(meta.Key) != len([32]byte{}) {
+		return note.Meta{}, false
+	}
+	if meta.Path, err = note.NormalizePath(meta.Path); err != nil {
+		return note.Meta{}, false
+	}
+	if note.CheckRemotePath(meta.Path) != nil {
+		return note.Meta{}, false
+	}
+	return meta, true
+}
+
+func (r *pullRun) place(ctx context.Context, stored *syncv1.StoredRevision) error {
+	rev := stored.GetRevision()
+	meta, isOpened := r.openMeta(rev)
+	if !isOpened {
+		r.result.Unverified++
+		return nil
+	}
+	local, stat, err := r.readLocal(ctx, meta.Path)
+	if err != nil {
+		return err
+	}
+	record, isKnown := r.getRecord(rev.GetFileId())
+	switch note.Decide(local, record.BaseHash, meta.Hash) {
+	case note.Adopt:
+		r.setRecord(newPulledRecord(rev.GetFileId(), meta.Path, meta.Hash, stored.GetRevId()))
+		return r.retire(ctx, record, isKnown, meta.Path, stored.GetSeq())
+	case note.Download:
+		return r.download(ctx, stored, meta, stat, local == "")
+	case note.Conflict:
+	}
+	r.addConflict(meta.Path, stored.GetSeq())
+	return nil
+}
+
+func (r *pullRun) retire(ctx context.Context, previous transfer.FileRecord, isKnown bool, path string, seq uint64) error {
+	if !isKnown || previous.Path == path {
+		return nil
+	}
+	local, _, err := r.readLocal(ctx, previous.Path)
+	if err != nil || local == "" {
+		return err
+	}
+	if local != previous.BaseHash {
+		r.addConflict(previous.Path, seq)
+		return nil
+	}
+	return r.moveToTrash(ctx, previous.Path)
+}
+
+func (r *pullRun) remove(ctx context.Context, fileID []byte, seq uint64) error {
+	record, isKnown := r.getRecord(fileID)
+	if !isKnown {
+		return nil
+	}
+	local, _, err := r.readLocal(ctx, record.Path)
+	if err != nil {
+		return err
+	}
+	if local != "" && local != record.BaseHash {
+		r.addConflict(record.Path, seq)
+		return nil
+	}
+	if local != "" {
+		if err := r.moveToTrash(ctx, record.Path); err != nil {
+			return err
+		}
+	}
+	r.removeRecord(fileID)
+	return nil
+}
+
+func (r *pullRun) moveToTrash(ctx context.Context, path string) error {
+	removals, err := r.deps.Notes.GetNotes(r.id).RemoveNotes(ctx, []string{path})
+	if err != nil {
+		return err
+	}
+	for _, removal := range removals {
+		if removal.Err != nil && !errors.Is(removal.Err, host.ErrNotExist) {
+			return removal.Err
+		}
+	}
+	return nil
+}
+
+func (r *pullRun) readLocal(ctx context.Context, path string) (string, domain.FileStat, error) {
+	content, stat, err := r.files.Read(ctx, path)
+	if errors.Is(err, host.ErrNotExist) {
+		return "", domain.FileStat{}, nil
+	}
+	if err != nil {
+		return "", domain.FileStat{}, err
+	}
+	return note.Hash(content), stat, nil
+}
+
+func (r *pullRun) getRecord(fileID []byte) (transfer.FileRecord, bool) {
+	at := slices.IndexFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, fileID) })
+	if at < 0 {
+		return transfer.NewEmptyRecord(), false
+	}
+	return r.records[at], true
+}
+
+func (r *pullRun) setRecord(record transfer.FileRecord) {
+	at := slices.IndexFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, record.FileID) })
+	if at < 0 {
+		r.records = append(r.records, record)
+		return
+	}
+	r.records[at] = record
+}
+
+func (r *pullRun) removeRecord(fileID []byte) {
+	r.records = slices.DeleteFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, fileID) })
+}
+
+func newPulledRecord(fileID []byte, path, baseHash string, headRev []byte) transfer.FileRecord {
+	record := transfer.NewEmptyRecord()
+	record.FileID, record.Path, record.BaseHash, record.HeadRev = fileID, path, baseHash, headRev
+	return record
+}
+
+func refuseShorterChain(stored, served []byte) error {
+	if len(stored) == 0 {
+		return nil
+	}
+	storedChain, err := identity.ParseChain(stored)
+	if err != nil {
+		return err
+	}
+	servedChain, err := identity.ParseChain(served)
+	if err != nil {
+		return err
+	}
+	if servedChain.Len() < storedChain.Len() && storedChain.IsExtensionOf(servedChain) {
+		return errChainRolledBack
+	}
+	return nil
+}
+
+func (r *pullRun) writeLink(ctx context.Context) error {
+	return r.deps.Links.UpdateLink(ctx, r.id, func(fresh *vaultlink.Link) error {
+		fresh.Received, fresh.ServerSeq = r.link.Received, r.link.ServerSeq
+		return nil
+	})
+}

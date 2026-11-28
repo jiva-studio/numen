@@ -13,7 +13,8 @@ type registryFile struct {
 
 // vaultEntry is the on-disk JSON representation of one registered vault.
 type vaultEntry struct {
-	ID   domain.VaultID `json:"id"`
-	Name string         `json:"name"`
-	Path string         `json:"path"`
+	ID        domain.VaultID `json:"id"`
+	Name      string         `json:"name"`
+	Path      string         `json:"path"`
+	ManagedBy string         `json:"managedBy,omitempty"`
 }

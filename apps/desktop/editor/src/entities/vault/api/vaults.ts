@@ -10,6 +10,7 @@ interface VaultWire {
   readonly name: string
   readonly path: string
   readonly isMissing: boolean
+  readonly managedBy?: string | undefined
 }
 
 const unvaulted: Partial<Record<WireErrorCodeValue, VaultErrorCode>> = {
@@ -36,6 +37,7 @@ const mapVault = (one: VaultWire): Vault => ({
   name: one.name,
   path: one.path,
   isMissing: one.isMissing,
+  isReadOnly: (one.managedBy ?? '') !== '',
 })
 
 const mapVaultResult = (from: {

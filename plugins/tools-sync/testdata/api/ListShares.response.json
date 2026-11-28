@@ -1,0 +1,13 @@
+{
+  "shares": [
+    {
+      "vaultId": "01JCX6Q4ZB3W8N2V7T5R9K1M0P",
+      "folder": "Food",
+      "state": "active",
+      "readers": [
+        { "label": "Anna laptop", "fingerprint": "0F3A 9C21 77B0 D4E6 18AA 5C02 93F1 EE40", "state": "active" },
+        { "label": "Bo phone", "fingerprint": "A1B2 C3D4 E5F6 0718 293A 4B5C 6D7E 8F90", "state": "removed" }
+      ]
+    }
+  ]
+}

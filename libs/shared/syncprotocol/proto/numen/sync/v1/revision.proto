@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// RevisionService stores the head revision of every file of a vault and feeds the changes to the other devices.
+service RevisionService {
+  // CommitRevisions commits a batch of signed revisions of one vault: all of them or none.
+  rpc CommitRevisions(CommitRevisionsRequest) returns (CommitRevisionsResponse);
+
+  // GetChanges returns the head revisions of files that changed after a cursor, in the order of seq.
+  rpc GetChanges(GetChangesRequest) returns (GetChangesResponse);
+}
+
+message Revision {
+  // vault_id is 16 bytes.
+  bytes vault_id = 1;
+  // file_id is 16 random bytes, stable for the file.
+  bytes file_id = 2;
+  // parent_rev is the revision id, 32 bytes, that the author saw as head; empty for a new file.
+  bytes parent_rev = 3;
+  // blob_id is 16 bytes from ReserveBlobs or ReserveMultipartBlob; empty when deleted. It may name the blob of the head of the
+  // same file when parent_rev is that head and blob_hash and blob_size equal the head's (a revision that changes only metadata).
+  bytes blob_id = 4;
+  // blob_hash is the SHA-256 of the stored object, 32 bytes; empty when deleted.
+  bytes blob_hash = 5;
+  // blob_size is the stored (padded) size in bytes, the size declared to ReserveBlobs; 0 when deleted.
+  uint64 blob_size = 6;
+  // enc_meta is ciphertext of the path, the revision key, the sizes and the mtime, at most 16 KiB. It may be empty only when deleted.
+  bytes enc_meta = 7;
+  // path_hash is the keyed hash of the normalized path, 32 bytes.
+  bytes path_hash = 8;
+  // share_root_id is 16 bytes or empty. It is stored and signed; the server does not act on it yet.
+  bytes share_root_id = 9;
+  // deleted marks a tombstone: no blob, enc_meta may be empty, path_hash and parent_rev are set.
+  bool deleted = 10;
+  // epoch is the key epoch of the vault or the share root; stored and signed. The server refuses a revision outside every share whose epoch is below the highest epoch of the vault, and reports CONFLICT_KIND_SHARE_EPOCH for a share revision whose epoch is not the current epoch of the share.
+  uint32 epoch = 11;
+  // author_device_sign_key is 32 bytes.
+  bytes author_device_sign_key = 12;
+  // signature is 64 bytes over syncprotocol.GetRevisionMessage, under the plugin domain.
+  bytes signature = 13;
+  // file_version is signed: 1 for the first revision of a file, the version of the parent plus one for every later one.
+  // A device that holds a version never takes an older revision of the file as its head. A file written again after a
+  // removal or a restore continues from the highest version its author knows. A revision of a version below 1 is invalid.
+  uint64 file_version = 14;
+}
+
+message StoredRevision {
+  Revision revision = 1;
+  // rev_id is syncprotocol.GetRevisionID of the revision, 32 bytes, computed by the server.
+  bytes rev_id = 2;
+  // seq is the vault sequence number of the commit that stored it.
+  uint64 seq = 3;
+}
+
+message CommitRevisionsRequest {
+  bytes vault_id = 1;
+  // revisions holds 1 to 5000 revisions.
+  repeated Revision revisions = 2;
+}
+
+message CommitRevisionsResponse {
+  bool committed = 1;
+  // seq is the seq of the batch, or of the stored heads for a pure retry.
+  uint64 seq = 2;
+  // revisions are the stored revisions in request order, when committed.
+  repeated StoredRevision revisions = 3;
+  // conflicts are set when not committed.
+  repeated Conflict conflicts = 4;
+}
+
+enum ConflictKind {
+  CONFLICT_KIND_UNSPECIFIED = 0;
+  // CONFLICT_KIND_PARENT_MISMATCH means parent_rev is not the head of the file.
+  CONFLICT_KIND_PARENT_MISMATCH = 1;
+  // CONFLICT_KIND_PATH_TAKEN means another live file has the same path_hash.
+  CONFLICT_KIND_PATH_TAKEN = 2;
+  // CONFLICT_KIND_SHARE_EPOCH means the revision has a share_root_id whose epoch is not the current epoch of the share.
+  CONFLICT_KIND_SHARE_EPOCH = 3;
+}
+
+message Conflict {
+  // file_id is the file of the request that conflicted.
+  bytes file_id = 1;
+  ConflictKind kind = 2;
+  // head is the current head for PARENT_MISMATCH, unset when the file does not exist; for PATH_TAKEN the head of the file that holds the path.
+  StoredRevision head = 3;
+  // existing_file_id is set for PATH_TAKEN only.
+  bytes existing_file_id = 4;
+  // share_epoch is the current epoch of the share; set for SHARE_EPOCH only.
+  uint32 share_epoch = 5;
+}
+
+message GetChangesRequest {
+  bytes vault_id = 1;
+  // since_seq is 0 for the first load.
+  uint64 since_seq = 2;
+  // limit 0 means 200; at most 1000.
+  uint32 limit = 3;
+}
+
+message GetChangesResponse {
+  // changes are ordered by seq, then file_id; a batch is never split across pages.
+  repeated StoredRevision changes = 1;
+  // next_seq is the cursor for the next call.
+  uint64 next_seq = 2;
+  bool has_more = 3;
+  // head_seq is the vault seq when the page was read.
+  uint64 head_seq = 4;
+  // reset is true when since_seq is older than the deletion records the server keeps; the client lists the vault again
+  // from since_seq 0. A reset page carries changes, next_seq and has_more like any other page.
+  bool reset = 5;
+  // restore_epoch_id is the id of the current restore epoch, 16 bytes, or empty before the first restore.
+  bytes restore_epoch_id = 6;
+}

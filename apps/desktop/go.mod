@@ -3,7 +3,7 @@ module github.com/jiva-studio/numen/apps/desktop
 go 1.26.11
 
 require (
-	connectrpc.com/connect v1.21.1 // indirect
+	connectrpc.com/connect v1.21.1
 	github.com/ebitengine/purego v0.11.3 // indirect
 	github.com/rjeczalik/notify v0.9.3 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
@@ -13,6 +13,7 @@ require (
 )
 
 require (
+	golang.org/x/crypto v0.59.0
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
@@ -53,6 +54,7 @@ require (
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
+	github.com/jiva-studio/numen/libs/shared/identity v0.0.0
 	github.com/jiva-studio/numen/libs/shared/note v0.0.0
 	github.com/zalando/go-keyring v0.2.8
 )
@@ -64,3 +66,5 @@ replace github.com/jiva-studio/numen/libs/core/kernel => ../../libs/core/kernel
 replace github.com/jiva-studio/numen/libs/shared/note => ../../libs/shared/note
 
 replace github.com/jiva-studio/numen/libs/shared/atomicfile => ../../libs/shared/atomicfile
+
+replace github.com/jiva-studio/numen/libs/shared/identity => ../../libs/shared/identity

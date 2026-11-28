@@ -204,6 +204,8 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
       api: {
         settings: configuration.settings,
         license: configuration.license,
+        identity: configuration.identity,
+        keyFile: configuration.keyFile,
         listFiles: api.vault.file.listFiles,
         listCatalog: api.plugins.listCatalog,
         readReadme: api.plugins.readReadme,

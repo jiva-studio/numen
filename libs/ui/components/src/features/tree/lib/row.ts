@@ -13,11 +13,19 @@ export type RowId = string
  * One row: what it is called, and whether it can hold other rows. What is
  * rendered beside the name belongs to the component that renders the tree.
  */
+/** What a row says about where its content is, with the text that names it. */
+export interface RowStatus {
+  readonly kind: 'cloud' | 'loading'
+  readonly label: string
+  readonly progress?: number
+}
+
 export interface Row {
   readonly id: RowId
   readonly name: string
   readonly hasChildren: boolean
   readonly rows?: readonly Row[]
+  readonly status?: RowStatus
 }
 
 /**
@@ -49,6 +57,7 @@ export interface ShownRow {
   readonly isLast: boolean
   readonly hasRows: boolean
   readonly isOpen: boolean
+  readonly status?: RowStatus
 }
 
 /**
@@ -72,6 +81,7 @@ export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonl
         isLast: index === children.length - 1,
         hasRows: inside.length > 0,
         isOpen: isOpened,
+        ...(row.status ? { status: row.status } : {}),
       })
 
       if (isOpened) walk(inside, row.id, level + 1)

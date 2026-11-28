@@ -20,6 +20,8 @@ export interface CommandTarget {
   readonly others: readonly string[]
   readonly tab: string
   readonly noteType?: string
+  readonly isAbsent?: boolean
+  readonly provider?: string
   readonly properties?: Readonly<Record<string, JsonValue>>
 }
 

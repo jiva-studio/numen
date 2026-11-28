@@ -234,7 +234,7 @@ func newVaultClient(t *testing.T, fakeCallers *callers, token string) HostVaultC
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
-	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent, endpoint.newPermissionOption())
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))

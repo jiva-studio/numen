@@ -59,6 +59,7 @@ export const PLUGIN_TESTS = {
   'tools-media-importer': [ACCEPTANCE],
   'tools-proofreading': [ACCEPTANCE],
   'tools-saved-search': [ACCEPTANCE],
+  'tools-sync': [ACCEPTANCE],
   'tools-templates': [ACCEPTANCE],
   'tools-updater': [ACCEPTANCE],
   'views-agent-chat': ['agents.chat', ACCEPTANCE],

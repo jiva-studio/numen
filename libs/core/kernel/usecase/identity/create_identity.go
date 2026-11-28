@@ -1,0 +1,95 @@
+package identity
+
+import (
+	"context"
+	"fmt"
+	"io"
+
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
+)
+
+// CreateIdentity keeps a new identity on this device.
+type CreateIdentity struct {
+	records records
+	builder stateBuilder
+	created wordsHold
+	gate    CreateGate
+}
+
+// NewCreateIdentity returns the use case that creates the identity of this device.
+func NewCreateIdentity(d Deps) *CreateIdentity {
+	return &CreateIdentity{records: d.records, builder: d.getBuilder(), created: d.progress.created, gate: d.createLock}
+}
+
+// Execute accepts only the words GenerateRecoveryWords made last (ErrInvalidWords otherwise); it parses the words (ErrInvalidWords wrapping the library error), refuses when the key store
+// holds an entry of the identity (ErrIdentityExists, even when it does not parse), derives the
+// recovery key, makes new account keys and a device key, builds the chain (genesis and this device,
+// signed by the recovery key), wraps the account keys for the device, writes the chain file and then
+// the record with one SetKey. The generated words are dropped once the record is written, so a failed attempt can be repeated with the same words.
+func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identitydomain.Identity, error) {
+	recovery, err := identitylib.ParseRecoveryWords(words)
+	if err != nil {
+		return identitydomain.Identity{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidWords, err)
+	}
+	release, err := u.gate.acquire(ctx)
+	if err != nil {
+		return identitydomain.Identity{}, fmt.Errorf("wait for the creation of the identity: %w", err)
+	}
+	defer release()
+	if err := u.records.checkAbsent(ctx); err != nil {
+		return identitydomain.Identity{}, err
+	}
+	if !u.created.hasSameWords(words) {
+		return identitydomain.Identity{}, fmt.Errorf("%w: these are not the words the core made", identitydomain.ErrInvalidWords)
+	}
+	state, err := u.buildState(recovery)
+	if err != nil {
+		return identitydomain.Identity{}, err
+	}
+	if err := u.records.writeNewState(ctx, state.Record, state.Chain); err != nil {
+		return identitydomain.Identity{}, err
+	}
+	u.created.drop()
+	return toIdentity(state)
+}
+
+func (u *CreateIdentity) buildState(recovery identitylib.RecoveryWords) (identitylib.State, error) {
+	root, err := recovery.DeriveRecoveryKey()
+	if err != nil {
+		return identitylib.State{}, err
+	}
+	device, err := identitylib.NewDeviceKey(u.builder.random)
+	if err != nil {
+		return identitylib.State{}, err
+	}
+	return u.builder.buildNew(root, device)
+}
+
+// stateBuilder makes the state of a device that starts an account, or that joins one with its recovery words.
+type stateBuilder struct {
+	names  DeviceName
+	clock  Clock
+	random io.Reader
+}
+
+func (b stateBuilder) buildNew(root identitylib.RecoveryKey, device identitylib.DeviceKey) (identitylib.State, error) {
+	account, err := identitylib.NewAccountKeys(b.random)
+	if err != nil {
+		return identitylib.State{}, err
+	}
+	now := b.clock.Now()
+	chain, err := identitylib.NewChain(root, account, now)
+	if err != nil {
+		return identitylib.State{}, err
+	}
+	chain, err = chain.AppendDevice(root, device.Public(), normalizeEntryName(b.names.GetInstanceName()), now)
+	if err != nil {
+		return identitylib.State{}, err
+	}
+	wrapped, err := account.WrapForDevice(device.Public())
+	if err != nil {
+		return identitylib.State{}, err
+	}
+	return identitylib.NewState(identitylib.Record{Device: device, Wrapped: wrapped}, chain)
+}
