@@ -156,13 +156,15 @@ func TestRestoreClient_RefusesAForgedServerKeyAtFirstUse(t *testing.T) {
 func TestRestoreClient_IgnoresAnAnnouncementOfAnEpochKeyWithoutACertificate(t *testing.T) {
 	t.Parallel()
 	response, _, root := newEpochOf(t, 2)
-	response.RootSignature, response.EpochSerial, response.EpochNotAfter = nil, 0, 0
-	_, client := serveRestoreStub(t, response, root)
+	_, client := serveRestoreStub(t, &syncv1.GetRestoreEpochResponse{
+		EpochSignKey: response.GetEpochSignKey(),
+		Epoch:        response.GetEpoch(),
+	}, root)
 
-	_, _, err := client.GetRestoreEpoch(t.Context())
+	epoch, key, err := client.GetRestoreEpoch(t.Context())
 
-	if !errors.Is(err, epochtrust.ErrUntrusted) {
-		t.Errorf("GetRestoreEpoch = %v, want ErrUntrusted", err)
+	if !errors.Is(err, epochtrust.ErrUntrusted) || epoch != nil || key != nil {
+		t.Errorf("GetRestoreEpoch = %v %x %v, want nothing and ErrUntrusted", epoch, key, err)
 	}
 }
 
