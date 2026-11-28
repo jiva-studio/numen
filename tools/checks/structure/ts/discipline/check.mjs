@@ -338,7 +338,7 @@ const STYLELINT_CONFIG = /(^|\/)(stylelint\.config\.[cm]?js|\.stylelintrc[^/]*|\
 const NOT_SHIPPED = /^tools\/|(\.(test|spec|stories)\.[a-z]+|_test\.go)$|(^|\/)(testing|fixtures|testdata|e2e)\//;
 
 /** The most `Stryker disable` comments the shipped code holds: the count of the code when the cap was set, so it only falls. */
-export const STRYKER_DISABLE_CAP = 217;
+export const STRYKER_DISABLE_CAP = 214;
 
 /**
  * Every way a stylelint run skips something: an `ignoreFiles` or `ignore` entry of a configuration,

@@ -1,5 +1,4 @@
 /** The words of the questions about where the keys are kept. */
-// Stryker disable StringLiteral: interface copy
 export const WORDS = {
   chooseTitle: 'Key storage',
   chooseHint: 'No system keychain was found.',

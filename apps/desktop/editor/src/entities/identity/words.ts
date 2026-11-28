@@ -1,5 +1,4 @@
 /** What the identity store reports when the core refuses an identity call or a read fails. */
-// Stryker disable StringLiteral: interface copy
 import type { IdentityErrorCode } from './lib/types'
 
 const FAILURE_TEXTS: Readonly<Partial<Record<IdentityErrorCode, string>>> = {
