@@ -289,6 +289,11 @@ function getOwnBackendPath(value, plugin) {
 /** Whether a backend path names a domain package: `domain/...` or a top-level package that is not a layer. */
 const isDomainPath = (inner) => !BACKEND_LAYER_PACKAGES.includes(inner.split('/')[0])
 
+const SYNC_PROTOCOL_MODULE = `${GO_MODULE_ROOT}libs/shared/syncprotocol`
+const isSyncProtocolClient = (value) =>
+  value === `${SYNC_PROTOCOL_MODULE}/client` ||
+  value === `${SYNC_PROTOCOL_MODULE}/gen/numen/sync/v1/syncv1connect`
+
 /** The technology folder of an adapter path (`internal/adapter/engine/onnx` gives `internal/adapter/engine/`). */
 const getAdapterTechnology = (inner) =>
   `${ADAPTER_FOLDER}${inner.slice(ADAPTER_FOLDER.length).split('/')[0]}/`
@@ -327,6 +332,7 @@ function isAllowedAdapterImport(value, plugin, adapterPath) {
  * - an adapter (`backend/internal/adapter/<technology>/...`) imports, of its own backend, the `ports`, the domain, the
  *   use case package that declares the interface it satisfies and the packages of its own technology folder; never
  *   `api`, `wire`, `service`, `engine` or another technology's adapter.
+ * Sync protocol clients belong in adapters. A domain package imports neither client package.
  * The other packages have a deny list: an inner package (below `service` and `wire`) imports no `service`, `engine` or
  * `wire`; a `wire` package imports no `service`, `engine` or adapter. `wire` is the layer between `service` and `api`,
  * the domain, the use cases and the ports: the service imports it, it imports them, nothing below imports it.
@@ -361,6 +367,7 @@ export function findPluginBackendLayerInversions(files) {
     }
     const isWire = subpkg === WIRE_BACKEND_PACKAGE
     if (!isWire && NON_INNER_BACKEND_PACKAGES.includes(subpkg)) continue
+    const isDomain = isDomainPath(subpkg)
     const forbidden = isWire
       ? (value) =>
           OUTER_BACKEND_PACKAGES.some((outer) => isBackendPackageImport(value, outer)) ||
@@ -370,7 +377,12 @@ export function findPluginBackendLayerInversions(files) {
             isBackendPackageImport(value, outer),
           )
     for (const { line, value } of imports) {
-      if (forbidden(value))
+      if (isDomain && isSyncProtocolClient(value))
+        refuse(
+          line,
+          `domain package ${dir} imports ${value} in plugins/${plugin}. Sync protocol clients belong in adapters`,
+        )
+      else if (forbidden(value))
         refuse(
           line,
           `${isWire ? 'wire' : 'inner'} package backend/${subpkg} imports ${value} in plugins/${plugin}, against the direction service, wire, then api, domain, usecase and ports`,
@@ -390,7 +402,7 @@ export function verifyPluginBackendInternalLayers() {
   requireMatches('plugin use case source files', countFiles('backend/usecase/'))
   requireMatches('plugin adapter source files', countFiles(`backend/${ADAPTER_FOLDER}`))
   failOnFindings(
-    'Plugin backend package imports against the layers: a use case or an adapter imports a package off its allow list; an inner package imports service, engine or wire; wire imports service, engine or an adapter',
+    'Plugin backend package imports against the layers: a use case or an adapter imports a package off its allow list; a domain package imports a Sync protocol client; an inner package imports service, engine or wire; wire imports service, engine or an adapter',
     findPluginBackendLayerInversions(files),
   )
 }
