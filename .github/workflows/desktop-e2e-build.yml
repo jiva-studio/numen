@@ -1,0 +1,211 @@
+name: Desktop Build
+
+on:
+  workflow_call:
+    inputs:
+      scope:
+        type: string
+        required: true
+      engines:
+        type: string
+        required: true
+      smoke:
+        type: boolean
+        default: false
+      artifact-name:
+        description: existing desktop build artifact in the same run
+        type: string
+        default: ''
+    outputs:
+      desktop:
+        value: ${{ jobs.build.outputs.desktop }}
+      flashcards:
+        value: ${{ jobs.build.outputs.flashcards }}
+      acceptance:
+        value: ${{ jobs.build.outputs.acceptance }}
+      paths:
+        value: ${{ jobs.build.outputs.paths }}
+      matrix:
+        value: ${{ jobs.build.outputs.matrix }}
+      artifact-name:
+        value: ${{ jobs.build.outputs.artifact-name }}
+
+env:
+  SCOPE: ${{ inputs.scope }}
+  ENGINES: ${{ inputs.smoke && 'chromium' || inputs.engines }}
+  SMOKE: ${{ inputs.smoke && 'true' || 'false' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Plans the jobs the scope needs, each engine split into shards of about five minutes by
+  # shards.json, and builds the windows, the plugins and the debug binaries they run once for them.
+  # The build restores a matching archive from main or builds one, then publishes it for its test jobs.
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      desktop: ${{ steps.plan.outputs.desktop }}
+      flashcards: ${{ steps.plan.outputs.flashcards }}
+      acceptance: ${{ steps.plan.outputs.acceptance }}
+      paths: ${{ steps.plan.outputs.paths }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      artifact-name: ${{ inputs.artifact-name || steps.key.outputs.artifact-name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Test the selection of tests
+        run: node --test tests/e2e/desktop/scripts/select-tests.test.mjs
+
+      - id: plan
+        name: Plan the jobs
+        run: |
+          node tests/e2e/desktop/scripts/select-tests.mjs plan "$SCOPE" > "$RUNNER_TEMP/plan.txt"
+          while IFS= read -r line; do
+            case "$line" in
+              paths=*)
+                if [ "$SMOKE" = true ]; then echo "paths="; else echo "$line"; fi
+                ;;
+              matrix=*)
+                jq -c --arg engines "$ENGINES" --argjson smoke "$SMOKE" \
+                  '{include: (if $smoke and (.include | length) > 0 then [{engine: "chromium", shard: 1, shards: 1}] else [.include[] | select(.engine as $engine | $engines | split(" ") | index($engine))] end)}' \
+                  <<< "${line#matrix=}" | sed 's/^/matrix=/'
+                ;;
+              *) echo "$line" ;;
+            esac
+          done < "$RUNNER_TEMP/plan.txt" | tee -a "$GITHUB_OUTPUT"
+          if grep -qxE '(desktop|flashcards|acceptance)=true' "$RUNNER_TEMP/plan.txt"; then
+            echo "build=true" | tee -a "$GITHUB_OUTPUT"
+          fi
+
+      - id: key
+        if: steps.plan.outputs.build == 'true' && !inputs.artifact-name
+        env:
+          FLASHCARDS: ${{ steps.plan.outputs.flashcards }}
+          ACCEPTANCE: ${{ steps.plan.outputs.acceptance }}
+        run: |
+          prefix="e2e-build-${ImageOS:-unknown}-$(.github/scripts/hash-e2e-build.sh)"
+          flashcards=false
+          if [ "$FLASHCARDS" = true ] || [ "$ACCEPTANCE" = true ]; then flashcards=true; fi
+          restore=
+          name=all
+          if [ "$flashcards" = false ]; then
+            name=editor
+            restore="$prefix-all"
+          fi
+          {
+            echo "artifact-name=e2e-build-$(cat /proc/sys/kernel/random/uuid)"
+            echo "flashcards=$flashcards"
+            echo "key=$prefix-$name"
+            echo "restore-keys=$restore"
+          } | tee -a "$GITHUB_OUTPUT"
+
+      - name: Restore the build archive
+        if: steps.plan.outputs.build == 'true' && !inputs.artifact-name
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/e2e-build.tar
+          key: ${{ steps.key.outputs.key }}
+          restore-keys: ${{ steps.key.outputs.restore-keys }}
+
+      - id: need
+        if: steps.plan.outputs.build == 'true' && !inputs.artifact-name
+        run: |
+          if [ ! -s "$RUNNER_TEMP/e2e-build.tar" ]; then echo "build=true" >> "$GITHUB_OUTPUT"; fi
+
+      - id: setup-go
+        if: steps.need.outputs.build == 'true'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: apps/desktop/go.mod
+          cache: false
+
+      - id: go-mod-cache
+        if: steps.need.outputs.build == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
+          restore-keys: go-mod-e2e-
+
+      # What the newest build left behind: the binaries and plugin backends compile what changed.
+      # The prefix restores the newest build when the Go version or a go.sum differs.
+      - id: go-build-cache
+        if: steps.need.outputs.build == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/go-build
+          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-${{ github.sha }}
+          restore-keys: |
+            go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-
+            go-build-e2e-
+
+      - name: Install dependencies
+        if: steps.need.outputs.build == 'true'
+        uses: ./.github/actions/install-node-modules
+
+      - if: steps.need.outputs.build == 'true'
+        uses: ./.github/actions/setup-webkit
+
+      - name: Build UI library
+        if: steps.need.outputs.build == 'true'
+        uses: ./.github/actions/build-ui
+        with:
+          shell: 'true'
+
+      - name: Build the plugins, the windows and the debug binaries
+        if: steps.need.outputs.build == 'true'
+        env:
+          BUILD_FLASHCARDS: ${{ steps.key.outputs.flashcards }}
+        run: |
+          .github/scripts/run-e2e-build.sh
+          go build -C tools/syncaccount -o bin/syncaccount .
+
+      # A pull request's cache is visible only to that pull request; main's to all.
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: steps.need.outputs.build == 'true' && github.ref == 'refs/heads/main' && steps.go-mod-cache.outputs.cache-hit != 'true'
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: steps.need.outputs.build == 'true' && github.ref == 'refs/heads/main' && steps.go-build-cache.outputs.cache-hit != 'true'
+        with:
+          path: ~/.cache/go-build
+          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-${{ github.sha }}
+
+      # An artifact drops the mode bits of its files, and the binaries must stay executable.
+      - name: Pack what the tests run
+        if: steps.need.outputs.build == 'true'
+        run: |
+          shopt -s nullglob
+          files=(plugins/plugins-index.json plugins/*/bin plugins/*/dist tools/syncaccount/bin/syncaccount)
+          for binary in apps/desktop/numen-debug apps/desktop/numen-flashcards-debug; do
+            if [ -e "$binary" ]; then files+=("$binary"); fi
+          done
+          tar -cf "$RUNNER_TEMP/e2e-build.tar" "${files[@]}"
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: steps.need.outputs.build == 'true' && github.ref == 'refs/heads/main'
+        with:
+          path: ${{ runner.temp }}/e2e-build.tar
+          key: ${{ steps.key.outputs.key }}
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.plan.outputs.build == 'true' && !inputs.artifact-name
+        with:
+          name: ${{ steps.key.outputs.artifact-name }}
+          path: ${{ runner.temp }}/e2e-build.tar
+          if-no-files-found: error
+          compression-level: 1
+          retention-days: 1

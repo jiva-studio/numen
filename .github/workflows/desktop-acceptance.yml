@@ -1,0 +1,97 @@
+name: Desktop Acceptance
+
+on:
+  workflow_call:
+    inputs:
+      artifact-name:
+        type: string
+        required: true
+      engines:
+        type: string
+        required: true
+      video:
+        type: boolean
+        default: false
+      features:
+        type: string
+        default: ''
+      smoke:
+        type: boolean
+        default: false
+
+env:
+  ENGINES: ${{ inputs.smoke && 'chromium' || inputs.engines }}
+  SMOKE: ${{ inputs.smoke && 'true' || 'false' }}
+  FEATURES: ${{ inputs.features }}
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    name: Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      - uses: ./.github/actions/setup-playwright
+        with:
+          browsers: ${{ env.ENGINES }}
+          packages: libgtk-4-1 libwebkitgtk-6.0-4
+
+      - uses: ./.github/actions/fetch-e2e-build
+        with:
+          artifact-name: ${{ inputs.artifact-name }}
+
+      - name: Unpack the build
+        run: |
+          tar -xf "$RUNNER_TEMP/e2e-build.tar"
+          if ldd apps/desktop/numen-debug | grep 'not found'; then exit 1; fi
+
+      - name: Allow user namespaces, where the suite cuts the network
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns > /dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
+      - name: Run the scenarios
+        working-directory: tests/acceptance/desktop
+        env:
+          PLAYWRIGHT_VIDEO: ${{ inputs.video && '1' || '' }}
+          PWTEST_BLOB_DO_NOT_REMOVE: '1'
+        run: |
+          read -ra engines <<< "$ENGINES"
+          read -ra features <<< "$FEATURES"
+          args=()
+          if [ "${#engines[@]}" -eq 1 ]; then args=("--project=${engines[0]}"); fi
+          script=acceptance:test
+          if [ "$SMOKE" = true ]; then script=acceptance:smoke; fi
+          npm run "$script" -- "${args[@]}" "${features[@]}"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-report-acceptance
+          path: |
+            tests/acceptance/desktop/playwright-report/
+            tests/e2e/desktop/test-results/
+          retention-days: 7
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() && inputs.video }}
+        with:
+          name: acceptance-blobs-linux
+          path: tests/acceptance/desktop/acceptance-blobs/
+          retention-days: 7

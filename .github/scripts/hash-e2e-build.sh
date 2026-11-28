@@ -11,5 +11,5 @@ git ls-files -s > "$blobs"
 
 {
   cut -f2 "$blobs" | node tests/e2e/desktop/scripts/select-tests.mjs inputs | grep -Ev '^(tests|features)/' || true
-  cut -f2 "$blobs" | grep -E '^((apps|libs|plugins|tools)/.*\.mdx?|tsconfig\.base\.json|\.github/actions/.*|\.github/scripts/(apt-retry|hash-e2e-build|run-e2e-build)\.sh)$' || true
+  cut -f2 "$blobs" | grep -E '^((apps|libs|plugins|tools)/.*\.mdx?|tools/syncaccount/.*|tsconfig\.base\.json|\.github/actions/.*|\.github/scripts/(apt-retry|hash-e2e-build|run-e2e-build)\.sh)$' || true
 } | sort -u | awk -F'\t' 'NR == FNR { keep[$0]; next } $2 in keep' - "$blobs" | sha256sum | cut -d' ' -f1

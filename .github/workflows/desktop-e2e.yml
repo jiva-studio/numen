@@ -26,6 +26,10 @@ on:
         description: 'run the tests tagged @smoke in Chromium alone, the main journeys of the product; engines and the selection of paths are ignored'
         type: boolean
         default: false
+      artifact-name:
+        description: existing desktop build artifact in the same run
+        type: string
+        default: ''
   workflow_dispatch:
     inputs:
       scope:
@@ -50,183 +54,21 @@ on:
         default: false
 
 env:
-  SCOPE: ${{ inputs.scope || 'all' }}
   ENGINES: ${{ inputs.smoke && 'chromium' || inputs.engines || 'chromium webkit' }}
   SMOKE: ${{ inputs.smoke && 'true' || 'false' }}
-  FEATURES: ${{ inputs.features }}
 
 permissions:
   contents: read
 
 jobs:
-  # Plans the jobs the scope needs, each engine split into shards of about five minutes by
-  # shards.json, and builds the windows, the plugins and the debug binaries they run once for them.
-  # The build restores a matching archive from main or builds one, then publishes it for its test jobs.
   build:
     name: Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    outputs:
-      desktop: ${{ steps.plan.outputs.desktop }}
-      flashcards: ${{ steps.plan.outputs.flashcards }}
-      acceptance: ${{ steps.plan.outputs.acceptance }}
-      paths: ${{ steps.plan.outputs.paths }}
-      matrix: ${{ steps.plan.outputs.matrix }}
-      artifact-name: ${{ steps.key.outputs.artifact-name }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Test the selection of tests
-        run: node --test tests/e2e/desktop/scripts/select-tests.test.mjs
-
-      - id: plan
-        name: Plan the jobs
-        run: |
-          node tests/e2e/desktop/scripts/select-tests.mjs plan "$SCOPE" > "$RUNNER_TEMP/plan.txt"
-          while IFS= read -r line; do
-            case "$line" in
-              paths=*)
-                if [ "$SMOKE" = true ]; then echo "paths="; else echo "$line"; fi
-                ;;
-              matrix=*)
-                jq -c --arg engines "$ENGINES" --argjson smoke "$SMOKE" \
-                  '{include: (if $smoke and (.include | length) > 0 then [{engine: "chromium", shard: 1, shards: 1}] else [.include[] | select(.engine as $engine | $engines | split(" ") | index($engine))] end)}' \
-                  <<< "${line#matrix=}" | sed 's/^/matrix=/'
-                ;;
-              *) echo "$line" ;;
-            esac
-          done < "$RUNNER_TEMP/plan.txt" | tee -a "$GITHUB_OUTPUT"
-          if grep -qxE '(desktop|flashcards|acceptance)=true' "$RUNNER_TEMP/plan.txt"; then
-            echo "build=true" | tee -a "$GITHUB_OUTPUT"
-          fi
-
-      - id: key
-        if: steps.plan.outputs.build == 'true'
-        env:
-          FLASHCARDS: ${{ steps.plan.outputs.flashcards }}
-          ACCEPTANCE: ${{ steps.plan.outputs.acceptance }}
-        run: |
-          prefix="e2e-build-${ImageOS:-unknown}-$(.github/scripts/hash-e2e-build.sh)"
-          flashcards=false
-          if [ "$FLASHCARDS" = true ] || [ "$ACCEPTANCE" = true ]; then flashcards=true; fi
-          restore=
-          name=all
-          if [ "$flashcards" = false ]; then
-            name=editor
-            restore="$prefix-all"
-          fi
-          {
-            echo "artifact-name=e2e-build-$(cat /proc/sys/kernel/random/uuid)"
-            echo "flashcards=$flashcards"
-            echo "key=$prefix-$name"
-            echo "restore-keys=$restore"
-          } | tee -a "$GITHUB_OUTPUT"
-
-      - name: Restore the build archive
-        if: steps.plan.outputs.build == 'true'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/e2e-build.tar
-          key: ${{ steps.key.outputs.key }}
-          restore-keys: ${{ steps.key.outputs.restore-keys }}
-
-      - id: need
-        if: steps.plan.outputs.build == 'true'
-        run: |
-          if [ ! -s "$RUNNER_TEMP/e2e-build.tar" ]; then echo "build=true" >> "$GITHUB_OUTPUT"; fi
-
-      - id: setup-go
-        if: steps.need.outputs.build == 'true'
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: apps/desktop/go.mod
-          cache: false
-
-      - id: go-mod-cache
-        if: steps.need.outputs.build == 'true'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/go/pkg/mod
-          key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
-          restore-keys: go-mod-e2e-
-
-      # What the newest build left behind: the binaries and plugin backends compile what changed.
-      # The prefix restores the newest build when the Go version or a go.sum differs.
-      - id: go-build-cache
-        if: steps.need.outputs.build == 'true'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/go-build
-          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-${{ github.sha }}
-          restore-keys: |
-            go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-
-            go-build-e2e-
-
-      - name: Install dependencies
-        if: steps.need.outputs.build == 'true'
-        uses: ./.github/actions/install-node-modules
-
-      - if: steps.need.outputs.build == 'true'
-        uses: ./.github/actions/setup-webkit
-
-      - name: Build UI library
-        if: steps.need.outputs.build == 'true'
-        uses: ./.github/actions/build-ui
-        with:
-          shell: 'true'
-
-      - name: Build the plugins, the windows and the debug binaries
-        if: steps.need.outputs.build == 'true'
-        env:
-          BUILD_FLASHCARDS: ${{ steps.key.outputs.flashcards }}
-        run: .github/scripts/run-e2e-build.sh
-
-      # A pull request's cache is visible only to that pull request; main's to all.
-      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: steps.need.outputs.build == 'true' && github.ref == 'refs/heads/main' && steps.go-mod-cache.outputs.cache-hit != 'true'
-        with:
-          path: ~/go/pkg/mod
-          key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
-
-      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: steps.need.outputs.build == 'true' && github.ref == 'refs/heads/main' && steps.go-build-cache.outputs.cache-hit != 'true'
-        with:
-          path: ~/.cache/go-build
-          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-${{ github.sha }}
-
-      # An artifact drops the mode bits of its files, and the binaries must stay executable.
-      - name: Pack what the tests run
-        if: steps.need.outputs.build == 'true'
-        run: |
-          shopt -s nullglob
-          files=(plugins/plugins-index.json plugins/*/bin plugins/*/dist)
-          for binary in apps/desktop/numen-debug apps/desktop/numen-flashcards-debug; do
-            if [ -e "$binary" ]; then files+=("$binary"); fi
-          done
-          tar -cf "$RUNNER_TEMP/e2e-build.tar" "${files[@]}"
-
-      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: steps.need.outputs.build == 'true' && github.ref == 'refs/heads/main'
-        with:
-          path: ${{ runner.temp }}/e2e-build.tar
-          key: ${{ steps.key.outputs.key }}
-
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: steps.plan.outputs.build == 'true'
-        with:
-          name: ${{ steps.key.outputs.artifact-name }}
-          path: ${{ runner.temp }}/e2e-build.tar
-          if-no-files-found: error
-          compression-level: 1
-          retention-days: 1
+    uses: ./.github/workflows/desktop-e2e-build.yml
+    with:
+      scope: ${{ inputs.scope || 'all' }}
+      engines: ${{ inputs.engines || 'chromium webkit' }}
+      smoke: ${{ inputs.smoke }}
+      artifact-name: ${{ inputs.artifact-name || '' }}
 
   # One Playwright process with one server on each runner: the specs of a shard, in one engine.
   desktop:
@@ -363,74 +205,16 @@ jobs:
           retention-days: 7
 
   acceptance:
-    name: Linux
+    name: Acceptance
     needs: [build]
     if: needs.build.outputs.acceptance == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        uses: ./.github/actions/install-node-modules
-
-      - uses: ./.github/actions/setup-playwright
-        with:
-          browsers: ${{ env.ENGINES }}
-          packages: libgtk-4-1 libwebkitgtk-6.0-4
-
-      - uses: ./.github/actions/fetch-e2e-build
-        with:
-          artifact-name: ${{ needs.build.outputs.artifact-name }}
-
-      - name: Unpack the build
-        run: |
-          tar -xf "$RUNNER_TEMP/e2e-build.tar"
-          if ldd apps/desktop/numen-debug | grep 'not found'; then exit 1; fi
-
-      - name: Allow user namespaces, where the suite cuts the network
-        run: |
-          if sysctl -n kernel.apparmor_restrict_unprivileged_userns > /dev/null 2>&1; then
-            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-          fi
-
-      - name: Run the scenarios
-        working-directory: tests/acceptance/desktop
-        env:
-          PLAYWRIGHT_VIDEO: ${{ inputs.video && '1' || '' }}
-          PWTEST_BLOB_DO_NOT_REMOVE: '1'
-        run: |
-          read -ra engines <<< "$ENGINES"
-          read -ra features <<< "$FEATURES"
-          args=()
-          if [ "${#engines[@]}" -eq 1 ]; then args=("--project=${engines[0]}"); fi
-          script=acceptance:test
-          if [ "$SMOKE" = true ]; then script=acceptance:smoke; fi
-          npm run "$script" -- "${args[@]}" "${features[@]}"
-
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: failure()
-        with:
-          name: playwright-report-acceptance
-          path: |
-            tests/e2e/desktop/playwright-report/
-            tests/e2e/desktop/test-results/
-          retention-days: 7
-
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: ${{ !cancelled() && inputs.video }}
-        with:
-          name: acceptance-blobs-linux
-          path: tests/acceptance/desktop/acceptance-blobs/
-          retention-days: 7
+    uses: ./.github/workflows/desktop-acceptance.yml
+    with:
+      artifact-name: ${{ needs.build.outputs.artifact-name }}
+      engines: ${{ inputs.engines || 'chromium webkit' }}
+      smoke: ${{ inputs.smoke }}
+      features: ${{ inputs.features }}
+      video: ${{ inputs.video }}
 
   report:
     name: Report
