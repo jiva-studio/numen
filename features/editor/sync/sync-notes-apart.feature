@@ -1,4 +1,3 @@
-@live
 Feature: Sync notes when the computers are apart
 
   Numen Sync keeps every note when the server is away or when two computers change the same note.
@@ -12,14 +11,14 @@ Feature: Sync notes when the computers are apart
 
   Rule: Numen Sync keeps working when the server is away
 
-    @own-server
+    @stand
     Scenario: A note written while the server is away arrives later
       Given the sync server stops
       And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       When the sync server runs again
       Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
 
-    @own-server
+    @stand
     Scenario: Numen Sync warns while the server is away
       When the sync server stops
       Then the person is told "Could not reach the sync server"

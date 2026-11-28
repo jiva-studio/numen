@@ -1,4 +1,3 @@
-@live
 Feature: Numen Sync subscription
 
   One subscription belongs to the identity of a person. It covers every vault and every computer of the identity.
@@ -15,10 +14,12 @@ Feature: Numen Sync subscription
 
   Rule: The page "Identity and licenses" shows the subscription
 
+    @live
     Scenario: A new identity has no subscription
       When the person opens the page "Identity and licenses"
       Then the page offers to buy the subscription
 
+    @live
     Scenario: A payment that is not made leaves the identity without a subscription
       Given the person opens the page "Identity and licenses"
       When the person opens the payment page without paying
@@ -26,6 +27,7 @@ Feature: Numen Sync subscription
 
   Rule: The subscription needs an identity and a server that answers
 
+    @live
     Scenario: A subscription is not offered without an identity
       Given the person deletes the identity from this device
       When the person opens the page "Identity and licenses"
@@ -33,7 +35,7 @@ Feature: Numen Sync subscription
       And the person is told "Needs an identity"
       And the page does not offer to buy the subscription
 
-    @own-server
+    @stand
     Scenario: The page tells when the server is away
       Given the sync server stops
       When the person opens the page "Identity and licenses"

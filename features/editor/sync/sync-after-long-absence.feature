@@ -1,4 +1,3 @@
-@live
 Feature: Sync after a long absence
 
   Numen Sync brings a computer up to date when it was away longer than the sync server keeps the removals.
@@ -17,7 +16,7 @@ Feature: Sync after a long absence
 
   Rule: A note removed while a computer was away stays removed
 
-    @own-server
+    @stand
     Scenario: A removed note does not come back
       Given the person removes the note "Shopping list" in the vault "Test"
       And the second computer was away longer than the sync server keeps removals
@@ -25,7 +24,7 @@ Feature: Sync after a long absence
       Then the vault "Test" is without the note "Shopping list"
       And the second computer is without the note "Shopping list" in its vault "Copy"
 
-    @own-server
+    @stand
     Scenario: A note that did not change stays
       Given the person removes the note "Shopping list" in the vault "Test"
       And the second computer was away longer than the sync server keeps removals
@@ -34,7 +33,7 @@ Feature: Sync after a long absence
 
   Rule: A change made while a computer was away is kept
 
-    @own-server
+    @stand
     Scenario: A changed note of the away computer comes back
       Given the second computer writes the note "Shopping list" with the text "bread" in its vault "Copy"
       And the person removes the note "Shopping list" in the vault "Test"
@@ -42,7 +41,7 @@ Feature: Sync after a long absence
       When the second computer goes online
       Then the vault "Test" has the note "Shopping list" with the text "bread"
 
-    @own-server
+    @stand
     Scenario: A new note of the away computer arrives
       Given the second computer writes the note "Ideas" with the text "eggs" in its vault "Copy"
       And the second computer was away longer than the sync server keeps removals

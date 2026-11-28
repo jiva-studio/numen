@@ -345,11 +345,12 @@ export class ComputerDriver {
   }
 
   /** Makes the other computer reach the sync server only after this one sent its changes. */
-  connectToServer(computer: ComputerName): void {
-    this.owner.sync.holdOthers(this.getScenario(computer))
+  async connectToServer(computer: ComputerName): Promise<void> {
+    await this.owner.sync.holdOther(this.getScenario(computer === 'first' ? 'second' : 'first'))
   }
 
   async expectNoFile(computer: ComputerName, filePath: string, vault: string): Promise<void> {
+    await this.owner.sync.waitForInterruption()
     const world = this.getScenario(computer).getWorld()
     const name = this.resolveVault(computer, vault)
     await expect.poll(() => world.getEntryKind(name, filePath), { timeout: ARRIVAL_LIMIT_MS }).toBeUndefined()
@@ -383,8 +384,11 @@ export class ComputerDriver {
     await subscription.expectActive()
   }
 
-  removeNote(computer: ComputerName, title: string, vault: string): void {
-    this.getScenario(computer).getWorld().removeFile(this.resolveVault(computer, vault), getNotePath(title))
+  async removeNote(computer: ComputerName, title: string, vault: string): Promise<void> {
+    const { world, vault: name } = this.getPlace(computer, vault)
+    const filePath = getNotePath(title)
+    await this.owner.sync.recordRemoval(world.getFolder(name), filePath)
+    world.removeFile(name, filePath)
   }
 
   async expectNoNote(holder: Holder, title: string, vault: string | undefined): Promise<void> {
@@ -394,8 +398,8 @@ export class ComputerDriver {
   }
 
   /** Makes the computer unable to reach the sync server, or able again. */
-  setOnline(computer: ComputerName, isOnline: boolean): void {
-    this.owner.sync.setReachable(this.getScenario(computer), isOnline)
+  async setOnline(computer: ComputerName, isOnline: boolean): Promise<void> {
+    await this.owner.sync.setReachable(this.getScenario(computer), isOnline)
   }
 
   async answerConfirmation(computer: ComputerName, answer: 'Connect' | 'Cancel'): Promise<void> {

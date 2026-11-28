@@ -58,8 +58,10 @@ Feature: Delete a note
 A tag on a Feature or a Scenario selects it for a run. Only these exist; do not add others.
 
 - `@smoke`: a main journey of the product. A pull request runs the `@smoke` scenarios and the `@smoke` specs of `tests/e2e/desktop/` in Chromium alone. A push to main and the nightly run every test (only the nightly publishes the report), in both engines, so a test that must gate pull requests needs the tag.
-- `@live`: reaches real things that really run: the real sync server (`NUMEN_SYNC_TEST_URL`, from `make sync_stack_up`; the scenario skips without it, at its first step that needs the server, and fails when `NUMEN_SYNC_TEST_REQUIRED=1`) or the real model (a scenario that declares a key whose environment variable is missing, such as `NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY`, skips). `npm run acceptance:test` skips it; `npm run acceptance:live` and the nightly run it (never a pull request), except `@own-server`. Never combine it with `@smoke`.
-- `@own-server`: the scenario needs its own sync server process, clock or data, which the shared stack does not give.
+- `@live`: uses the shared real sync server (`NUMEN_SYNC_TEST_URL`, from `make sync_stack_up`) or a real model. The scenario skips if the server is unavailable and fails if `NUMEN_SYNC_TEST_REQUIRED=1`. A model scenario skips if its key is missing. The nightly shared run uses `npm run acceptance:live`.
+- `@stand`: controls its own sync server, payment stand-in, storage and database. `npm run acceptance:stand` runs these scenarios one at a time. Stage C2 connects this command to the nightly workflow.
+
+Every scenario belongs to one group. The offline run skips `@live` and `@stand`. The shared run selects `@live` and skips `@stand`. The stand run selects `@stand`. Apply shared or stand tags to individual scenarios in a mixed feature. A scenario, including tags inherited from its feature or rule, carries at most one of `@smoke`, `@live` and `@stand`.
 
 Mark a scenario `@smoke` when it is a main journey (make a note, open a file, search, change a setting, ask the agent, review a card), runs in about two seconds, gives the same result on every run, and needs no network and no stand-in that is missing. Do not mark one that is slow, needs a restart of the application, repeats a journey a smoke scenario already covers, or checks an edge of a rule. Put the tag on a Scenario, not on a Feature, and on a Scenario Outline only when every example is fast.
 

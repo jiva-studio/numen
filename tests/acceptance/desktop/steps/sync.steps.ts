@@ -6,10 +6,6 @@ Given('a sync server runs', ({ person }) => {
   person.sync.start()
 })
 
-Given('the sync server needs a newer Numen', async ({ person }) => {
-  await person.sync.needNewerProtocol()
-})
-
 Then('this device is {signed} to the sync server', async ({ person }, isSignedIn: boolean) => {
   if (isSignedIn) await person.sync.expectSignedIn()
   else await person.sync.expectNotSignedIn()
@@ -90,16 +86,16 @@ When(
   },
 )
 
-When('{computer} adds the file {string} to {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
-  person.files.addFile(computer, filePath, undefined, vault)
+When('{computer} adds the file {string} to {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+  await person.files.addFile(computer, filePath, undefined, vault)
 })
 
 Then('{computer} does not have the file {string} in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
   await person.computers.expectNoFile(computer, filePath, vault)
 })
 
-When('{computer} is the first to reach the sync server', ({ person }, computer: ComputerName) => {
-  person.computers.connectToServer(computer)
+When('{computer} is the first to reach the sync server', async ({ person }, computer: ComputerName) => {
+  await person.computers.connectToServer(computer)
 })
 
 Then(
@@ -197,18 +193,6 @@ When('{int} GB are removed from the cloud', async ({ person }, gigabytes: number
   await person.sync.deleteFromCloud(gigabytes)
 })
 
-When('the person starts a trial of the plan {string}', async ({ person }, name: string) => {
-  await person.sync.startTrial(name)
-})
-
-When('the person cancels the trial', async ({ person }) => {
-  await person.sync.cancelTrial()
-})
-
-Then('the subscription shows the day the trial ends', async ({ person }) => {
-  await person.subscription.expectTrialUntil(person.sync.getTrialEnd())
-})
-
 When('the operator makes a backup of the sync server', async ({ person }) => {
   await person.sync.makeBackup()
 })
@@ -217,12 +201,12 @@ When('the operator restores the sync server from the backup{telling}', async ({ 
   await person.sync.restoreFromBackup(isTold)
 })
 
-When('{computer} goes offline', ({ person }, computer: ComputerName) => {
-  person.computers.setOnline(computer, false)
+When('{computer} goes offline', async ({ person }, computer: ComputerName) => {
+  await person.computers.setOnline(computer, false)
 })
 
-When('{computer} goes online', ({ person }, computer: ComputerName) => {
-  person.computers.setOnline(computer, true)
+When('{computer} goes online', async ({ person }, computer: ComputerName) => {
+  await person.computers.setOnline(computer, true)
 })
 
 Then('the synced vault {string} holds the note {string} with the text {string}', async ({ person }, synced: string, title: string, text: string) => {
@@ -241,16 +225,16 @@ Then('the vault {string} has the same file {string} as the second computer', asy
   await person.files.expectSameFileAsSecond(vault, filePath)
 })
 
-When('{computer} adds the file {string} of {int} MB to {owned}', ({ person }, computer: ComputerName, filePath: string, megabytes: number, vault: string) => {
-  person.files.addFile(computer, filePath, megabytes, vault)
+When('{computer} adds the file {string} of {int} MB to {owned}', async ({ person }, computer: ComputerName, filePath: string, megabytes: number, vault: string) => {
+  await person.files.addFile(computer, filePath, megabytes, vault)
 })
 
 When('{computer} adds {int} files to the folder {string} in {owned}', ({ person }, computer: ComputerName, count: number, folder: string, vault: string) => {
   person.files.addFiles(computer, count, folder, vault)
 })
 
-When('{computer} replaces the file {string} with a new version in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
-  person.files.changeFile(computer, filePath, vault)
+When('{computer} replaces the file {string} with a new version in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+  await person.files.changeFile(computer, filePath, vault)
 })
 
 When('{computer} moves the file {string} to {string} in {owned}', async ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
@@ -280,12 +264,12 @@ Then('{holder} has 1 file in its folder {string}{inside}', async ({ person }, ho
   await person.files.expectFileCount(holder, 1, folder, vault)
 })
 
-Given('the connection breaks while the file {string} is sent', async ({ person }, filePath: string) => {
-  await person.files.breakConnectionWhileSending(filePath)
+Given('the connection breaks while the file {string} is sent', ({ person }, filePath: string) => {
+  person.files.breakConnectionWhileSending(filePath)
 })
 
-Given('the connection breaks while the second computer receives the file {string}', async ({ person }, filePath: string) => {
-  await person.files.breakConnectionWhileReceiving(filePath)
+Given('the connection breaks while the second computer receives the file {string}', ({ person }, filePath: string) => {
+  person.files.breakConnectionWhileReceiving(filePath)
 })
 
 When('the person chooses {string}', async ({ person }, action: string) => {

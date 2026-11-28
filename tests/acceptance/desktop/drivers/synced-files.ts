@@ -25,11 +25,16 @@ export class SyncedFilesDriver {
   ) {}
 
   /** Puts a file in the vault: a sample when the file has an extension that has one and no size, else bytes of the size. */
-  addFile(computer: ComputerName, filePath: string, megabytes: number | undefined, vault: string): void {
+  async addFile(computer: ComputerName, filePath: string, megabytes: number | undefined, vault: string): Promise<void> {
     const { world, vault: name } = this.computers.getPlace(computer, vault)
     const sample = SAMPLE_OF_EXTENSION[path.extname(filePath).toLowerCase()] as string | undefined
-    if (megabytes === undefined && sample !== undefined) world.copySample(name, getSampleKind(sample), filePath, sample)
-    else world.writeBytes(name, filePath, buildFixture(filePath, megabytes))
+    if (megabytes === undefined && sample !== undefined) {
+      world.copySample(name, getSampleKind(sample), filePath, sample)
+      return
+    }
+    const bytes = buildFixture(filePath, megabytes)
+    if (bytes.length > BREAK_AFTER_BYTES) await this.sync.recordFileTransfer(filePath, bytes.length)
+    world.writeBytes(name, filePath, bytes)
   }
 
   addFiles(computer: ComputerName, count: number, folder: string, vault: string): void {
@@ -40,7 +45,8 @@ export class SyncedFilesDriver {
     }
   }
 
-  changeFile(computer: ComputerName, filePath: string, vault: string): void {
+  async changeFile(computer: ComputerName, filePath: string, vault: string): Promise<void> {
+    await this.sync.waitForInterruption()
     const { world, vault: name } = this.computers.getPlace(computer, vault)
     const content = world.readBytes(name, filePath)
     if (content === undefined) throw new Error(`the vault "${name}" has no file "${filePath}" to change`)
@@ -82,13 +88,13 @@ export class SyncedFilesDriver {
   }
 
   /** Makes the sync server break once 20 MiB of the parts of the file went up; the step "the sync server runs again" ends the break. */
-  async breakConnectionWhileSending(_filePath: string): Promise<void> {
-    await this.sync.breakAfter('received', BREAK_AFTER_BYTES)
+  breakConnectionWhileSending(filePath: string): void {
+    this.sync.breakAfter(filePath, 'received', BREAK_AFTER_BYTES)
   }
 
   /** Makes the sync server break once 20 MiB of a blob went down to the second computer. */
-  async breakConnectionWhileReceiving(_filePath: string): Promise<void> {
-    await this.sync.breakAfter('sent', BREAK_AFTER_BYTES)
+  breakConnectionWhileReceiving(filePath: string): void {
+    this.sync.breakAfter(filePath, 'sent', BREAK_AFTER_BYTES)
   }
 
   async choose(action: string): Promise<void> {

@@ -1,4 +1,3 @@
-@live
 Feature: Sync a file removed on one computer and changed on the other
 
   Numen Sync keeps a changed file when the other computer removes it.
@@ -12,7 +11,7 @@ Feature: Sync a file removed on one computer and changed on the other
 
   Rule: A change wins over a removal
 
-    @own-server
+    @stand
     Scenario: A note changed on one computer and removed on the other stays
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
@@ -23,7 +22,7 @@ Feature: Sync a file removed on one computer and changed on the other
       Then the vault "Test" has the note "Shopping list" with the text "bread"
       And the second computer has the note "Shopping list" with the text "bread" in its vault "Copy"
 
-    @own-server
+    @stand
     Scenario: A note removed on one computer and changed on the other stays
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
@@ -34,7 +33,7 @@ Feature: Sync a file removed on one computer and changed on the other
       Then the vault "Test" has the note "Shopping list" with the text "eggs"
       And the vault "Test" has no conflict copy of the note "Shopping list"
 
-    @own-server
+    @stand
     Scenario: A file changed on one computer and removed on the other stays
       Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
@@ -47,7 +46,7 @@ Feature: Sync a file removed on one computer and changed on the other
 
   Rule: A file removed on both computers stays removed
 
-    @own-server
+    @stand
     Scenario: A file removed on both computers is removed
       Given the person adds the file "Papers/Report.pdf" to the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"

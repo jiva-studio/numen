@@ -21,8 +21,8 @@ Then('the sync settings of the second computer do not list the vault {string}', 
   await person.computers.expectNotConnected('second', vault)
 })
 
-When('{computer} removes the note {string} in {owned}', ({ person }, computer: ComputerName, title: string, vault: string) => {
-  person.computers.removeNote(computer, title, vault)
+When('{computer} removes the note {string} in {owned}', async ({ person }, computer: ComputerName, title: string, vault: string) => {
+  await person.computers.removeNote(computer, title, vault)
 })
 
 Then('{holder} is without the note {string}{inside}', async ({ person }, holder: Holder, title: string, vault: string | undefined) => {

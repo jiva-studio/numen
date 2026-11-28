@@ -9,7 +9,7 @@ import {
   readPosition,
   readSheetNumbers,
 } from './identity-kit.js'
-import { formatDay, getChoosePattern, getPlanItemPattern, getPlanLinePattern } from './subscription.js'
+import { getChoosePattern, getPlanItemPattern, getPlanLinePattern } from './subscription.js'
 
 const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'bee', 'elk', 'yak']
 
@@ -49,10 +49,6 @@ describe('the names of the buttons of the card', () => {
     expect(getChoosePattern('Plus', 100).test('Choose Plus, 100 GB, $15 / month')).toBe(true)
     expect(getChoosePattern('Plus', 10).test('Choose Plus, 100 GB, $15 / month')).toBe(false)
     expect(getChoosePattern('Plus').test('Choose Plus Pro, 100 GB')).toBe(false)
-  })
-
-  it('writes a day with the month in full', () => {
-    expect(formatDay(new Date(2026, 11, 7))).toBe('December 7, 2026')
   })
 })
 
