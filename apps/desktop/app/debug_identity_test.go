@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/identityfile"
@@ -87,13 +88,40 @@ func TestDebugHTTPPersistsAnIdentityCreatedInAnEmptyPlaintextProfile(t *testing.
 func TestDebugHTTPDoesNotOpenIdentityFilesOutsideTheTemporaryProfile(t *testing.T) {
 	folder := makeDebugProfile(t, settings.CredentialsFilePlaintext)
 	outside := filepath.Join(t.TempDir(), "numen")
+	moveDebugProfileFolder(t, folder, outside)
+	requireEmptyDebugIdentity(t, "127.0.0.1:0")
+}
+
+func TestDebugHTTPDoesNotOpenIdentityFilesFromASiblingProfile(t *testing.T) {
+	parent := t.TempDir()
+	home := filepath.Join(parent, "first")
+	config := filepath.Join(parent, "second", "config")
+	setDebugProfilePaths(t, home, config)
+	folder := writeDebugProfile(t, settings.CredentialsFilePlaintext)
+	if runtime.GOOS == "darwin" {
+		moveDebugProfileFolder(t, folder, filepath.Join(config, "numen"))
+	}
+	requireEmptyDebugIdentity(t, "127.0.0.1:0")
+}
+
+func TestDebugHTTPDoesNotOpenIdentityFilesFromAnAlternateConfigFolder(t *testing.T) {
+	folder := makeDebugProfile(t, settings.CredentialsFilePlaintext)
+	profile := filepath.Dir(os.Getenv("HOME"))
+	moveDebugProfileFolder(t, folder, filepath.Join(profile, "alternate", "numen"))
+	requireEmptyDebugIdentity(t, "127.0.0.1:0")
+}
+
+func moveDebugProfileFolder(t *testing.T, folder, outside string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(outside), 0o700); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.Rename(folder, outside); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.Symlink(outside, folder); err != nil {
 		t.Skipf("cannot create a symlink: %v", err)
 	}
-	requireEmptyDebugIdentity(t, "127.0.0.1:0")
 }
 
 func TestDebugHTTPDoesNotFollowAnIdentityFileSymlinkOutsideTheProfile(t *testing.T) {
@@ -137,14 +165,23 @@ func requireEmptyDebugIdentity(t *testing.T, addr string) {
 func makeDebugProfile(t *testing.T, mode string) string {
 	t.Helper()
 	root := t.TempDir()
-	home := filepath.Join(root, "home")
+	setDebugProfilePaths(t, filepath.Join(root, "home"), filepath.Join(root, "config"))
+	return writeDebugProfile(t, mode)
+}
+
+func setDebugProfilePaths(t *testing.T, home, config string) {
+	t.Helper()
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
-	t.Setenv("AppData", filepath.Join(root, "config"))
+	t.Setenv("XDG_CONFIG_HOME", config)
+	t.Setenv("AppData", config)
 	if err := os.MkdirAll(home, 0o700); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func writeDebugProfile(t *testing.T, mode string) string {
+	t.Helper()
 	path, err := settings.GetPath()
 	if err != nil {
 		t.Fatal(err)
