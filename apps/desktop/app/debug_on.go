@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
+	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
@@ -29,7 +30,7 @@ func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
 }
 
 func (d *DebugOptions) apply(refreshDependencies func(), res *container.Resources) error {
-	if d.isServingHTTP() {
+	if d.isServingHTTP() && !platform.ApplyDebugIdentityFiles(d.HTTPAddr, res) {
 		res.Stores.Keys = debugserve.NewKeyStore()
 		res.Stores.Chains = debugserve.NewChainStore()
 	}
